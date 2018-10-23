@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>CFBundleExecutable</key>
+        <string>run-gptt.sh</string>
+        <key>CFBundleIdentifier</key>
+        <string>ai.ptt.gptt</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>0.1</string>
+        <key>CFBundleName</key>
+        <string>gptt</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>English</string>
+        <key>CFBundleShortVersionString</key>
+        <string>3.2.0</string>
+        <key>CFBundleSignature</key>
+        <string>gptt</string>
+        <key>CFBundleVersion</key>
+        <string>4712</string>
+        <key>LSApplicationCategoryType</key>
+        <string>public.app-category.business</string>
+        <key>LSMinimumSystemVersion</key>
+        <string>10.9</string>
+        <key>NSAppleScriptEnabled</key>
+        <string>YES</string>
+        <key>NSPrincipalClass</key>
+        <string>AtomApplication</string>
+        <key>CFBundleIconFile</key>
+        <string>gptt.icns</string>
+</dict>
+</plist>

@@ -1,4 +1,5 @@
 /__
+/build/bin
 _workspace
 test.out
 /gptt.pkg

@@ -61,7 +61,7 @@ var (
 	}
 	TestnetFlag = cli.BoolFlag{
 		Name:  "testnet",
-		Usage: "Ropsten network: pre-configured proof-of-work test network",
+		Usage: "Test network: pre-configured Ptt.ai test network",
 	}
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",

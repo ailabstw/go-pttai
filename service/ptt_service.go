@@ -22,9 +22,7 @@ import (
 )
 
 /*
-Service is the service-level representation to register to the node.
-
-Service use ServiceProtocolManager to manage the service-level protocol.
+PttService is the interface for ptt as the service in the node-level.
 */
 type PttService interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.

@@ -14,48 +14,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package e2e
 
-import "time"
+import (
+	"testing"
 
-// default config
-var (
-	DefaultConfig = Config{
-		MaxPeers:          350,
-		MaxImportantPeers: 100,
-		MaxMemberPeers:    200,
-		MaxRandomPeers:    50,
-	}
+	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-const (
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
+func TestBasicBasic(t *testing.T) {
+	var bodyString string
 
-	SizeOpType   = 4 // optype uint32
-	SizeCodeType = 8 // codetype uint64
+	setupTest(t)
+	defer teardownTest(t)
 
-	SizeChallenge = 16
+	t0 := baloo.New("http://127.0.0.1:9450")
+	t1 := baloo.New("http://127.0.0.1:9451")
+	t2 := baloo.New("http://127.0.0.1:9452")
 
-	HandshakeTimeout    = 60 * time.Second
-	IdentifyPeerTimeout = 10 * time.Second
-)
-
-// protocol
-const (
-	_ uint = iota
-	Ptt1
-)
-
-var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
-	ProtocolLengths  = [1]uint64{4}
-)
-
-const (
-	StatusMsg = 0x00
-
-	CodeTypeJoinMsg    = 0x01
-	CodeTypeJoinAckMsg = 0x02
-	CodeTypeOpMsg      = 0x03
-)
+	// 1. ptt_countPeers. ensure connecting to each other.
+	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":4}}`
+	testBodyEqualCore(t0, bodyString, resultString, t)
+	testBodyEqualCore(t1, bodyString, resultString, t)
+	testBodyEqualCore(t2, bodyString, resultString, t)
+}

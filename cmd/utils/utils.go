@@ -34,6 +34,7 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/nat"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ailabstw/go-pttai/params"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -55,6 +56,14 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
+}
+
+// SetPttConfig applies ptt-related command line flags to the config.
+func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config, gitCommit string) {
+	log.Debug("SetPttConfig: start", "cfg", cfg, "cfgNode", cfgNode)
+	cfg.DataDir = filepath.Join(cfgNode.DataDir, "ptt")
+	cfg.Version = params.Version
+	cfg.GitCommit = gitCommit
 }
 
 // MakeDataDir retrieves the currently requested data directory, terminating

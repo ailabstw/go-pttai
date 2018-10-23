@@ -23,6 +23,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/cmd/utils"
 	"github.com/ailabstw/go-pttai/node"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/naoina/toml"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -148,6 +149,7 @@ var (
 
 	DefaultConfig = Config{
 		Node: &node.DefaultConfig,
+		Ptt:  &pkgservice.DefaultConfig,
 	}
 )
 

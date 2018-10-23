@@ -19,3 +19,29 @@ package service
 // ServiceConstructor is the function signature of the constructors needed to be
 // registered for service instantiation.
 type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
+
+// merkletree
+
+type MerkleTreeLevel uint8
+
+const (
+	_ MerkleTreeLevel = iota
+	MerkleTreeLevelNow
+	MerkleTreeLevelHR
+	MerkleTreeLevelDay
+	MerkleTreeLevelMonth
+	MerkleTreeLevelYear
+)
+
+// PeerType
+
+type PeerType int
+
+const (
+	PeerTypeErr PeerType = iota
+	PeerTypeRemoved
+	PeerTypeRandom
+	PeerTypeMember
+	PeerTypeImportant
+	PeerTypeMe
+)

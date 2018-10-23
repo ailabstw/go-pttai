@@ -603,10 +603,7 @@ func (srv *Server) run(dialstate dialer) {
 
 running:
 	for {
-		log.Debug("run (in-for-loop): to schedule Tasks")
 		scheduleTasks()
-
-		log.Debug("run (in-for-loop): after schedule Tasks")
 
 		select {
 		case <-srv.quit:

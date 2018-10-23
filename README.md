@@ -8,9 +8,9 @@ The architecture of Ptt.ai can be found in the [link](https://docs.google.com/pr
 Install
 -----
 
-	git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai;
-	make gptt
-	build/bin/gptt
+    git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai;
+    make gptt
+    build/bin/gptt
 
 
 Docker Environment
@@ -43,12 +43,14 @@ Development
 -----
 The code-structure is based on [go-ethereum](https://github.com/ethereum/go-ethereum). The following is the general guide for the development.
 
-	git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai; git submodule update --init; ./scripts/init_cookiecutter.sh
+    git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai; git submodule update --init; ./scripts/init_cookiecutter.sh
+
+    ./scripts/gptt-dev.sh
 
 * follow gofmt / goimports
 * follow [gotests](https://github.com/cweill/gotests)
 * coding style (in-general):
-	1. Each struct file (generated from ./scripts/dev_struct.sh) represents 1 struct
+    1. Each struct file (generated from ./scripts/dev_struct.sh) represents 1 struct
     2. Each module file (generated from ./scripts/dev_module.sh) represents 1 public function
     3. Struct is always CapitalizedCamelCase
     4. Public constants / variables / functions / member variables / member functions are CapitalizedCamelCase
@@ -57,8 +59,8 @@ The code-structure is based on [go-ethereum](https://github.com/ethereum/go-ethe
     7. Global test variables are in globals_test.go
     8. Errors are in errors.go
 * Naming:
-	* Full name: Pttai, pttai
-	* cmd: gptt, Gptt (go-ptt)
+    * Full name: Pttai, pttai
+    * cmd: gptt, Gptt (go-ptt)
 * Default ports:
     * http-connection: 9774
     * api-connection: 14779

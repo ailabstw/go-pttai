@@ -16,46 +16,34 @@
 
 package service
 
-import "time"
+type PrivateAPI struct {
+	p *Ptt
+}
 
-// default config
-var (
-	DefaultConfig = Config{
-		MaxPeers:          350,
-		MaxImportantPeers: 100,
-		MaxMemberPeers:    200,
-		MaxRandomPeers:    50,
-	}
-)
+func NewPrivateAPI(p *Ptt) *PrivateAPI {
+	return &PrivateAPI{p}
+}
 
-const (
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
+func (api *PrivateAPI) CountPeers() (*BackendCountPeers, error) {
+	return api.p.CountPeers()
+}
 
-	SizeOpType   = 4 // optype uint32
-	SizeCodeType = 8 // codetype uint64
+func (api *PrivateAPI) GetPeers() ([]*BackendPeer, error) {
+	return api.p.BEGetPeers()
+}
 
-	SizeChallenge = 16
+func (api *PrivateAPI) GetVersion() (string, error) {
+	return api.p.GetVersion()
+}
 
-	HandshakeTimeout    = 60 * time.Second
-	IdentifyPeerTimeout = 10 * time.Second
-)
+func (api *PrivateAPI) GetGitCommit() (string, error) {
+	return api.p.GetGitCommit()
+}
 
-// protocol
-const (
-	_ uint = iota
-	Ptt1
-)
+func (api *PrivateAPI) Shutdown() (bool, error) {
+	return api.p.Shutdown()
+}
 
-var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
-	ProtocolLengths  = [1]uint64{4}
-)
-
-const (
-	StatusMsg = 0x00
-
-	CodeTypeJoinMsg    = 0x01
-	CodeTypeJoinAckMsg = 0x02
-	CodeTypeOpMsg      = 0x03
-)
+func (api *PrivateAPI) Restart() (bool, error) {
+	return api.p.Restart()
+}

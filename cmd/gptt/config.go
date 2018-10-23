@@ -23,17 +23,20 @@ import (
 	"os"
 
 	"github.com/ailabstw/go-pttai/node"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/naoina/toml"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 type Config struct {
 	Node *node.Config
+	Ptt  *pkgservice.Config
 }
 
 func NewConfig(ctx *cli.Context) (*Config, error) {
 	return &Config{
 		Node: &node.DefaultConfig,
+		Ptt:  &pkgservice.DefaultConfig,
 	}, nil
 }
 

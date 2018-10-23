@@ -16,46 +16,32 @@
 
 package service
 
-import "time"
+import (
+	"net"
 
-// default config
-var (
-	DefaultConfig = Config{
-		MaxPeers:          350,
-		MaxImportantPeers: 100,
-		MaxMemberPeers:    200,
-		MaxRandomPeers:    50,
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/p2p/discover"
+)
+
+type BackendCountPeers struct {
+	MyPeers        int `json:"M"`
+	ImportantPeers int `json:"I"`
+	MemberPeers    int `json:"E"`
+	RandomPeers    int `json:"R"`
+}
+
+type BackendPeer struct {
+	NodeID   *discover.NodeID `json:"ID"`
+	PeerType PeerType         `json:"T"`
+	UserID   *types.PttID     `json:"UID"`
+	Addr     net.Addr
+}
+
+func PeerToBackendPeer(peer *PttPeer) *BackendPeer {
+	return &BackendPeer{
+		NodeID:   peer.GetID(),
+		PeerType: peer.PeerType,
+		UserID:   peer.UserID,
+		Addr:     peer.RemoteAddr(),
 	}
-)
-
-const (
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
-
-	SizeOpType   = 4 // optype uint32
-	SizeCodeType = 8 // codetype uint64
-
-	SizeChallenge = 16
-
-	HandshakeTimeout    = 60 * time.Second
-	IdentifyPeerTimeout = 10 * time.Second
-)
-
-// protocol
-const (
-	_ uint = iota
-	Ptt1
-)
-
-var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
-	ProtocolLengths  = [1]uint64{4}
-)
-
-const (
-	StatusMsg = 0x00
-
-	CodeTypeJoinMsg    = 0x01
-	CodeTypeJoinAckMsg = 0x02
-	CodeTypeOpMsg      = 0x03
-)
+}

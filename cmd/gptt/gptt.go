@@ -25,6 +25,8 @@ import (
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/node"
+	"github.com/ailabstw/go-pttai/p2p/discover"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -39,12 +41,19 @@ func gptt(ctx *cli.Context) error {
 
 	utils.SetNodeConfig(ctx, cfg.Node)
 
+	utils.SetPttConfig(ctx, cfg.Ptt, cfg.Node, gitCommit)
+
 	// Setup metrics
 	utils.SetupMetrics(ctx)
 
 	// new node
 	n, err := node.New(cfg.Node)
 	if err != nil {
+		return err
+	}
+
+	// register ptt
+	if err := registerPtt(n, cfg); err != nil {
 		return err
 	}
 
@@ -64,6 +73,24 @@ func gptt(ctx *cli.Context) error {
 	log.Info("Ptt.ai: see u later～")
 
 	return nil
+}
+
+func registerPtt(n *node.Node, cfg *Config) error {
+	return n.Register(func(ctx *pkgservice.ServiceContext) (pkgservice.PttService, error) {
+		return registerServices(ctx, cfg)
+	})
+}
+
+func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.PttService, error) {
+	myNodeKey := cfg.Node.NodeKey()
+	myNodeID := discover.PubkeyID(&myNodeKey.PublicKey)
+
+	ptt, err := pkgservice.NewPtt(ctx, cfg.Ptt, &myNodeID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ptt, nil
 }
 
 func setSignal(n *node.Node) {

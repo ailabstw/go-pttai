@@ -16,46 +16,12 @@
 
 package service
 
-import "time"
-
-// default config
-var (
-	DefaultConfig = Config{
-		MaxPeers:          350,
-		MaxImportantPeers: 100,
-		MaxMemberPeers:    200,
-		MaxRandomPeers:    50,
-	}
-)
-
-const (
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
-
-	SizeOpType   = 4 // optype uint32
-	SizeCodeType = 8 // codetype uint64
-
-	SizeChallenge = 16
-
-	HandshakeTimeout    = 60 * time.Second
-	IdentifyPeerTimeout = 10 * time.Second
-)
-
-// protocol
-const (
-	_ uint = iota
-	Ptt1
-)
-
-var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
-	ProtocolLengths  = [1]uint64{4}
-)
-
-const (
-	StatusMsg = 0x00
-
-	CodeTypeJoinMsg    = 0x01
-	CodeTypeJoinAckMsg = 0x02
-	CodeTypeOpMsg      = 0x03
-)
+type Config struct {
+	MaxPeers          int
+	MaxImportantPeers int
+	MaxMemberPeers    int
+	MaxRandomPeers    int
+	DataDir           string
+	Version           string
+	GitCommit         string
+}

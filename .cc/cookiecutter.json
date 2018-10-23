@@ -1,0 +1,41 @@
+{
+  "pkg": "",
+  "module": "",
+
+  "project": "",
+
+  "pkg_name": "",
+  "project_name": "",
+
+  "package_dir": "",
+
+  "PKG": "",
+  "MODULE": "",
+  "PROJECT": "",
+  "PKG_NAME": "",
+  "PROJECT_NAME": "",
+  "INCLUDE_PKG": "",
+  "PACKAGE_DIR": "",
+  "INCLUDE_PACKAGE_DIR": "",
+  "TEST_PACKAGE_DIR": "",
+
+  "Pkg": "",
+  "Module": "",
+  "Project": "",
+  "PkgName": "",
+  "ProjectName": "",
+  "IncludePkg": "",
+  "PackageDir": "",
+  "IncludePackageDir": "",
+  "TestPackageDir": "",
+
+  "pkgLCamel": "",
+  "moduleLCamel": "",
+  "projectLCamel": "",
+  "pkgName": "",
+  "projectName": "",
+  "includePkg": "",
+  "packageDir": "",
+  "includePackageDir": "",
+  "testPackageDir": ""
+}

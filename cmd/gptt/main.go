@@ -76,7 +76,10 @@ func InitApp() *cli.App {
 	sort.Sort(cli.CommandsByName(app.Commands))
 
 	app.Flags = append(app.Flags, nodeFlags...)
+	app.Flags = append(app.Flags, meFlags...)
+	app.Flags = append(app.Flags, contentFlags...)
 	app.Flags = append(app.Flags, rpcFlags...)
+	app.Flags = append(app.Flags, httpFlags...)
 	app.Flags = append(app.Flags, networkFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 

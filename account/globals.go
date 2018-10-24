@@ -30,6 +30,18 @@ var (
 	}
 )
 
+// user-profile
+const (
+	MaxProfileImgWidth  = 128
+	MinProfileImgWidth  = 64
+	MaxProfileImgHeight = 128
+	MinProfileImgHeight = 64
+	MaxProfileImgSize   = 65535
+
+	MaxNameLength         = 25
+	ProfileImageMaskRatio = 0.8
+)
+
 // db
 var (
 	dbAccount *pttdb.LDBDatabase = nil

@@ -17,6 +17,7 @@
 package account
 
 import (
+	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -57,6 +58,22 @@ func (b *Backend) Start() error {
 func (b *Backend) Stop() error {
 	TeardownAccount()
 	return nil
+}
+
+func (b *Backend) APIs() []rpc.API {
+	return []rpc.API{
+		{
+			Namespace: "account",
+			Version:   "1.0",
+			Service:   NewPrivateAPI(b),
+		},
+		{
+			Namespace: "account",
+			Version:   "1.0",
+			Service:   NewPublicAPI(b),
+			Public:    true,
+		},
+	}
 }
 
 func (b *Backend) Name() string {

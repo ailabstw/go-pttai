@@ -80,6 +80,11 @@ func GOPATH() string {
 	return os.Getenv("GOPATH")
 }
 
+func GOBIN() string {
+	gobin, _ := filepath.Abs(filepath.Join("build", "bin"))
+	return gobin
+}
+
 // VERSION returns the content of the VERSION file.
 func VERSION() string {
 	version, err := ioutil.ReadFile("VERSION")
@@ -178,7 +183,7 @@ func CopyFile(dst, src string, mode os.FileMode) {
 // because runtime.Version checks on the host should match the tools that are run.
 func GoTool(tool string, args ...string) *exec.Cmd {
 	if tool == "test" {
-		return exec.Command(filepath.Join(GOPATH(), "bin", "gotest"), args...)
+		return exec.Command(filepath.Join(GOBIN(), "gotest"), args...)
 	}
 	args = append([]string{tool}, args...)
 	return exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"), args...)

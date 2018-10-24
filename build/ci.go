@@ -332,7 +332,9 @@ func goToolArch(arch string, cc string, subcmd string, args ...string) *exec.Cmd
 
 func doE2e(cmdline []string) {
 	// Get metalinter and install all supported linters
+	build.MustRun(goTool("get", "github.com/rakyll/gotest"), false)
 	build.MustRun(goTool("install", "github.com/rakyll/gotest"), false)
+	build.MustRun(goTool("get", "gopkg.in/h2non/baloo.v3"), false)
 	build.MustRun(goTool("install", "gopkg.in/h2non/baloo.v3"), false)
 	flag.CommandLine.Parse(cmdline)
 	env := build.Env()
@@ -354,7 +356,9 @@ func doE2e(cmdline []string) {
 
 func doTest(cmdline []string) {
 	// Get metalinter and install all supported linters
+	build.MustRun(goTool("get", "github.com/rakyll/gotest"), false)
 	build.MustRun(goTool("install", "github.com/rakyll/gotest"), false)
+
 	var (
 		coverage = flag.Bool("coverage", false, "Whether to record code coverage")
 	)
@@ -392,6 +396,7 @@ func doLint(cmdline []string) {
 		packages = flag.CommandLine.Args()
 	}
 	// Get metalinter and install all supported linters
+	build.MustRun(goTool("get", "gopkg.in/alecthomas/gometalinter.v2"), false)
 	build.MustRun(goTool("install", "gopkg.in/alecthomas/gometalinter.v2"), false)
 	build.MustRunCommand(filepath.Join(GOBIN, "gometalinter.v2"), "--install")
 

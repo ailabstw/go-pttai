@@ -54,6 +54,27 @@ var (
 		Usage: "TOML configuration file",
 	}
 
+	// flags that configure me
+	meFlags = []cli.Flag{
+		utils.MyDataDirFlag,
+		utils.MyKeyFileFlag,
+		utils.MyKeyHexFlag,
+		utils.ServerFlag,
+	}
+
+	// flags that configure content
+	contentFlags = []cli.Flag{
+		utils.ContentDataDirFlag,
+		utils.ContentKeystoreDirFlag,
+	}
+
+	// flags that configure http-server
+	httpFlags = []cli.Flag{
+		utils.HTTPAddrFlag,
+		utils.HTTPDirFlag,
+		utils.ExternHTTPAddrFlag,
+	}
+
 	// flags that configure the node
 	nodeFlags = []cli.Flag{
 		configFileFlag,
@@ -78,6 +99,7 @@ var (
 		utils.MetricsInfluxDBHostTagFlag,
 	}
 
+	// flags that configure p2p-network
 	networkFlags = []cli.Flag{
 		utils.MaxPeersFlag,
 		utils.MaxPendingPeersFlag,
@@ -96,6 +118,7 @@ var (
 		utils.NetrestrictFlag,
 	}
 
+	// flags that configure rpc
 	rpcFlags = []cli.Flag{
 		utils.RPCEnabledFlag,
 		utils.RPCListenAddrFlag,
@@ -143,7 +166,7 @@ The output of this command is supposed to be machine-readable.
 		Name:        "dumpconfig",
 		Usage:       "Show configuration values",
 		ArgsUsage:   "",
-		Flags:       append(append(nodeFlags, rpcFlags...), networkFlags...),
+		Flags:       append(append(append(append(append(nodeFlags, meFlags...), contentFlags...), rpcFlags...), httpFlags...), networkFlags...),
 		Category:    "MISCELLANEOUS COMMANDS",
 		Description: `The dumpconfig command shows configuration values.`,
 	}

@@ -15,3 +15,9 @@
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
 package utils
+
+type Config struct {
+	HTTPDir        string
+	HTTPAddr       string
+	ExternHTTPAddr string
+}

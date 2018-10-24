@@ -35,6 +35,8 @@ package utils
 import (
 	"strings"
 
+	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/node"
 	"gopkg.in/urfave/cli.v1"
@@ -65,6 +67,44 @@ var (
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",
 		Usage: "Custom user name",
+	}
+
+	// My settings
+	MyDataDirFlag = DirectoryFlag{
+		Name:  "mydatadir",
+		Usage: "Data directory for my info",
+		Value: DirectoryString{me.DefaultConfig.DataDir},
+	}
+	MyKeyFileFlag = cli.StringFlag{
+		Name:  "mykey",
+		Usage: "my key file",
+	}
+	MyKeyHexFlag = cli.StringFlag{
+		Name:  "mykeyhex",
+		Usage: "my key as hex (for testing)",
+	}
+
+	MyPostfixFlag = cli.StringFlag{
+		Name:  "mypostfix",
+		Usage: "my postfix (20 bytes)",
+	}
+
+	ServerFlag = cli.BoolFlag{
+		Name:  "server",
+		Usage: "set as server mode",
+	}
+
+	// Content settings
+	ContentDataDirFlag = DirectoryFlag{
+		Name:  "contentdatadir",
+		Usage: "Data directory for content",
+		Value: DirectoryString{content.DefaultConfig.DataDir},
+	}
+
+	ContentKeystoreDirFlag = DirectoryFlag{
+		Name:  "contentkeystoredir",
+		Usage: "Keystore directory for content",
+		Value: DirectoryString{content.DefaultConfig.KeystoreDir},
 	}
 
 	// Performance tuning settings
@@ -125,6 +165,20 @@ var (
 		Name:  "metrics.influxdb.host.tag",
 		Usage: "InfluxDB `host` tag attached to all measurements",
 		Value: "localhost",
+	}
+
+	// HTTP server
+	HTTPAddrFlag = cli.StringFlag{
+		Name:  "httpaddr",
+		Usage: "HTTP server listening addr",
+	}
+	HTTPDirFlag = cli.StringFlag{
+		Name:  "httpdir",
+		Usage: "HTTP server serving file-dir",
+	}
+	ExternHTTPAddrFlag = cli.StringFlag{
+		Name:  "exthttpaddr",
+		Usage: "External HTTP server listening addr",
 	}
 
 	// RPC settings

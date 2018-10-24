@@ -14,44 +14,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package me
 
-// ServiceConstructor is the function signature of the constructors needed to be
-// registered for service instantiation.
-type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
+import "errors"
 
-// merkletree
+var (
+	ErrInvalidMe = errors.New("invalid me")
 
-type MerkleTreeLevel uint8
+	ErrInvalidNode = errors.New("invalid node")
 
-const (
-	_ MerkleTreeLevel = iota
-	MerkleTreeLevelNow
-	MerkleTreeLevelHR
-	MerkleTreeLevelDay
-	MerkleTreeLevelMonth
-	MerkleTreeLevelYear
-)
+	ErrInvalidPrivateKeyPostfix = errors.New("private-key and postfix must be specified at the same time")
+	ErrInvalidPrivateKey        = errors.New("invalid private key")
+	ErrInvalidPrivateKeyFileHex = errors.New("cannot set private-key file / hex at the same time")
+	ErrInvalidPrivateKeyFile    = errors.New("invalid private key file")
+	ErrInvalidPrivateKeyHex     = errors.New("invalid private key hex")
 
-// PeerType
+	ErrAlreadyMyNode = errors.New("already my node")
 
-type PeerType int
-
-const (
-	PeerTypeErr PeerType = iota
-	PeerTypeRemoved
-	PeerTypeRandom
-	PeerTypeMember
-	PeerTypeImportant
-	PeerTypeMe
-)
-
-// NodeType
-type NodeType int
-
-const (
-	NodeTypeUnknown NodeType = iota
-	NodeTypeMobile
-	NodeTypeDesktop
-	NodeTypeServer
+	ErrInvalidEntry     = errors.New("invalid raft entry")
+	ErrInvalidRaftIndex = errors.New("invalid raft index")
 )

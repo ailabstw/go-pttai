@@ -18,6 +18,14 @@ package utils
 
 import cli "gopkg.in/urfave/cli.v1"
 
+// default config
+var (
+	DefaultConfig = Config{
+		HTTPAddr: "localhost:9774",
+		HTTPDir:  "static/",
+	}
+)
+
 var (
 	CommandHelpTemplate = `{{.cmd.Name}}{{if .cmd.Subcommands}} command{{end}}{{if .cmd.Flags}} [command options]{{end}} [arguments...]
 {{if .cmd.Description}}{{.cmd.Description}}

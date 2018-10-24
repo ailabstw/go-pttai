@@ -14,44 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package account
 
-// ServiceConstructor is the function signature of the constructors needed to be
-// registered for service instantiation.
-type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
+import "errors"
 
-// merkletree
-
-type MerkleTreeLevel uint8
-
-const (
-	_ MerkleTreeLevel = iota
-	MerkleTreeLevelNow
-	MerkleTreeLevelHR
-	MerkleTreeLevelDay
-	MerkleTreeLevelMonth
-	MerkleTreeLevelYear
-)
-
-// PeerType
-
-type PeerType int
-
-const (
-	PeerTypeErr PeerType = iota
-	PeerTypeRemoved
-	PeerTypeRandom
-	PeerTypeMember
-	PeerTypeImportant
-	PeerTypeMe
-)
-
-// NodeType
-type NodeType int
-
-const (
-	NodeTypeUnknown NodeType = iota
-	NodeTypeMobile
-	NodeTypeDesktop
-	NodeTypeServer
+var (
+	ErrInvalidImg  = errors.New("invalid img")
+	ErrInvalidName = errors.New("invalid name")
 )

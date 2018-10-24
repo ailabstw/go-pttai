@@ -14,44 +14,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package content
 
-// ServiceConstructor is the function signature of the constructors needed to be
-// registered for service instantiation.
-type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
+type Config struct {
+	DataDir     string
+	KeystoreDir string
+}
 
-// merkletree
-
-type MerkleTreeLevel uint8
-
-const (
-	_ MerkleTreeLevel = iota
-	MerkleTreeLevelNow
-	MerkleTreeLevelHR
-	MerkleTreeLevelDay
-	MerkleTreeLevelMonth
-	MerkleTreeLevelYear
-)
-
-// PeerType
-
-type PeerType int
-
-const (
-	PeerTypeErr PeerType = iota
-	PeerTypeRemoved
-	PeerTypeRandom
-	PeerTypeMember
-	PeerTypeImportant
-	PeerTypeMe
-)
-
-// NodeType
-type NodeType int
-
-const (
-	NodeTypeUnknown NodeType = iota
-	NodeTypeMobile
-	NodeTypeDesktop
-	NodeTypeServer
-)
+func NewConfig() (*Config, error) {
+	return &Config{}, nil
+}

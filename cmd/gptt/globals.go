@@ -21,7 +21,11 @@ import (
 	"reflect"
 	"unicode"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/cmd/utils"
+	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/friend"
+	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/node"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/naoina/toml"
@@ -30,6 +34,20 @@ import (
 
 const ()
 
+// config
+var (
+	DefaultConfig = Config{
+		Node:    &node.DefaultConfig,
+		Me:      &me.DefaultConfig,
+		Content: &content.DefaultConfig,
+		Account: &account.DefaultConfig,
+		Friend:  &friend.DefaultConfig,
+		Ptt:     &pkgservice.DefaultConfig,
+		Utils:   &utils.DefaultConfig,
+	}
+)
+
+// flags
 var (
 	configFileFlag = cli.StringFlag{
 		Name:  "config",
@@ -99,6 +117,7 @@ var (
 	}
 )
 
+// cmd
 var (
 	versionCommand = cli.Command{
 		Action:    utils.MigrateFlags(version),
@@ -130,6 +149,7 @@ The output of this command is supposed to be machine-readable.
 	}
 )
 
+// toml-settings
 var (
 	tomlSettings = toml.Config{
 		NormFieldName: func(rt reflect.Type, key string) string {
@@ -146,12 +166,4 @@ var (
 			return fmt.Errorf("field '%s' is not defined in %s%s", field, rt.String(), link)
 		},
 	}
-
-	DefaultConfig = Config{
-		Node: &node.DefaultConfig,
-		Ptt:  &pkgservice.DefaultConfig,
-	}
 )
-
-func init() {
-}

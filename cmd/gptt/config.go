@@ -22,6 +22,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/ailabstw/go-pttai/account"
+	"github.com/ailabstw/go-pttai/cmd/utils"
+	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/friend"
+	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/node"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/naoina/toml"
@@ -29,14 +34,24 @@ import (
 )
 
 type Config struct {
-	Node *node.Config
-	Ptt  *pkgservice.Config
+	Node    *node.Config
+	Me      *me.Config
+	Content *content.Config
+	Account *account.Config
+	Friend  *friend.Config
+	Ptt     *pkgservice.Config
+	Utils   *utils.Config
 }
 
 func NewConfig(ctx *cli.Context) (*Config, error) {
 	return &Config{
-		Node: &node.DefaultConfig,
-		Ptt:  &pkgservice.DefaultConfig,
+		Node:    &node.DefaultConfig,
+		Me:      &me.DefaultConfig,
+		Content: &content.DefaultConfig,
+		Account: &account.DefaultConfig,
+		Friend:  &friend.DefaultConfig,
+		Ptt:     &pkgservice.DefaultConfig,
+		Utils:   &utils.DefaultConfig,
 	}, nil
 }
 

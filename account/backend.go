@@ -14,44 +14,51 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package account
 
-// ServiceConstructor is the function signature of the constructors needed to be
-// registered for service instantiation.
-type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
-
-// merkletree
-
-type MerkleTreeLevel uint8
-
-const (
-	_ MerkleTreeLevel = iota
-	MerkleTreeLevelNow
-	MerkleTreeLevelHR
-	MerkleTreeLevelDay
-	MerkleTreeLevelMonth
-	MerkleTreeLevelYear
+import (
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-// PeerType
+type Backend struct {
+	*pkgservice.BaseService
+}
 
-type PeerType int
+func NewBackend(ctx *pkgservice.ServiceContext, config *Config, ptt *pkgservice.Ptt) (*Backend, error) {
+	// init account
+	err := InitAccount(config.DataDir)
+	if err != nil {
+		return nil, err
+	}
 
-const (
-	PeerTypeErr PeerType = iota
-	PeerTypeRemoved
-	PeerTypeRandom
-	PeerTypeMember
-	PeerTypeImportant
-	PeerTypeMe
-)
+	// backend
+	backend := &Backend{}
 
-// NodeType
-type NodeType int
+	// spm
+	spm, err := NewServiceProtocolManager(ptt, backend)
+	if err != nil {
+		return nil, err
+	}
 
-const (
-	NodeTypeUnknown NodeType = iota
-	NodeTypeMobile
-	NodeTypeDesktop
-	NodeTypeServer
-)
+	// base-service
+	b, err := pkgservice.NewBaseService(ptt, spm)
+	if err != nil {
+		return nil, err
+	}
+	backend.BaseService = b
+
+	return backend, nil
+}
+
+func (b *Backend) Start() error {
+	return nil
+}
+
+func (b *Backend) Stop() error {
+	TeardownAccount()
+	return nil
+}
+
+func (b *Backend) Name() string {
+	return "account"
+}

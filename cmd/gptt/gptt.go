@@ -22,9 +22,13 @@ import (
 	"reflect"
 	"syscall"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/cmd/utils"
+	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -40,7 +44,17 @@ func gptt(ctx *cli.Context) error {
 		return err
 	}
 
+	utils.SetUtilsConfig(ctx, cfg.Utils)
+
 	utils.SetNodeConfig(ctx, cfg.Node)
+
+	utils.SetMeConfig(ctx, cfg.Me, cfg.Node)
+
+	utils.SetAccountConfig(ctx, cfg.Account, cfg.Node)
+
+	utils.SetContentConfig(ctx, cfg.Content, cfg.Node)
+
+	utils.SetFriendConfig(ctx, cfg.Friend, cfg.Node)
 
 	utils.SetPttConfig(ctx, cfg.Ptt, cfg.Node, gitCommit)
 
@@ -87,6 +101,45 @@ func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.P
 	myNodeID := discover.PubkeyID(&myNodeKey.PublicKey)
 
 	ptt, err := pkgservice.NewPtt(ctx, cfg.Ptt, &myNodeID)
+	if err != nil {
+		return nil, err
+	}
+
+	accountBackend, err := account.NewBackend(ctx, cfg.Account, ptt)
+	if err != nil {
+		return nil, err
+	}
+	err = ptt.RegisterService(accountBackend)
+	if err != nil {
+		return nil, err
+	}
+
+	// content
+	contentBackend, err := content.NewBackend(ctx, cfg.Content, cfg.Me.ID, ptt, accountBackend)
+	if err != nil {
+		return nil, err
+	}
+	err = ptt.RegisterService(contentBackend)
+	if err != nil {
+		return nil, err
+	}
+
+	// friend
+	friendBackend, err := friend.NewBackend(ctx, cfg.Friend, cfg.Me.ID, ptt, accountBackend, contentBackend)
+	if err != nil {
+		return nil, err
+	}
+	err = ptt.RegisterService(friendBackend)
+	if err != nil {
+		return nil, err
+	}
+
+	// me
+	meBackend, err := me.NewBackend(ctx, cfg.Me, ptt, accountBackend, contentBackend, friendBackend)
+	if err != nil {
+		return nil, err
+	}
+	err = ptt.RegisterService(meBackend)
 	if err != nil {
 		return nil, err
 	}

@@ -23,9 +23,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/fdlimit"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/metrics/influxdb"
 	"github.com/ailabstw/go-pttai/node"
@@ -38,13 +42,33 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 )
 
+// SetContentConfig applies node-related command line flags to the config.
+func SetUtilsConfig(ctx *cli.Context, cfg *Config) {
+	switch {
+	case ctx.GlobalIsSet(HTTPDirFlag.Name):
+		cfg.HTTPDir = ctx.GlobalString(HTTPDirFlag.Name)
+	}
+
+	switch {
+	case ctx.GlobalIsSet(HTTPAddrFlag.Name):
+		cfg.HTTPAddr = ctx.GlobalString(HTTPAddrFlag.Name)
+	}
+
+	switch {
+	case ctx.GlobalIsSet(ExternHTTPAddrFlag.Name):
+		cfg.ExternHTTPAddr = ctx.GlobalString(ExternHTTPAddrFlag.Name)
+	default:
+		cfg.ExternHTTPAddr = cfg.HTTPAddr
+	}
+
+}
+
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
-	SetP2PConfig(ctx, &cfg.P2P)
+	setP2PConfig(ctx, &cfg.P2P)
 	setIPC(ctx, cfg)
 	setHTTP(ctx, cfg)
 	setWS(ctx, cfg)
-	setNodeUserIdent(ctx, cfg)
 
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
@@ -56,6 +80,77 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
 	}
+}
+
+// SetMyConfig applies node-related command line flags to the config.
+func SetMeConfig(ctx *cli.Context, cfg *me.Config, cfgNode *node.Config) {
+	// data-dir
+	switch {
+	case ctx.GlobalIsSet(MyDataDirFlag.Name):
+		cfg.DataDir = ctx.GlobalString(MyDataDirFlag.Name)
+	case ctx.GlobalBool(TestnetFlag.Name):
+		cfg.DataDir = filepath.Join(filepath.Join(node.DefaultDataDir(), "testnet"), "me")
+	default:
+		cfg.DataDir = filepath.Join(cfgNode.DataDir, "me")
+	}
+
+	// node-type
+	switch {
+	case ctx.GlobalBool(ServerFlag.Name):
+		cfg.NodeType = pkgservice.NodeTypeServer
+	default:
+		cfg.NodeType = pkgservice.NodeTypeDesktop
+	}
+
+	// key/id/postfix
+	setMyKey(ctx, cfg)
+}
+
+// SetMyKey creates a node key from set command line flags, either loading it
+// from a file or as a specified hex value. If neither flags were provided, this
+// method returns nil and an emphemeral key is to be generated.
+func setMyKey(ctx *cli.Context, cfg *me.Config) error {
+	var (
+		hex     = ctx.GlobalString(MyKeyHexFlag.Name)
+		file    = ctx.GlobalString(MyKeyFileFlag.Name)
+		postfix = ctx.GlobalString(MyPostfixFlag.Name)
+	)
+
+	err := cfg.SetMyKey(hex, file, postfix, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetContentConfig applies node-related command line flags to the config.
+func SetAccountConfig(ctx *cli.Context, cfg *account.Config, cfgNode *node.Config) {
+	cfg.DataDir = filepath.Join(cfgNode.DataDir, "account")
+}
+
+// SetContentConfig applies node-related command line flags to the config.
+func SetContentConfig(ctx *cli.Context, cfg *content.Config, cfgNode *node.Config) {
+	switch {
+	case ctx.GlobalIsSet(ContentDataDirFlag.Name):
+		cfg.DataDir = ctx.GlobalString(ContentDataDirFlag.Name)
+	case ctx.GlobalBool(TestnetFlag.Name):
+		cfg.DataDir = filepath.Join(filepath.Join(node.DefaultDataDir(), "testnet"), "content")
+	default:
+		cfg.DataDir = filepath.Join(cfgNode.DataDir, "content")
+	}
+
+	switch {
+	case ctx.GlobalIsSet(ContentKeystoreDirFlag.Name):
+		cfg.KeystoreDir = ctx.GlobalString(ContentKeystoreDirFlag.Name)
+	default:
+		cfg.KeystoreDir = filepath.Join(cfgNode.DataDir, ".keystore")
+	}
+}
+
+// SetContentConfig applies node-related command line flags to the config.
+func SetFriendConfig(ctx *cli.Context, cfg *friend.Config, cfgNode *node.Config) {
+	cfg.DataDir = filepath.Join(cfgNode.DataDir, "friend")
 }
 
 // SetPttConfig applies ptt-related command line flags to the config.
@@ -103,13 +198,6 @@ func setNodeKey(ctx *cli.Context, cfg *p2p.Config) {
 			Fatalf("Option %q: %v", NodeKeyHexFlag.Name, err)
 		}
 		cfg.PrivateKey = key
-	}
-}
-
-// setNodeUserIdent creates the user identifier from CLI flags.
-func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
-	if identity := ctx.GlobalString(IdentityFlag.Name); len(identity) > 0 {
-		cfg.UserIdent = identity
 	}
 }
 
@@ -253,7 +341,7 @@ func makeDatabaseHandles() int {
 	return limit / 2 // Leave half for networking and other stuff
 }
 
-func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
+func setP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setNodeKey(ctx, cfg)
 	setNAT(ctx, cfg)
 	setListenAddress(ctx, cfg)

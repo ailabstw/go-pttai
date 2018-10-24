@@ -16,7 +16,12 @@
 
 package service
 
-import "time"
+import (
+	"time"
+
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
+)
 
 // default config
 var (
@@ -59,3 +64,115 @@ const (
 	CodeTypeJoinAckMsg = 0x02
 	CodeTypeOpMsg      = 0x03
 )
+
+// op-key
+var (
+	DBOpKeyIdxOplogPrefix    = []byte(".okig")
+	DBOpKeyOplogPrefix       = []byte(".oklg")
+	DBOpKeyMerkleOplogPrefix = []byte(".oklg")
+	DBOpKeyPrefix            = []byte(".okdb")
+	DBOpKeyIdxPrefix         = []byte(".okix")
+	DBOpKeyIdx2Prefix        = []byte(".oki2")
+)
+
+// db
+const (
+	SleepTimeMasterLock = 10
+
+	SleepTimeMeLock = 10
+
+	SleepTimePttLock = 10
+
+	MaxCountPttOplog = 2000
+	PPttOplog        = 12 // 2^12 = 4096
+)
+
+var (
+	dbOplog     *pttdb.LDBBatch
+	dbOplogCore *pttdb.LDBDatabase
+
+	dbMeta *pttdb.LDBDatabase
+
+	DBNewestMasterLogIDPrefix = []byte(".nmld")
+	DBMasterOplogPrefix       = []byte(".malg")
+	DBMasterIdxOplogPrefix    = []byte(".maig")
+	DBMasterMerkleOplogPrefix = []byte(".mamk")
+	DBMasterLockMap           *types.LockMap
+
+	DBMeOplogPrefix       = []byte(".melg")
+	DBMeIdxOplogPrefix    = []byte(".meig")
+	DBMeMerkleOplogPrefix = []byte(".memk")
+	DBMeLockMap           *types.LockMap
+
+	DBCountPttOplogPrefix = []byte(".ptct")
+
+	DBPttOplogPrefix       = []byte(".ptlg") // .ptlm, .ptli is used as well
+	DBPttIdxOplogPrefix    = []byte(".ptig")
+	DBPttMerkleOplogPrefix = []byte(".ptmk")
+	DBPttLockMap           *types.LockMap
+
+	DBLocalePrefix     = []byte(".locl")
+	DBPttLogSeenPrefix = []byte(".ptsn")
+)
+
+func InitService(dataDir string) error {
+	dbOplogCore, err := pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	dbOplog, err = pttdb.NewLDBBatch(dbOplogCore)
+	if err != nil {
+		return err
+	}
+
+	dbMeta, err = pttdb.NewLDBDatabase("meta", dataDir, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	DBMasterLockMap, err = types.NewLockMap(SleepTimeMasterLock)
+	if err != nil {
+		return err
+	}
+
+	DBMeLockMap, err = types.NewLockMap(SleepTimeMeLock)
+	if err != nil {
+		return err
+	}
+
+	DBPttLockMap, err = types.NewLockMap(SleepTimePttLock)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TeardownService() {
+	if dbOplog != nil {
+		dbOplog = nil
+	}
+
+	if dbOplogCore != nil {
+		dbOplogCore.Close()
+		dbOplogCore = nil
+	}
+
+	if dbMeta != nil {
+		dbMeta.Close()
+		dbMeta = nil
+	}
+
+	if DBMasterLockMap != nil {
+		DBMasterLockMap = nil
+	}
+
+	if DBMeLockMap != nil {
+		DBMeLockMap = nil
+	}
+
+	if DBPttLockMap != nil {
+		DBPttLockMap = nil
+	}
+}

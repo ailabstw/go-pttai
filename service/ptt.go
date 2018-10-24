@@ -29,7 +29,7 @@ import (
 
 type Ptt struct {
 	config   *Config
-	MyNodeID *discover.NodeID
+	MyNodeID *discover.NodeID // ptt knows only my-node-id
 
 	eventMux *event.TypeMux
 
@@ -53,6 +53,9 @@ type Ptt struct {
 	quitSync chan struct{}
 	syncWG   sync.WaitGroup
 
+	// services
+	services map[string]Service
+
 	// p2p server
 	server *p2p.Server
 
@@ -63,16 +66,16 @@ type Ptt struct {
 	apis []rpc.API
 
 	networkID uint32
-
-	// misc
-	ErrChan *types.Chan
 }
 
 func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*Ptt, error) {
-	log.Debug("NewPtt: start")
+	// init-service
+	InitService(cfg.DataDir)
 
 	p := &Ptt{
 		config: cfg,
+
+		MyNodeID: myNodeID,
 
 		eventMux: new(event.TypeMux),
 
@@ -83,16 +86,17 @@ func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*Ptt, 
 		newPeerCh:   make(chan *PttPeer),
 		noMorePeers: make(chan struct{}),
 
-		// sync
-		quitSync: make(chan struct{}),
-
 		myPeers:        make(map[discover.NodeID]*PttPeer),
 		importantPeers: make(map[discover.NodeID]*PttPeer),
 		memberPeers:    make(map[discover.NodeID]*PttPeer),
 		randomPeers:    make(map[discover.NodeID]*PttPeer),
-	}
 
-	log.Debug("NewPtt: done", "quitSync", p.quitSync)
+		// sync
+		quitSync: make(chan struct{}),
+
+		// services
+		services: make(map[string]Service),
+	}
 
 	p.apis = p.PttAPIs()
 
@@ -164,4 +168,20 @@ func (p *Ptt) RWInit(peer *PttPeer, version uint) {
 	if rw, ok := peer.RW().(MeteredMsgReadWriter); ok {
 		rw.Init(version)
 	}
+}
+
+/*
+RegisterService
+*/
+func (p *Ptt) RegisterService(service Service) error {
+	log.Info("RegisterService", "name", service.Name())
+	p.apis = append(p.apis, service.APIs()...)
+
+	name := service.Name()
+
+	p.services[name] = service
+
+	log.Info("RegisterService: done", "name", service.Name())
+
+	return nil
 }

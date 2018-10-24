@@ -59,6 +59,10 @@ type RBody struct {
 	ContentLength int64
 }
 
+type DataWrapper struct {
+	Result interface{} `json:"result"`
+}
+
 func GetResponseBody(r *RBody) func(res *http.Response, req *http.Request) error {
 	return func(res *http.Response, req *http.Request) error {
 		body, err := readBody(res)
@@ -165,10 +169,6 @@ func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testi
 func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) []byte {
 	rbody := &RBody{}
 
-	dataWrapper := &struct {
-		Result interface{} `json:"result"`
-	}{Result: data}
-
 	c.Post("/").
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
@@ -176,9 +176,19 @@ func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T
 		AssertFunc(GetResponseBody(rbody)).
 		Done()
 
-	ParseBody(rbody.Body, t, dataWrapper, false)
+	var dataWrapper *DataWrapper
+	if data != nil {
+		dataWrapper = &DataWrapper{Result: data}
+		ParseBody(rbody.Body, t, dataWrapper, false)
+	}
+
 	if isDebug {
-		t.Logf("after Parse: body: %v data: %v", rbody.Body, dataWrapper.Result)
+		if data != nil {
+			t.Logf("after Parse: body: %v data: %v", rbody.Body, dataWrapper.Result)
+		} else {
+			t.Logf("after Parse: body: %v", rbody.Body)
+
+		}
 	}
 
 	return rbody.Body

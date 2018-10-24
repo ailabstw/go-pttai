@@ -17,30 +17,27 @@
 package e2e
 
 import (
-    "testing"
-    "time"
+	"testing"
+	"time"
 
-    "github.com/stretchr/testify/assert"
-    baloo "gopkg.in/h2non/baloo.v3"
+	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func Test{{cookiecutter.Module}}(t *testing.T) {
-    var bodyString string
-    assert := assert.New(t)
+func TestPttRestart(t *testing.T) {
+	var bodyString string
 
-    setupTest(t)
-    defer teardownTest(t)
+	//assert := assert.New(t)
 
-    t0 := baloo.New("http://127.0.0.1:9450")
+	setupTest(t)
+	defer teardownTest(t)
 
-    // 1. ptt-shutdown
-    bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
+	t0 := baloo.New("http://127.0.0.1:9450")
 
-    resultBytes := append([]byte(`{"jsonrpc":"2.0","id":"testID","result":true}`), '\n')
+	// 2. ptt_countEntities
+	bodyString = `{"id": "testID", "method": "ptt_restart", "params": []}`
 
-    body := testCore(t0, bodyString, nil, t, true)
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":true}`
+	testBodyEqualCore(t0, bodyString, resultString, t)
 
-    assert.Equal(resultBytes, body)
-
-    time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 }

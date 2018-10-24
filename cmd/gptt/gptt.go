@@ -19,6 +19,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"reflect"
 	"syscall"
 
 	"github.com/ailabstw/go-pttai/cmd/utils"
@@ -118,14 +119,32 @@ func setSignal(n *node.Node) {
 func WaitNode(n *node.Node) error {
 	log.Info("start Waiting...")
 
+	ptt := n.Services()[reflect.TypeOf(&pkgservice.Ptt{})].(*pkgservice.Ptt)
+
 loop:
 	for {
-		err, ok := <-n.StopChan
-		if ok && err != nil {
-			log.Error("Wait", "e", err)
-			return err
+		select {
+		case _, ok := <-ptt.NotifyNodeRestart.GetChan():
+			if !ok {
+				break loop
+			}
+			err := n.Restart(false, true)
+			if err != nil {
+				return err
+			}
+		case _, ok := <-ptt.NotifyNodeStop.GetChan():
+			if !ok {
+				break loop
+			}
+			n.Stop(false, false)
+			break loop
+		case err, ok := <-n.StopChan:
+			if ok && err != nil {
+				log.Error("Wait", "e", err)
+				return err
+			}
+			break loop
 		}
-		break loop
 	}
 
 	return nil

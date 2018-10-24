@@ -19,23 +19,22 @@ package e2e
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestBasicBasic(t *testing.T) {
-	var bodyString string
+func TestPttGitcommit(t *testing.T) {
+	assert := assert.New(t)
 
+	// setup test
 	setupTest(t)
 	defer teardownTest(t)
 
 	t0 := baloo.New("http://127.0.0.1:9450")
-	t1 := baloo.New("http://127.0.0.1:9451")
-	t2 := baloo.New("http://127.0.0.1:9452")
 
-	// 1. ptt_countPeers. ensure connecting to each other.
-	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
-	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":4}}`
-	testBodyEqualCore(t0, bodyString, resultString, t)
-	testBodyEqualCore(t1, bodyString, resultString, t)
-	testBodyEqualCore(t2, bodyString, resultString, t)
+	bodyString := `{"id": "testID", "method": "ptt_getGitCommit", "params": []}`
+
+	body := testCore(t0, bodyString, nil, t, true)
+
+	assert.Equal(84, len(body))
 }

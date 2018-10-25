@@ -34,14 +34,14 @@ type Backend struct {
 	friendBackend  *friend.Backend
 }
 
-func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt *pkgservice.Ptt, accountBackend *account.Backend, contentBackend *content.Backend, friendBacked *friend.Backend) (*Backend, error) {
+func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt *pkgservice.BasePtt, accountBackend *account.Backend, contentBackend *content.Backend, friendBacked *friend.Backend) (*Backend, error) {
 	err := InitMe(cfg.DataDir)
 	if err != nil {
 		return nil, err
 	}
 
 	// init-id
-	err = initMyInfo(cfg.ID, ptt.MyNodeID, cfg.PrivateKey, cfg.NodeType)
+	err = initMyInfo(cfg.ID, ptt.MyNodeID(), cfg.PrivateKey, cfg.NodeType)
 	if err != nil {
 		return nil, err
 	}

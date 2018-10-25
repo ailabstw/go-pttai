@@ -27,9 +27,16 @@ import (
 	"github.com/ailabstw/go-pttai/rpc"
 )
 
-type Ptt struct {
+/*
+Ptt is the public-access version of Ptt.
+*/
+type Ptt interface {
+	MyNodeID() *discover.NodeID
+}
+
+type BasePtt struct {
 	config   *Config
-	MyNodeID *discover.NodeID // ptt knows only my-node-id
+	myNodeID *discover.NodeID // ptt knows only my-node-id
 
 	eventMux *event.TypeMux
 
@@ -68,14 +75,14 @@ type Ptt struct {
 	networkID uint32
 }
 
-func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*Ptt, error) {
+func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*BasePtt, error) {
 	// init-service
 	InitService(cfg.DataDir)
 
-	p := &Ptt{
+	p := &BasePtt{
 		config: cfg,
 
-		MyNodeID: myNodeID,
+		myNodeID: myNodeID,
 
 		eventMux: new(event.TypeMux),
 
@@ -105,15 +112,15 @@ func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*Ptt, 
 	return p, nil
 }
 
-func (p *Ptt) Protocols() []p2p.Protocol {
+func (p *BasePtt) Protocols() []p2p.Protocol {
 	return p.protocols
 }
 
-func (p *Ptt) APIs() []rpc.API {
+func (p *BasePtt) APIs() []rpc.API {
 	return p.apis
 }
 
-func (p *Ptt) Start(server *p2p.Server) error {
+func (p *BasePtt) Start(server *p2p.Server) error {
 	p.server = server
 
 	go p.SyncWrapper()
@@ -121,7 +128,7 @@ func (p *Ptt) Start(server *p2p.Server) error {
 	return nil
 }
 
-func (p *Ptt) Stop() error {
+func (p *BasePtt) Stop() error {
 	close(p.quitSync)
 	close(p.noMorePeers)
 
@@ -143,7 +150,7 @@ func (p *Ptt) Stop() error {
  * Sync
  **********/
 
-func (p *Ptt) SyncWrapper() {
+func (p *BasePtt) SyncWrapper() {
 	log.Debug("ptt.SyncWrapper: start")
 loop:
 	for {
@@ -164,7 +171,7 @@ loop:
  * RW
  **********/
 
-func (p *Ptt) RWInit(peer *PttPeer, version uint) {
+func (p *BasePtt) RWInit(peer *PttPeer, version uint) {
 	if rw, ok := peer.RW().(MeteredMsgReadWriter); ok {
 		rw.Init(version)
 	}
@@ -173,7 +180,7 @@ func (p *Ptt) RWInit(peer *PttPeer, version uint) {
 /*
 RegisterService
 */
-func (p *Ptt) RegisterService(service Service) error {
+func (p *BasePtt) RegisterService(service Service) error {
 	log.Info("RegisterService", "name", service.Name())
 	p.apis = append(p.apis, service.APIs()...)
 
@@ -184,4 +191,8 @@ func (p *Ptt) RegisterService(service Service) error {
 	log.Info("RegisterService: done", "name", service.Name())
 
 	return nil
+}
+
+func (p *BasePtt) MyNodeID() *discover.NodeID {
+	return p.myNodeID
 }

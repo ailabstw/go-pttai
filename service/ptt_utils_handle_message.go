@@ -26,7 +26,7 @@ import (
 /*
 HandleMessageWrapper
 */
-func (p *Ptt) HandleMessageWrapper(peer *PttPeer) error {
+func (p *BasePtt) HandleMessageWrapper(peer *PttPeer) error {
 	log.Debug("HandleMessageWrapper: to readMsg", "peer", peer)
 	msg, err := peer.RW().ReadMsg()
 	log.Debug("HandleMessageWrapper: recved msg", "peer", peer, "size", msg.Size, "e", err)
@@ -53,13 +53,12 @@ func (p *Ptt) HandleMessageWrapper(peer *PttPeer) error {
 	return nil
 }
 
-func (p *Ptt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) error {
+func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) error {
 	var err error
 
 	//log.Debug("HandleMessage: start", "code", code, "data", data, "peer", peer)
 
-	if !reflect.DeepEqual(data.Node, discover.EmptyNodeID) && !reflect.DeepEqual(data.Node, p.MyNodeID[:]) {
-		log.Error("HandleMessage: not my node", "data", data.Node, "me", p.MyNodeID)
+	if !reflect.DeepEqual(data.Node, discover.EmptyNodeID) && !reflect.DeepEqual(data.Node, p.myNodeID[:]) {
 		return ErrInvalidData
 	}
 

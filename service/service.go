@@ -36,7 +36,7 @@ type Service interface {
 
 	Name() string
 
-	Ptt() *Ptt
+	Ptt() Ptt
 }
 
 /*
@@ -44,10 +44,10 @@ BaseService implements the base-type of Service
 */
 type BaseService struct {
 	spm ServiceProtocolManager
-	ptt *Ptt
+	ptt Ptt
 }
 
-func NewBaseService(ptt *Ptt, spm ServiceProtocolManager) (*BaseService, error) {
+func NewBaseService(ptt Ptt, spm ServiceProtocolManager) (*BaseService, error) {
 	return &BaseService{ptt: ptt, spm: spm}, nil
 }
 
@@ -67,6 +67,6 @@ func (svc *BaseService) SPM() ServiceProtocolManager {
 	return svc.spm
 }
 
-func (svc *BaseService) Ptt() *Ptt {
+func (svc *BaseService) Ptt() Ptt {
 	return svc.ptt
 }

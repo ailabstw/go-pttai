@@ -17,10 +17,10 @@
 package service
 
 type PrivateAPI struct {
-	p *Ptt
+	p *BasePtt
 }
 
-func NewPrivateAPI(p *Ptt) *PrivateAPI {
+func NewPrivateAPI(p *BasePtt) *PrivateAPI {
 	return &PrivateAPI{p}
 }
 

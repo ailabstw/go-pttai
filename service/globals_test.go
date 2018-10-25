@@ -49,8 +49,8 @@ var (
 	tDefaultHash   = crypto.PubkeyToAddress(tDefaultKey.PublicKey)
 	tDefaultNodeID = &discover.NodeID{}
 
-	tDefaultPtt = &Ptt{
-		MyNodeID: tDefaultNodeID,
+	tDefaultPtt = &BasePtt{
+		myNodeID: tDefaultNodeID,
 	}
 
 	tDefaultData = TType{

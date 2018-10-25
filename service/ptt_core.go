@@ -16,15 +16,15 @@
 
 package service
 
-func (p *Ptt) GetVersion() (string, error) {
+func (p *BasePtt) GetVersion() (string, error) {
 	return p.config.Version, nil
 }
 
-func (p *Ptt) GetGitCommit() (string, error) {
+func (p *BasePtt) GetGitCommit() (string, error) {
 	return p.config.GitCommit, nil
 }
 
-func (p *Ptt) CountPeers() (*BackendCountPeers, error) {
+func (p *BasePtt) CountPeers() (*BackendCountPeers, error) {
 	p.peerLock.RLock()
 	defer p.peerLock.RUnlock()
 
@@ -36,7 +36,7 @@ func (p *Ptt) CountPeers() (*BackendCountPeers, error) {
 	}, nil
 }
 
-func (p *Ptt) BEGetPeers() ([]*BackendPeer, error) {
+func (p *BasePtt) BEGetPeers() ([]*BackendPeer, error) {
 	p.peerLock.RLock()
 	defer p.peerLock.RUnlock()
 
@@ -66,12 +66,12 @@ func (p *Ptt) BEGetPeers() ([]*BackendPeer, error) {
 	return peerList, nil
 }
 
-func (p *Ptt) Shutdown() (bool, error) {
+func (p *BasePtt) Shutdown() (bool, error) {
 	p.NotifyNodeStop.PassChan(struct{}{})
 	return true, nil
 }
 
-func (p *Ptt) Restart() (bool, error) {
+func (p *BasePtt) Restart() (bool, error) {
 	p.NotifyNodeRestart.PassChan(struct{}{})
 	return true, nil
 }

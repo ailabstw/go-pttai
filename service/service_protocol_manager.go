@@ -32,16 +32,16 @@ type ServiceProtocolManager interface {
 	Start() error
 	Stop() error
 
-	Ptt() *Ptt
+	Ptt() Ptt
 	Service() Service
 }
 
 type BaseServiceProtocolManager struct {
-	ptt     *Ptt
+	ptt     Ptt
 	service Service
 }
 
-func NewBaseServiceProtocolManager(ptt *Ptt, service Service) (*BaseServiceProtocolManager, error) {
+func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtocolManager, error) {
 	spm := &BaseServiceProtocolManager{
 		ptt: ptt,
 
@@ -59,7 +59,7 @@ func (b *BaseServiceProtocolManager) Stop() error {
 	return nil
 }
 
-func (b *BaseServiceProtocolManager) Ptt() *Ptt {
+func (b *BaseServiceProtocolManager) Ptt() Ptt {
 	return b.ptt
 }
 

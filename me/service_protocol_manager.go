@@ -24,7 +24,7 @@ type ServiceProtocolManager struct {
 	*pkgservice.BaseServiceProtocolManager
 }
 
-func NewServiceProtocolManager(ptt *pkgservice.Ptt, service pkgservice.Service) (*ServiceProtocolManager, error) {
+func NewServiceProtocolManager(ptt *pkgservice.BasePtt, service pkgservice.Service) (*ServiceProtocolManager, error) {
 
 	b, err := pkgservice.NewBaseServiceProtocolManager(ptt, service)
 	if err != nil {

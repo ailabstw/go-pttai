@@ -45,7 +45,7 @@ var genIV = func(iv []byte) error {
 // encrypt / decrypt refers:
 // https://gist.github.com/stupidbodo/601b68bfef3449d1b8d9
 
-func (p *Ptt) EncryptData(op OpType, data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
+func (p *BasePtt) EncryptData(op OpType, data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
 	keyBytes := crypto.FromECDSA(key)
 	marshaled := make([]byte, 4+len(data))
 	binary.BigEndian.PutUint32(marshaled[:4], uint32(op))
@@ -72,7 +72,7 @@ func (p *Ptt) EncryptData(op OpType, data []byte, key *ecdsa.PrivateKey) ([]byte
 	return ciphertext, nil
 }
 
-func (p *Ptt) DecryptData(ciphertext []byte, key *ecdsa.PrivateKey) (OpType, []byte, error) {
+func (p *BasePtt) DecryptData(ciphertext []byte, key *ecdsa.PrivateKey) (OpType, []byte, error) {
 	keyBytes := crypto.FromECDSA(key)
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
@@ -137,7 +137,7 @@ MarshalData marshals the encrypted data based on ptt-protocol.
 	enc: encrypted-data
 The purpose is to have checksum to ensure that the data is not randomly-modified (preventing machine-error)
 */
-func (p *Ptt) MarshalData(code CodeType, hash *common.Address, encData []byte) (*PttData, error) {
+func (p *BasePtt) MarshalData(code CodeType, hash *common.Address, encData []byte) (*PttData, error) {
 	// 2. forms pttEvent
 	ev := &PttEventData{
 		Code:    code,
@@ -165,7 +165,7 @@ ChecksumPttEventData do checksum on the ev
 
 Return: bytesWithSalt, checksum, error
 */
-func (p *Ptt) ChecksumPttEventData(ev *PttEventData) ([]byte, []byte, error) {
+func (p *BasePtt) ChecksumPttEventData(ev *PttEventData) ([]byte, []byte, error) {
 	evBytes, err := json.Marshal(ev)
 	if err != nil {
 		return nil, nil, err
@@ -179,7 +179,7 @@ ChecksumData do checksum on the bytes
 
 Return: bytesWithSalt, checksum, error
 */
-func (p *Ptt) ChecksumData(bytes []byte) ([]byte, []byte, error) {
+func (p *BasePtt) ChecksumData(bytes []byte) ([]byte, []byte, error) {
 	salt, err := types.NewSalt()
 	if err != nil {
 		return nil, nil, err
@@ -197,7 +197,7 @@ func (p *Ptt) ChecksumData(bytes []byte) ([]byte, []byte, error) {
 /*
 PttUnmarshalData unmarshal the pttData to the original data
 */
-func (p *Ptt) UnmarshalData(pttData *PttData) (CodeType, *common.Address, []byte, error) {
+func (p *BasePtt) UnmarshalData(pttData *PttData) (CodeType, *common.Address, []byte, error) {
 	ev, err := p.VerifyChecksumEventData(pttData)
 	if err != nil {
 		return CodeTypeDummy, nil, nil, err
@@ -209,7 +209,7 @@ func (p *Ptt) UnmarshalData(pttData *PttData) (CodeType, *common.Address, []byte
 	return ev.Code, hashAddr, ev.EncData, nil
 }
 
-func (p *Ptt) VerifyChecksumEventData(pttData *PttData) (*PttEventData, error) {
+func (p *BasePtt) VerifyChecksumEventData(pttData *PttData) (*PttEventData, error) {
 	evWithSalt, checksum := pttData.EvWithSalt, pttData.Checksum
 	err := p.VerifyChecksumData(evWithSalt, checksum)
 	if err != nil {
@@ -229,7 +229,7 @@ func (p *Ptt) VerifyChecksumEventData(pttData *PttData) (*PttEventData, error) {
 
 }
 
-func (p *Ptt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) error {
+func (p *BasePtt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) error {
 	hash := crypto.Keccak256(bytesWithSalt)
 
 	isGood := reflect.DeepEqual(hash, checksum)
@@ -242,7 +242,7 @@ func (p *Ptt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) error {
 /*
 SignEventData Signs the PttEventData
 */
-func (p *Ptt) SignEventData(ev *PttEventData, key *ecdsa.PrivateKey) ([]byte, []byte, []byte, error) {
+func (p *BasePtt) SignEventData(ev *PttEventData, key *ecdsa.PrivateKey) ([]byte, []byte, []byte, error) {
 	evBytes, err := json.Marshal(ev)
 	if err != nil {
 		return nil, nil, nil, err
@@ -252,7 +252,7 @@ func (p *Ptt) SignEventData(ev *PttEventData, key *ecdsa.PrivateKey) ([]byte, []
 	return bytesWithSalt, sig, pubBytes, err
 }
 
-func (p *Ptt) VerifyEventData(evWithSalt []byte, sig []byte, keyBytes []byte) (*PttEventData, error) {
+func (p *BasePtt) VerifyEventData(evWithSalt []byte, sig []byte, keyBytes []byte) (*PttEventData, error) {
 	err := VerifyData(evWithSalt, sig, keyBytes)
 	if err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func (p *Ptt) VerifyEventData(evWithSalt []byte, sig []byte, keyBytes []byte) (*
 
 }
 
-func (p *Ptt) GenerateProtocols() []p2p.Protocol {
+func (p *BasePtt) GenerateProtocols() []p2p.Protocol {
 	subProtocols := make([]p2p.Protocol, 0, len(ProtocolVersions))
 
 	for i, version := range ProtocolVersions {
@@ -290,7 +290,7 @@ func (p *Ptt) GenerateProtocols() []p2p.Protocol {
 	return subProtocols
 }
 
-func (p *Ptt) GenerateRun(version uint) func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
+func (p *BasePtt) GenerateRun(version uint) func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 	return func(p2pPeer *p2p.Peer, rw p2p.MsgReadWriter) error {
 		peer, err := p.NewPeer(version, p2pPeer, rw)
 		log.Debug("GenerateRun: get new peer", "peer", peer, "e", err)
@@ -316,13 +316,13 @@ func (p *Ptt) GenerateRun(version uint) func(p *p2p.Peer, rw p2p.MsgReadWriter) 
 
 }
 
-func (p *Ptt) GenerateNodeInfo() func() interface{} {
+func (p *BasePtt) GenerateNodeInfo() func() interface{} {
 	return func() interface{} {
 		return p.NodeInfo()
 	}
 }
 
-func (p *Ptt) GeneratePeerInfo() func(id discover.NodeID) interface{} {
+func (p *BasePtt) GeneratePeerInfo() func(id discover.NodeID) interface{} {
 	return func(id discover.NodeID) interface{} {
 		p.peerLock.RLock()
 		defer p.peerLock.RUnlock()
@@ -336,7 +336,7 @@ func (p *Ptt) GeneratePeerInfo() func(id discover.NodeID) interface{} {
 	}
 }
 
-func (p *Ptt) PttAPIs() []rpc.API {
+func (p *BasePtt) PttAPIs() []rpc.API {
 	return []rpc.API{
 		{
 			Namespace: "ptt",
@@ -346,14 +346,14 @@ func (p *Ptt) PttAPIs() []rpc.API {
 	}
 }
 
-func (p *Ptt) NodeInfo() interface{} {
+func (p *BasePtt) NodeInfo() interface{} {
 	return nil
 }
 
-func (p *Ptt) Server() *p2p.Server {
+func (p *BasePtt) Server() *p2p.Server {
 	return p.server
 }
 
-func (p *Ptt) NoMorePeers() chan struct{} {
+func (p *BasePtt) NoMorePeers() chan struct{} {
 	return p.noMorePeers
 }

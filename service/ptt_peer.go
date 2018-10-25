@@ -37,7 +37,7 @@ type PttPeer struct {
 
 	term chan struct{} // Termination channel to stop the broadcaster
 
-	ptt *Ptt
+	ptt *BasePtt
 
 	UserID *types.PttID
 
@@ -47,7 +47,7 @@ type PttPeer struct {
 	IDChan     chan struct{}
 }
 
-func NewPttPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, ptt *Ptt) (*PttPeer, error) {
+func NewPttPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, ptt *BasePtt) (*PttPeer, error) {
 	return &PttPeer{
 		Peer:    p,
 		rw:      rw,

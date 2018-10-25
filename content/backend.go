@@ -27,7 +27,7 @@ type Backend struct {
 	accountBackend *account.Backend
 }
 
-func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, id *types.PttID, ptt *pkgservice.Ptt, accountBackend *account.Backend) (*Backend, error) {
+func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, id *types.PttID, ptt *pkgservice.BasePtt, accountBackend *account.Backend) (*Backend, error) {
 	// init content
 	err := InitContent(cfg.DataDir, cfg.KeystoreDir)
 	if err != nil {
@@ -35,7 +35,7 @@ func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, id *types.PttID, pt
 	}
 
 	// init myinfo
-	err = initMyInfo(id, ptt.MyNodeID)
+	err = initMyInfo(id, ptt.MyNodeID())
 	if err != nil {
 		return nil, err
 	}

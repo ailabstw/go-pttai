@@ -172,7 +172,7 @@ func setSignal(n *node.Node) {
 func WaitNode(n *node.Node) error {
 	log.Info("start Waiting...")
 
-	ptt := n.Services()[reflect.TypeOf(&pkgservice.Ptt{})].(*pkgservice.Ptt)
+	ptt := n.Services()[reflect.TypeOf(&pkgservice.BasePtt{})].(*pkgservice.BasePtt)
 
 loop:
 	for {

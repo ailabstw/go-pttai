@@ -11,9 +11,9 @@ The architecture of Ptt.ai can be found in the [link](https://docs.google.com/pr
 Install
 -----
 
-    git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai;
-    make gptt
-    build/bin/gptt
+    go get github.com/ailabstw/go-pttai
+    go install github.com/ailabstw/go-pttai/cmd/gptt
+    ${GOPATH}/bin/gptt
 
 
 Docker Environment
@@ -46,7 +46,7 @@ Development
 -----
 The code-structure is based on [go-ethereum](https://github.com/ethereum/go-ethereum). The following is the general guide for the development.
 
-    git clone git@gitlab.corp.ailabs.tw:ptt.ai/go-pttai.git; cd go-pttai; git submodule update --init; ./scripts/init_cookiecutter.sh
+    go get github.com/ailabstw/go-pttai; cd ${GOPATH}/src/github.com/ailabstw/go-pttai; ./scripts/init_cookiecutter.sh; source __/bin/activate
 
     ./scripts/gptt-dev.sh
 

@@ -34,7 +34,7 @@ type ErrWrapper struct {
 	err error
 }
 
-func (p *Ptt) HandlePeer(peer *PttPeer) error {
+func (p *BasePtt) HandlePeer(peer *PttPeer) error {
 	log.Debug("HandlePeer: start", "peer", peer)
 
 	errWrapper := &ErrWrapper{}
@@ -68,7 +68,7 @@ func (p *Ptt) HandlePeer(peer *PttPeer) error {
 /*
 AddPeer adds peer.
 */
-func (p *Ptt) AddPeer(peer *PttPeer) error {
+func (p *BasePtt) AddPeer(peer *PttPeer) error {
 	p.peerLock.Lock()
 	defer p.peerLock.Unlock()
 
@@ -80,7 +80,7 @@ func (p *Ptt) AddPeer(peer *PttPeer) error {
 /*
 SetupPeer setup peer with known user-id and register to entities.
 */
-func (p *Ptt) SetupPeer(peer *PttPeer) error {
+func (p *BasePtt) SetupPeer(peer *PttPeer) error {
 	p.peerLock.Lock()
 	defer p.peerLock.Unlock()
 
@@ -102,7 +102,7 @@ AddPeerKnownUserID deals with peer already with user-id.
 	1. check-peer-type
 	2. validate-peer
 */
-func (p *Ptt) addPeerKnownUserID(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) addPeerKnownUserID(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -122,7 +122,7 @@ func (p *Ptt) addPeerKnownUserID(peer *PttPeer, isLocked bool) error {
 	return nil
 }
 
-func (p *Ptt) RemovePeer(peer *PttPeer) error {
+func (p *BasePtt) RemovePeer(peer *PttPeer) error {
 	id := peer.ID()
 
 	p.peerLock.Lock()
@@ -143,7 +143,7 @@ func (p *Ptt) RemovePeer(peer *PttPeer) error {
 	return err
 }
 
-func (p *Ptt) NewPeer(version uint, peer *p2p.Peer, rw p2p.MsgReadWriter) (*PttPeer, error) {
+func (p *BasePtt) NewPeer(version uint, peer *p2p.Peer, rw p2p.MsgReadWriter) (*PttPeer, error) {
 	meteredMsgReadWriter, err := NewBaseMeteredMsgReadWriter(rw, version)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (p *Ptt) NewPeer(version uint, peer *p2p.Peer, rw p2p.MsgReadWriter) (*PttP
 /*
 CheckPeerType goes through all the registered entities and check the corresponding peer-type.
 */
-func (p *Ptt) CheckPeerType(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) CheckPeerType(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -166,7 +166,7 @@ func (p *Ptt) CheckPeerType(peer *PttPeer, isLocked bool) error {
 /*
 SetPeerType sets the peer to the new peer-type.
 */
-func (p *Ptt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error {
+func (p *BasePtt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error {
 	if !isLocked {
 		peer.LockPeerType.Lock()
 		defer peer.LockPeerType.Unlock()
@@ -208,7 +208,7 @@ func (p *Ptt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLock
 	return nil
 }
 
-func (p *Ptt) ValidatePeer(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) ValidatePeer(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -269,7 +269,7 @@ func (p *Ptt) ValidatePeer(peer *PttPeer, isLocked bool) error {
 RegisterPeer registers peer to all the existing entities (register-peer-to-ptt is already done in CheckPeerType / SetPeerType)
 	register to all the existing entities.
 */
-func (p *Ptt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -282,7 +282,7 @@ func (p *Ptt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 	return nil
 }
 
-func (p *Ptt) UnregisterPeer(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) UnregisterPeer(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -300,7 +300,7 @@ func (p *Ptt) UnregisterPeer(peer *PttPeer, isLocked bool) error {
 	return nil
 }
 
-func (p *Ptt) UnsetPeerType(peer *PttPeer, peerType PeerType, isLocked bool) error {
+func (p *BasePtt) UnsetPeerType(peer *PttPeer, peerType PeerType, isLocked bool) error {
 	peerID := peer.ID()
 
 	switch peerType {
@@ -333,7 +333,7 @@ func (p *Ptt) UnsetPeerType(peer *PttPeer, peerType PeerType, isLocked bool) err
 	return nil
 }
 
-func (p *Ptt) ClosePeers() {
+func (p *BasePtt) ClosePeers() {
 	p.peerLock.RLock()
 	defer p.peerLock.RUnlock()
 
@@ -358,7 +358,7 @@ func (p *Ptt) ClosePeers() {
 	}
 }
 
-func (p *Ptt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
+func (p *BasePtt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
 	if !isLocked {
 		p.peerLock.RLock()
 		defer p.peerLock.RUnlock()
@@ -391,7 +391,7 @@ func (p *Ptt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
 /*
 DropAnyPeer drops any peers at most with the peerType.
 */
-func (p *Ptt) DropAnyPeer(peerType PeerType, isLocked bool) error {
+func (p *BasePtt) DropAnyPeer(peerType PeerType, isLocked bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -423,7 +423,7 @@ func (p *Ptt) DropAnyPeer(peerType PeerType, isLocked bool) error {
 	return nil
 }
 
-func (p *Ptt) DropPeer(peers map[discover.NodeID]*PttPeer) error {
+func (p *BasePtt) DropPeer(peers map[discover.NodeID]*PttPeer) error {
 	randIdx := mrand.Intn(len(peers))
 
 	i := 0
@@ -444,7 +444,7 @@ func (p *Ptt) DropPeer(peers map[discover.NodeID]*PttPeer) error {
  * Misc
  **********/
 
-func (p *Ptt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
+func (p *BasePtt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
 	return p.myPeers, p.importantPeers, p.memberPeers, p.randomPeers, &p.peerLock
 }
 

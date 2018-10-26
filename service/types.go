@@ -16,6 +16,8 @@
 
 package service
 
+import "github.com/ailabstw/go-pttai/common/types"
+
 // ServiceConstructor is the function signature of the constructors needed to be
 // registered for service instantiation.
 type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
@@ -55,3 +57,16 @@ const (
 	NodeTypeDesktop
 	NodeTypeServer
 )
+
+// SignInfo
+
+type SignInfo struct {
+	ID       *types.PttID    `json:"ID"`
+	CreateTS types.Timestamp `json:"CT"`
+
+	Hash   []byte        `json:"H"`
+	Salt   types.Salt    `json:"s"`
+	Sig    []byte        `json:"S"`
+	Pubkey []byte        `json:"K"`
+	Extra  *KeyExtraInfo `json:"e,omitempty"`
+}

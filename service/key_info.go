@@ -31,12 +31,12 @@ import (
 
 // KeyInfo
 type KeyInfo struct {
-	V    types.Version
-	ID   *types.PttID
-	Hash *common.Address `json:"H"`
+	V  types.Version
+	ID *types.PttID
 
-	Key      *ecdsa.PrivateKey `json:"-"`
-	KeyBytes []byte            `json:"K"`
+	Key         *ecdsa.PrivateKey `json:"-"`
+	KeyBytes    []byte            `json:"K"`
+	PubKeyBytes []byte            `json:"-"`
 
 	UpdateTS types.Timestamp `json:"UT"`
 	Status   types.Status    `json:"S"`
@@ -85,6 +85,10 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 		return nil, err
 	}
 
+	privBytes, err := extendedKey.PrivkeyBytes()
+	if err != nil {
+		return nil, err
+	}
 	pubBytes := extendedKey.PubkeyBytes()
 	hash := crypto.PubkeyBytesToAddress(pubBytes)
 
@@ -97,15 +101,15 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 	copy(id[:common.AddressLength], hash[:])
 
 	return &KeyInfo{
-		V:        types.CurrentVersion,
-		ID:       id,
-		Key:      key,
-		KeyBytes: pubBytes,
-		Hash:     &hash,
-		UpdateTS: updateTS,
-		EntityID: entityID,
-		DoerID:   doerID,
-		Extra:    extra,
+		V:           types.CurrentVersion,
+		ID:          id,
+		Key:         key,
+		KeyBytes:    privBytes,
+		PubKeyBytes: pubBytes,
+		UpdateTS:    updateTS,
+		EntityID:    entityID,
+		DoerID:      doerID,
+		Extra:       extra,
 	}, nil
 }
 
@@ -175,16 +179,10 @@ func (k *KeyInfo) Save(db *pttdb.LDBBatch) error {
 		return err
 	}
 
-	idxKey2, err := k.IdxKey2()
-	if err != nil {
-		return err
-	}
-
 	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: k.UpdateTS}
 
 	kvs := []*pttdb.KeyVal{
 		&pttdb.KeyVal{K: key, V: marshaled},
-		&pttdb.KeyVal{K: idxKey2, V: key},
 	}
 
 	log.Debug("Save: to PutAll", "idxKey", idxKey, "idx", idx, "key", key, "marshaled", marshaled)
@@ -236,10 +234,6 @@ func (k *KeyInfo) IdxPrefix() []byte {
 
 func (k *KeyInfo) IdxKey() ([]byte, error) {
 	return common.Concat([][]byte{DBOpKeyIdxPrefix, k.EntityID[:], k.ID[:]})
-}
-
-func (k *KeyInfo) IdxKey2() ([]byte, error) {
-	return common.Concat([][]byte{DBOpKeyIdx2Prefix, k.EntityID[:], k.Hash[:]})
 }
 
 func (k *KeyInfo) DBPrefix() []byte {

@@ -14,39 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package pttdb
+package service
 
-import (
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
-)
+import "github.com/ailabstw/go-pttai/common/types"
 
-func GetIterByID(db *LDBDatabase, prefix []byte, idxPrefix []byte, startID *types.PttID, listOrder ListOrder) (iterator.Iterator, error) {
-	if startID == nil {
-		return db.NewIteratorWithPrefix(nil, prefix, listOrder)
-	}
-
-	idxKey, err := common.Concat([][]byte{idxPrefix, startID[:]})
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := db.Get(idxKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return db.NewIteratorWithPrefix(key, prefix, listOrder)
+type MasterOplog struct {
+	*BaseOplog `json:"O"`
 }
 
-func GetFuncIter(iter iterator.Iterator, listOrder ListOrder) func() bool {
-	switch listOrder {
-	case ListOrderNext:
-		return iter.Next
-	case ListOrderPrev:
-		return iter.Prev
-	}
+func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
 
-	return nil
+	oplog, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
+	if err != nil {
+		return nil, err
+	}
+	return &MasterOplog{
+		BaseOplog: oplog,
+	}, nil
+}
+
+func SetMasterOplogDB(oplog *MasterOplog, myID *types.PttID) {
+	oplog.SetDB(dbOplog, myID, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
 }

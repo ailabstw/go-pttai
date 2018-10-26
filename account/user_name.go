@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 type SyncNameInfo struct {
@@ -179,14 +180,14 @@ func (u *UserName) Delete(id *types.PttID, isLocked bool) error {
 	return nil
 }
 
-func (u *UserName) GetList(id *types.PttID, limit int) ([]*UserName, error) {
+func (u *UserName) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder) ([]*UserName, error) {
 	u.ID = id
 	key, err := u.MarshalKey()
 	if err != nil {
 		return nil, err
 	}
 	userNames := make([]*UserName, 0)
-	iter, err := dbAccount.NewIteratorWithPrefix(key, nil)
+	iter, err := dbAccount.NewIteratorWithPrefix(key, nil, listOrder)
 	if err != nil {
 		return nil, err
 	}

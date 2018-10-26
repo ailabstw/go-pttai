@@ -19,6 +19,7 @@ package account
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 func (b *Backend) GetRawUserName(idBytes []byte) (*UserName, error) {
@@ -52,14 +53,14 @@ func (b *Backend) GetUserName(idBytes []byte) (*BackendUserName, error) {
 	return userNameToBackendUserName(u), nil
 }
 
-func (b *Backend) GetUserNameList(idTextBytes []byte, limit int) ([]*BackendUserName, error) {
+func (b *Backend) GetUserNameList(idTextBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendUserName, error) {
 	id, err := types.UnmarshalTextPttID(idTextBytes)
 	if err != nil {
 		return nil, err
 	}
 
 	userName := &UserName{}
-	userNameList, err := userName.GetList(id, limit)
+	userNameList, err := userName.GetList(id, limit, listOrder)
 	if err != nil {
 		return nil, err
 	}

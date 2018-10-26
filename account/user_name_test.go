@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -466,7 +467,7 @@ func TestUserName_GetList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
-			got, err := u.GetList(tt.args.id, tt.args.limit)
+			got, err := u.GetList(tt.args.id, tt.args.limit, pttdb.ListOrderNext)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UserName.GetList() error = %v, wantErr %v", err, tt.wantErr)
 				return

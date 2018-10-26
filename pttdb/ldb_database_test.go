@@ -719,7 +719,7 @@ func TestLDBDatabase_NewIteratorWithPrefix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix)
+			got, err := tt.db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderNext)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LDBDatabase.NewIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return

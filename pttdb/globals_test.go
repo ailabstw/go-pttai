@@ -39,7 +39,7 @@ func teardownTest(t *testing.T) {
 	log.Root().SetHandler(origHandler)
 
 	if tDefaultDB != nil {
-		got := tDefaultDB.NewIterator()
+		got := tDefaultDB.NewIterator(ListOrderNext)
 		if got != nil {
 			defer got.Release()
 		}

@@ -139,7 +139,6 @@ func UnmarshalTextPttID(b []byte) (*PttID, error) {
 	p := &PttID{}
 
 	err := p.UnmarshalText(b)
-	//log.Info("after UnmarshalText", "p", p, "e", err)
 	if err != nil {
 		return nil, err
 	}

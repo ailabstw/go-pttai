@@ -19,59 +19,48 @@ package service
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ailabstw/go-pttai/common/types"
 )
 
-func TestSignData(t *testing.T) {
+func TestMerkleNode_MarshalJSON(t *testing.T) {
 	// setup test
 	setupTest(t)
 	defer teardownTest(t)
 
 	// define test-structure
-	type args struct {
-		bytes   []byte
-		keyInfo *KeyInfo
+	type fields struct {
+		Level     MerkleTreeLevel
+		Hash      []byte
+		UpdateTS  types.Timestamp
+		NChildren uint32
 	}
 
 	// prepare test-cases
 	tests := []struct {
 		name    string
-		args    args
+		m       *MerkleNode
 		want    []byte
-		want1   []byte
-		want2   []byte
-		want3   []byte
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
-			args:    args{bytes: tDefaultBytes2, keyInfo: tDefaultSignKeyInfo2},
-			want:    tDefaultBytesWithSalt2,
-			want1:   tDefaultHash2,
-			want2:   tDefaultSig2,
-			want3:   tDefaultPubBytes2,
-			wantErr: false,
+			m:    tDefaultMerkleNode,
+			want: tDefaultMerkleNodeBytes,
 		},
 	}
 
 	// run test
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3, err := SignData(tt.args.bytes, tt.args.keyInfo)
+			m := tt.m
+			got, err := m.MarshalJSON()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("SignData() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MerkleNode.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SignData() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("SignData() got1 = %v, want %v", got1, tt.want1)
-			}
-			if !reflect.DeepEqual(got2, tt.want2) {
-				t.Errorf("SignData() got2 = %v, want %v", got2, tt.want2)
-			}
-			if !reflect.DeepEqual(got3, tt.want3) {
-				t.Errorf("SignData() got3 = %v, want %v", got3, tt.want3)
+				t.Errorf("MerkleNode.MarshalJSON() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -79,36 +68,47 @@ func TestSignData(t *testing.T) {
 	// teardown test
 }
 
-func TestVerifyData(t *testing.T) {
+func TestMerkleNode_UnmarshalJSON(t *testing.T) {
 	// setup test
 	setupTest(t)
 	defer teardownTest(t)
 
 	// define test-structure
+	type fields struct {
+		Level     MerkleTreeLevel
+		Hash      []byte
+		UpdateTS  types.Timestamp
+		NChildren uint32
+	}
 	type args struct {
-		bytesWithSalt []byte
-		sig           []byte
-		keyBytes      []byte
+		b []byte
 	}
 
 	// prepare test-cases
 	tests := []struct {
 		name    string
+		m       *MerkleNode
 		args    args
+		want    *MerkleNode
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
-			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2},
-			wantErr: false,
+			args: args{b: tDefaultMerkleNodeBytes},
+			m:    &MerkleNode{},
+			want: tDefaultMerkleNode,
 		},
 	}
 
 	// run test
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := VerifyData(tt.args.bytesWithSalt, tt.args.sig, tt.args.keyBytes); (err != nil) != tt.wantErr {
-				t.Errorf("VerifyData() error = %v, wantErr %v", err, tt.wantErr)
+			m := tt.m
+			if err := m.UnmarshalJSON(tt.args.b); (err != nil) != tt.wantErr {
+				t.Errorf("MerkleNode.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(m, tt.want) {
+				t.Errorf("MerkleNode.UnmarshalJSON() = %v, want %v", m, tt.want)
 			}
 		})
 	}

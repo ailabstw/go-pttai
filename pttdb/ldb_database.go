@@ -285,29 +285,41 @@ func (db *LDBDatabase) Pop(key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (db *LDBDatabase) NewIterator() iterator.Iterator {
-	return db.db.NewIterator(nil, nil)
+func (db *LDBDatabase) NewIterator(listOrder ListOrder) iterator.Iterator {
+	iter := db.db.NewIterator(nil, nil)
+	if listOrder == ListOrderPrev {
+		iter.Seek(dbLastKey)
+	}
+
+	return iter
 }
 
-func (db *LDBDatabase) NewIteratorWithRange(r *util.Range) iterator.Iterator {
-	return db.db.NewIterator(r, nil)
+func (db *LDBDatabase) NewIteratorWithRange(r *util.Range, listOrder ListOrder) iterator.Iterator {
+	iter := db.db.NewIterator(r, nil)
+	if listOrder == ListOrderPrev {
+		iter.Seek(r.Limit)
+	}
+
+	return iter
 }
 
 // NewIteratorWithPrefix returns a iterator to iterate over subset of database content with a particular prefix.
-func (db *LDBDatabase) NewIteratorWithPrefix(start []byte, prefix []byte) (iterator.Iterator, error) {
+func (db *LDBDatabase) NewIteratorWithPrefix(start []byte, prefix []byte, listOrder ListOrder) (iterator.Iterator, error) {
 	// both as nil
 	if len(start) == 0 && len(prefix) == 0 {
-		return db.NewIterator(), nil
+		return db.NewIterator(listOrder), nil
 	}
 
 	// start as nil
 	if len(start) == 0 {
-		return db.db.NewIterator(util.BytesPrefix(prefix), nil), nil
+		r := util.BytesPrefix(prefix)
+		return db.NewIteratorWithRange(r, listOrder), nil
 	}
 
 	// prefix as nil
 	if len(prefix) == 0 {
-		return db.db.NewIterator(&util.Range{Start: start}, nil), nil
+		r := &util.Range{Start: start}
+		return db.NewIteratorWithRange(r, listOrder), nil
 	}
 
 	// both non-nil
@@ -315,12 +327,10 @@ func (db *LDBDatabase) NewIteratorWithPrefix(start []byte, prefix []byte) (itera
 		return nil, ErrInvalidPrefix
 	}
 
-	theRange := util.BytesPrefix(prefix)
-	theRange.Start = start
+	r := util.BytesPrefix(prefix)
+	r.Start = start
 
-	//log.Debug("NewIteratorWithPrefix", "theRange", theRange)
-
-	return db.db.NewIterator(theRange, nil), nil
+	return db.NewIteratorWithRange(r, listOrder), nil
 }
 
 /*

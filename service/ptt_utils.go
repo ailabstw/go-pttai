@@ -239,38 +239,6 @@ func (p *BasePtt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) erro
 	return nil
 }
 
-/*
-SignEventData Signs the PttEventData
-*/
-func (p *BasePtt) SignEventData(ev *PttEventData, key *ecdsa.PrivateKey) ([]byte, []byte, []byte, error) {
-	evBytes, err := json.Marshal(ev)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	bytesWithSalt, _, sig, pubBytes, err := SignData(evBytes, key)
-	return bytesWithSalt, sig, pubBytes, err
-}
-
-func (p *BasePtt) VerifyEventData(evWithSalt []byte, sig []byte, keyBytes []byte) (*PttEventData, error) {
-	err := VerifyData(evWithSalt, sig, keyBytes)
-	if err != nil {
-		return nil, err
-
-	}
-
-	evBytes := evWithSalt[:len(evWithSalt)-types.SizeSalt]
-
-	ev := &PttEventData{}
-	err = json.Unmarshal(evBytes, ev)
-	if err != nil {
-		return nil, err
-	}
-
-	return ev, nil
-
-}
-
 func (p *BasePtt) GenerateProtocols() []p2p.Protocol {
 	subProtocols := make([]p2p.Protocol, 0, len(ProtocolVersions))
 

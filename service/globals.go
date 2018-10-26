@@ -19,6 +19,7 @@ package service
 import (
 	"time"
 
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
@@ -117,6 +118,35 @@ var (
 
 	DBLocalePrefix     = []byte(".locl")
 	DBPttLogSeenPrefix = []byte(".ptsn")
+)
+
+// oplog
+const (
+	ExpireOplogSeconds       = 300 // expire oplog circulation as 5 minutes for now.
+	OffsetMasterOplogRaftIdx = 12
+)
+
+// oplog-merkle-tree
+var (
+	SizeMerkleTreeLevel     = 1 // uint8
+	SizeMerkleTreeNChildren = 4 // uint32
+	NMerkleTreeMagicAlloc   = 50
+	MerkleTreeOffsetAddr    = SizeMerkleTreeLevel
+	MerkleTreeOffsetTS      = MerkleTreeOffsetAddr + common.AddressLength
+
+	DBMerkleGenerateTimePrefix = []byte(".mtgt")
+	DBMerkleSyncTimePrefix     = []byte(".mtst")
+	DBMerkleFailSyncTimePrefix = []byte(".mtft")
+
+	OffsetMerkleSyncTime uint64 = 3600 // validate until 2-hr ago, and sync with data starting 2-hr ago.
+
+	GenerateOplogMerkleTreeSeconds              = 900 * time.Second // 15 mins
+	ExpireGenerateOplogMerkleTreeSeconds uint64 = 450               // 7.5 mins
+)
+
+var (
+	ExpireDialHistorySeconds = uint64(30)
+	DialHistoryLoopInterval  = 30 * time.Second
 )
 
 func InitService(dataDir string) error {

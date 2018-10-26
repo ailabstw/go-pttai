@@ -18,7 +18,6 @@ package service
 
 import (
 	"bytes"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"io"
 	mrand "math/rand"
@@ -30,7 +29,7 @@ import (
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
-func SignData(bytes []byte, key *ecdsa.PrivateKey) ([]byte, []byte, []byte, []byte, error) {
+func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, error) {
 	salt, err := types.NewSalt()
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -41,14 +40,12 @@ func SignData(bytes []byte, key *ecdsa.PrivateKey) ([]byte, []byte, []byte, []by
 		return nil, nil, nil, nil, err
 	}
 	hash := crypto.Keccak256(bytesWithSalt)
-	sig, err := crypto.Sign(hash, key)
+	sig, err := crypto.Sign(hash, keyInfo.Key)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	pubBytes := crypto.FromECDSAPub(&key.PublicKey)
-
-	return bytesWithSalt, hash, sig, pubBytes, nil
+	return bytesWithSalt, hash, sig, keyInfo.PubKeyBytes, nil
 }
 
 func VerifyData(bytesWithSalt []byte, sig []byte, keyBytes []byte) error {

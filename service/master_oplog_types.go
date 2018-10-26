@@ -14,35 +14,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package pttdb
+package service
 
-import (
-	"time"
-)
+import "github.com/ailabstw/go-pttai/p2p/discover"
 
 const (
-	// Code using batches should try to add this much data to the batch.
-	// The value was determined empirically.
-	IdealBatchSize = 100 * 1024
-
-	writeDelayNThreshold       = 200
-	writeDelayThreshold        = 350 * time.Millisecond
-	writeDelayWarningThrottler = 1 * time.Minute
-
-	InfiniteQuota = 0
-
-	SizeDBKeyPrefix          = 5
-	OffsetDBKeyPrefixPostfix = 3
+	_ OpType = iota
+	MasterOpTypeAddMaster
+	MasterOpTypeRevokeMaster
 )
 
-var (
-	DBMetaPostfix = []byte("mt")
-	dbLastKey     = []byte{255}
-)
+type MasterOpAddMaster struct {
+	ID      *discover.NodeID
+	Weight  uint32                     `json:"W"`
+	Masters map[discover.NodeID]uint32 `json:"M"`
+}
 
-const (
-	minCache   = 16
-	minHandles = 16
-
-	OpenFileLimit = 64
-)
+type MasterOpRevokeMaster struct {
+	ID      *discover.NodeID
+	Masters map[discover.NodeID]uint32 `json:"M"`
+}

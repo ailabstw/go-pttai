@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 type UserNode struct {
@@ -113,7 +114,7 @@ func (u *UserNode) Count() (int, error) {
 		return 0, err
 	}
 
-	iter, err := dbAccount.NewIteratorWithPrefix(nil, prefix)
+	iter, err := dbAccount.NewIteratorWithPrefix(nil, prefix, pttdb.ListOrderNext)
 	if err != nil {
 		return 0, err
 	}

@@ -22,6 +22,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 type SyncImgInfo struct {
@@ -155,7 +156,7 @@ func (u *UserImg) Delete(id *types.PttID, isLocked bool) error {
 	return nil
 }
 
-func (u *UserImg) GetList(id *types.PttID, limit int) ([]*UserImg, error) {
+func (u *UserImg) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder) ([]*UserImg, error) {
 	u.ID = id
 	key, err := u.MarshalKey()
 	if err != nil {
@@ -163,7 +164,7 @@ func (u *UserImg) GetList(id *types.PttID, limit int) ([]*UserImg, error) {
 	}
 
 	userImgs := make([]*UserImg, 0)
-	iter, err := dbAccount.NewIteratorWithPrefix(key, nil)
+	iter, err := dbAccount.NewIteratorWithPrefix(key, nil, listOrder)
 	if err != nil {
 		return nil, err
 	}

@@ -16,6 +16,8 @@
 
 package account
 
+import "github.com/ailabstw/go-pttai/pttdb"
+
 type PrivateAPI struct {
 	b *Backend
 }
@@ -44,8 +46,8 @@ func (api *PublicAPI) GetUserName(idStr string) (*BackendUserName, error) {
 	return api.b.GetUserName([]byte(idStr))
 }
 
-func (api *PublicAPI) GetUserNameList(idStr string, limit int) ([]*BackendUserName, error) {
-	return api.b.GetUserNameList([]byte(idStr), limit)
+func (api *PublicAPI) GetUserNameList(idStr string, limit int, listOrder pttdb.ListOrder) ([]*BackendUserName, error) {
+	return api.b.GetUserNameList([]byte(idStr), limit, listOrder)
 }
 
 func (api *PublicAPI) GetUserNameByIDs(idStrs []string) (map[string]*BackendUserName, error) {

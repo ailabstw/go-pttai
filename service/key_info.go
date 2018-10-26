@@ -142,6 +142,7 @@ func deriveKeyBIP32(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraI
 	extraBIP32 := &KeyBIP32{
 		Parent: masterPubBytes,
 		Salt:   salt,
+		Child:  idx,
 	}
 
 	extra := &KeyExtraInfo{

@@ -45,7 +45,6 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/btcsuite/btcd/btcec"
 )
 
 type ExtendedKey struct {
@@ -71,7 +70,10 @@ func (k *ExtendedKey) Child(idx uint32) (*ExtendedKey, error) {
 	childChainCode := ilr[len(ilr)/2:]
 
 	ilNum := new(big.Int).SetBytes(il)
-	if ilNum.Cmp(crypto.S256().Params().N) >= 0 || ilNum.Sign() == 0 {
+
+	N := crypto.S256().Params().N
+
+	if ilNum.Cmp(N) >= 0 || ilNum.Sign() == 0 {
 		return nil, ErrInvalidChild
 	}
 
@@ -81,7 +83,7 @@ func (k *ExtendedKey) Child(idx uint32) (*ExtendedKey, error) {
 	if k.isPrivate {
 		keyNum := new(big.Int).SetBytes(k.key)
 		ilNum.Add(ilNum, keyNum)
-		ilNum.Mod(ilNum, btcec.S256().N)
+		ilNum.Mod(ilNum, N)
 		childKey = ilNum.Bytes()
 
 		isPrivate = true

@@ -66,6 +66,10 @@ const (
 )
 
 // op-key
+const (
+	MaxIterDeriveKeyBIP32 = 10
+)
+
 var (
 	DBOpKeyIdxOplogPrefix    = []byte(".okig")
 	DBOpKeyOplogPrefix       = []byte(".oklg")

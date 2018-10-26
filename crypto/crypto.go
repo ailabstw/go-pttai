@@ -199,6 +199,10 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 }
 
+func PubkeyBytesToAddress(pubBytes []byte) common.Address {
+	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
+}
+
 func PubkeyToHash(p ecdsa.PublicKey) common.Hash {
 	pubBytes := FromECDSAPub(&p)
 

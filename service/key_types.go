@@ -40,4 +40,5 @@ KeyBIP32 represents the extra data for BIP32
 type KeyBIP32 struct {
 	Parent []byte      `json:"P"`
 	Salt   *types.Salt `json:"S"`
+	Child  uint32      `json:"c"`
 }

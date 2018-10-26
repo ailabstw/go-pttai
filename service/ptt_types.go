@@ -16,16 +16,37 @@
 
 package service
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/p2p/discover"
+)
 
 // CodeType
 type CodeType uint64
 
 const (
-	CodeTypeDummy CodeType = iota
+	CodeTypeInvalid CodeType = iota
+	CodeTypeStatus
 	CodeTypeJoin
 	CodeTypeJoinAck
 	CodeTypeOp
+	CodeTypeOpAck
+	CodeTypeOpFail
+	CodeTypeRequestOp
+	CodeTypeRequestOpAck
+
+	CodeTypeIdentifyPeer
+	CodeTypeIdentifyPeerAck
+	CodeTypeIdentifyPeerFail
+
+	CodeTypeIdentifyPeerWithMyID
+	CodeTypeIdentifyPeerWithMyIDChallenge
+	CodeTypeIdentifyPeerWithMyIDChallengeAck
+	CodeTypeIdentifyPeerWithMyIDAck
+
+	NCodeType
 )
 
 func MarshalCode(code CodeType) ([]byte, error) {
@@ -71,17 +92,17 @@ func UnmarshalOp(opBytes []byte) (OpType, error) {
 // PttEventData
 type PttEventData struct {
 	Code    CodeType `json:"C"`
-	Hash    []byte   `json:"H"`
-	EncData []byte   `json:"D"`
+	Hash    []byte   `json:"H,omitempty"`
+	EncData []byte   `json:"D,omitempty"`
 }
 
 // PttData
 type PttData struct {
-	Node       []byte   `json:"N"`
-	Code       CodeType `json:"O"`
-	Hash       []byte   `json:"H"`
-	EvWithSalt []byte   `json:"E"`
-	Checksum   []byte   `json:"C"`
+	Node       []byte   `json:"N,omitempty"`
+	Code       CodeType `json:"C"`
+	Hash       []byte   `json:"H,omitempty"`
+	EvWithSalt []byte   `json:"E,omitempty"`
+	Checksum   []byte   `json:"c,omitempty"`
 
 	Relay uint8 `json:"R"`
 }
@@ -102,4 +123,20 @@ func (p *PttData) Clone() *PttData {
 type PttStatus struct {
 	Version   uint32
 	NetworkID uint32
+}
+
+// PttPeerInfo
+type PttPeerInfo struct {
+	NodeID   *discover.NodeID `json:"N"`
+	UserID   *types.PttID     `json:"U"`
+	PeerType PeerType         `json:"T"`
+}
+
+type PttNodeInfo struct {
+	NodeID *discover.NodeID `json:"N"`
+	UserID *types.PttID     `json:"U"`
+
+	Peers    int `json:"NP"`
+	Entities int `json:"NE"`
+	Services int `json:"NS"`
 }

@@ -16,19 +16,36 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+	"github.com/ailabstw/go-pttai/common"
+)
+
+type IdentifyPeerFail struct {
+	Hash *common.Address `json:"H"`
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
+/*
+IdentifyPeerFail acks PMIdentifyPeer as failed
+*/
+func (p *BasePtt) IdentifyPeerFail(hash *common.Address, peer *PttPeer) error {
+	data := &IdentifyPeerFail{
+		Hash: hash,
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+
+	return p.SendDataToPeer(CodeTypeIdentifyPeerFail, data, peer)
+}
+
+func (p *BasePtt) HandleIdentifyPeerFail(dataBytes []byte, peer *PttPeer) error {
+	data := &IdentifyPeerFail{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	hash := data.Hash
+	p.RemoveOpHash(hash)
+
+	return p.IdentifyPeerWithMyID(peer)
 }

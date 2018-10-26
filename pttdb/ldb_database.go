@@ -318,7 +318,15 @@ func (db *LDBDatabase) NewIteratorWithPrefix(start []byte, prefix []byte, listOr
 
 	// prefix as nil
 	if len(prefix) == 0 {
-		r := &util.Range{Start: start}
+		startRange := util.BytesPrefix(start)
+		var r *util.Range
+		switch listOrder {
+		case ListOrderPrev:
+			r = &util.Range{Limit: startRange.Limit}
+		case ListOrderNext:
+			r = &util.Range{Start: startRange.Start}
+		}
+
 		return db.NewIteratorWithRange(r, listOrder), nil
 	}
 
@@ -327,61 +335,17 @@ func (db *LDBDatabase) NewIteratorWithPrefix(start []byte, prefix []byte, listOr
 		return nil, ErrInvalidPrefix
 	}
 
-	r := util.BytesPrefix(prefix)
-	r.Start = start
+	startRange := util.BytesPrefix(start)
+	prefixRange := util.BytesPrefix(prefix)
+	var r *util.Range
+	switch listOrder {
+	case ListOrderPrev:
+		r = &util.Range{Start: prefixRange.Start, Limit: startRange.Limit}
+	case ListOrderNext:
+		r = &util.Range{Start: startRange.Start, Limit: prefixRange.Limit}
+	}
 
 	return db.NewIteratorWithRange(r, listOrder), nil
-}
-
-/*
-XXX how to deal with last-item in db?
-*/
-func (db *LDBDatabase) NewPrevIterator() iterator.Iterator {
-	iter := db.db.NewIterator(nil, nil)
-	iter.Last()
-
-	return iter
-}
-
-func (db *LDBDatabase) NewPrevIteratorWithPrefix(start []byte, prefix []byte) (iterator.Iterator, error) {
-
-	// both nil
-	if len(start) == 0 && len(prefix) == 0 {
-		return db.NewPrevIterator(), nil
-	}
-
-	// start as nil
-	if len(start) == 0 {
-		prefixRange := util.BytesPrefix(prefix)
-		iter := db.db.NewIterator(prefixRange, nil)
-		iter.Seek(prefixRange.Limit)
-
-		return iter, nil
-	}
-
-	// prefix as nil
-	startRange := util.BytesPrefix(start)
-	nextStart := startRange.Limit
-
-	if len(prefix) == 0 {
-		iter := db.db.NewIterator(&util.Range{Limit: start}, nil)
-		iter.Seek(nextStart)
-
-		return iter, nil
-	}
-
-	// both non-nil
-	if !strings.HasPrefix(string(start), string(prefix)) {
-		return nil, ErrInvalidPrefix
-	}
-
-	theRange := util.BytesPrefix(prefix)
-	theRange.Limit = nextStart
-
-	iter := db.db.NewIterator(theRange, nil)
-	iter.Seek(nextStart)
-
-	return iter, nil
 }
 
 func (db *LDBDatabase) Close() {

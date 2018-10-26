@@ -46,11 +46,17 @@ var (
 	}
 
 	tMyKey, _      = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
-	tMyID, _       = types.NewPttIDFromKeyPostfix(tMyKey, "0123456789abcdefghij")
+	tMyID, _       = types.NewPttIDFromKeyPostfix(tMyKey, []byte("0123456789abcdefghij"))
 	tDefaultSPM, _ = NewBaseServiceProtocolManager(tDefaultPtt, nil)
 
 	tDefaultKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	tDefaultID, _  = types.NewPttIDFromKeyPostfix(tDefaultKey, "0123456789abcdefghij")
+	tDefaultID, _  = types.NewPttIDFromKeyPostfix(tDefaultKey, []byte("0123456789abcdefghij"))
+
+	tDefaultKeyInfo = &KeyInfo{
+		Key:         tDefaultKey,
+		KeyBytes:    crypto.FromECDSA(tDefaultKey),
+		PubKeyBytes: crypto.FromECDSAPub(&tDefaultKey.PublicKey),
+	}
 
 	tDefaultHash   = crypto.PubkeyToAddress(tDefaultKey.PublicKey)
 	tDefaultNodeID = &discover.NodeID{}
@@ -70,6 +76,20 @@ var (
 		175, 41, 199, 197, 220, 16, 143, 52,
 	}
 
+	tDefaultPttData = &PttData{
+		Node:       nil,
+		Code:       CodeTypeOp,
+		Hash:       []byte{113, 86, 43, 113, 153, 152, 115, 219, 91, 40, 109, 249, 87, 175, 25, 158, 201, 70, 23, 247},
+		EvWithSalt: []byte("{\"C\":4,\"H\":\"cVYrcZmYc9tbKG35V68ZnslGF/c=\",\"D\":\"AAECAwQFBgcICQoLDA0ODwAAAAN7IkEiOiJ0ZXN0IiwiQiI6InRlc3QyIn0EBAQE\"}01234567890123456789012345678901"),
+		Checksum: []byte{
+			204, 211, 90, 234, 168, 48, 66, 22, 62, 144,
+			66, 158, 184, 174, 58, 199, 120, 241, 68, 163,
+			239, 137, 107, 252, 222, 160, 111, 124, 52, 247,
+			241, 58,
+		},
+		Relay: 0,
+	}
+
 	tDefaultMerkleNode = &MerkleNode{
 		Level: MerkleTreeLevelHR,
 		Addr: []byte{
@@ -82,9 +102,9 @@ var (
 	}
 	tDefaultMerkleNodeBytes = []byte("\"AgABAgMEBQYHCAkKCwwNDg8QERITAAAAAEmWAtIHW80VAAAADQ==\"")
 
-	tDefaultOplog          *BaseOplog = nil
-	tDefaultTimestamp1                = types.Timestamp{Ts: 1234567890, NanoTs: 0}
-	tDefaultOplogMerkleKey            = []byte{
+	tDefaultOplog          *Oplog = nil
+	tDefaultTimestamp1            = types.Timestamp{Ts: 1234567890, NanoTs: 0}
+	tDefaultOplogMerkleKey        = []byte{
 		46, 116, 116, 109, 107,
 		113, 86, 43, 113, 153, 152, 115, 219, 91, 40,
 		109, 249, 87, 175, 25, 158, 201, 70, 23, 247,
@@ -101,8 +121,8 @@ var (
 	tDefaultMerkleNode1Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			158, 153, 26, 223, 108, 59, 168, 243, 20, 65,
-			229, 51, 247, 237, 35, 58, 132, 167, 66, 96,
+			77, 247, 91, 228, 8, 74, 185, 175, 208, 100,
+			157, 205, 155, 247, 189, 226, 215, 253, 236, 9,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 0,
@@ -121,9 +141,9 @@ var (
 		},
 	}
 
-	tDefaultOplog2          *BaseOplog = nil
-	tDefaultTimestamp2                 = types.Timestamp{Ts: 1234567891, NanoTs: 0}
-	tDefaultOplog2MerkleKey            = []byte{
+	tDefaultOplog2          *Oplog = nil
+	tDefaultTimestamp2             = types.Timestamp{Ts: 1234567891, NanoTs: 0}
+	tDefaultOplog2MerkleKey        = []byte{
 		46, 116, 116, 109, 107,
 		113, 86, 43, 113, 153, 152, 115, 219, 91, 40,
 		109, 249, 87, 175, 25, 158, 201, 70, 23, 247,
@@ -140,8 +160,8 @@ var (
 	tDefaultMerkleNode2Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			43, 85, 77, 247, 77, 109, 80, 65, 18, 80,
-			180, 197, 10, 82, 238, 12, 226, 14, 122, 226,
+			61, 141, 203, 134, 244, 215, 3, 163, 91, 237,
+			30, 215, 218, 18, 190, 109, 36, 177, 142, 20,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567891, NanoTs: 0},
 		NChildren: 0,
@@ -163,8 +183,8 @@ var (
 	tDefaultMerkleNodeDay = &MerkleNode{
 		Level: MerkleTreeLevelDay,
 		Addr: []byte{
-			101, 210, 96, 196, 38, 127, 83, 182, 124, 60,
-			234, 85, 0, 34, 231, 196, 68, 129, 31, 72,
+			28, 185, 64, 218, 63, 42, 178, 106, 53, 191,
+			200, 7, 11, 246, 62, 249, 104, 122, 160, 191,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -174,8 +194,8 @@ var (
 	tDefaultMerkleNodeMonth = &MerkleNode{
 		Level: MerkleTreeLevelMonth,
 		Addr: []byte{
-			117, 246, 2, 234, 29, 5, 234, 183, 81, 131,
-			225, 167, 50, 194, 116, 102, 16, 203, 118, 115,
+			126, 167, 239, 124, 1, 158, 220, 129, 242, 70,
+			238, 200, 1, 172, 74, 150, 127, 248, 192, 130,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -185,8 +205,8 @@ var (
 	tDefaultMerkleNodeYear = &MerkleNode{
 		Level: MerkleTreeLevelYear,
 		Addr: []byte{
-			194, 226, 122, 207, 184, 237, 91, 8, 45, 109,
-			159, 127, 14, 56, 141, 226, 220, 194, 82, 55,
+			31, 200, 126, 94, 78, 42, 165, 46, 219, 199,
+			154, 233, 10, 96, 98, 74, 46, 14, 116, 234,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -225,6 +245,7 @@ var (
 	}
 	tDefaultSignKey2     *ecdsa.PrivateKey
 	tDefaultSignKeyInfo2 *KeyInfo
+	tDefaultDoerID2      *types.PttID
 
 	tDefaultPubBytes2 = []byte{
 		4, 59, 103, 1, 40, 236, 82, 148, 94, 111,
@@ -351,9 +372,11 @@ func setupTest(t *testing.T) {
 	tDefaultMerkle, _ = NewMerkle(tDBOplogPrefix, tDBOplogMerklePrefix, tDefaultID, tDBOplog)
 
 	tDefaultSignKey2, _ = crypto.ToECDSA(tDefaultSignKeyBytes2)
+	tDefaultDoerID2, _ = types.NewPttIDFromKey(tDefaultSignKey2)
 	tDefaultSignKeyInfo2 = &KeyInfo{
 		Key:         tDefaultSignKey2,
 		KeyBytes:    tDefaultSignKeyBytes2,
+		DoerID:      tDefaultDoerID2,
 		PubKeyBytes: crypto.FromECDSAPub(&tDefaultSignKey2.PublicKey),
 	}
 

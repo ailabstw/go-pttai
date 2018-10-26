@@ -25,6 +25,7 @@ var (
 	ErrClosed            = errors.New("peer set is closed")
 	ErrAlreadyRegistered = errors.New("peer is already registered")
 	ErrNotRegistered     = errors.New("peer is not registered")
+	ErrPeerUserID        = errors.New("peer user id")
 
 	ErrEntityAlreadyRegistered = errors.New("entity is already registered")
 	ErrEntityNotRegistered     = errors.New("entity is not registered")

@@ -26,13 +26,14 @@ import (
 	"github.com/ailabstw/go-pttai/crypto/bip32"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // KeyInfo
 type KeyInfo struct {
 	V  types.Version
 	ID *types.PttID
+
+	Hash *common.Address `json:"H"`
 
 	Key         *ecdsa.PrivateKey `json:"-"`
 	KeyBytes    []byte            `json:"K"`
@@ -46,9 +47,11 @@ type KeyInfo struct {
 
 	LogID *types.PttID  `json:"l,omitempty"`
 	Extra *KeyExtraInfo `json:"e,omitempty"`
+
+	dbLock *types.LockMap
 }
 
-func NewJoinKeyInfo(entityID *types.PttID, doerID *types.PttID) (*KeyInfo, error) {
+func NewJoinKeyInfo(entityID *types.PttID) (*KeyInfo, error) {
 	key, err := deriveJoinKey()
 	if err != nil {
 		return nil, err
@@ -58,7 +61,7 @@ func NewJoinKeyInfo(entityID *types.PttID, doerID *types.PttID) (*KeyInfo, error
 		return nil, err
 	}
 
-	return newKeyInfo(extendedKey, nil, entityID, doerID)
+	return newKeyInfo(extendedKey, nil, entityID, nil)
 }
 
 func NewOpKeyInfo(entityID *types.PttID, doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo, error) {
@@ -103,6 +106,7 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 	return &KeyInfo{
 		V:           types.CurrentVersion,
 		ID:          id,
+		Hash:        &hash,
 		Key:         key,
 		KeyBytes:    privBytes,
 		PubKeyBytes: pubBytes,
@@ -157,8 +161,32 @@ func deriveKeyBIP32(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraI
 	return extendedKey, extra, nil
 }
 
-func (k *KeyInfo) Save(db *pttdb.LDBBatch) error {
+func (k *KeyInfo) Init(dbLock *types.LockMap) error {
+	k.dbLock = dbLock
+
+	key, err := crypto.ToECDSA(k.KeyBytes)
+	if err != nil {
+		return err
+	}
+
+	pubKeyBytes := crypto.FromECDSAPub(&key.PublicKey)
+
+	k.Key = key
+	k.PubKeyBytes = pubKeyBytes
+
+	return nil
+}
+
+func (k *KeyInfo) Save(db *pttdb.LDBBatch, isLocked bool) error {
 	var err error
+	if !isLocked {
+		err = k.dbLock.Lock(k.ID)
+		if err != nil {
+			return err
+		}
+		defer k.dbLock.Unlock(k.ID)
+	}
+
 	if k.Key == nil && k.KeyBytes != nil {
 		k.Key, err = crypto.ToECDSA(k.KeyBytes)
 		if err != nil {
@@ -195,32 +223,22 @@ func (k *KeyInfo) Save(db *pttdb.LDBBatch) error {
 	return nil
 }
 
-func (k *KeyInfo) LoadNewest(db *pttdb.LDBBatch) error {
-	iter, err := db.DB().NewPrevIteratorWithPrefix(nil, k.DBPrefix())
-	if err != nil {
-		return err
-	}
-	defer iter.Release()
-
-	log.Debug("LoadNewest: to loop for", "DBPrefix", k.DBPrefix(), "iter", iter)
-
-	var val []byte = nil
-	for iter.Prev() {
-		val = iter.Value()
-		log.Debug("LoadNewest: in-loop", "val", val)
-		break
-
-	}
-	if val == nil {
-		return leveldb.ErrNotFound
+func (k *KeyInfo) Delete(db *pttdb.LDBBatch, isLocked bool) error {
+	var err error
+	if !isLocked {
+		err = k.dbLock.Lock(k.ID)
+		if err != nil {
+			return err
+		}
+		defer k.dbLock.Unlock(k.ID)
 	}
 
-	err = k.Unmarshal(val)
+	idxKey, err := k.IdxKey()
 	if err != nil {
 		return err
 	}
 
-	k.Key, err = crypto.ToECDSA(k.KeyBytes)
+	err = db.DeleteAll(idxKey)
 	if err != nil {
 		return err
 	}

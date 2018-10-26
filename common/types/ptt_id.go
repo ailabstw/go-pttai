@@ -81,15 +81,32 @@ func NewPttIDFromKey(key *ecdsa.PrivateKey) (*PttID, error) {
 /*
 NewPttIDFromKey generates new PttID with the 1st part as the key-address and the 2nd part as postfix.
 */
-func NewPttIDFromKeyPostfix(key *ecdsa.PrivateKey, postfix string) (*PttID, error) {
+func NewPttIDFromKeyPostfix(key *ecdsa.PrivateKey, postfix []byte) (*PttID, error) {
 	addr := crypto.PubkeyToAddress(key.PublicKey)
+
+	return NewPttIDFromAddrPostfix(&addr, postfix)
+}
+
+/*
+NewPttIDFromPubkeyPostfix generates new PttID with the 1st part as the key-address and the 2nd part as postfix.
+*/
+func NewPttIDFromPubkeyPostfix(key *ecdsa.PublicKey, postfix []byte) (*PttID, error) {
+	addr := crypto.PubkeyToAddress(*key)
+
+	return NewPttIDFromAddrPostfix(&addr, postfix)
+}
+
+/*
+NewPttIDFromAddrPostfix generates new PttID with the 1st part as the key-address and the 2nd part as postfix.
+*/
+func NewPttIDFromAddrPostfix(addr *common.Address, postfix []byte) (*PttID, error) {
 	p := &PttID{}
 	nCopy := copy(p[:], addr[:])
 	if nCopy != common.AddressLength {
 		return nil, ErrInvalidID
 	}
 
-	nCopy = copy(p[common.AddressLength:], []byte(postfix))
+	nCopy = copy(p[common.AddressLength:], postfix)
 	if nCopy != common.AddressLength {
 		return nil, ErrInvalidID
 	}
@@ -101,38 +118,14 @@ func NewPttIDFromKeyPostfix(key *ecdsa.PrivateKey, postfix string) (*PttID, erro
 NewPttIDWithRefID generates new PttID with the 1st part as the key-address and the 2nd part as the addr-part of refID.
 */
 func NewPttIDWithRefID(key *ecdsa.PrivateKey, refID *PttID) (*PttID, error) {
-	addr := crypto.PubkeyToAddress(key.PublicKey)
-	p := &PttID{}
-	nCopy := copy(p[:], addr[:])
-	if nCopy != common.AddressLength {
-		return nil, ErrInvalidID
-	}
-
-	nCopy = copy(p[common.AddressLength:], refID[:common.AddressLength])
-	if nCopy != common.AddressLength {
-		return nil, ErrInvalidID
-	}
-
-	return p, nil
+	return NewPttIDFromKeyPostfix(key, refID[:common.AddressLength])
 }
 
 /*
 NewPttIDWithRefID generates new PttID with the 1st part as the key-address and the 2nd part as the addr-part of refID.
 */
 func NewPttIDWithPubkeyAndRefID(key *ecdsa.PublicKey, refID *PttID) (*PttID, error) {
-	addr := crypto.PubkeyToAddress(*key)
-	p := &PttID{}
-	nCopy := copy(p[:], addr[:])
-	if nCopy != common.AddressLength {
-		return nil, ErrInvalidID
-	}
-
-	nCopy = copy(p[common.AddressLength:], refID[:common.AddressLength])
-	if nCopy != common.AddressLength {
-		return nil, ErrInvalidID
-	}
-
-	return p, nil
+	return NewPttIDFromPubkeyPostfix(key, refID[:common.AddressLength])
 }
 
 func UnmarshalTextPttID(b []byte) (*PttID, error) {

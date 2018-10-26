@@ -67,11 +67,11 @@ func (p *BasePtt) BEGetPeers() ([]*BackendPeer, error) {
 }
 
 func (p *BasePtt) Shutdown() (bool, error) {
-	p.NotifyNodeStop.PassChan(struct{}{})
+	p.notifyNodeStop.PassChan(struct{}{})
 	return true, nil
 }
 
 func (p *BasePtt) Restart() (bool, error) {
-	p.NotifyNodeRestart.PassChan(struct{}{})
+	p.notifyNodeRestart.PassChan(struct{}{})
 	return true, nil
 }

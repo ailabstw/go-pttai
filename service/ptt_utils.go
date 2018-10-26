@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/json"
@@ -31,22 +30,25 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/p2p"
-	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/rpc"
 )
+
+/**********
+ * Encrypt / Decrypt in ptt-layer
+ * encrypt / decrypt refers:
+ * https://gist.github.com/stupidbodo/601b68bfef3449d1b8d9
+ **********/
 
 var genIV = func(iv []byte) error {
 	_, err := io.ReadFull(rand.Reader, iv)
 	return err
 }
 
-// encrypt / decrypt refers:
-// https://gist.github.com/stupidbodo/601b68bfef3449d1b8d9
-
-func (p *BasePtt) EncryptData(op OpType, data []byte, key *ecdsa.PrivateKey) ([]byte, error) {
-	keyBytes := crypto.FromECDSA(key)
+/*
+EncryptData encrypts data in ptt-layer.
+Reference: https://gist.github.com/stupidbodo/601b68bfef3449d1b8d9
+*/
+func (p *BasePtt) EncryptData(op OpType, data []byte, keyInfo *KeyInfo) ([]byte, error) {
+	keyBytes := keyInfo.KeyBytes
 	marshaled := make([]byte, 4+len(data))
 	binary.BigEndian.PutUint32(marshaled[:4], uint32(op))
 
@@ -72,8 +74,12 @@ func (p *BasePtt) EncryptData(op OpType, data []byte, key *ecdsa.PrivateKey) ([]
 	return ciphertext, nil
 }
 
-func (p *BasePtt) DecryptData(ciphertext []byte, key *ecdsa.PrivateKey) (OpType, []byte, error) {
-	keyBytes := crypto.FromECDSA(key)
+/*
+DecryptData decrypts data in ptt-layer.
+Reference: https://gist.github.com/stupidbodo/601b68bfef3449d1b8d9
+*/
+func (p *BasePtt) DecryptData(ciphertext []byte, keyInfo *KeyInfo) (OpType, []byte, error) {
+	keyBytes := keyInfo.KeyBytes
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return 0, nil, err
@@ -131,6 +137,10 @@ func aesUnpad(src []byte) ([]byte, error) {
 	return src[:(length - unpadding)], nil
 }
 
+/**********
+ * Marshal / Unmarshal data in ptt-layer
+ **********/
+
 /*
 MarshalData marshals the encrypted data based on ptt-protocol.
 	hash: entity-hash
@@ -146,7 +156,7 @@ func (p *BasePtt) MarshalData(code CodeType, hash *common.Address, encData []byt
 	}
 
 	// ptt-event signed
-	evWithSalt, checksum, err := p.ChecksumPttEventData(ev)
+	evWithSalt, checksum, err := p.checksumPttEventData(ev)
 	if err != nil {
 		return nil, err
 	}
@@ -165,13 +175,13 @@ ChecksumPttEventData do checksum on the ev
 
 Return: bytesWithSalt, checksum, error
 */
-func (p *BasePtt) ChecksumPttEventData(ev *PttEventData) ([]byte, []byte, error) {
+func (p *BasePtt) checksumPttEventData(ev *PttEventData) ([]byte, []byte, error) {
 	evBytes, err := json.Marshal(ev)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return p.ChecksumData(evBytes)
+	return p.checksumData(evBytes)
 }
 
 /*
@@ -179,7 +189,7 @@ ChecksumData do checksum on the bytes
 
 Return: bytesWithSalt, checksum, error
 */
-func (p *BasePtt) ChecksumData(bytes []byte) ([]byte, []byte, error) {
+func (p *BasePtt) checksumData(bytes []byte) ([]byte, []byte, error) {
 	salt, err := types.NewSalt()
 	if err != nil {
 		return nil, nil, err
@@ -195,12 +205,12 @@ func (p *BasePtt) ChecksumData(bytes []byte) ([]byte, []byte, error) {
 }
 
 /*
-PttUnmarshalData unmarshal the pttData to the original data
+UnmarshalData unmarshal the pttData to the original data
 */
 func (p *BasePtt) UnmarshalData(pttData *PttData) (CodeType, *common.Address, []byte, error) {
-	ev, err := p.VerifyChecksumEventData(pttData)
+	ev, err := p.verifyChecksumEventData(pttData)
 	if err != nil {
-		return CodeTypeDummy, nil, nil, err
+		return CodeTypeInvalid, nil, nil, err
 	}
 
 	hashAddr := &common.Address{}
@@ -209,12 +219,11 @@ func (p *BasePtt) UnmarshalData(pttData *PttData) (CodeType, *common.Address, []
 	return ev.Code, hashAddr, ev.EncData, nil
 }
 
-func (p *BasePtt) VerifyChecksumEventData(pttData *PttData) (*PttEventData, error) {
+func (p *BasePtt) verifyChecksumEventData(pttData *PttData) (*PttEventData, error) {
 	evWithSalt, checksum := pttData.EvWithSalt, pttData.Checksum
-	err := p.VerifyChecksumData(evWithSalt, checksum)
+	err := p.verifyChecksumData(evWithSalt, checksum)
 	if err != nil {
 		return nil, err
-
 	}
 
 	evBytes := evWithSalt[:len(evWithSalt)-types.SizeSalt]
@@ -229,7 +238,7 @@ func (p *BasePtt) VerifyChecksumEventData(pttData *PttData) (*PttEventData, erro
 
 }
 
-func (p *BasePtt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) error {
+func (p *BasePtt) verifyChecksumData(bytesWithSalt []byte, checksum []byte) error {
 	hash := crypto.Keccak256(bytesWithSalt)
 
 	isGood := reflect.DeepEqual(hash, checksum)
@@ -239,89 +248,16 @@ func (p *BasePtt) VerifyChecksumData(bytesWithSalt []byte, checksum []byte) erro
 	return nil
 }
 
-func (p *BasePtt) GenerateProtocols() []p2p.Protocol {
-	subProtocols := make([]p2p.Protocol, 0, len(ProtocolVersions))
-
-	for i, version := range ProtocolVersions {
-		protocol := p2p.Protocol{
-			Name:     ProtocolName,
-			Version:  version,
-			Length:   ProtocolLengths[i],
-			Run:      p.GenerateRun(version),
-			NodeInfo: p.GenerateNodeInfo(),
-			PeerInfo: p.GeneratePeerInfo(),
-		}
-
-		subProtocols = append(subProtocols, protocol)
+func (p *BasePtt) SendDataToPeer(code CodeType, data interface{}, peer *PttPeer) error {
+	marshaledData, err := json.Marshal(data)
+	if err != nil {
+		return err
 	}
 
-	return subProtocols
-}
-
-func (p *BasePtt) GenerateRun(version uint) func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-	return func(p2pPeer *p2p.Peer, rw p2p.MsgReadWriter) error {
-		peer, err := p.NewPeer(version, p2pPeer, rw)
-		log.Debug("GenerateRun: get new peer", "peer", peer, "e", err)
-		if err != nil {
-			return err
-		}
-
-		select {
-		case p.newPeerCh <- peer:
-			log.Debug("pass newPeerCh: to HandlePeer", "peer", peer)
-
-			p.peerWG.Add(1)
-			defer func() {
-				log.Debug("GenerateRun: finish HandlePeer: to peerWG.Done", "peer", peer)
-				p.peerWG.Done()
-			}()
-
-			return p.HandlePeer(peer)
-		case <-p.noMorePeers:
-			return p2p.DiscQuitting
-		}
+	pttData, err := p.MarshalData(code, nil, marshaledData)
+	if err != nil {
+		return err
 	}
 
-}
-
-func (p *BasePtt) GenerateNodeInfo() func() interface{} {
-	return func() interface{} {
-		return p.NodeInfo()
-	}
-}
-
-func (p *BasePtt) GeneratePeerInfo() func(id discover.NodeID) interface{} {
-	return func(id discover.NodeID) interface{} {
-		p.peerLock.RLock()
-		defer p.peerLock.RUnlock()
-
-		peer := p.GetPeer(&id, true)
-		if peer == nil {
-			return nil
-		}
-
-		return peer.Info()
-	}
-}
-
-func (p *BasePtt) PttAPIs() []rpc.API {
-	return []rpc.API{
-		{
-			Namespace: "ptt",
-			Version:   "1.0",
-			Service:   NewPrivateAPI(p),
-		},
-	}
-}
-
-func (p *BasePtt) NodeInfo() interface{} {
-	return nil
-}
-
-func (p *BasePtt) Server() *p2p.Server {
-	return p.server
-}
-
-func (p *BasePtt) NoMorePeers() chan struct{} {
-	return p.noMorePeers
+	return peer.SendData(pttData)
 }

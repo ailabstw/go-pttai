@@ -17,6 +17,7 @@
 package service
 
 import (
+	"reflect"
 	"sync"
 	"time"
 
@@ -41,10 +42,10 @@ type PttPeer struct {
 
 	UserID *types.PttID
 
-	lockID     sync.Mutex
-	IDEntityID *types.PttID
-	IDSalt     *types.Salt
-	IDChan     chan struct{}
+	lockID      sync.Mutex
+	IDEntityID  *types.PttID
+	IDChallenge *types.Salt
+	IDChan      chan struct{}
 }
 
 func NewPttPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, ptt *BasePtt) (*PttPeer, error) {
@@ -55,7 +56,7 @@ func NewPttPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, ptt *BasePtt) (
 		ptt:     ptt,
 
 		term:   make(chan struct{}),
-		IDChan: nil,
+		IDChan: make(chan struct{}, 1),
 	}, nil
 }
 
@@ -69,14 +70,18 @@ func (p *PttPeer) Broadcast() error {
 }
 
 func (p *PttPeer) Info() interface{} {
-	return struct{}{}
+	return &PttPeerInfo{
+		NodeID:   p.GetID(),
+		UserID:   p.UserID,
+		PeerType: p.PeerType,
+	}
 }
 
 func (p *PttPeer) Handshake(networkID uint32) error {
 	errc := make(chan error, 2)
 
 	go func() {
-		errc <- p2p.Send(p.rw, StatusMsg, &PttStatus{
+		errc <- p2p.Send(p.rw, uint64(CodeTypeStatus), &PttStatus{
 			Version:   uint32(p.version),
 			NetworkID: networkID,
 		})
@@ -108,7 +113,7 @@ func (p *PttPeer) ReadStatus(networkID uint32) error {
 		return err
 	}
 
-	if msg.Code != StatusMsg {
+	if msg.Code != uint64(CodeTypeStatus) {
 		return ErrInvalidMsgCode
 	}
 
@@ -148,4 +153,55 @@ func (p *PttPeer) RW() p2p.MsgReadWriter {
 func (p *PttPeer) SendData(data *PttData) error {
 	//log.Debug("SendData", "p", p, "data", data)
 	return p2p.Send(p.rw, uint64(data.Code), data)
+}
+
+/**********
+ * Identify UserID
+ **********/
+
+/*
+InitID initializes info for identifying user-id
+*/
+func (p *PttPeer) InitID(entityID *types.PttID, salt *types.Salt, quitSync chan struct{}) error {
+	p.lockID.Lock()
+	defer p.lockID.Unlock()
+
+	if p.UserID != nil {
+		return types.ErrAlreadyExists
+	}
+
+	if p.IDEntityID != nil {
+		return types.ErrAlreadyExists
+	}
+	p.IDEntityID = entityID
+	p.IDChallenge = salt
+
+	// expire-time
+	go func(p *PttPeer, entityID *types.PttID) {
+		timer := time.NewTimer(IdentifyPeerTimeout)
+		defer timer.Stop()
+
+		select {
+		case <-timer.C:
+			p.FinishID(entityID)
+		case <-quitSync:
+			break
+		}
+	}(p, entityID)
+
+	return nil
+}
+
+/*
+FinishID finishes info for identifying user-id (remove info)
+*/
+func (p *PttPeer) FinishID(entityID *types.PttID) {
+	p.lockID.Lock()
+	defer p.lockID.Unlock()
+
+	if !reflect.DeepEqual(entityID, p.IDEntityID) {
+		return
+	}
+
+	p.IDEntityID = nil
 }

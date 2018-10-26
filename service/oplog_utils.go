@@ -17,7 +17,6 @@
 package service
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -61,11 +60,9 @@ func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix
 
 	switch status {
 	case types.StatusInternalPending:
-		dbOplogPrefix = common.CloneBytes(dbOplogPrefix)
-		dbOplogPrefix[pttdb.SizeDBKeyPrefix-1] = 'i'
+		dbOplogPrefix = dbPrefixToDBPrefixInternal(dbOplogPrefix)
 	case types.StatusPending:
-		dbOplogPrefix = common.CloneBytes(dbOplogPrefix)
-		dbOplogPrefix[pttdb.SizeDBKeyPrefix-1] = 'm'
+		dbOplogPrefix = dbPrefixToDBPrefixMaster(dbOplogPrefix)
 	}
 
 	prefix, err := DBPrefix(dbOplogPrefix, prefixID)
@@ -77,7 +74,7 @@ func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix
 		return db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
 	}
 
-	o := &BaseOplog{}
+	o := &Oplog{}
 	o.SetDB(db, prefixID, dbOplogPrefix, dbOplogIdxPrefix, dbOplogMerklePrefix, dbLock)
 	startKey, err := o.GetKey(logID, isLocked)
 	if err != nil {
@@ -87,7 +84,7 @@ func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix
 	return db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
-func CheckPreLog(oplog *BaseOplog, prelog *BaseOplog, existIDs map[types.PttID]*BaseOplog) error {
+func CheckPreLog(oplog *Oplog, prelog *Oplog, existIDs map[types.PttID]*Oplog) error {
 	if oplog.PreLogID == nil {
 		existIDs[*oplog.ID] = oplog
 		return nil

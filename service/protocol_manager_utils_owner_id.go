@@ -18,17 +18,18 @@ package service
 
 import "github.com/ailabstw/go-pttai/common/types"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+func (pm *BaseProtocolManager) SetOwnerID(ownerID *types.PttID, isLocked bool) {
+	if !isLocked {
+		pm.lockOwnerID.Lock()
+		defer pm.lockOwnerID.Unlock()
+	}
+	pm.ownerID = ownerID
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
+func (pm *BaseProtocolManager) GetOwnerID(isLocked bool) *types.PttID {
+	if !isLocked {
+		pm.lockOwnerID.RLock()
+		defer pm.lockOwnerID.RUnlock()
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+	return pm.ownerID
 }

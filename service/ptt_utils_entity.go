@@ -16,19 +16,27 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"sync"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
-}
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
+func (p *BasePtt) getEntityFromHash(hash *common.Address, lock *sync.RWMutex, hashMap map[common.Address]*types.PttID) (Entity, error) {
+	lock.RLock()
+	defer lock.RUnlock()
 
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
+	hashVal := *hash
+	entityID, ok := hashMap[hashVal]
+	if !ok {
+		return nil, ErrInvalidData
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+	idVal := *entityID
+	entity, ok := p.entities[idVal]
+	if !ok {
+		return nil, ErrInvalidData
+	}
+
+	return entity, nil
 }

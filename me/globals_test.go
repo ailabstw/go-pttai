@@ -14,21 +14,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package me
 
-import "github.com/ailabstw/go-pttai/common/types"
+import "testing"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+const ()
+
+var ()
+
+func setupTest(t *testing.T) {
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
-	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+func teardownTest(t *testing.T) {
 }

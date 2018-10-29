@@ -34,6 +34,19 @@ var (
 	}
 )
 
+// protocol
+const (
+	_ uint = iota
+	Ptt1
+)
+
+var (
+	ProtocolVersions = [1]uint{Ptt1}
+	ProtocolName     = "ptt1"
+	ProtocolLengths  = [1]uint64{uint64(NCodeType)}
+)
+
+// ptt-layer
 const (
 	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
 
@@ -46,29 +59,59 @@ const (
 	IdentifyPeerTimeout = 10 * time.Second
 )
 
-// protocol
+// join
 const (
-	_ uint = iota
-	Ptt1
+	IntRenewJoinKeySeconds = 86400 // 1 day for now
+	RenewJoinKeySeconds    = time.Duration(IntRenewJoinKeySeconds) * time.Second
 )
 
-var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
-	ProtocolLengths  = [1]uint64{4}
-)
-
+// op
 const (
-	StatusMsg = 0x00
+	_ OpType = iota
 
-	CodeTypeJoinMsg    = 0x01
-	CodeTypeJoinAckMsg = 0x02
-	CodeTypeOpMsg      = 0x03
+	// join
+
+	JoinMsg
+	JoinAckChallengeMsg
+
+	JoinEntityMsg
+	ApproveJoinMsg
+
+	JoinAlreadyRegisteredMsg
+	JoinAckAlreadyRegistedMsg
+
+	// op-key
+	AddOpKeyOplogMsg
+	AddOpKeyOplogsMsg
+
+	AddPendingOpKeyOplogMsg
+	AddPendingOpKeyOplogsMsg
+
+	RevokeOpKeyInfoMsg
+
+	// peer
+	IdentifyPeerMsg
+	IdentifyPeerAckMsg
+
+	// me
+	AddMeOplogMsg
+	AddMeOplogsMsg
+
+	AddPendingMeOplogMsg
+	AddPendingMeOplogsMsg
+
+	BoardLastSeenMsg
+	ArticleLastSeenMsg
+	NMsg
 )
 
 // op-key
 const (
 	MaxIterDeriveKeyBIP32 = 10
+
+	SleepTimeOpKeyLock = 10
+
+	ExpireOpKeySeconds = 259200
 )
 
 var (
@@ -99,6 +142,7 @@ var (
 	dbMeta *pttdb.LDBDatabase
 
 	DBNewestMasterLogIDPrefix = []byte(".nmld")
+
 	DBMasterOplogPrefix       = []byte(".malg")
 	DBMasterIdxOplogPrefix    = []byte(".maig")
 	DBMasterMerkleOplogPrefix = []byte(".mamk")

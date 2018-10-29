@@ -16,19 +16,18 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import "github.com/ailabstw/go-pttai/common"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+const (
+	_ OpType = iota
+	OpKeyOpTypeAddKey
+	OpKeyOpTypeRevokeKey
+)
+
+type OpKeyOpAddKey struct {
+	Hash *common.Address `json:"H"`
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
-	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+type OpKeyOpRevokeKey struct {
+	Hash *common.Address `json:"H"`
 }

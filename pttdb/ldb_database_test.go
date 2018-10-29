@@ -83,7 +83,7 @@ func TestLDBDatabase_NewPrevIteratorWithPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := tt.db
-			iter, err := db.NewPrevIteratorWithPrefix(tt.args.start, tt.args.prefix)
+			iter, err := db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderPrev)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -157,7 +157,7 @@ func TestLDBDatabase_NewPrevIteratorWithPrefix2(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := tt.db
-			iter, err := db.NewPrevIteratorWithPrefix(tt.args.start, tt.args.prefix)
+			iter, err := db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderPrev)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -231,7 +231,7 @@ func TestLDBDatabase_NewPrevIteratorWithPrefix3(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := tt.db
-			iter, err := db.NewPrevIteratorWithPrefix(tt.args.start, tt.args.prefix)
+			iter, err := db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderPrev)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -298,6 +298,81 @@ func TestLDBDatabase_NewPrevIteratorWithPrefix4(t *testing.T) {
 				start:  []byte("test123"),
 				prefix: []byte("test"),
 			},
+			want: []byte("test123"),
+		},
+	}
+
+	// run test
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := tt.db
+			iter, err := db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderPrev)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			var got []byte
+			for iter.Prev() {
+				key := iter.Key()
+				got = common.CloneBytes(key)
+				break
+			}
+			t.Logf("LDBDatabase.NewPrevIteratorWithPrefix4: got: %v", got)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+	// teardown test
+}
+
+func TestLDBDatabase_NewPrevIteratorWithPrefix5(t *testing.T) {
+	// setup test
+	setupTest(t)
+	defer teardownTest(t)
+	tDefaultDB.Put([]byte("test122"), []byte("test"))
+	tDefaultDB.Put([]byte("test123"), []byte("test"))
+	tDefaultDB.Put([]byte("test124"), []byte("test"))
+
+	// define test-structure
+	type fields struct {
+		name             string
+		fn               string
+		db               *leveldb.DB
+		compTimeMeter    metrics.Meter
+		compReadMeter    metrics.Meter
+		compWriteMeter   metrics.Meter
+		writeDelayNMeter metrics.Meter
+		writeDelayMeter  metrics.Meter
+		diskReadMeter    metrics.Meter
+		diskWriteMeter   metrics.Meter
+		quitLock         sync.Mutex
+		quitChan         chan chan error
+		log              log.Logger
+		lockLockMap      sync.Mutex
+		lockMap          map[string]int
+	}
+	type args struct {
+		start  []byte
+		prefix []byte
+	}
+
+	// prepare test-cases
+	tests := []struct {
+		name    string
+		db      *LDBDatabase
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			db: tDefaultDB,
+			args: args{
+				start:  []byte("test123"),
+				prefix: []byte("test"),
+			},
 			want: []byte("test122"),
 		},
 	}
@@ -306,7 +381,7 @@ func TestLDBDatabase_NewPrevIteratorWithPrefix4(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := tt.db
-			iter, err := db.NewPrevIteratorWithPrefix(tt.args.start, tt.args.prefix)
+			iter, err := db.NewIteratorWithPrefix(tt.args.start, tt.args.prefix, ListOrderPrev)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LDBDatabase.NewPrevIteratorWithPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return

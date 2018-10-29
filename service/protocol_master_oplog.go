@@ -16,19 +16,34 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/binary"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
-}
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
+func (p *BasePtt) CreateMasterOplog(raftIdx uint64, ts types.Timestamp, op OpType, data interface{}) (*MasterOplog, error) {
+	key := p.SignKey()
+	myID := p.myEntity.GetID()
+	nodeSignID := p.myEntity.GetNodeSignID()
 
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
+	oplog, err := NewMasterOplog(myID, ts, nodeSignID, op, data)
 	if err != nil {
 		return nil, err
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+
+	// oplog.ID
+	binary.BigEndian.PutUint64(oplog.ID[OffsetMasterOplogRaftIdx:], raftIdx)
+	copy(oplog.ID[common.AddressLength:], myID[:common.AddressLength])
+
+	err = oplog.Sign(key)
+	if err != nil {
+		return nil, err
+	}
+
+	p.myEntity.PM().SetNewestMasterLogID(oplog.ID)
+	oplog.MasterLogID = oplog.ID
+
+	return oplog, nil
 }

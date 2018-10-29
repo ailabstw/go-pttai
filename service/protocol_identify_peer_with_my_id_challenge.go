@@ -16,19 +16,33 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+	"github.com/ailabstw/go-pttai/common/types"
+)
+
+/*
+IdentifyPeerWithMyIDChallenge requests challenge to make sure the user-id (acker)
+*/
+func (p *BasePtt) IdentifyPeerWithMyIDChallenge(userID *types.PttID, peer *PttPeer) error {
+	data, err := p.IdentifyPeer(userID, p.quitSync, peer)
+	if err != nil {
+		return err
+	}
+
+	return p.SendDataToPeer(CodeTypeIdentifyPeerWithMyIDChallenge, data, peer)
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
+/*
+HandleIdentifyPeerWithMyIDChallenge handles IdentifyPeerWithMyIDChallenge (requester)
+*/
+func (p *BasePtt) HandleIdentifyPeerWithMyIDChallenge(dataBytes []byte, peer *PttPeer) error {
+	data := &IdentifyPeer{}
+	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+
+	return p.IdentifyPeerWithMyIDChallengeAck(data, peer)
 }

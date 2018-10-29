@@ -98,7 +98,7 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 	}
 
 	if c.PrivateKey != nil {
-		id, err := types.NewPttIDFromKeyPostfix(c.PrivateKey, c.Postfix)
+		id, err := types.NewPttIDFromKeyPostfix(c.PrivateKey, []byte(c.Postfix))
 		if err != nil {
 			return nil, "", nil, ErrInvalidMe
 		}
@@ -129,13 +129,12 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 	key, err := crypto.LoadECDSA(keyfile)
 	postfixBytes, err2 := ioutil.ReadFile(keyfile + ".postfix")
 	if err == nil && err2 == nil {
-		postfix := string(postfixBytes)
-		id, err := types.NewPttIDFromKeyPostfix(key, postfix)
+		id, err := types.NewPttIDFromKeyPostfix(key, postfixBytes)
 		if err != nil {
 			return nil, "", nil, ErrInvalidMe
 		}
 
-		return key, postfix, id, nil
+		return key, string(postfixBytes), id, nil
 	}
 
 	log.Warn(fmt.Sprintf("Failed to load key: %v. create a new one.", err))

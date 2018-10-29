@@ -19,6 +19,7 @@ package me
 import (
 	"crypto/ecdsa"
 	"path/filepath"
+	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/node"
@@ -37,13 +38,13 @@ var (
 
 // MyInfo
 var (
-	MyID       *types.PttID        = nil
-	MyNodeID   *discover.NodeID    = nil
-	MyKey      *ecdsa.PrivateKey   = nil
+	MyID       *types.PttID
+	MyNodeID   *discover.NodeID
+	MyKey      *ecdsa.PrivateKey
 	MyNodeType pkgservice.NodeType = pkgservice.NodeTypeDesktop
 
-	MyNodeSignID *types.PttID = nil
-	MyRaftID     uint64       = 0
+	MyNodeSignID *types.PttID
+	MyRaftID     uint64
 )
 
 // defaults
@@ -80,6 +81,16 @@ var (
 	DBKeyRaftSnapshotIndex = []byte(".rfsi")
 	DBKeyRaftConfState     = []byte(".rfcs")
 	DBKeyRaftLead          = []byte(".rfld")
+)
+
+// raft
+
+const (
+	RaftTickTime        = 100 * time.Millisecond
+	RaftElectionTick    = 50
+	RaftHeartbeatTick   = 5
+	RaftMaxSizePerMsg   = 1024 * 1024
+	RaftMaxInflightMsgs = 16
 )
 
 func InitMe(dataDir string) error {
@@ -181,5 +192,4 @@ func TeardownMe() {
 	if dbKey != nil {
 		dbKey = nil
 	}
-
 }

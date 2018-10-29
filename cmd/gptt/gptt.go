@@ -139,6 +139,7 @@ func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.P
 	if err != nil {
 		return nil, err
 	}
+
 	err = ptt.RegisterService(meBackend)
 	if err != nil {
 		return nil, err
@@ -177,7 +178,7 @@ func WaitNode(n *node.Node) error {
 loop:
 	for {
 		select {
-		case _, ok := <-ptt.NotifyNodeRestart.GetChan():
+		case _, ok := <-ptt.NotifyNodeRestart().GetChan():
 			if !ok {
 				break loop
 			}
@@ -185,11 +186,17 @@ loop:
 			if err != nil {
 				return err
 			}
-		case _, ok := <-ptt.NotifyNodeStop.GetChan():
+		case _, ok := <-ptt.NotifyNodeStop().GetChan():
 			if !ok {
 				break loop
 			}
 			n.Stop(false, false)
+			break loop
+		case err, ok := <-ptt.ErrChan().GetChan():
+			if !ok {
+				break loop
+			}
+			log.Error("Received err from ptt", "e", err)
 			break loop
 		case err, ok := <-n.StopChan:
 			if ok && err != nil {

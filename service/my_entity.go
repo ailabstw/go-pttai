@@ -16,19 +16,41 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"crypto/ecdsa"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
+)
+
+type MyEntity interface {
+	GetID() *types.PttID
+
+	Name() string
+
+	MasterKey() *ecdsa.PrivateKey
+
+	SignKey() *KeyInfo
+	GetNodeSignID() *types.PttID
+
+	IsValidInternalOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
+type PttMyEntity interface {
+	MyEntity
 
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
-	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+	PM() ProtocolManager
+
+	// board
+	GetMyBoard() Entity
+
+	// join
+	GetJoinRequest(hash *common.Address) (*JoinRequest, error)
+	HandleApproveJoin(dataBytes []byte, hash *common.Address, joinRequest *JoinRequest, peer *PttPeer) error
+
+	// node
+	GetLenNodes() int
+
+	// oplog
+	IsValidOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 }

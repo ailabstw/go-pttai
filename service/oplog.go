@@ -30,10 +30,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type Oplog interface {
-}
-
-type BaseOplog struct {
+type Oplog struct {
 	V        types.Version
 	ID       *types.PttID
 	DoerID   *types.PttID    `json:"DID"`
@@ -55,14 +52,15 @@ type BaseOplog struct {
 	dbPrefixInternal []byte
 	dbPrefixMaster   []byte
 
-	DoerHash []byte     `json:"dH"`
-	Salt     types.Salt `json:"s"`
-	Sig      []byte     `json:"S"`
-	Pubkey   []byte     `json:"K"`
+	DoerHash []byte        `json:"dH,omitempty"`
+	Salt     types.Salt    `json:"s,omitempty"`
+	Sig      []byte        `json:"S,omitempty"`
+	Pubkey   []byte        `json:"K,omitempty"`
+	KeyExtra *KeyExtraInfo `json:"k,omitempty"`
 
 	// to remove when doing sign
 	UpdateTS types.Timestamp `json:"UT"`
-	Hash     []byte          `json:"H"`
+	Hash     []byte          `json:"H,omitempty"`
 
 	MasterLogID   *types.PttID `json:"mID,omitempty"`
 	MasterSigns   []*SignInfo  `json:"m,omitempty"`
@@ -75,11 +73,11 @@ type BaseOplog struct {
 	Extra     interface{}  `json:"e,omitempty"`
 }
 
-func NewOplogForLoadData(data interface{}, db *pttdb.LDBBatch) *BaseOplog {
-	return &BaseOplog{Data: data, db: db}
+func NewOplogForLoadData(data interface{}, db *pttdb.LDBBatch) *Oplog {
+	return &Oplog{Data: data, db: db}
 }
 
-func NewOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}, db *pttdb.LDBBatch, dbPrefixID *types.PttID, dbPrefix []byte, dbIdxPrefix []byte, dbMerklePrefix []byte, dbLock *types.LockMap) (*BaseOplog, error) {
+func NewOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}, db *pttdb.LDBBatch, dbPrefixID *types.PttID, dbPrefix []byte, dbIdxPrefix []byte, dbMerklePrefix []byte, dbLock *types.LockMap) (*Oplog, error) {
 
 	opID, err := types.NewPttID()
 	if err != nil {
@@ -89,7 +87,7 @@ func NewOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpTyp
 	dbPrefixInternal := dbPrefixToDBPrefixInternal(dbPrefix)
 	dbPrefixMaster := dbPrefixToDBPrefixMaster(dbPrefix)
 
-	oplog := &BaseOplog{
+	oplog := &Oplog{
 		V:        types.CurrentVersion,
 		ID:       opID,
 		DoerID:   doerID,
@@ -117,7 +115,7 @@ func NewOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpTyp
 	return oplog, nil
 }
 
-func (o *BaseOplog) SetDB(db *pttdb.LDBBatch, id *types.PttID, prefix []byte, idxPrefix []byte, merklePrefix []byte, dbLock *types.LockMap) {
+func (o *Oplog) SetDB(db *pttdb.LDBBatch, id *types.PttID, prefix []byte, idxPrefix []byte, merklePrefix []byte, dbLock *types.LockMap) {
 	dbPrefixInternal := dbPrefixToDBPrefixInternal(prefix)
 	dbPrefixMaster := dbPrefixToDBPrefixMaster(prefix)
 
@@ -131,7 +129,39 @@ func (o *BaseOplog) SetDB(db *pttdb.LDBBatch, id *types.PttID, prefix []byte, id
 	o.dbLock = dbLock
 }
 
-func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
+func (o *Oplog) GetDB() *pttdb.LDBBatch {
+	return o.db
+}
+
+func (o *Oplog) GetDBPrefxiID() *types.PttID {
+	return o.dbPrefixID
+}
+
+func (o *Oplog) GetDBPrefix() []byte {
+	return o.dbPrefix
+}
+
+func (o *Oplog) GetDBPrefixInternal() []byte {
+	return o.dbPrefixInternal
+}
+
+func (o *Oplog) GetDBPrefixMaster() []byte {
+	return o.dbPrefixMaster
+}
+
+func (o *Oplog) GetDBIdxPrefix() []byte {
+	return o.dbIdxPrefix
+}
+
+func (o *Oplog) GetDBMerklePrefix() []byte {
+	return o.dbMerklePrefix
+}
+
+func (o *Oplog) GetDBLock() *types.LockMap {
+	return o.dbLock
+}
+
+func (o *Oplog) SaveWithIsSync(isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -145,7 +175,7 @@ func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
 		return err
 	}
 
-	origO := &BaseOplog{}
+	origO := &Oplog{}
 	origO.SetDB(o.db, o.dbPrefixID, o.dbPrefix, o.dbIdxPrefix, o.dbMerklePrefix, o.dbLock)
 	err = origO.Load(kvs[0].K)
 	if err == nil && reflect.DeepEqual(o.Hash, origO.Hash) && bool(origO.IsSync) {
@@ -161,7 +191,7 @@ func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
 	return nil
 }
 
-func (o *BaseOplog) Save(isLocked bool) error {
+func (o *Oplog) Save(isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -183,31 +213,7 @@ func (o *BaseOplog) Save(isLocked bool) error {
 	return nil
 }
 
-/*
-func (o *Oplog) SemiForceSave(isLocked bool) error {
-	if !isLocked {
-		err := o.dbLock.Lock(o.ID)
-		if err != nil {
-			return err
-		}
-		defer o.dbLock.Unlock(o.ID)
-	}
-
-	idxKey, idx, kvs, err := o.SaveCore()
-	if err != nil {
-		return err
-	}
-
-	_, err = o.db.TryPutAllSameUT(idxKey, idx, kvs, true)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-*/
-
-func (o *BaseOplog) ForceSave(isLocked bool) error {
+func (o *Oplog) ForceSave(isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -230,7 +236,7 @@ func (o *BaseOplog) ForceSave(isLocked bool) error {
 	return nil
 }
 
-func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
+func (o *Oplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 	o.NewestLog = nil
 	if o.MasterLogID == nil {
 		return o.SaveCorePending()
@@ -298,7 +304,7 @@ func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 	return idxKey, idx, kvs, nil
 }
 
-func (o *BaseOplog) SaveCorePending() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
+func (o *Oplog) SaveCorePending() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 	idxKey, err := o.IdxKey()
 	if err != nil {
 		return nil, nil, nil, err
@@ -347,7 +353,7 @@ func (o *BaseOplog) SaveCorePending() ([]byte, *pttdb.Index, []*pttdb.KeyVal, er
 	return idxKey, idx, kvs, nil
 }
 
-func (o *BaseOplog) Get(id *types.PttID, isLocked bool) error {
+func (o *Oplog) Get(id *types.PttID, isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.RLock(id)
 		if err != nil {
@@ -365,7 +371,7 @@ func (o *BaseOplog) Get(id *types.PttID, isLocked bool) error {
 	return o.Load(key)
 }
 
-func (o *BaseOplog) GetKey(id *types.PttID, isLocked bool) ([]byte, error) {
+func (o *Oplog) GetKey(id *types.PttID, isLocked bool) ([]byte, error) {
 	if !isLocked {
 		err := o.dbLock.RLock(id)
 		if err != nil {
@@ -383,7 +389,7 @@ func (o *BaseOplog) GetKey(id *types.PttID, isLocked bool) ([]byte, error) {
 	return o.db.GetKeyByIdxKey(idxKey, 0)
 }
 
-func (o *BaseOplog) Delete(isLocked bool) error {
+func (o *Oplog) Delete(isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -400,7 +406,7 @@ func (o *BaseOplog) Delete(isLocked bool) error {
 	return o.db.DeleteAll(idxKey)
 }
 
-func (o *BaseOplog) Load(key []byte) error {
+func (o *Oplog) Load(key []byte) error {
 	/*
 		if !isLocked {
 			log.Debug("Load", "dbLock", o.dbLock, "key", key, "o", o.ID)
@@ -428,42 +434,42 @@ func (o *BaseOplog) Load(key []byte) error {
 /*
 IdxPrefix
 */
-func (o *BaseOplog) IdxPrefix() []byte {
+func (o *Oplog) IdxPrefix() []byte {
 	return append(o.dbIdxPrefix, o.dbPrefixID[:]...)
 }
 
 /*
 IdxKey: idxPrefix:OplogID
 */
-func (o *BaseOplog) IdxKey() ([]byte, error) {
+func (o *Oplog) IdxKey() ([]byte, error) {
 	return common.Concat([][]byte{o.dbIdxPrefix, o.dbPrefixID[:], o.ID[:]})
 }
 
 /*
 Prefix
 */
-func (o *BaseOplog) DBPrefix() []byte {
+func (o *Oplog) DBPrefix() []byte {
 	return append(o.dbPrefix, o.dbPrefixID[:]...)
 }
 
 /*
 PrefixInternal
 */
-func (o *BaseOplog) DBPrefixInternal() []byte {
+func (o *Oplog) DBPrefixInternal() []byte {
 	return append(o.dbPrefixInternal, o.dbPrefixID[:]...)
 }
 
 /*
 PrefixInternal
 */
-func (o *BaseOplog) DBPrefixMaster() []byte {
+func (o *Oplog) DBPrefixMaster() []byte {
 	return append(o.dbPrefixMaster, o.dbPrefixID[:]...)
 }
 
 /*
 MarshalKey: prefixID:TS:OplogID:Op
 */
-func (o *BaseOplog) MarshalMerkleKey() ([]byte, error) {
+func (o *Oplog) MarshalMerkleKey() ([]byte, error) {
 	marshaledTS, err := o.UpdateTS.Marshal()
 	if err != nil {
 		return nil, err
@@ -480,7 +486,7 @@ func (o *BaseOplog) MarshalMerkleKey() ([]byte, error) {
 /*
 MarshalKey: prefixID:TS:OplogID:Op
 */
-func (o *BaseOplog) MarshalKey(prefix []byte) ([]byte, error) {
+func (o *Oplog) MarshalKey(prefix []byte) ([]byte, error) {
 	marshaledTS, err := o.UpdateTS.Marshal()
 	if err != nil {
 		return nil, err
@@ -494,15 +500,15 @@ func (o *BaseOplog) MarshalKey(prefix []byte) ([]byte, error) {
 	return common.Concat([][]byte{prefix, o.dbPrefixID[:], marshaledTS[:], o.ID[:], opBytes})
 }
 
-func (o *BaseOplog) Marshal() ([]byte, error) {
+func (o *Oplog) Marshal() ([]byte, error) {
 	return json.Marshal(o)
 }
 
-func (o *BaseOplog) Unmarshal(data []byte) error {
+func (o *Oplog) Unmarshal(data []byte) error {
 	return json.Unmarshal(data, o)
 }
 
-func (o *BaseOplog) GetData(data interface{}) error {
+func (o *Oplog) GetData(data interface{}) error {
 	marshaled, err := json.Marshal(o.Data)
 	if err != nil {
 		return err
@@ -516,7 +522,7 @@ func (o *BaseOplog) GetData(data interface{}) error {
 	return nil
 }
 
-func (o *BaseOplog) Sign(keyInfo *KeyInfo) error {
+func (o *Oplog) Sign(keyInfo *KeyInfo) error {
 	origSync := o.IsSync
 	origExtra := o.Extra
 	defer func() {
@@ -554,6 +560,7 @@ func (o *BaseOplog) Sign(keyInfo *KeyInfo) error {
 	copy(o.Salt[:], bytesWithSalt[len(marshaled):])
 	o.Sig = sig
 	o.Pubkey = pubBytes
+	o.KeyExtra = keyInfo.Extra
 
 	o.UpdateTS = o.CreateTS
 	o.Hash, _ = o.SignsHash()
@@ -561,7 +568,7 @@ func (o *BaseOplog) Sign(keyInfo *KeyInfo) error {
 	return nil
 }
 
-func (o *BaseOplog) SignsHash() ([]byte, error) {
+func (o *Oplog) SignsHash() ([]byte, error) {
 
 	// master-logid + doer
 	lenData := 1 + (len(o.MasterSigns)+len(o.InternalSigns)+1)*4
@@ -604,7 +611,7 @@ func (o *BaseOplog) SignsHash() ([]byte, error) {
 	return hash[:], nil
 }
 
-func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
+func (o *Oplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 	// ts
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -623,7 +630,7 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 	origSync := o.IsSync
 	origMasterSigns := o.MasterSigns
 	origExtra := o.Extra
-	defer func(o *BaseOplog) {
+	defer func(o *Oplog) {
 		o.MasterLogID = origMasterLogID
 		o.IsSync = origSync
 		o.Extra = origExtra
@@ -657,6 +664,7 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 		Hash:   hash,
 		Sig:    sig,
 		Pubkey: pubBytes,
+		Extra:  keyInfo.Extra,
 	}
 
 	copy(masterSign.Salt[:], bytesWithSalt[len(marshaled):])
@@ -674,7 +682,7 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 	return nil
 }
 
-func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
+func (o *Oplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	// ts
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -693,7 +701,7 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	origSync := o.IsSync
 	origInternalSigns := o.InternalSigns
 	origExtra := o.Extra
-	defer func(o *BaseOplog) {
+	defer func(o *Oplog) {
 		o.MasterLogID, o.MasterSigns = origMasterLogID, origMasterSigns
 		o.IsSync = origSync
 		o.Extra = origExtra
@@ -745,7 +753,7 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	return nil
 }
 
-func (o *BaseOplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
+func (o *Oplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
 	log.Debug("SetMasterOplogID", "oplogID", oplogID)
 	o.MasterLogID = oplogID
 	o.InternalSigns = nil
@@ -754,7 +762,7 @@ func (o *BaseOplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
 	return nil
 }
 
-func (o *BaseOplog) Verify() error {
+func (o *Oplog) Verify() error {
 	hash, err := o.SignsHash()
 	if err != nil {
 		return err
@@ -766,12 +774,12 @@ func (o *BaseOplog) Verify() error {
 	}
 
 	origUpdateTS := o.UpdateTS
-	origHash, origDoerHash, origSalt, origSig, origPubBytes := o.Hash, o.DoerHash, o.Salt, o.Sig, o.Pubkey
+	origHash, origDoerHash, origSalt, origSig, origPubBytes, origKeyExtra := o.Hash, o.DoerHash, o.Salt, o.Sig, o.Pubkey, o.KeyExtra
 	origMasterLogID, origMasterSigns, origInternalSigns := o.MasterLogID, o.MasterSigns, o.InternalSigns
 	origIsSync := o.IsSync
 	origNewestLog := o.NewestLog
 	origExtra := o.Extra
-	defer func(o *BaseOplog) {
+	defer func(o *Oplog) {
 		o.UpdateTS = origUpdateTS
 		o.Hash, o.DoerHash, o.Salt, o.Sig, o.Pubkey = origHash, origDoerHash, origSalt, origSig, origPubBytes
 		o.MasterLogID, o.MasterSigns, o.InternalSigns = origMasterLogID, origMasterSigns, origInternalSigns
@@ -787,6 +795,7 @@ func (o *BaseOplog) Verify() error {
 	o.Sig = nil
 	o.Salt = types.Salt{}
 	o.Pubkey = nil
+	o.KeyExtra = nil
 
 	o.MasterLogID = nil
 	o.MasterSigns = nil
@@ -801,7 +810,7 @@ func (o *BaseOplog) Verify() error {
 	}
 	bytesWithSalt := append(marshaled, origSalt[:]...)
 
-	err = VerifyData(bytesWithSalt, origSig, origPubBytes)
+	err = VerifyData(bytesWithSalt, origSig, origPubBytes, o.DoerID, origKeyExtra)
 	if err != nil {
 		log.Warn("Verify (sign)", "bytesWithSalt", bytesWithSalt, "origSig", origSig, "origPubBytes", origPubBytes)
 		return err
@@ -812,6 +821,7 @@ func (o *BaseOplog) Verify() error {
 	o.Sig = origSig
 	o.Salt = origSalt
 	o.Pubkey = origPubBytes
+	o.KeyExtra = origKeyExtra
 
 	// master signs
 	if origMasterSigns != nil {
@@ -822,7 +832,7 @@ func (o *BaseOplog) Verify() error {
 			}
 			bytesWithSalt = append(marshaled, masterSign.Salt[:]...)
 
-			err = VerifyData(bytesWithSalt, masterSign.Sig, masterSign.Pubkey)
+			err = VerifyData(bytesWithSalt, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
 			log.Debug("Verify (master-sign): after VerifyData", "e", err)
 			if err != nil {
 				return err
@@ -839,7 +849,7 @@ func (o *BaseOplog) Verify() error {
 			}
 			bytesWithSalt = append(marshaled, internalSign.Salt[:]...)
 
-			err = VerifyData(bytesWithSalt, internalSign.Sig, internalSign.Pubkey)
+			err = VerifyData(bytesWithSalt, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
 			log.Debug("Verify (internal-sign): after VerifyData", "e", err)
 			if err != nil {
 				return err
@@ -850,7 +860,7 @@ func (o *BaseOplog) Verify() error {
 	return nil
 }
 
-func (o *BaseOplog) CheckAlreadyExists() error {
+func (o *Oplog) CheckAlreadyExists() error {
 	idxKey, err := o.IdxKey()
 	if err != nil {
 		return err
@@ -877,7 +887,7 @@ func (o *BaseOplog) CheckAlreadyExists() error {
 	return nil
 }
 
-func (o *BaseOplog) ToStatus() types.Status {
+func (o *Oplog) ToStatus() types.Status {
 	switch {
 	case o.MasterLogID != nil:
 		return types.StatusAlive
@@ -890,7 +900,7 @@ func (o *BaseOplog) ToStatus() types.Status {
 	return types.StatusInvalid
 }
 
-func (o *BaseOplog) SelectExisting(isLocked bool) error {
+func (o *Oplog) SelectExisting(isLocked bool) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -907,7 +917,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 	o.NewestLog = nil
 
 	// get orig
-	orig := &BaseOplog{}
+	orig := &Oplog{}
 	orig.SetDB(o.db, o.dbPrefixID, o.dbPrefix, o.dbIdxPrefix, o.dbMerklePrefix, o.dbLock)
 
 	err := orig.Get(o.ID, true)
@@ -972,7 +982,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 
 // IntegrateExisting integrates with existing oplog.
 // Return: is-to-re-sign, error
-func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
+func (o *Oplog) IntegrateExisting(isLocked bool) (bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -988,7 +998,7 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 	}()
 	o.NewestLog = nil
 
-	orig := &BaseOplog{}
+	orig := &Oplog{}
 	orig.SetDB(o.db, o.dbPrefixID, o.dbPrefix, o.dbIdxPrefix, o.dbMerklePrefix, o.dbLock)
 	// no orig-log
 	err := orig.Get(o.ID, true)
@@ -1130,11 +1140,11 @@ loop:
 	return newSignInfos, len(newSignInfos) == lenSignInfos, len(newSignInfos) == lenOrigSignInfos, nil
 }
 
-func (o *BaseOplog) Lock() error {
+func (o *Oplog) Lock() error {
 	return o.dbLock.Lock(o.ID)
 }
 
-func (o *BaseOplog) Unlock() error {
+func (o *Oplog) Unlock() error {
 	return o.dbLock.Unlock(o.ID)
 }
 
@@ -1174,7 +1184,7 @@ func OplogKeyToIdxKey(key []byte, dbIdxPrefix []byte) []byte {
 	theID := &types.PttID{}
 	copy(theID[:], key[offset:nextOffset])
 
-	o := &BaseOplog{
+	o := &Oplog{
 		dbIdxPrefix: dbIdxPrefix,
 		dbPrefixID:  prefixID,
 		ID:          theID,

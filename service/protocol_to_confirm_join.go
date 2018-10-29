@@ -18,17 +18,36 @@ package service
 
 import "github.com/ailabstw/go-pttai/common/types"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
-}
+/*
+ToConfirmJoin puts the joinEntity into confirm-join-map and wait for confirming the join. (invitor)
+*/
+func (p *BasePtt) ToConfirmJoin(confirmKey []byte, entity Entity, joinEntity *JoinEntity, keyInfo *KeyInfo, peer *PttPeer, joinType JoinType) error {
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
+	ts, err := types.GetTimestamp()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+
+	confirmJoin := &ConfirmJoin{
+		Entity:     entity,
+		JoinEntity: joinEntity,
+		KeyInfo:    keyInfo,
+		Peer:       peer,
+		UpdateTS:   ts,
+		JoinType:   joinType,
+	}
+
+	confirmKeyStr := string(confirmKey)
+
+	p.lockConfirmJoin.Lock()
+	defer p.lockConfirmJoin.Unlock()
+
+	_, ok := p.confirmJoins[confirmKeyStr]
+	if ok {
+		return types.ErrAlreadyExists
+	}
+
+	p.confirmJoins[confirmKeyStr] = confirmJoin
+
+	return nil
 }

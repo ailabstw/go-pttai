@@ -16,7 +16,14 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
+	"reflect"
+
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/crypto/bip32"
+)
 
 type KeyType uint8
 
@@ -41,4 +48,53 @@ type KeyBIP32 struct {
 	Parent []byte      `json:"P"`
 	Salt   *types.Salt `json:"S"`
 	Child  uint32      `json:"c"`
+}
+
+func (k *KeyExtraInfo) IsValid(pubKeyBytes []byte, doerID *types.PttID) bool {
+	switch k.KeyType {
+	case KeyTypeBIP32:
+		return k.IsValidBIP32(pubKeyBytes, doerID)
+	default:
+		return false
+	}
+}
+
+func (k *KeyExtraInfo) IsValidBIP32(pubKeyBytes []byte, doerID *types.PttID) bool {
+	keyBIP32 := &KeyBIP32{}
+	err := k.GetData(keyBIP32)
+	if err != nil {
+		return false
+	}
+
+	parentPubKey, err := crypto.UnmarshalPubkey(keyBIP32.Parent)
+	if err != nil {
+		return false
+	}
+
+	if !doerID.IsSamePubKey(parentPubKey) {
+		return false
+	}
+
+	extendKey, err := bip32.PubKeyToExtKey(parentPubKey, keyBIP32.Salt[:])
+	if err != nil {
+		return false
+	}
+
+	childKey, err := extendKey.Child(keyBIP32.Child)
+	if err != nil {
+		return false
+	}
+
+	childPubKeyBytes := childKey.PubkeyBytes()
+
+	return reflect.DeepEqual(childPubKeyBytes, pubKeyBytes)
+}
+
+func (k *KeyExtraInfo) GetData(data interface{}) error {
+	marshaled, err := json.Marshal(k.Data)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(marshaled, data)
 }

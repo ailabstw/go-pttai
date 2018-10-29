@@ -48,55 +48,33 @@ func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, e
 	return bytesWithSalt, hash, sig, keyInfo.PubKeyBytes, nil
 }
 
-func VerifyData(bytesWithSalt []byte, sig []byte, keyBytes []byte) error {
+func VerifyData(bytesWithSalt []byte, sig []byte, pubKeyBytes []byte, doerID *types.PttID, extra *KeyExtraInfo) error {
+
+	isValidKey := verifyDataCheckKey(pubKeyBytes, doerID, extra)
+	if !isValidKey {
+		return ErrInvalidKey
+	}
+
 	hash := crypto.Keccak256(bytesWithSalt)
 
-	isGood := crypto.VerifySignature(keyBytes, hash, sig[:64])
+	isGood := crypto.VerifySignature(pubKeyBytes, hash, sig[:64])
 	if !isGood {
 		return ErrInvalidData
 	}
 	return nil
 }
 
-/*
-func SelectBestServicePeers(ps *ServicePeerSet, n int) ([]Peer, error) {
-	peers := ps.Peers()
-	lenPeers := len(peers)
-
-	psList := make([]Peer, lenPeers)
-	var i int = 0
-	for _, p := range peers {
-		psList[i] = p
-		i++
-	}
-	psList, err := ShufflePeers(psList)
-	if err != nil {
-		return nil, err
+func verifyDataCheckKey(pubKeyBytes []byte, doerID *types.PttID, extra *KeyExtraInfo) bool {
+	if extra == nil {
+		pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+		if err != nil {
+			return false
+		}
+		return doerID.IsSamePubKey(pubKey)
 	}
 
-	var lenList int
-	if lenPeers < n {
-		lenList = lenPeers
-	} else {
-		lenList = n
-	}
-
-	return psList[:lenList], nil
+	return extra.IsValid(pubKeyBytes, doerID)
 }
-*/
-
-/*
-func ShufflePeers(src []Peer) ([]Peer, error) {
-	dest := make([]Peer, len(src))
-	perm := mrand.Perm(len(src))
-	for i, v := range perm {
-		dest[v] = src[i]
-	}
-
-	return dest, nil
-
-}
-*/
 
 func DBPrefix(dbPrefix []byte, id *types.PttID) ([]byte, error) {
 	return common.Concat([][]byte{dbPrefix, id[:]})

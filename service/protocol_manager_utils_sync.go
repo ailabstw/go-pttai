@@ -16,19 +16,30 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"math/rand"
+	"sync"
+	"time"
+)
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
+func (pm *BaseProtocolManager) ForceSyncCycle() time.Duration {
+	randNum := rand.Intn(pm.maxSyncRandomSeconds-pm.minSyncRandomSeconds) + pm.minSyncRandomSeconds
+
+	return time.Duration(randNum) * time.Second
 }
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
+func (pm *BaseProtocolManager) QuitSync() chan struct{} {
+	return pm.quitSync
+}
 
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
-	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+func (pm *BaseProtocolManager) SetQuitSync(quitSync chan struct{}) {
+	pm.quitSync = quitSync
+}
+
+func (pm *BaseProtocolManager) SyncWG() *sync.WaitGroup {
+	return pm.syncWG
+}
+
+func (pm *BaseProtocolManager) Sync(peer *PttPeer) error {
+	return nil
 }

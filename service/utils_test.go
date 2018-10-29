@@ -19,6 +19,8 @@ package service
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ailabstw/go-pttai/common/types"
 )
 
 func TestSignData(t *testing.T) {
@@ -89,6 +91,8 @@ func TestVerifyData(t *testing.T) {
 		bytesWithSalt []byte
 		sig           []byte
 		keyBytes      []byte
+		doerID        *types.PttID
+		extra         *KeyExtraInfo
 	}
 
 	// prepare test-cases
@@ -99,7 +103,7 @@ func TestVerifyData(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2},
+			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.DoerID},
 			wantErr: false,
 		},
 	}
@@ -107,7 +111,7 @@ func TestVerifyData(t *testing.T) {
 	// run test
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := VerifyData(tt.args.bytesWithSalt, tt.args.sig, tt.args.keyBytes); (err != nil) != tt.wantErr {
+			if err := VerifyData(tt.args.bytesWithSalt, tt.args.sig, tt.args.keyBytes, tt.args.doerID, tt.args.extra); (err != nil) != tt.wantErr {
 				t.Errorf("VerifyData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

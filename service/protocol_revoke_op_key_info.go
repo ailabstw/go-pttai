@@ -16,21 +16,19 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/p2p/discover"
+import "github.com/ailabstw/go-pttai/common/types"
 
-const (
-	_ OpType = iota
-	MasterOpTypeAddMaster
-	MasterOpTypeRevokeMaster
-)
+func (pm *BaseProtocolManager) RevokeOpKeyInfo(keyID *types.PttID) (bool, error) {
 
-type MasterOpAddMaster struct {
-	ID      *discover.NodeID
-	Weight  uint32                     `json:"W"`
-	Masters map[discover.NodeID]uint32 `json:"M"`
-}
+	opKey := NewEmptyKeyInfo()
+	pm.SetOpKeyObjDB(opKey)
 
-type MasterOpRevokeMaster struct {
-	ID      *discover.NodeID
-	Masters map[discover.NodeID]uint32 `json:"M"`
+	opData := &OpKeyOpRevokeOpKey{}
+
+	err := pm.DeleteObject(keyID, opKey, OpKeyOpTypeRevokeOpKey, opData, pm.NewOpKeyOplog, pm.broadcastOpKeyOplogCore, pm.DeleteOpKeyPostprocess)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

@@ -24,6 +24,8 @@ import (
 )
 
 func TestPttShutdown(t *testing.T) {
+	NNodes = 1
+
 	var bodyString string
 
 	//assert := assert.New(t)

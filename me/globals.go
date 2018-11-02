@@ -17,13 +17,10 @@
 package me
 
 import (
-	"crypto/ecdsa"
 	"path/filepath"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/node"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -31,20 +28,8 @@ import (
 // default config
 var (
 	DefaultConfig = Config{
-		DataDir:  filepath.Join(node.DefaultDataDir(), "me"),
-		NodeType: pkgservice.NodeTypeDesktop,
+		DataDir: filepath.Join(node.DefaultDataDir(), "me"),
 	}
-)
-
-// MyInfo
-var (
-	MyID       *types.PttID
-	MyNodeID   *discover.NodeID
-	MyKey      *ecdsa.PrivateKey
-	MyNodeType pkgservice.NodeType = pkgservice.NodeTypeDesktop
-
-	MyNodeSignID *types.PttID
-	MyRaftID     uint64
 )
 
 // defaults
@@ -52,6 +37,51 @@ var (
 	DataDirPrivateKey = "mykey"
 
 	DefaultTitle = []byte("")
+)
+
+// protocol
+const (
+	_ pkgservice.OpType = iota + pkgservice.NMsg
+
+	AddDeviceMsg
+	AddDeviceAckMsg
+
+	RemoveDeviceMsg
+	RemoveDeviceAckMsg
+
+	RevokeMeMsg
+	RevokeMeAckMsg
+
+	SyncDoneMsg
+
+	JoinFriendMsg
+
+	// me
+	AddMeOplogMsg
+	AddMeOplogsMsg
+
+	AddPendingMeOplogMsg
+	AddPendingMeOplogsMsg
+
+	SyncMeOplogMsg
+	SyncMeOplogAckMsg
+	SyncMeOplogNewOplogsMsg
+	SyncMeOplogNewOplogsAckMsg
+
+	SyncPendingMeOplogMsg
+	SyncPendingMeOplogAckMsg
+
+	SendRaftMsgsMsg
+
+	InitMeInfoMsg
+	InitMeInfoAckMsg
+	InitMeInfoSyncMsg
+
+	SyncCreateBoardMsg
+	SyncCreateBoardAckMsg
+
+	SyncCreateFriendMsg
+	SyncCreateFriendAckMsg
 )
 
 // db
@@ -83,6 +113,61 @@ var (
 	DBKeyRaftLead          = []byte(".rfld")
 )
 
+// sync
+const (
+	MaxSyncRandomSeconds = 8
+	MinSyncRandomSeconds = 5
+)
+
+// join
+const (
+	SyncJoinSeconds = 10 * time.Second
+
+	RenewJoinFriendKeySeconds = pkgservice.RenewJoinKeySeconds
+)
+
+// op-key
+var (
+	RenewOpKeySeconds  uint64 = 86400
+	ExpireOpKeySeconds uint64 = 259200
+)
+
+// sign-key
+const (
+	NRenewSignKey = 100
+)
+
+// oplog
+var (
+	DBMeOplogPrefix       = []byte(".melg")
+	DBMeIdxOplogPrefix    = []byte(".meig")
+	DBMeMerkleOplogPrefix = []byte(".memk")
+
+	DBMasterOplogPrefix       = []byte(".malg")
+	DBMasterIdxOplogPrefix    = []byte(".maig")
+	DBMasterMerkleOplogPrefix = []byte(".mamk")
+
+	dbOplog     *pttdb.LDBBatch
+	dbOplogCore *pttdb.LDBDatabase
+)
+
+// me-oplog
+const (
+	GenerateMeOplogMerkleTreeSeconds = 10 * time.Second
+
+	ExpireGenerateMeOplogMerkleTreeSeconds = 60
+	OffsetGenerateMeOplogMerkleTreeSeconds = 7200
+
+	SleepTimeMeLock = 10
+)
+
+// master-oplog
+const (
+	OffsetMasterOplogRaftIdx = 12
+
+	SleepTimeMasterLock = 10
+)
+
 // raft
 
 const (
@@ -93,10 +178,33 @@ const (
 	RaftMaxInflightMsgs = 16
 )
 
+// weight
+const (
+	WeightServer  = 2000000
+	WeightDesktop = 2000
+	WeightMobile  = 2
+)
+
+// init-me-info
+
+const (
+	InitMeInfoTickTime = 3 * time.Second
+)
+
 func InitMe(dataDir string) error {
 	var err error
 
 	// db
+	dbOplogCore, err := pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	dbOplog, err = pttdb.NewLDBBatch(dbOplogCore)
+	if err != nil {
+		return err
+	}
+
 	dbMe, err = pttdb.NewLDBDatabase("me", dataDir, 0, 0)
 	if err != nil {
 		return err
@@ -135,31 +243,16 @@ func InitMe(dataDir string) error {
 	return nil
 }
 
-func initMyInfo(id *types.PttID, nodeID *discover.NodeID, key *ecdsa.PrivateKey, nodeType pkgservice.NodeType) error {
-	MyID = id
-	MyNodeID = nodeID
-	MyKey = key
-	MyNodeType = nodeType
-
-	nodeIDPubkey, err := MyNodeID.Pubkey()
-	if err != nil {
-		return err
-	}
-
-	MyNodeSignID, err = types.NewPttIDWithPubkeyAndRefID(nodeIDPubkey, MyID)
-	if err != nil {
-		return err
-	}
-
-	MyRaftID, err = MyNodeID.ToRaftID()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func TeardownMe() {
+	if dbOplog != nil {
+		dbOplog = nil
+	}
+
+	if dbOplogCore != nil {
+		dbOplogCore.Close()
+		dbOplogCore = nil
+	}
+
 	if dbMe != nil {
 		dbMe.Close()
 		dbMe = nil

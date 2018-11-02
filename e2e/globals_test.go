@@ -61,6 +61,12 @@ type RBody struct {
 
 type DataWrapper struct {
 	Result interface{} `json:"result"`
+	Error  *MyError    `json:"error"`
+}
+
+type MyError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"message"`
 }
 
 func GetResponseBody(r *RBody) func(res *http.Response, req *http.Request) error {
@@ -130,8 +136,19 @@ func setupTest(t *testing.T) {
 		}
 	}
 
-	t.Logf("wait 12 seconds for node starting")
-	time.Sleep(12 * time.Second)
+	seconds := 0
+	switch {
+	case NNodes <= 3:
+		seconds = 7
+	case NNodes == 4:
+		seconds = 8
+	case NNodes == 5:
+		seconds = 10
+	}
+
+	log.Debug("wait for node starting", "seconds", seconds)
+	t.Logf("wait %v seconds for node starting", seconds)
+	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
 func teardownTest(t *testing.T) {
@@ -144,7 +161,9 @@ func teardownTest(t *testing.T) {
 	}
 	cancel()
 
-	time.Sleep(5 * time.Second)
+	log.Debug("wait 3 seconds for node starting")
+	t.Logf("wait 3 seconds for node shutdown")
+	time.Sleep(3 * time.Second)
 }
 
 func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) []byte {
@@ -166,7 +185,7 @@ func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testi
 	return rbody.Body
 }
 
-func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) []byte {
+func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) ([]byte, *MyError) {
 	rbody := &RBody{}
 
 	c.Post("/").
@@ -177,8 +196,9 @@ func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T
 		Done()
 
 	var dataWrapper *DataWrapper
+	err := &MyError{}
 	if data != nil {
-		dataWrapper = &DataWrapper{Result: data}
+		dataWrapper = &DataWrapper{Result: data, Error: err}
 		ParseBody(rbody.Body, t, dataWrapper, false)
 	}
 
@@ -191,7 +211,7 @@ func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T
 		}
 	}
 
-	return rbody.Body
+	return rbody.Body, err
 }
 
 func testStringCore(c *baloo.Client, bodyString string, t *testing.T, isDebug bool) (string, []byte) {

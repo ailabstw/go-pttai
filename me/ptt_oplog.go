@@ -14,21 +14,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package me
 
-import "github.com/ailabstw/go-pttai/common/types"
+import pkgservice "github.com/ailabstw/go-pttai/service"
 
-type MasterOplog struct {
-	*Oplog `json:"O"`
-}
+// It's possible that we have multiple ids due to multi-device setup.
+// Requiring per-entity-level oplog, not unique MeOplog / MasterOplog / PttOplog in ptt-layer
 
-func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}) (*MasterOplog, error) {
-
-	log, err := NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, DBMasterLockMap)
-	if err != nil {
-		return nil, err
-	}
-	return &MasterOplog{
-		Oplog: log,
-	}, nil
+func (pm *ProtocolManager) SetPttDB(log *pkgservice.BaseOplog) {
+	myID := pm.Entity().GetID()
+	myPtt := pm.myPtt
+	log.SetDB(myPtt.DBOplog(), myID, pkgservice.DBPttOplogPrefix, pkgservice.DBPttIdxOplogPrefix, pkgservice.DBPttMerkleOplogPrefix, pkgservice.DBPttLockMap)
 }

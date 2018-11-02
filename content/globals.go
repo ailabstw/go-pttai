@@ -21,8 +21,8 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/node"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 // config
@@ -31,12 +31,6 @@ var (
 		DataDir:     filepath.Join(node.DefaultDataDir(), "content"),
 		KeystoreDir: filepath.Join(node.DefaultDataDir(), ".keyContent"),
 	}
-)
-
-// MyInfo
-var (
-	MyID     *types.PttID     = nil
-	MyNodeID *discover.NodeID = nil
 )
 
 // db
@@ -137,11 +131,9 @@ func InitContent(dataDir string, keystoreDir string) error {
 	return nil
 }
 
-func initMyInfo(id *types.PttID, nodeID *discover.NodeID) error {
-	MyID = id
-	MyNodeID = nodeID
-
-	return nil
+// default-title
+func DefaultTitle(myID *types.PttID, creatorID *types.PttID, myName string) []byte {
+	return localeInfos[pkgservice.CurrentLocale].DefaultTitle(myID, creatorID, myName)
 }
 
 func TeardownContent() {

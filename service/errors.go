@@ -40,10 +40,13 @@ var (
 	ErrServiceUnknown = errors.New("service unknown")
 
 	ErrInvalidMsgCode = errors.New("invalid msg code")
+	ErrInvalidMsg     = errors.New("invalid msg")
 
 	ErrNotSent = errors.New("not sent")
 
 	ErrInvalidData = errors.New("invalid data")
+
+	ErrInvalidObject = errors.New("invalid object")
 
 	ErrTimeout = errors.New("timeout")
 
@@ -68,6 +71,8 @@ var (
 	ErrPeerRecentAdded = errors.New("peer recent added")
 
 	ErrAlreadyMyNode = errors.New("already my node")
+
+	ErrInvalidSyncInfo = errors.New("invalid sync info")
 )
 
 func ErrResp(code error, format string, v ...interface{}) error {

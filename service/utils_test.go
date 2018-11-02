@@ -103,7 +103,7 @@ func TestVerifyData(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.DoerID},
+			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.CreatorID},
 			wantErr: false,
 		},
 	}

@@ -26,18 +26,17 @@ import (
 )
 
 func (pm *BaseProtocolManager) IsValidOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool) {
-	return pm.isValidOplog(signInfos)
+	return nil, 0, false
 }
 
 /**********
  * BaseProtocolManager
  **********/
 
-func (pm *BaseProtocolManager) SignOplog(oplog *Oplog) error {
-	ptt := pm.Ptt()
-	key := ptt.SignKey()
+func (pm *BaseProtocolManager) SignOplog(oplog *BaseOplog) error {
+	myEntity := pm.Ptt().GetMyEntity()
 
-	err := oplog.Sign(key)
+	err := myEntity.Sign(oplog)
 	if err != nil {
 		return err
 	}
@@ -50,77 +49,65 @@ func (pm *BaseProtocolManager) SignOplog(oplog *Oplog) error {
 	return nil
 }
 
-func (pm *BaseProtocolManager) GetOplogsFromKeys(setDB func(log *Oplog), keys [][]byte) ([]*Oplog, error) {
+func (pm *BaseProtocolManager) GetOplogMerkleNodeList(merkle *Merkle, level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error) {
 
-	logs := make([]*Oplog, 0, len(keys))
-	var log *Oplog
-	for _, key := range keys {
-		log = &Oplog{}
-		setDB(log)
-		err := log.Load(key)
+	var err error
+	if len(startKey) == 0 {
+		startKey, err = merkle.MarshalKey(level, types.ZeroTimestamp)
 		if err != nil {
-			continue
+			return nil, err
 		}
-
-		logs = append(logs, log)
 	}
 
-	return logs, nil
-}
-
-func (pm *BaseProtocolManager) GetOplogList(log *Oplog, startID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status, isLocked bool) ([]*Oplog, error) {
-
-	iter, err := GetOplogIter(log.GetDB(), log.GetDBPrefix(), log.GetDBIdxPrefix(), log.GetDBMerklePrefix(), log.GetDBPrefxiID(), startID, log.GetDBLock(), isLocked, status, listOrder)
+	iter, err := merkle.GetMerkleIterByKey(startKey, level, listOrder)
 	if err != nil {
 		return nil, err
 	}
 	defer iter.Release()
 
-	funcIter := pttdb.GetFuncIter(iter, listOrder)
-
-	// for-loop
-	var eachLog *Oplog
-	logs := make([]*Oplog, 0)
 	i := 0
-	for funcIter() {
-		if limit > 0 && i >= limit {
+	results := make([]*MerkleNode, 0)
+	for iter.Next() {
+		if limit > 0 && i == limit {
 			break
 		}
 
-		v := iter.Value()
+		val := iter.Value()
 
-		eachLog = &Oplog{}
-		err := log.Unmarshal(v)
+		eachMerkleNode := &MerkleNode{}
+		err := eachMerkleNode.Unmarshal(val)
+
 		if err != nil {
 			continue
 		}
 
-		logs = append(logs, eachLog)
+		results = append(results, eachMerkleNode)
 
 		i++
 	}
 
-	return logs, nil
+	return results, nil
+
 }
 
-func (pm *BaseProtocolManager) BroadcastOplog(log *Oplog, msg OpType, pendingMsg OpType) error {
+func (pm *BaseProtocolManager) BroadcastOplog(oplog *BaseOplog, msg OpType, pendingMsg OpType) error {
 
 	// extras
-	origExtra := log.Extra
+	origExtra := oplog.Extra
 	defer func() {
-		log.Extra = origExtra
+		oplog.Extra = origExtra
 	}()
-	log.Extra = nil
+	oplog.Extra = nil
 
 	// msg type
 	var toSendPeers []*PttPeer
 	var op OpType
 	peers := pm.peers
 	switch {
-	case log.MasterLogID != nil:
+	case oplog.MasterLogID != nil:
 		toSendPeers = peers.PeerList(false)
 		op = msg
-	case log.InternalSigns != nil:
+	case oplog.InternalSigns != nil:
 		toSendPeers = peers.MePeerList(false)
 		op = pendingMsg
 	default:
@@ -132,24 +119,25 @@ func (pm *BaseProtocolManager) BroadcastOplog(log *Oplog, msg OpType, pendingMsg
 		return nil
 	}
 
-	return pm.SendDataToPeers(op, log, toSendPeers)
+	return pm.SendDataToPeers(op, &AddOplog{Oplog: oplog}, toSendPeers)
 }
 
-func (pm *BaseProtocolManager) BroadcastOplogs(logs []*Oplog, msg OpType, pendingMsg OpType) error {
-	lenOplog := len(logs)
+func (pm *BaseProtocolManager) BroadcastOplogs(oplogs []*BaseOplog, msg OpType, pendingMsg OpType) error {
 
 	// extras
+	lenOplog := len(oplogs)
+
 	origExtras := make([]interface{}, lenOplog)
-	for i, log := range logs {
+	for i, log := range oplogs {
 		origExtras[i] = log.Extra
 	}
 	defer func() {
-		for i, log := range logs {
+		for i, log := range oplogs {
 			log.Extra = origExtras[i]
 		}
 	}()
 
-	for _, log := range logs {
+	for _, log := range oplogs {
 		log.Extra = nil
 	}
 
@@ -162,11 +150,11 @@ func (pm *BaseProtocolManager) BroadcastOplogs(logs []*Oplog, msg OpType, pendin
 	peers.RUnlock()
 
 	// op-types
-	meLogs := make([]*Oplog, 0, lenOplog)
-	masterLogs := make([]*Oplog, 0, lenOplog)
-	allLogs := make([]*Oplog, 0, lenOplog)
+	meLogs := make([]*BaseOplog, 0, lenOplog)
+	masterLogs := make([]*BaseOplog, 0, lenOplog)
+	allLogs := make([]*BaseOplog, 0, lenOplog)
 
-	for _, log := range logs {
+	for _, log := range oplogs {
 		switch {
 		case log.MasterLogID != nil:
 			allLogs = append(allLogs, log)
@@ -179,35 +167,35 @@ func (pm *BaseProtocolManager) BroadcastOplogs(logs []*Oplog, msg OpType, pendin
 
 	// send-data-to-peers
 	if len(meLogs) != 0 && len(mePeerList) != 0 {
-		pm.SendDataToPeers(pendingMsg, meLogs, mePeerList)
+		pm.SendDataToPeers(pendingMsg, &AddOplogs{Oplogs: meLogs}, mePeerList)
 	}
 
 	if len(masterLogs) != 0 && len(masterPeerList) != 0 {
-		pm.SendDataToPeers(pendingMsg, masterLogs, masterPeerList)
+		pm.SendDataToPeers(pendingMsg, &AddOplogs{Oplogs: masterLogs}, masterPeerList)
 	}
 
 	if len(allLogs) != 0 && len(allPeerList) != 0 {
-		pm.SendDataToPeers(msg, allLogs, allPeerList)
+		pm.SendDataToPeers(msg, &AddOplogs{Oplogs: allLogs}, allPeerList)
 	}
 
 	return nil
 }
 
-func (pm *BaseProtocolManager) InternalSign(log *Oplog) (bool, error) {
-	if log.MasterLogID != nil {
+func (pm *BaseProtocolManager) InternalSign(oplog *BaseOplog) (bool, error) {
+	if oplog.MasterLogID != nil {
 		return false, nil
 	}
 
 	ptt := pm.Ptt()
-	myEntity := ptt.MyEntity()
+	myEntity := ptt.GetMyEntity()
 	myID := myEntity.GetID()
 
 	// check
-	if !reflect.DeepEqual(myID, log.DoerID) && !pm.IsMaster(myID) {
+	if !reflect.DeepEqual(myID, oplog.CreatorID) && !pm.isMaster(myID) {
 		return false, nil
 	}
 
-	masterSigns := log.MasterSigns
+	masterSigns := oplog.MasterSigns
 	lenMasterSigns := len(masterSigns)
 
 	// already signs master
@@ -220,10 +208,9 @@ func (pm *BaseProtocolManager) InternalSign(log *Oplog) (bool, error) {
 		}
 	}
 
-	key := myEntity.SignKey()
 	nodeSignID := myEntity.GetNodeSignID()
 
-	internalSigns := log.InternalSigns
+	internalSigns := oplog.InternalSigns
 	lenInternalSigns := len(internalSigns)
 
 	// already signs internal
@@ -237,29 +224,29 @@ func (pm *BaseProtocolManager) InternalSign(log *Oplog) (bool, error) {
 	}
 
 	// internal-sign
-	err := log.InternalSign(nodeSignID, key)
+	err := myEntity.InternalSign(oplog)
 	if err != nil {
 		return false, err
 	}
 
-	_, weight, isValid := myEntity.IsValidInternalOplog(log.InternalSigns)
+	_, weight, isValid := myEntity.IsValidInternalOplog(oplog.InternalSigns)
 	if !isValid {
 		return true, nil
 	}
 
 	// master-sign
-	err = log.MasterSign(myID, key)
+	err = myEntity.MasterSign(oplog)
 	if err != nil {
 		return false, err
 	}
 
-	masterLogID, weight, isValid := pm.isValidOplog(log.MasterSigns)
+	masterLogID, weight, isValid := pm.isValidOplog(oplog.MasterSigns)
 	if !isValid {
 		return true, nil
 	}
 
 	// master-log-id
-	err = log.SetMasterLogID(masterLogID, weight)
+	err = oplog.SetMasterLogID(masterLogID, weight)
 	if err != nil {
 		return false, err
 	}
@@ -267,9 +254,10 @@ func (pm *BaseProtocolManager) InternalSign(log *Oplog) (bool, error) {
 	return true, nil
 }
 
-func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(*Oplog)) ([]*Oplog, []*Oplog, error) {
-	log := &Oplog{}
-	setDB(log)
+func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([]*BaseOplog, []*BaseOplog, error) {
+
+	oplog := &BaseOplog{}
+	setDB(oplog)
 
 	expireTime, err := types.GetTimestamp()
 	if err != nil {
@@ -277,19 +265,19 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(*Oplog)) ([]*Oplog, [
 	}
 	expireTime.Ts -= ExpireOplogSeconds
 
-	pendingLogs, err := pm.GetOplogList(log, nil, 0, pttdb.ListOrderNext, types.StatusPending, false)
+	pendingLogs, err := GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusPending, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	internalPendingLogs, err := pm.GetOplogList(log, nil, 0, pttdb.ListOrderNext, types.StatusInternalPending, false)
+	internalPendingLogs, err := GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusInternalPending, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	lenLogs := len(pendingLogs) + len(internalPendingLogs)
-	logs := make([]*Oplog, 0, lenLogs)
-	failedLogs := make([]*Oplog, 0, lenLogs)
+	logs := make([]*BaseOplog, 0, lenLogs)
+	failedLogs := make([]*BaseOplog, 0, lenLogs)
 
 	for _, log := range pendingLogs {
 		if log.CreateTS.IsLess(expireTime) {
@@ -310,16 +298,16 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(*Oplog)) ([]*Oplog, [
 	return logs, failedLogs, nil
 }
 
-func (pm *BaseProtocolManager) IntegrateOplog(log *Oplog, isLocked bool) (bool, error) {
+func (pm *BaseProtocolManager) IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error) {
 	if !isLocked {
-		err := log.Lock()
+		err := oplog.Lock()
 		if err != nil {
 			return false, err
 		}
-		defer log.Unlock()
+		defer oplog.Unlock()
 	}
 
-	isToSign, err := log.IntegrateExisting(true)
+	isToSign, err := oplog.IntegrateExisting(true)
 	if err != nil {
 		return false, err
 	}
@@ -327,12 +315,12 @@ func (pm *BaseProtocolManager) IntegrateOplog(log *Oplog, isLocked bool) (bool, 
 		return false, nil
 	}
 
-	err = pm.validateIntegrateSign(log, true)
+	err = pm.validateIntegrateSign(oplog, true)
 	if err != nil {
 		return false, err
 	}
 
-	err = log.Save(true)
+	err = oplog.Save(true)
 	if err != nil {
 		return false, err
 	}
@@ -340,32 +328,30 @@ func (pm *BaseProtocolManager) IntegrateOplog(log *Oplog, isLocked bool) (bool, 
 	return true, nil
 }
 
-func (pm *BaseProtocolManager) validateIntegrateSign(log *Oplog, isLocked bool) error {
+func (pm *BaseProtocolManager) validateIntegrateSign(oplog *BaseOplog, isLocked bool) error {
 	var err error
 	if !isLocked {
-		err = log.Lock()
+		err = oplog.Lock()
 		if err != nil {
 			return err
 		}
-		defer log.Unlock()
+		defer oplog.Unlock()
 	}
 
 	ptt := pm.Ptt()
-	myEntity := ptt.MyEntity()
-	myID := myEntity.GetID()
-	key := ptt.SignKey()
+	myEntity := ptt.GetMyEntity()
 
-	_, weight, isValid := myEntity.IsValidInternalOplog(log.InternalSigns)
+	_, weight, isValid := myEntity.IsValidInternalOplog(oplog.InternalSigns)
 	if isValid {
-		err = log.MasterSign(myID, key)
+		err = myEntity.MasterSign(oplog)
 		if err != nil {
 			return err
 		}
 	}
 
-	masterLogID, weight, isValid := pm.isValidOplog(log.MasterSigns)
+	masterLogID, weight, isValid := pm.isValidOplog(oplog.MasterSigns)
 	if isValid {
-		err = log.SetMasterLogID(masterLogID, weight)
+		err = oplog.SetMasterLogID(masterLogID, weight)
 		if err != nil {
 			return err
 		}
@@ -374,46 +360,71 @@ func (pm *BaseProtocolManager) validateIntegrateSign(log *Oplog, isLocked bool) 
 	return nil
 }
 
-func (pm *BaseProtocolManager) RemoveNonSyncOplog(setDB func(log *Oplog), logID *types.PttID, isRetainValid bool, isLocked bool) (*Oplog, error) {
-	log := &Oplog{}
-	setDB(log)
-	log.ID = logID
+func (pm *BaseProtocolManager) RemoveNonSyncOplog(setDB func(oplog *BaseOplog), logID *types.PttID, isRetainValid bool, isLocked bool) (*BaseOplog, error) {
+
+	oplog := &BaseOplog{}
+	setDB(oplog)
+	oplog.ID = logID
 
 	if !isLocked {
-		err := log.Lock()
+		err := oplog.Lock()
 		if err != nil {
 			return nil, err
 		}
-		defer log.Unlock()
+		defer oplog.Unlock()
 	}
 
-	err := log.Get(logID, true)
+	err := oplog.Get(logID, true)
 	if err != nil {
 		return nil, err
 	}
 
-	status := log.ToStatus()
-	if log.IsSync && status == types.StatusAlive {
+	status := oplog.ToStatus()
+	if oplog.IsSync && status == types.StatusAlive {
 		return nil, nil
 	}
 
 	if isRetainValid && status == types.StatusAlive {
-		log.IsSync = true
-		err = log.SaveWithIsSync(true)
-		return log, nil
+		oplog.IsSync = true
+		err = oplog.SaveWithIsSync(true)
+		return oplog, nil
 	}
 
-	err = log.Delete(true)
+	err = oplog.Delete(true)
 
 	return nil, err
 }
 
-func (pm *BaseProtocolManager) SetOplogIsSync(log *Oplog) (bool, error) {
-	log.IsSync = true
-	isNewSign, err := pm.InternalSign(log)
+func (pm *BaseProtocolManager) SetOplogIsSync(
+	oplog *BaseOplog, isBroadcast bool,
+	broadcastLog func(oplog *BaseOplog) error,
+) (bool, error) {
+
+	oplog.IsSync = true
+	isNewSign, err := pm.InternalSign(oplog)
 	if err != nil {
 		return false, err
 	}
 
+	if isNewSign && isBroadcast {
+		broadcastLog(oplog)
+	}
+
 	return isNewSign, nil
+}
+
+func (pm *BaseProtocolManager) SetOplogIDIsSync(
+	logID *types.PttID,
+) (*BaseOplog, error) {
+	return nil, types.ErrNotImplemented
+}
+
+func (pm *BaseProtocolManager) postprocessDeleteOplog(oplog *BaseOplog, toBroadcastLogs []*BaseOplog) []*BaseOplog {
+
+	_, err := pm.InternalSign(oplog)
+	if err != nil {
+		return toBroadcastLogs
+	}
+
+	return append(toBroadcastLogs, oplog)
 }

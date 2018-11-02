@@ -15,3 +15,41 @@
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
 package me
+
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/p2p/discover"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
+
+type BackendMyInfo struct {
+	V        types.Version
+	ID       *types.PttID
+	CreateTS types.Timestamp `json:"CT"`
+	UpdateTS types.Timestamp `json:"UT"`
+
+	Status types.Status `json:"S"`
+
+	RaftID uint64
+	NodeID *discover.NodeID
+}
+
+func MarshalBackendMyInfo(m *MyInfo, ptt pkgservice.MyPtt) *BackendMyInfo {
+	if m == nil {
+		return nil
+	}
+
+	myRaftID := ptt.MyRaftID()
+	myNodeID := ptt.MyNodeID()
+
+	return &BackendMyInfo{
+		V:        m.V,
+		ID:       m.ID,
+		CreateTS: m.CreateTS,
+		UpdateTS: m.UpdateTS,
+		Status:   m.Status,
+
+		RaftID: myRaftID,
+		NodeID: myNodeID,
+	}
+}

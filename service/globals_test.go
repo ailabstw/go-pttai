@@ -33,6 +33,11 @@ import (
 
 const ()
 
+const (
+	_ OpType = iota
+	tDefaultOpType
+)
+
 type TType struct {
 	A string
 	B string
@@ -102,9 +107,9 @@ var (
 	}
 	tDefaultMerkleNodeBytes = []byte("\"AgABAgMEBQYHCAkKCwwNDg8QERITAAAAAEmWAtIHW80VAAAADQ==\"")
 
-	tDefaultOplog          *Oplog = nil
-	tDefaultTimestamp1            = types.Timestamp{Ts: 1234567890, NanoTs: 0}
-	tDefaultOplogMerkleKey        = []byte{
+	tDefaultOplog          *BaseOplog = nil
+	tDefaultTimestamp1                = types.Timestamp{Ts: 1234567890, NanoTs: 0}
+	tDefaultOplogMerkleKey            = []byte{
 		46, 116, 116, 109, 107,
 		113, 86, 43, 113, 153, 152, 115, 219, 91, 40,
 		109, 249, 87, 175, 25, 158, 201, 70, 23, 247,
@@ -121,8 +126,8 @@ var (
 	tDefaultMerkleNode1Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			77, 247, 91, 228, 8, 74, 185, 175, 208, 100,
-			157, 205, 155, 247, 189, 226, 215, 253, 236, 9,
+			103, 99, 210, 12, 26, 198, 176, 24, 72, 166,
+			70, 230, 235, 68, 43, 57, 167, 220, 164, 249,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 0,
@@ -141,9 +146,9 @@ var (
 		},
 	}
 
-	tDefaultOplog2          *Oplog = nil
-	tDefaultTimestamp2             = types.Timestamp{Ts: 1234567891, NanoTs: 0}
-	tDefaultOplog2MerkleKey        = []byte{
+	tDefaultOplog2          *BaseOplog = nil
+	tDefaultTimestamp2                 = types.Timestamp{Ts: 1234567891, NanoTs: 0}
+	tDefaultOplog2MerkleKey            = []byte{
 		46, 116, 116, 109, 107,
 		113, 86, 43, 113, 153, 152, 115, 219, 91, 40,
 		109, 249, 87, 175, 25, 158, 201, 70, 23, 247,
@@ -160,8 +165,8 @@ var (
 	tDefaultMerkleNode2Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			61, 141, 203, 134, 244, 215, 3, 163, 91, 237,
-			30, 215, 218, 18, 190, 109, 36, 177, 142, 20,
+			58, 243, 157, 167, 232, 159, 98, 220, 117, 152,
+			133, 92, 99, 173, 179, 192, 32, 162, 137, 168,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567891, NanoTs: 0},
 		NChildren: 0,
@@ -183,8 +188,8 @@ var (
 	tDefaultMerkleNodeDay = &MerkleNode{
 		Level: MerkleTreeLevelDay,
 		Addr: []byte{
-			28, 185, 64, 218, 63, 42, 178, 106, 53, 191,
-			200, 7, 11, 246, 62, 249, 104, 122, 160, 191,
+			26, 76, 7, 254, 219, 99, 186, 212, 72, 200,
+			122, 184, 97, 249, 85, 124, 78, 218, 162, 224,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -194,8 +199,8 @@ var (
 	tDefaultMerkleNodeMonth = &MerkleNode{
 		Level: MerkleTreeLevelMonth,
 		Addr: []byte{
-			126, 167, 239, 124, 1, 158, 220, 129, 242, 70,
-			238, 200, 1, 172, 74, 150, 127, 248, 192, 130,
+			234, 253, 227, 237, 110, 103, 98, 119, 51, 21,
+			69, 92, 150, 75, 228, 71, 6, 223, 233, 1,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -205,8 +210,8 @@ var (
 	tDefaultMerkleNodeYear = &MerkleNode{
 		Level: MerkleTreeLevelYear,
 		Addr: []byte{
-			31, 200, 126, 94, 78, 42, 165, 46, 219, 199,
-			154, 233, 10, 96, 98, 74, 46, 14, 116, 234,
+			50, 191, 42, 148, 116, 63, 198, 94, 68, 147,
+			246, 221, 71, 221, 4, 97, 89, 2, 244, 178,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -363,24 +368,27 @@ func setupTest(t *testing.T) {
 
 	tDBOplogCore, _ = pttdb.NewLDBDatabase("oplog", "./test.out", 0, 0)
 	tDBOplog, _ = pttdb.NewLDBBatch(tDBOplogCore)
-	tDefaultOplog, _ = NewOplog(tDefaultID, tDefaultTimestamp1, tMyID, MasterOpTypeAddMaster, nil, tDBOplog, tDefaultID, tDBOplogPrefix, tDBOplogIdxPrefix, tDBOplogMerklePrefix, tDBLock)
+	tDefaultOplog, _ = NewOplog(tDefaultID, tDefaultTimestamp1, tMyID, tDefaultOpType, nil, tDBOplog, tDefaultID, tDBOplogPrefix, tDBOplogIdxPrefix, tDBOplogMerklePrefix, tDBLock)
 	tDefaultOplog.Sign(tKeyInfoMe)
 	tDefaultOplog.MasterLogID = tUserIDMe
-	tDefaultOplog2, _ = NewOplog(tDefaultID, tDefaultTimestamp2, tMyID, MasterOpTypeAddMaster, nil, tDBOplog, tDefaultID, tDBOplogPrefix, tDBOplogIdxPrefix, tDBOplogMerklePrefix, tDBLock)
+	tDefaultOplog2, _ = NewOplog(tDefaultID, tDefaultTimestamp2, tMyID, tDefaultOpType, nil, tDBOplog, tDefaultID, tDBOplogPrefix, tDBOplogIdxPrefix, tDBOplogMerklePrefix, tDBLock)
 	tDefaultOplog2.Sign(tKeyInfoMe)
 	tDefaultOplog2.MasterLogID = tUserIDMe
 	tDefaultMerkle, _ = NewMerkle(tDBOplogPrefix, tDBOplogMerklePrefix, tDefaultID, tDBOplog)
 
 	tDefaultSignKey2, _ = crypto.ToECDSA(tDefaultSignKeyBytes2)
+	tDefaultSignHash2 := crypto.PubkeyToAddress(tDefaultSignKey2.PublicKey)
+	tDefaultSignID2 := keyInfoHashToID(&tDefaultSignHash2)
 	tDefaultDoerID2, _ = types.NewPttIDFromKey(tDefaultSignKey2)
+	ts, _ := types.GetTimestamp()
 	tDefaultSignKeyInfo2 = &KeyInfo{
+		BaseObject:  NewObject(tDefaultSignID2, ts, tDefaultDoerID2, tDefaultDoerID2, nil, nil, types.StatusAlive, nil, nil),
 		Key:         tDefaultSignKey2,
 		KeyBytes:    tDefaultSignKeyBytes2,
-		DoerID:      tDefaultDoerID2,
 		PubKeyBytes: crypto.FromECDSAPub(&tDefaultSignKey2.PublicKey),
 	}
 
-	ts, _ := types.GetTimestamp()
+	ts, _ = types.GetTimestamp()
 	t.Logf("after setup: GetTimestamp: %v", ts)
 
 }

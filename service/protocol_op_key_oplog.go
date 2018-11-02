@@ -18,65 +18,120 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) getOpKeyOplogsFromKeys(keys [][]byte) ([]*OpKeyOplog, error) {
-	logs, err := pm.GetOplogsFromKeys(pm.setOpKeyDB, keys)
-	if err != nil {
-		return nil, err
-	}
-
-	opKeyLogs := OplogsToOpKeyOplogs(logs)
-
-	return opKeyLogs, nil
-}
-
-func (pm *BaseProtocolManager) IntegrateOpKeyOplog(log *OpKeyOplog, isLocked bool) (bool, error) {
-	return pm.IntegrateOplog(log.Oplog, isLocked)
-}
-
 func (pm *BaseProtocolManager) GetPendingOpKeyOplogs() ([]*OpKeyOplog, []*OpKeyOplog, error) {
-	logs, failedLogs, err := pm.GetPendingOplogs(pm.setOpKeyDB)
+	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetOpKeyDB)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	opKeyLogs := OplogsToOpKeyOplogs(logs)
+	opKeyLogs := OplogsToOpKeyOplogs(oplogs)
 
 	failedOpKeyLogs := OplogsToOpKeyOplogs(failedLogs)
 
 	return opKeyLogs, failedOpKeyLogs, nil
 }
 
-func (pm *BaseProtocolManager) BroadcastOpKeyOplog(log *OpKeyOplog) error {
-	return pm.BroadcastOplog(log.Oplog, AddOpKeyOplogMsg, AddPendingOpKeyOplogMsg)
+/**********
+ * BroadcastOpKeyOplog
+ **********/
+
+func (pm *BaseProtocolManager) BroadcastOpKeyOplog(oplog *OpKeyOplog) error {
+	return pm.broadcastOpKeyOplogCore(oplog.BaseOplog)
 }
+
+func (pm *BaseProtocolManager) broadcastOpKeyOplogCore(oplog *BaseOplog) error {
+	return pm.BroadcastOplog(oplog, AddOpKeyOplogMsg, AddPendingOpKeyOplogMsg)
+}
+
+/**********
+ * BroadcastOpKeyOplogs
+ **********/
 
 func (pm *BaseProtocolManager) BroadcastOpKeyOplogs(opKeyLogs []*OpKeyOplog) error {
-	logs := OpKeyOplogsToOplogs(opKeyLogs)
-	return pm.BroadcastOplogs(logs, AddOpKeyOplogsMsg, AddPendingOpKeyOplogsMsg)
+	oplogs := OpKeyOplogsToOplogs(opKeyLogs)
+	return pm.broadcastOpKeyOplogsCore(oplogs)
 }
 
-func (pm *BaseProtocolManager) SetOpKeyOplogIsSync(log *OpKeyOplog, isBroadcast bool) (bool, error) {
-	isNewSign, err := pm.SetOplogIsSync(log.Oplog)
-	if err != nil {
-		return false, err
-	}
-	if isNewSign && isBroadcast {
-		pm.BroadcastOpKeyOplog(log)
-	}
+func (pm *BaseProtocolManager) broadcastOpKeyOplogsCore(oplogs []*BaseOplog) error {
+	return pm.BroadcastOplogs(oplogs, AddOpKeyOplogsMsg, AddPendingOpKeyOplogsMsg)
+}
 
-	return isNewSign, nil
+/**********
+ * SetOpKeyOplogIsSync
+ **********/
+
+func (pm *BaseProtocolManager) SetOpKeyOplogIsSync(oplog *OpKeyOplog, isBroadcast bool) (bool, error) {
+	return pm.SetOplogIsSync(oplog.BaseOplog, isBroadcast, pm.broadcastOpKeyOplogCore)
 }
 
 func (pm *BaseProtocolManager) RemoveNonSyncOpKeyOplog(logID *types.PttID, isRetainValid bool, isLocked bool) (*OpKeyOplog, error) {
-	log, err := pm.RemoveNonSyncOplog(pm.setOpKeyDB, logID, isRetainValid, isLocked)
+	oplog, err := pm.RemoveNonSyncOplog(pm.SetOpKeyDB, logID, isRetainValid, isLocked)
 	if err != nil {
 		return nil, err
 	}
-	if log == nil {
-		return nil, nil
+	return OplogToOpKeyOplog(oplog), nil
+}
+
+/**********
+ * Handle Oplogs
+ **********/
+
+func (pm *BaseProtocolManager) CreateOpKeyPostprocess(theOpKey Object, oplog *BaseOplog) error {
+	opKey, ok := theOpKey.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
 	}
 
-	return &OpKeyOplog{Oplog: log}, nil
+	pm.RegisterOpKeyInfo(opKey, false)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) FailedCreateOpKeyPostprocess(theOpKey Object, oplog *BaseOplog) error {
+	opKey, ok := theOpKey.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	log.Debug("FailedCreateOpKeyPostprocess: to Remove OpKeyInfoFromHash")
+
+	return pm.RemoveOpKeyInfoFromHash(opKey.Hash, false, true, true)
+}
+
+func (pm *BaseProtocolManager) CreateOpKeyExistsInInfo(oplog *BaseOplog, theInfo ProcessInfo) (bool, error) {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return false, ErrInvalidData
+	}
+
+	objID := oplog.ObjID
+	_, ok = info.DeleteOpKeyInfo[*objID]
+	if ok {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (pm *BaseProtocolManager) DeleteOpKeyPostprocess(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
+	hash := keyInfoIDToHash(id)
+
+	opKey, ok := origObj.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	opKey.CreateLogID = oplog.PreLogID
+
+	err := opKey.Save(true)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("DeleteOpKeyPostprocess: to RemoveOpKeyInfoFromHash")
+
+	return pm.RemoveOpKeyInfoFromHash(hash, false, false, false)
 }

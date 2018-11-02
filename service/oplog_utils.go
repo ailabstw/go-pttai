@@ -51,10 +51,54 @@ func DiffOplogKeys(myKeys [][]byte, theirKeys [][]byte) ([][]byte, [][]byte, err
 	return myExtraKeys, theirExtraKeys, nil
 }
 
+func GetOplogList(oplog *BaseOplog, startID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status, isLocked bool) ([]*BaseOplog, error) {
+
+	iter, err := GetOplogIterWithOplog(oplog, startID, listOrder, status, isLocked)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Release()
+
+	funcIter := pttdb.GetFuncIter(iter, listOrder)
+
+	// for-loop
+	var eachLog *BaseOplog
+	oplogs := make([]*BaseOplog, 0)
+	i := 0
+	for funcIter() {
+		if limit > 0 && i >= limit {
+			break
+		}
+
+		v := iter.Value()
+
+		eachLog = &BaseOplog{}
+		err := eachLog.Unmarshal(v)
+		if err != nil {
+			continue
+		}
+
+		oplogs = append(oplogs, eachLog)
+
+		i++
+	}
+
+	return oplogs, nil
+
+}
+
+func GetOplogIterWithOplog(oplog *BaseOplog, startID *types.PttID, listOrder pttdb.ListOrder, status types.Status, isLocked bool) (iterator.Iterator, error) {
+
+	return getOplogIterCore(oplog.db, oplog.dbPrefix, oplog.dbIdxPrefix, oplog.dbMerklePrefix, oplog.dbPrefixID, startID, oplog.dbLock, isLocked, status, listOrder)
+
+}
+
+/*
 func GetOplogIter(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix []byte, dbOplogMerklePrefix []byte, prefixID *types.PttID, logID *types.PttID, dbLock *types.LockMap, isLocked bool, status types.Status, listOrder pttdb.ListOrder) (iterator.Iterator, error) {
 
 	return getOplogIterCore(db, dbOplogPrefix, dbOplogIdxPrefix, dbOplogMerklePrefix, prefixID, logID, dbLock, isLocked, status, listOrder)
 }
+*/
 
 func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix []byte, dbOplogMerklePrefix []byte, prefixID *types.PttID, logID *types.PttID, dbLock *types.LockMap, isLocked bool, status types.Status, listOrder pttdb.ListOrder) (iterator.Iterator, error) {
 
@@ -74,7 +118,7 @@ func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix
 		return db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
 	}
 
-	o := &Oplog{}
+	o := &BaseOplog{}
 	o.SetDB(db, prefixID, dbOplogPrefix, dbOplogIdxPrefix, dbOplogMerklePrefix, dbLock)
 	startKey, err := o.GetKey(logID, isLocked)
 	if err != nil {
@@ -84,28 +128,20 @@ func getOplogIterCore(db *pttdb.LDBBatch, dbOplogPrefix []byte, dbOplogIdxPrefix
 	return db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
-func CheckPreLog(oplog *Oplog, prelog *Oplog, existIDs map[types.PttID]*Oplog) error {
-	if oplog.PreLogID == nil {
-		existIDs[*oplog.ID] = oplog
-		return nil
+func getOplogsFromKeys(setDB func(oplog *BaseOplog), keys [][]byte) ([]*BaseOplog, error) {
+
+	oplogs := make([]*BaseOplog, 0, len(keys))
+	var oplog *BaseOplog
+	for _, key := range keys {
+		oplog = &BaseOplog{}
+		setDB(oplog)
+		err := oplog.Load(key)
+		if err != nil {
+			continue
+		}
+
+		oplogs = append(oplogs, oplog)
 	}
 
-	log, ok := existIDs[*oplog.PreLogID]
-	if ok && log.MasterLogID != nil {
-		existIDs[*oplog.ID] = oplog
-		return nil
-	}
-
-	err := prelog.Get(oplog.PreLogID, false)
-	if err != nil {
-		return ErrInvalidOplog
-	}
-
-	if prelog.MasterLogID == nil {
-		return ErrInvalidOplog
-	}
-
-	existIDs[*oplog.ID] = oplog
-	return nil
-
+	return oplogs, nil
 }

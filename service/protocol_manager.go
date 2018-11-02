@@ -49,7 +49,37 @@ type ProtocolManager interface {
 	GetOwnerID(isLocked bool) *types.PttID
 
 	// oplog
-	isValidOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
+	BroadcastOplog(oplog *BaseOplog, msg OpType, pendingMsg OpType) error
+	BroadcastOplogs(oplogs []*BaseOplog, msg OpType, pendingMsg OpType) error
+
+	GetPendingOplogs(
+		setDB func(oplog *BaseOplog),
+	) ([]*BaseOplog, []*BaseOplog, error)
+
+	GetOplogMerkleNodeList(
+		merkle *Merkle,
+		level MerkleTreeLevel,
+		startKey []byte,
+		limit int,
+		listOrder pttdb.ListOrder,
+	) ([]*MerkleNode, error)
+
+	RemoveNonSyncOplog(
+		setDB func(oplog *BaseOplog),
+		logID *types.PttID,
+		isRetainValid bool,
+		isLocked bool,
+	) (*BaseOplog, error)
+
+	SetOplogIsSync(
+		oplog *BaseOplog, isBroadcast bool,
+		broadcastLog func(oplog *BaseOplog) error,
+	) (bool, error)
+
+	SignOplog(oplog *BaseOplog) error
+
+	IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error)
+	InternalSign(oplog *BaseOplog) (bool, error)
 
 	// peers
 	IsMyDevice(peer *PttPeer) bool
@@ -79,28 +109,50 @@ type ProtocolManager interface {
 	JoinKeyInfos() []*KeyInfo
 
 	// op
-	GetOpKeyInfoFromHash(hash *common.Address) (*KeyInfo, error)
-	GetNewestOpKey() (*KeyInfo, error)
-	GetOldestOpKey() (*KeyInfo, error)
 
-	RegisterOpKeyInfo(keyInfo *KeyInfo) error
+	GetOpKeyInfoFromHash(hash *common.Address, isLocked bool) (*KeyInfo, error)
+	GetNewestOpKey(isLocked bool) (*KeyInfo, error)
+	GetOldestOpKey(isLocked bool) (*KeyInfo, error)
 
-	RemoveOpKeyInfoFromHash(hash *common.Address) error
-	RemoveOpKeyInfo(keyInfo *KeyInfo) error
+	RegisterOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error
+
+	RemoveOpKeyInfoFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error
 
 	OpKeyInfos() map[common.Address]*KeyInfo
-
-	SaveOpKeyInfo(opKeyInfo *KeyInfo) error
-
-	RevokeKeyChan() chan *KeyInfo
+	OpKeyInfoList() []*KeyInfo
 
 	RenewOpKeySeconds() uint64
 	ExpireOpKeySeconds() uint64
+	GetToRenewOpKeySeconds() int
+	ToRenewOpKeyTS() (types.Timestamp, error)
 
 	DBOpKeyLock() *types.LockMap
 	DBOpKeyInfo() *pttdb.LDBBatch
 
-	TryCreateOpKeyInfo() error
+	SetOpKeyDB(oplog *BaseOplog)
+
+	SetOpKeyObjDB(opKey *KeyInfo)
+
+	GetOpKeyInfosFromDB() ([]*KeyInfo, error)
+
+	CreateOpKeyLoop() error
+
+	// op-key-oplog
+
+	BroadcastOpKeyOplog(log *OpKeyOplog) error
+	SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) error
+
+	HandleAddOpKeyOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddOpKeyOplogs(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingOpKeyOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingOpKeyOplogs(dataBytes []byte, peer *PttPeer) error
+
+	HandleSyncOpKeyOplog(dataBytes []byte, peer *PttPeer, syncMsg OpType) error
+	HandleSyncPendingOpKeyOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncPendingOpKeyOplogAck(dataBytes []byte, peer *PttPeer) error
+
+	HandleSyncCreateOpKey(dataBytes []byte, peer *PttPeer) error
+	HandleSyncCreateOpKeyAck(dataBytes []byte, peer *PttPeer) error
 
 	// peers
 	Peers() *PttPeerSet
@@ -121,11 +173,13 @@ type ProtocolManager interface {
 	IdentifyPeerAck(data *IdentifyPeer, peer *PttPeer) error
 	HandleIdentifyPeerAck(dataBytes []byte, peer *PttPeer) error
 
+	SendDataToPeer(op OpType, data interface{}, peer *PttPeer) error
+	SendDataToPeers(op OpType, data interface{}, peerList []*PttPeer) error
+
 	// sync
 	ForceSyncCycle() time.Duration
 
 	QuitSync() chan struct{}
-	SetQuitSync(quitSync chan struct{})
 
 	SyncWG() *sync.WaitGroup
 
@@ -137,6 +191,19 @@ type ProtocolManager interface {
 
 	// db
 	DB() *pttdb.LDBBatch
+	DBObjLock() *types.LockMap
+}
+
+type MyProtocolManager interface {
+	ProtocolManager
+
+	SetMeDB(log *BaseOplog)
+	SetMasterDB(log *BaseOplog)
+	SetPttDB(log *BaseOplog)
+}
+
+type PttProtocolManager interface {
+	ProtocolManager
 }
 
 type BaseProtocolManager struct {
@@ -145,6 +212,8 @@ type BaseProtocolManager struct {
 
 	// master
 	newestMasterLogID *types.PttID
+
+	isMaster func(id *types.PttID) bool
 
 	// owner-id
 	lockOwnerID sync.RWMutex
@@ -189,15 +258,30 @@ type BaseProtocolManager struct {
 	ptt Ptt
 
 	// db
-	db *pttdb.LDBBatch
+	db     *pttdb.LDBBatch
+	dbLock *types.LockMap
 
 	// is-start
 	isStart bool
 }
 
-func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySeconds uint64, maxSyncRandomSeconds int, minSyncRandomSeconds int, isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool), e Entity, db *pttdb.LDBBatch) (*BaseProtocolManager, error) {
+func NewBaseProtocolManager(
+	ptt Ptt,
+	renewOpKeySeconds uint64,
+	expireOpKeySeconds uint64,
+	maxSyncRandomSeconds int,
+	minSyncRandomSeconds int,
+	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool),
+	isMaster func(id *types.PttID) bool,
+	e Entity,
+	db *pttdb.LDBBatch) (*BaseProtocolManager, error) {
 
 	peers, err := NewPttPeerSet()
+	if err != nil {
+		return nil, err
+	}
+
+	dbLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
@@ -213,9 +297,14 @@ func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySecond
 		// join
 		joinKeyInfos: make([]*KeyInfo, 0),
 
+		// master
+		isMaster: isMaster,
+
 		// op
 		renewOpKeySeconds:  renewOpKeySeconds,
 		expireOpKeySeconds: expireOpKeySeconds,
+
+		opKeyInfos: make(map[common.Address]*KeyInfo),
 
 		dbOpKeyLock: dbOpKeyLock,
 
@@ -230,6 +319,9 @@ func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySecond
 		maxSyncRandomSeconds: maxSyncRandomSeconds,
 		minSyncRandomSeconds: minSyncRandomSeconds,
 
+		quitSync: make(chan struct{}),
+		syncWG:   ptt.SyncWG(),
+
 		// entity
 		entity: e,
 
@@ -237,7 +329,8 @@ func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySecond
 		ptt: ptt,
 
 		// db
-		db: db,
+		db:     db,
+		dbLock: dbLock,
 	}
 
 	// op-key
@@ -249,11 +342,8 @@ func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySecond
 	pm.lockOpKeyInfo.Lock()
 	defer pm.lockOpKeyInfo.Unlock()
 
-	ptt.LockOps()
-	defer ptt.UnlockOps()
-
 	for _, keyInfo := range opKeyInfos {
-		pm.RegisterOpKeyInfo(keyInfo, true, true)
+		pm.RegisterOpKeyInfo(keyInfo, true)
 	}
 
 	// master-log-id
@@ -268,8 +358,18 @@ func NewBaseProtocolManager(ptt Ptt, renewOpKeySeconds uint64, expireOpKeySecond
 
 }
 
+func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *PttPeer) error {
+	return types.ErrNotImplemented
+}
+
 func (pm *BaseProtocolManager) Start() error {
 	pm.isStart = true
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) PreStop() error {
+	close(pm.quitSync)
 
 	return nil
 }
@@ -294,4 +394,8 @@ func (pm *BaseProtocolManager) Ptt() Ptt {
 
 func (pm *BaseProtocolManager) DB() *pttdb.LDBBatch {
 	return pm.db
+}
+
+func (pm *BaseProtocolManager) DBObjLock() *types.LockMap {
+	return pm.dbLock
 }

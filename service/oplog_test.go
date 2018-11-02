@@ -52,7 +52,7 @@ func TestOplog_MarshalMerkleKey(t *testing.T) {
 	// prepare test-cases
 	tests := []struct {
 		name    string
-		o       *Oplog
+		o       *BaseOplog
 		want    []byte
 		wantErr bool
 	}{

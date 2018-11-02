@@ -31,6 +31,8 @@ var (
 		MaxImportantPeers: 100,
 		MaxMemberPeers:    200,
 		MaxRandomPeers:    50,
+
+		NodeType: NodeTypeDesktop,
 	}
 )
 
@@ -81,24 +83,23 @@ const (
 	JoinAckAlreadyRegistedMsg
 
 	// op-key
+
 	AddOpKeyOplogMsg
 	AddOpKeyOplogsMsg
-
 	AddPendingOpKeyOplogMsg
 	AddPendingOpKeyOplogsMsg
 
-	RevokeOpKeyInfoMsg
+	SyncOpKeyOplogMsg
+	SyncOpKeyOplogAckMsg
+	SyncPendingOpKeyOplogMsg
+	SyncPendingOpKeyOplogAckMsg
+
+	SyncCreateOpKeyMsg
+	SyncCreateOpKeyAckMsg
 
 	// peer
 	IdentifyPeerMsg
 	IdentifyPeerAckMsg
-
-	// me
-	AddMeOplogMsg
-	AddMeOplogsMsg
-
-	AddPendingMeOplogMsg
-	AddPendingMeOplogsMsg
 
 	BoardLastSeenMsg
 	ArticleLastSeenMsg
@@ -110,14 +111,12 @@ const (
 	MaxIterDeriveKeyBIP32 = 10
 
 	SleepTimeOpKeyLock = 10
-
-	ExpireOpKeySeconds = 259200
 )
 
 var (
 	DBOpKeyIdxOplogPrefix    = []byte(".okig")
 	DBOpKeyOplogPrefix       = []byte(".oklg")
-	DBOpKeyMerkleOplogPrefix = []byte(".oklg")
+	DBOpKeyMerkleOplogPrefix []byte
 	DBOpKeyPrefix            = []byte(".okdb")
 	DBOpKeyIdxPrefix         = []byte(".okix")
 	DBOpKeyIdx2Prefix        = []byte(".oki2")
@@ -125,11 +124,9 @@ var (
 
 // db
 const (
-	SleepTimeMasterLock = 10
-
-	SleepTimeMeLock = 10
-
 	SleepTimePttLock = 10
+
+	SleepTimeLock = 10
 
 	MaxCountPttOplog = 2000
 	PPttOplog        = 12 // 2^12 = 4096
@@ -142,16 +139,6 @@ var (
 	dbMeta *pttdb.LDBDatabase
 
 	DBNewestMasterLogIDPrefix = []byte(".nmld")
-
-	DBMasterOplogPrefix       = []byte(".malg")
-	DBMasterIdxOplogPrefix    = []byte(".maig")
-	DBMasterMerkleOplogPrefix = []byte(".mamk")
-	DBMasterLockMap           *types.LockMap
-
-	DBMeOplogPrefix       = []byte(".melg")
-	DBMeIdxOplogPrefix    = []byte(".meig")
-	DBMeMerkleOplogPrefix = []byte(".memk")
-	DBMeLockMap           *types.LockMap
 
 	DBCountPttOplogPrefix = []byte(".ptct")
 
@@ -166,8 +153,7 @@ var (
 
 // oplog
 const (
-	ExpireOplogSeconds       = 300 // expire oplog circulation as 5 minutes for now.
-	OffsetMasterOplogRaftIdx = 12
+	ExpireOplogSeconds = 300 // expire oplog circulation as 5 minutes for now.
 )
 
 // oplog-merkle-tree
@@ -188,9 +174,16 @@ var (
 	ExpireGenerateOplogMerkleTreeSeconds uint64 = 450               // 7.5 mins
 )
 
+// dial-history
 var (
 	ExpireDialHistorySeconds = uint64(30)
 	DialHistoryLoopInterval  = 30 * time.Second
+)
+
+// locale
+var (
+	DefaultLocale Locale = LocaleTW
+	CurrentLocale Locale
 )
 
 func InitService(dataDir string) error {
@@ -205,16 +198,6 @@ func InitService(dataDir string) error {
 	}
 
 	dbMeta, err = pttdb.NewLDBDatabase("meta", dataDir, 0, 0)
-	if err != nil {
-		return err
-	}
-
-	DBMasterLockMap, err = types.NewLockMap(SleepTimeMasterLock)
-	if err != nil {
-		return err
-	}
-
-	DBMeLockMap, err = types.NewLockMap(SleepTimeMeLock)
 	if err != nil {
 		return err
 	}
@@ -240,14 +223,6 @@ func TeardownService() {
 	if dbMeta != nil {
 		dbMeta.Close()
 		dbMeta = nil
-	}
-
-	if DBMasterLockMap != nil {
-		DBMasterLockMap = nil
-	}
-
-	if DBMeLockMap != nil {
-		DBMeLockMap = nil
 	}
 
 	if DBPttLockMap != nil {

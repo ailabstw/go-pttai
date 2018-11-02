@@ -100,7 +100,7 @@ func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.P
 	myNodeKey := cfg.Node.NodeKey()
 	myNodeID := discover.PubkeyID(&myNodeKey.PublicKey)
 
-	ptt, err := pkgservice.NewPtt(ctx, cfg.Ptt, &myNodeID)
+	ptt, err := pkgservice.NewPtt(ctx, cfg.Ptt, &myNodeID, myNodeKey)
 	if err != nil {
 		return nil, err
 	}

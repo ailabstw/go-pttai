@@ -38,15 +38,17 @@ const (
 
 	StatusPendingTransfer
 
+	StatusTransferred
+
 	StatusPendingMigrate
+
+	StatusMigrated
 
 	StatusInternalDeleted
 
 	StatusPendingDeleted
 
 	StatusDeleted
-
-	StatusMigrated
 )
 
 func StatusToDeleteStatus(status Status) Status {

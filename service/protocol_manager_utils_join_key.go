@@ -79,9 +79,6 @@ func (b *BaseProtocolManager) createJoinKeyInfo() error {
 	b.lockJoinKeyInfo.Lock()
 	defer b.lockJoinKeyInfo.Unlock()
 
-	b.ptt.LockJoins()
-	defer b.ptt.UnlockJoins()
-
 	entityID := b.Entity().GetID()
 	newKeyInfo, err := NewJoinKeyInfo(entityID)
 	if err != nil {
@@ -90,12 +87,12 @@ func (b *BaseProtocolManager) createJoinKeyInfo() error {
 
 	if len(b.joinKeyInfos) > 2 {
 		origKeyInfo := b.joinKeyInfos[0]
-		b.ptt.RemoveJoinKey(origKeyInfo.Hash, entityID, true)
+		b.ptt.RemoveJoinKey(origKeyInfo.Hash, entityID, false)
 		b.joinKeyInfos = b.joinKeyInfos[1:]
 	}
 
 	b.joinKeyInfos = append(b.joinKeyInfos, newKeyInfo)
-	b.ptt.AddJoinKey(newKeyInfo.Hash, entityID, true)
+	b.ptt.AddJoinKey(newKeyInfo.Hash, entityID, false)
 
 	return nil
 }

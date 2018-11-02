@@ -94,14 +94,6 @@ func SetMeConfig(ctx *cli.Context, cfg *me.Config, cfgNode *node.Config) {
 		cfg.DataDir = filepath.Join(cfgNode.DataDir, "me")
 	}
 
-	// node-type
-	switch {
-	case ctx.GlobalBool(ServerFlag.Name):
-		cfg.NodeType = pkgservice.NodeTypeServer
-	default:
-		cfg.NodeType = pkgservice.NodeTypeDesktop
-	}
-
 	// key/id/postfix
 	setMyKey(ctx, cfg)
 }
@@ -159,6 +151,14 @@ func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "ptt")
 	cfg.Version = params.Version
 	cfg.GitCommit = gitCommit
+
+	// node-type
+	switch {
+	case ctx.GlobalBool(ServerFlag.Name):
+		cfg.NodeType = pkgservice.NodeTypeServer
+	default:
+		cfg.NodeType = pkgservice.NodeTypeDesktop
+	}
 }
 
 // MakeDataDir retrieves the currently requested data directory, terminating

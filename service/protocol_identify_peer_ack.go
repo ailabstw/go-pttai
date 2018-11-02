@@ -116,7 +116,7 @@ func (p *BasePtt) IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*Identi
 		return nil, ErrInvalidEntity
 	}
 
-	signKey := p.SignKey()
+	signKey := p.myEntity.SignKey()
 	if signKey == nil {
 		return nil, ErrInvalidKey
 	}

@@ -17,23 +17,50 @@
 package me
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type ServiceProtocolManager struct {
 	*pkgservice.BaseServiceProtocolManager
+
+	MyInfo *MyInfo
+
+	myPtt pkgservice.MyPtt
 }
 
-func NewServiceProtocolManager(ptt *pkgservice.BasePtt, service pkgservice.Service) (*ServiceProtocolManager, error) {
+func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service pkgservice.Service, contentBackend *content.Backend) (*ServiceProtocolManager, error) {
 
+	spm := &ServiceProtocolManager{myPtt: ptt}
 	b, err := pkgservice.NewBaseServiceProtocolManager(ptt, service)
 	if err != nil {
 		return nil, err
 	}
 
-	spm := &ServiceProtocolManager{
-		BaseServiceProtocolManager: b,
+	spm.BaseServiceProtocolManager = b
+
+	// load me
+	myInfo, myInfos, err := spm.GetMeList(myID, contentBackend, nil, 0)
+	if err != nil {
+		return nil, err
 	}
+
+	for _, eachMyInfo := range myInfos {
+		err = eachMyInfo.Init(ptt, service, myID)
+		if err != nil {
+			return nil, err
+		}
+
+		err = spm.RegisterEntity(eachMyInfo.ID, eachMyInfo)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	// Me
+	spm.MyInfo = myInfo
 
 	return spm, nil
 }

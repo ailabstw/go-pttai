@@ -1119,9 +1119,9 @@ loop:
 			}
 			signInfoID = signInfos[idx].ID
 		case cmp > 0:
-			newSignInfos = append(newSignInfos, origSignInfos[idx])
+			newSignInfos = append(newSignInfos, origSignInfos[idxOrig])
 			idxOrig++
-			if idx >= lenOrigSignInfos {
+			if idxOrig >= lenOrigSignInfos {
 				break loop
 			}
 			origSignInfoID = origSignInfos[idxOrig].ID

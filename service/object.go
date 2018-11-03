@@ -61,7 +61,7 @@ type Object interface {
 	 * implemented in BaseObject
 	 **********/
 
-	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap)
+	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, dbPrefix []byte)
 	Lock() error
 	Unlock() error
 	RLock() error
@@ -101,13 +101,13 @@ type BaseObject struct {
 	EntityID  *types.PttID    `json:"e,omitempty"`
 
 	LogID       *types.PttID `json:"l,omitempty"`
-	OwnerID     *types.PttID `json:"o,omitempty"`
 	UpdateLogID *types.PttID `json:"u,omitempty"`
 
 	Status types.Status `json:"S"`
 
-	db     *pttdb.LDBBatch
-	dbLock *types.LockMap
+	db       *pttdb.LDBBatch
+	dbLock   *types.LockMap
+	dbPrefix []byte
 }
 
 func NewObject(
@@ -121,7 +121,8 @@ func NewObject(
 
 	status types.Status,
 
-	db *pttdb.LDBBatch, dbLock *types.LockMap,
+	db *pttdb.LDBBatch,
+	dbLock *types.LockMap,
 ) *BaseObject {
 	return &BaseObject{
 		V:         types.CurrentVersion,
@@ -140,9 +141,14 @@ func NewObject(
 	}
 }
 
-func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
+func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, dbPrefix []byte) {
 	o.db = db
 	o.dbLock = dbLock
+	o.dbPrefix = dbPrefix
+
+	if o.EntityID != nil {
+		o.dbPrefix = append(o.dbPrefix, o.EntityID[:]...)
+	}
 }
 
 func (o *BaseObject) Lock() error {

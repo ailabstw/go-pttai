@@ -26,10 +26,12 @@ import (
 
 type ApproveJoin struct {
 	ID         *types.PttID
-	Name       []byte      `json:"N"`
-	OpKeyBytes []byte      `json:"K"`
-	Data       interface{} `json:"D"`
+	Name       []byte          `json:"N"`
+	OpKeyBytes []byte          `json:"K"`
+	Data       ApproveJoinData `json:"D"`
 }
+
+type ApproveJoinData interface{}
 
 /*
 ApproveJoin approves join (invitor)

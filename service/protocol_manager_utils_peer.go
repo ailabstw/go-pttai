@@ -38,18 +38,25 @@ func (pm *BaseProtocolManager) NoMorePeers() chan struct{} {
 	return pm.noMorePeers
 }
 
-func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer) error {
-	peerType := pm.GetPeerType(peer)
+func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) error {
 	if peerType == PeerTypeRandom {
 		return nil
 	}
 
+	if peerType == PeerTypePending {
+		return pm.RegisterPendingPeer(peer)
+	}
+
 	select {
 	case pm.NewPeerCh() <- peer:
-		return pm.peers.Register(peer, peerType, false)
+		return pm.Peers().Register(peer, peerType, false)
 	case <-pm.NoMorePeers():
 		return p2p.DiscQuitting
 	}
+}
+
+func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer) error {
+	return pm.peers.Register(peer, PeerTypePending, false)
 }
 
 func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer) error {
@@ -64,29 +71,41 @@ func (pm *BaseProtocolManager) GetPeerType(peer *PttPeer) PeerType {
 		return PeerTypeImportant
 	case pm.IsMemberPeer(peer):
 		return PeerTypeMember
+	case pm.IsPendingPeer(peer):
+		return PeerTypePending
 	}
 	return PeerTypeRandom
 }
 
 func (pm *BaseProtocolManager) CountPeers() (int, error) {
-	peerList := pm.peers.PeerList(false)
-	return len(peerList), nil
+	pm.peers.RLock()
+	defer pm.peers.RUnlock()
+
+	peerList := pm.peers.PeerList(true)
+	pendingPeerList := pm.peers.PendingPeerList(true)
+	return len(peerList) + len(pendingPeerList), nil
 }
 
 func (pm *BaseProtocolManager) GetPeers() ([]*PttPeer, error) {
-	peerList := pm.peers.PeerList(false)
-	return peerList, nil
+	pm.peers.RLock()
+	defer pm.peers.RUnlock()
 
+	peerList := pm.peers.PeerList(true)
+	pendingPeerList := pm.peers.PendingPeerList(true)
+	return append(peerList, pendingPeerList...), nil
 }
 
-func (b *BaseProtocolManager) IsMyDevice(peer *PttPeer) bool {
-	return false
+func (pm *BaseProtocolManager) IsMyDevice(peer *PttPeer) bool {
+	return pm.Entity().PM().IsMyDevice(peer)
 }
-func (b *BaseProtocolManager) IsImportantPeer(peer *PttPeer) bool {
-	return false
+func (pm *BaseProtocolManager) IsImportantPeer(peer *PttPeer) bool {
+	return pm.Entity().PM().IsImportantPeer(peer)
 }
-func (b *BaseProtocolManager) IsMemberPeer(peer *PttPeer) bool {
-	return false
+func (pm *BaseProtocolManager) IsMemberPeer(peer *PttPeer) bool {
+	return pm.Entity().PM().IsMemberPeer(peer)
+}
+func (pm *BaseProtocolManager) IsPendingPeer(peer *PttPeer) bool {
+	return pm.Entity().PM().IsPendingPeer(peer)
 }
 
 func (pm *BaseProtocolManager) IsSuspiciousID(id *types.PttID, nodeID *discover.NodeID) bool {

@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	CurrentVersion Version = 1
+	CurrentVersion Version = 2
 )
 
 // protocol-versions

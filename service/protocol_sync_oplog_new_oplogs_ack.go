@@ -69,7 +69,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogNewOplogsAck(
 	peer *PttPeer,
 	setDB func(oplog *BaseOplog),
 	handleOplogs func(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error,
-	postsync func() error,
+	postsync func(peer *PttPeer) error,
 ) error {
 
 	ptt := pm.Ptt()
@@ -95,7 +95,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogNewOplogsAck(
 	}
 
 	if postsync != nil {
-		return postsync()
+		return postsync(peer)
 	}
 
 	return nil

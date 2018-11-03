@@ -220,7 +220,7 @@ func (pm *ProtocolManager) SetRaftAppliedIndex(idx uint64, isLocked bool) error 
 	val := make([]byte, 8)
 	binary.BigEndian.PutUint64(val, idx)
 
-	err = dbMe.Put(key, val)
+	err = dbMeCore.Put(key, val)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (pm *ProtocolManager) LoadRaftAppliedIndex(isLocked bool) error {
 		return err
 	}
 
-	val, err := dbMe.Get(key)
+	val, err := dbMeCore.Get(key)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (pm *ProtocolManager) SetRaftSnapshotIndex(idx uint64, isLocked bool) error
 	val := make([]byte, 8)
 	binary.BigEndian.PutUint64(val, idx)
 
-	err = dbMe.Put(key, val)
+	err = dbMeCore.Put(key, val)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func (pm *ProtocolManager) LoadRaftSnapshotIndex(isLocked bool) error {
 		return err
 	}
 
-	val, err := dbMe.Get(key)
+	val, err := dbMeCore.Get(key)
 	if err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func (pm *ProtocolManager) SetRaftLastIndex(idx uint64, isLocked bool) error {
 	val := make([]byte, 8)
 	binary.BigEndian.PutUint64(val, idx)
 
-	err = dbMe.Put(key, val)
+	err = dbMeCore.Put(key, val)
 	if err != nil {
 		return err
 	}
@@ -379,7 +379,7 @@ func (pm *ProtocolManager) LoadRaftLastIndex(isLocked bool) error {
 		return err
 	}
 
-	val, err := dbMe.Get(key)
+	val, err := dbMeCore.Get(key)
 	if err != nil {
 		return err
 	}
@@ -430,7 +430,7 @@ func (pm *ProtocolManager) SetRaftConfState(cs pb.ConfState, isLocked bool) erro
 		return err
 	}
 
-	err = dbMe.Put(key, val)
+	err = dbMeCore.Put(key, val)
 	if err != nil {
 		return err
 	}
@@ -465,7 +465,7 @@ func (pm *ProtocolManager) LoadRaftConfState(isLocked bool) error {
 		return err
 	}
 
-	val, err := dbMe.Get(key)
+	val, err := dbMeCore.Get(key)
 	if err != nil {
 		return err
 	}

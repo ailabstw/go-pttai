@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -35,7 +36,7 @@ type InitMeInfoSync struct {
 }
 
 func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
-
+	log.Debug("InitMeInfoSync: start")
 	var err error
 	myInfo := pm.Entity().(*MyInfo)
 	myID := myInfo.ID
@@ -82,11 +83,15 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 		return err
 	}
 
+	log.Debug("InitMeInfoSync: done")
+
 	return nil
 }
 
 func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservice.PttPeer) error {
 	myInfo := pm.Entity().(*MyInfo)
+
+	log.Debug("HandleInitMeInfoSync: start")
 
 	data := &InitMeInfoSync{}
 	err := json.Unmarshal(dataBytes, data)
@@ -132,7 +137,10 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 		return err
 	}
 
+	// notify the other that my status changed.
 	pm.SendDataToPeer(InitMeInfoAckMsg, &InitMeInfoAck{Status: myInfo.Status}, peer)
+
+	log.Debug("HandleInitMeInfoSync: to restart")
 
 	// restart
 	pm.myPtt.NotifyNodeRestart().PassChan(struct{}{})

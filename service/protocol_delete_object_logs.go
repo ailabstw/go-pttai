@@ -38,6 +38,8 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 ) ([]*BaseOplog, error) {
 
 	objID := oplog.ObjID
+	obj.SetID(objID)
+
 	toBroadcastLogs := make([]*BaseOplog, 0, 1) // orig-log-id and sync-log-id
 
 	// 1. lock obj
@@ -48,7 +50,6 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 	defer obj.Unlock()
 
 	// 2. get obj
-	obj.SetID(objID)
 	err = obj.GetByID(true)
 	if err != nil {
 		return nil, ErrNewerOplog
@@ -134,6 +135,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 ) ([]*BaseOplog, error) {
 
 	objID := oplog.ObjID
+	obj.SetID(objID)
 
 	// 1. lock obj
 	err := obj.Lock()
@@ -143,7 +145,6 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 	defer obj.Unlock()
 
 	// 2. get obj
-	obj.SetID(objID)
 	err = obj.GetByID(true)
 	if err != nil {
 		return nil, ErrNewerOplog
@@ -212,6 +213,9 @@ func (pm *BaseProtocolManager) SetNewestDeleteObjectLog(
 func (pm *BaseProtocolManager) HandleFailedDeleteObjectLog(
 	oplog *BaseOplog, obj Object,
 ) error {
+
+	objID := oplog.ObjID
+	obj.SetID(objID)
 
 	// 1. lock obj
 	err := obj.Lock()

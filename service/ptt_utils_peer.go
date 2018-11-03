@@ -147,6 +147,11 @@ func (p *BasePtt) determinePeerTypeFromAllEntities(peer *PttPeer, isLocked bool)
 		return PeerTypeMe, nil
 	}
 
+	// hub
+	if p.IsHubPeer(peer) {
+		return PeerTypeHub, nil
+	}
+
 	// important
 	var pm ProtocolManager
 	for _, entity := range p.entities {
@@ -164,8 +169,20 @@ func (p *BasePtt) determinePeerTypeFromAllEntities(peer *PttPeer, isLocked bool)
 		}
 	}
 
+	// pending
+	for _, entity := range p.entities {
+		pm = entity.PM()
+		if pm.IsPendingPeer(peer) {
+			return PeerTypePending, nil
+		}
+	}
+
 	// random
 	return PeerTypeRandom, nil
+}
+
+func (p *BasePtt) IsHubPeer(peer *PttPeer) bool {
+	return false
 }
 
 /*
@@ -238,6 +255,7 @@ func (p *BasePtt) RemovePeer(peer *PttPeer, isLocked bool) error {
 		log.Error("unable to unregister peer from entities", "peer", peer, "e", err)
 	}
 
+	log.Debug("RemovePeer: to UnsetPeerType", "registeredPeer", peer)
 	err = p.UnsetPeerType(registeredPeer, true)
 	if err != nil {
 		log.Error("unable to remove peer", "peer", peer, "e", err)
@@ -275,9 +293,15 @@ func (p *BasePtt) ValidatePeer(nodeID *discover.NodeID, userID *types.PttID, pee
 
 	// check max-peers
 	lenMyPeers := len(p.myPeers)
+	lenHubPeers := len(p.hubPeers)
 	lenImportantPeers := len(p.importantPeers)
 	lenMemberPeers := len(p.memberPeers)
+	lenPendingPeers := len(p.pendingPeers)
 	lenRandomPeers := len(p.randomPeers)
+
+	if peerType == PeerTypeHub && lenHubPeers >= p.config.MaxHubPeers {
+		return p2p.DiscTooManyPeers
+	}
 
 	if peerType == PeerTypeImportant && lenImportantPeers >= p.config.MaxImportantPeers {
 		return p2p.DiscTooManyPeers
@@ -287,11 +311,15 @@ func (p *BasePtt) ValidatePeer(nodeID *discover.NodeID, userID *types.PttID, pee
 		return p2p.DiscTooManyPeers
 	}
 
+	if peerType == PeerTypePending && lenPendingPeers >= p.config.MaxPendingPeers {
+		return p2p.DiscTooManyPeers
+	}
+
 	if peerType == PeerTypeRandom && lenRandomPeers >= p.config.MaxRandomPeers {
 		return p2p.DiscTooManyPeers
 	}
 
-	lenPeers := lenMyPeers + lenImportantPeers + lenMemberPeers + lenRandomPeers
+	lenPeers := lenMyPeers + lenHubPeers + lenImportantPeers + lenMemberPeers + lenPendingPeers + lenRandomPeers
 	if lenPeers >= p.config.MaxPeers {
 		err := p.dropAnyPeer(peerType, true)
 		if err != nil {
@@ -323,13 +351,19 @@ func (p *BasePtt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, is
 
 	peer.PeerType = peerType
 
+	log.Debug("SetPeerType", "peer", peer, "origPeerType", origPeerType, "peerType", peerType)
+
 	switch origPeerType {
 	case PeerTypeMe:
 		delete(p.myPeers, peer.ID())
+	case PeerTypeHub:
+		delete(p.hubPeers, peer.ID())
 	case PeerTypeImportant:
 		delete(p.importantPeers, peer.ID())
 	case PeerTypeMember:
 		delete(p.memberPeers, peer.ID())
+	case PeerTypePending:
+		delete(p.pendingPeers, peer.ID())
 	case PeerTypeRandom:
 		delete(p.randomPeers, peer.ID())
 	}
@@ -337,10 +371,14 @@ func (p *BasePtt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, is
 	switch peerType {
 	case PeerTypeMe:
 		p.myPeers[peer.ID()] = peer
+	case PeerTypeHub:
+		p.hubPeers[peer.ID()] = peer
 	case PeerTypeImportant:
 		p.importantPeers[peer.ID()] = peer
 	case PeerTypeMember:
 		p.memberPeers[peer.ID()] = peer
+	case PeerTypePending:
+		p.pendingPeers[peer.ID()] = peer
 	case PeerTypeRandom:
 		p.randomPeers[peer.ID()] = peer
 	}
@@ -371,6 +409,12 @@ func (p *BasePtt) UnsetPeerType(peer *PttPeer, isLocked bool) error {
 			return ErrNotRegistered
 		}
 		delete(p.myPeers, peerID)
+	case PeerTypeHub:
+		_, ok := p.hubPeers[peerID]
+		if !ok {
+			return ErrNotRegistered
+		}
+		delete(p.hubPeers, peerID)
 	case PeerTypeImportant:
 		_, ok := p.importantPeers[peerID]
 		if !ok {
@@ -383,6 +427,12 @@ func (p *BasePtt) UnsetPeerType(peer *PttPeer, isLocked bool) error {
 			return ErrNotRegistered
 		}
 		delete(p.memberPeers, peerID)
+	case PeerTypePending:
+		_, ok := p.pendingPeers[peerID]
+		if !ok {
+			return ErrNotRegistered
+		}
+		delete(p.pendingPeers, peerID)
 	case PeerTypeRandom:
 		_, ok := p.randomPeers[peerID]
 		if !ok {
@@ -417,11 +467,11 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 		pm = entity.PM()
 		fitPeerType = pm.GetPeerType(peer)
 
-		if fitPeerType < PeerTypeMember {
+		if fitPeerType < PeerTypePending {
 			continue
 		}
 
-		err = pm.RegisterPeer(peer)
+		err = pm.RegisterPeer(peer, fitPeerType)
 		if err != nil {
 			log.Warn("RegisterPeerToEntities: unable to register peer to entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}
@@ -477,12 +527,22 @@ func (p *BasePtt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
 		return peer
 	}
 
+	peer = p.hubPeers[*id]
+	if peer != nil {
+		return peer
+	}
+
 	peer = p.importantPeers[*id]
 	if peer != nil {
 		return peer
 	}
 
 	peer = p.memberPeers[*id]
+	if peer != nil {
+		return peer
+	}
+
+	peer = p.pendingPeers[*id]
 	if peer != nil {
 		return peer
 	}
@@ -512,6 +572,13 @@ func (p *BasePtt) dropAnyPeer(peerType PeerType, isLocked bool) error {
 		return p2p.DiscTooManyPeers
 	}
 
+	if len(p.pendingPeers) != 0 {
+		return p.dropAnyPeerCore(p.pendingPeers)
+	}
+	if peerType == PeerTypePending {
+		return p2p.DiscTooManyPeers
+	}
+
 	if len(p.memberPeers) != 0 {
 		return p.dropAnyPeerCore(p.memberPeers)
 	}
@@ -524,6 +591,13 @@ func (p *BasePtt) dropAnyPeer(peerType PeerType, isLocked bool) error {
 	}
 
 	if peerType == PeerTypeImportant {
+		return p2p.DiscTooManyPeers
+	}
+
+	if len(p.hubPeers) != 0 {
+		return p.dropAnyPeerCore(p.hubPeers)
+	}
+	if peerType == PeerTypeHub {
 		return p2p.DiscTooManyPeers
 	}
 
@@ -614,8 +688,8 @@ func (p *BasePtt) checkDialEntity(peer *PttPeer) (Entity, error) {
  * Misc
  **********/
 
-func (p *BasePtt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
-	return p.myPeers, p.importantPeers, p.memberPeers, p.randomPeers, &p.peerLock
+func (p *BasePtt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
+	return p.myPeers, p.hubPeers, p.importantPeers, p.memberPeers, p.pendingPeers, p.randomPeers, &p.peerLock
 }
 
 func randomPttPeers(peers []*PttPeer) []*PttPeer {
@@ -625,4 +699,39 @@ func randomPttPeers(peers []*PttPeer) []*PttPeer {
 		newPeers[v] = peers[i]
 	}
 	return newPeers
+}
+
+func (p *BasePtt) ClosePeers() {
+	p.peerLock.RLock()
+	defer p.peerLock.RUnlock()
+
+	for _, peer := range p.myPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
+
+	for _, peer := range p.hubPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
+
+	for _, peer := range p.importantPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
+
+	for _, peer := range p.memberPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
+
+	for _, peer := range p.pendingPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
+
+	for _, peer := range p.randomPeers {
+		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		log.Debug("ClosePeers: disconnect", "peer", peer)
+	}
 }

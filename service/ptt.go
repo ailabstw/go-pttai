@@ -26,7 +26,6 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/ailabstw/go-pttai/rpc"
 )
 
@@ -44,6 +43,7 @@ type Ptt interface {
 	HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error
 
 	FinishIdentifyPeer(peer *PttPeer, isLocked bool) error
+	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
 	NoMorePeers() chan struct{}
 
@@ -51,7 +51,7 @@ type Ptt interface {
 
 	// entities
 
-	RegisterEntity(e Entity, isLocked bool) error
+	RegisterEntity(e Entity, isLocked bool, isPeerLock bool) error
 	UnregisterEntity(e Entity, isLocked bool) error
 
 	// join
@@ -99,8 +99,6 @@ type MyPtt interface {
 	MyNodeType() NodeType
 	MyNodeKey() *ecdsa.PrivateKey
 
-	DBOplog() *pttdb.LDBBatch
-
 	// SetPeerType
 
 	SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error
@@ -120,8 +118,10 @@ type BasePtt struct {
 	peerLock sync.RWMutex
 
 	myPeers        map[discover.NodeID]*PttPeer
+	hubPeers       map[discover.NodeID]*PttPeer
 	importantPeers map[discover.NodeID]*PttPeer
 	memberPeers    map[discover.NodeID]*PttPeer
+	pendingPeers   map[discover.NodeID]*PttPeer
 	randomPeers    map[discover.NodeID]*PttPeer
 
 	userPeerMap map[types.PttID]*discover.NodeID
@@ -202,8 +202,10 @@ func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID, myNodeK
 		noMorePeers: make(chan struct{}),
 
 		myPeers:        make(map[discover.NodeID]*PttPeer),
+		hubPeers:       make(map[discover.NodeID]*PttPeer),
 		importantPeers: make(map[discover.NodeID]*PttPeer),
 		memberPeers:    make(map[discover.NodeID]*PttPeer),
+		pendingPeers:   make(map[discover.NodeID]*PttPeer),
 		randomPeers:    make(map[discover.NodeID]*PttPeer),
 
 		userPeerMap: make(map[types.PttID]*discover.NodeID),
@@ -292,7 +294,14 @@ func (p *BasePtt) Stop() error {
 		}
 	}
 
+	log.Debug("Stop: to wait syncWG")
+
 	p.syncWG.Wait()
+
+	// close peers
+	p.ClosePeers()
+
+	log.Debug("Stop: to wait peerWG")
 
 	p.peerWG.Wait()
 

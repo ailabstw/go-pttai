@@ -18,83 +18,184 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
+/*
+Entity is the fundamental interface of entities.
+The reason why entity is not an object is because:
+	1. Creating an entity does not require the consensus from other nodes.
+	2. We may recover a deleted entity.
+*/
 type Entity interface {
-	GetID() *types.PttID
-	GetCreateTS() types.Timestamp
-	GetStatus() types.Status
-
-	GetOwnerID() *types.PttID
-
 	Start() error
 	Stop() error
 
+	GetUpdateTS() types.Timestamp
+	SetUpdateTS(ts types.Timestamp)
+
 	// implemented in BaseEntity
+	GetID() *types.PttID
+	SetID(id *types.PttID)
+
+	GetCreateTS() types.Timestamp
+	GetCreatorID() *types.PttID
+
+	GetUpdaterID() *types.PttID
+	SetUpdaterID(id *types.PttID)
+
+	GetLogID() *types.PttID
+	SetLogID(id *types.PttID)
+
+	GetUpdateLogID() *types.PttID
+	SetUpdateLogID(id *types.PttID)
+
+	GetStatus() types.Status
+	SetStatus(status types.Status)
+
+	GetOwnerID() *types.PttID
+	SetOwnerID(id *types.PttID)
+
 	PM() ProtocolManager
 	Ptt() Ptt
 	Service() Service
 
 	Name() string
 	SetName(name string)
+
+	DB() *pttdb.LDBBatch
 }
 
 type BaseEntity struct {
+	V         types.Version
+	ID        *types.PttID
+	CreateTS  types.Timestamp `json:"CT"`
+	CreatorID *types.PttID    `json:"CID"`
+	UpdaterID *types.PttID    `json:"UID"`
+
+	LogID       *types.PttID `json:"l,omitempty"`
+	UpdateLogID *types.PttID `json:"u,omitempty"`
+
+	Status types.Status `json:"S"`
+
+	OwnerID *types.PttID `json:"o,omitempty"`
+
 	pm      ProtocolManager
 	name    string
 	ptt     Ptt
 	service Service
+
+	db *pttdb.LDBBatch
 }
 
-func NewBaseEntity(pm ProtocolManager, name string, ptt Ptt, service Service) (*BaseEntity, error) {
-	b := &BaseEntity{
-		pm:      pm,
-		name:    name,
-		ptt:     ptt,
-		service: service,
+func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, ownerID *types.PttID, db *pttdb.LDBBatch) *BaseEntity {
+
+	e := &BaseEntity{
+		V:         types.CurrentVersion,
+		ID:        id,
+		CreateTS:  createTS,
+		CreatorID: creatorID,
+		UpdaterID: creatorID,
+		Status:    status,
+		OwnerID:   ownerID,
+		db:        db,
 	}
 
-	return b, nil
+	return e
 }
 
-func (b *BaseEntity) GetID() *types.PttID {
-	return nil
+func (e *BaseEntity) Init(pm ProtocolManager, name string, ptt Ptt, service Service) {
+	e.pm = pm
+	e.name = ProtocolName
+	e.ptt = ptt
+	e.service = service
 }
 
-func (b *BaseEntity) GetStatus() types.Status {
-	return types.StatusInvalid
+func (e *BaseEntity) Start() error {
+	return StartPM(e.pm)
 }
 
-func (b *BaseEntity) GetOwnerID() *types.PttID {
-	return nil
-}
-
-func (b *BaseEntity) Start() error {
-	return StartPM(b.pm)
-}
-
-func (b *BaseEntity) Stop() error {
-	return StopPM(b.pm)
+func (e *BaseEntity) Stop() error {
+	return StopPM(e.pm)
 }
 
 // implemented in BaseEntity
-
-func (b *BaseEntity) PM() ProtocolManager {
-	return b.pm
+func (e *BaseEntity) GetID() *types.PttID {
+	return e.ID
 }
 
-func (b *BaseEntity) Ptt() Ptt {
-	return b.ptt
+func (e *BaseEntity) SetID(id *types.PttID) {
+	e.ID = id
 }
 
-func (b *BaseEntity) Service() Service {
-	return b.service
+func (e *BaseEntity) GetCreateTS() types.Timestamp {
+	return e.CreateTS
 }
 
-func (b *BaseEntity) Name() string {
-	return b.name
+func (e *BaseEntity) GetCreatorID() *types.PttID {
+	return e.CreatorID
 }
 
-func (b *BaseEntity) SetName(name string) {
-	b.name = name
+func (e *BaseEntity) GetUpdaterID() *types.PttID {
+	return e.UpdaterID
+}
+
+func (e *BaseEntity) SetUpdaterID(id *types.PttID) {
+	e.UpdaterID = id
+}
+
+func (e *BaseEntity) GetLogID() *types.PttID {
+	return e.LogID
+}
+
+func (e *BaseEntity) SetLogID(id *types.PttID) {
+	e.LogID = id
+}
+
+func (e *BaseEntity) GetUpdateLogID() *types.PttID {
+	return e.UpdateLogID
+}
+
+func (e *BaseEntity) SetUpdateLogID(id *types.PttID) {
+	e.UpdateLogID = id
+}
+
+func (e *BaseEntity) GetStatus() types.Status {
+	return e.Status
+}
+
+func (e *BaseEntity) SetStatus(status types.Status) {
+	e.Status = status
+}
+
+func (e *BaseEntity) GetOwnerID() *types.PttID {
+	return e.OwnerID
+}
+
+func (e *BaseEntity) SetOwnerID(id *types.PttID) {
+	e.OwnerID = id
+}
+
+func (e *BaseEntity) PM() ProtocolManager {
+	return e.pm
+}
+
+func (e *BaseEntity) Ptt() Ptt {
+	return e.ptt
+}
+
+func (e *BaseEntity) Service() Service {
+	return e.service
+}
+
+func (e *BaseEntity) Name() string {
+	return e.name
+}
+
+func (e *BaseEntity) SetName(name string) {
+	e.name = name
+}
+
+func (e *BaseEntity) DB() *pttdb.LDBBatch {
+	return e.db
 }

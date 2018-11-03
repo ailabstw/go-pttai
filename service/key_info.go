@@ -183,7 +183,7 @@ func deriveKeyBIP32(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraI
 }
 
 func (k *KeyInfo) Init(db *pttdb.LDBBatch, dbLock *types.LockMap) error {
-	k.SetDB(db, dbLock)
+	k.SetDB(db, dbLock, DBOpKeyPrefix)
 	key, err := crypto.ToECDSA(k.KeyBytes)
 	if err != nil {
 		return err
@@ -400,13 +400,4 @@ func (k *KeyInfo) Unmarshal(data []byte) error {
 	}
 
 	return nil
-}
-
-/**********
- * SetObjDB
- **********/
-
-func (pm *BaseProtocolManager) SetOpKeyObjDB(opKey *KeyInfo) {
-	opKey.SetEntityID(pm.Entity().GetID())
-	opKey.SetDB(pm.DBOpKeyInfo(), pm.DBObjLock())
 }

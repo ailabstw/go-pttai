@@ -106,19 +106,24 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 func (p *BasePtt) HandleCodeJoin(hash *common.Address, encData []byte, peer *PttPeer) error {
 	entity, err := p.getEntityFromHash(hash, &p.lockJoins, p.joins)
 	if err != nil {
+		log.Error("HandleCodeJoin: getEntityFromHash", "e", err)
 		return err
 	}
 
 	pm := entity.PM()
 	keyInfo, err := pm.GetJoinKeyInfo(hash)
 	if err != nil {
+		log.Error("HandleCodeJoin: unable to get JoinKeyInfo", "e", err)
 		return err
 	}
 
 	op, dataBytes, err := p.DecryptData(encData, keyInfo)
 	if err != nil {
+		log.Error("HandleCodeJoin: unable to DecryptData", "e", err)
 		return err
 	}
+
+	log.Debug("HandleCodeJoin: start", "op", op, "joinMsg", JoinMsg, "joinEntityMsg", JoinEntityMsg)
 
 	switch op {
 	case JoinMsg:
@@ -146,6 +151,8 @@ func (p *BasePtt) HandleCodeJoinAck(hash *common.Address, encData []byte, peer *
 		return err
 	}
 
+	log.Debug("HandleCodeJoinAck: start", "op", op, "ApproveJoinMsg", ApproveJoinMsg)
+
 	switch op {
 	case JoinAckChallengeMsg:
 		err = p.HandleJoinAckChallenge(dataBytes, hash, joinRequest, peer)
@@ -162,6 +169,7 @@ func (p *BasePtt) HandleCodeOp(hash *common.Address, encData []byte, peer *PttPe
 
 	entity, err := p.getEntityFromHash(hash, &p.lockOps, p.ops)
 	if err != nil {
+		log.Error("HandleCodeOp: invalid entity", "hash", hash, "e", err)
 		return err
 	}
 
@@ -176,6 +184,7 @@ func (p *BasePtt) HandleCodeIdentifyPeer(hash *common.Address, encData []byte, p
 
 	entity, err := p.getEntityFromHash(hash, &p.lockOps, p.ops)
 	if err != nil {
+		log.Error("HandleCodeIdentifyPeer: invalid entity", "hash", hash, "e", err)
 		return p.IdentifyPeerFail(hash, peer)
 	}
 

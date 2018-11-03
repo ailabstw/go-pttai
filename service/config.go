@@ -18,12 +18,15 @@ package service
 
 type Config struct {
 	MaxPeers          int
+	MaxHubPeers       int
 	MaxImportantPeers int
 	MaxMemberPeers    int
+	MaxPendingPeers   int
 	MaxRandomPeers    int
-	DataDir           string
-	Version           string
-	GitCommit         string
+
+	DataDir   string
+	Version   string
+	GitCommit string
 
 	NodeType NodeType
 }

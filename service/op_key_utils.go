@@ -19,6 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 // Save
@@ -149,4 +150,14 @@ func (k *KeyInfo) SetPendingDeleteSyncInfo(oplog *BaseOplog) error {
 	k.SyncInfo = syncInfo
 
 	return nil
+}
+
+/**********
+ * SetObjDB
+ **********/
+
+func (pm *BaseProtocolManager) SetOpKeyObjDB(opKey *KeyInfo) {
+	opKey.SetEntityID(pm.Entity().GetID())
+	log.Debug("SetOpKeyObjDB: to SetDB", "dblock", pm.DBObjLock())
+	opKey.SetDB(pm.DBOpKeyInfo(), pm.DBObjLock(), DBOpKeyPrefix)
 }

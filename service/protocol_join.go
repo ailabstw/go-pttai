@@ -47,7 +47,17 @@ func (p *BasePtt) TryJoin(challenge []byte, hash *common.Address, key *ecdsa.Pri
 
 	// 2. my peer
 	var err error
-	peer := p.importantPeers[*nodeID]
+	peer := p.hubPeers[*nodeID]
+	if peer != nil {
+		err = p.join(challenge, hash, key, peer)
+		if err != nil {
+			return err
+		}
+		request.Status = JoinStatusRequested
+		return nil
+	}
+
+	peer = p.importantPeers[*nodeID]
 	if peer != nil {
 		err = p.join(challenge, hash, key, peer)
 		if err != nil {
@@ -59,6 +69,16 @@ func (p *BasePtt) TryJoin(challenge []byte, hash *common.Address, key *ecdsa.Pri
 	}
 
 	peer = p.memberPeers[*nodeID]
+	if peer != nil {
+		err = p.join(challenge, hash, key, peer)
+		if err != nil {
+			return err
+		}
+		request.Status = JoinStatusRequested
+		return nil
+	}
+
+	peer = p.pendingPeers[*nodeID]
 	if peer != nil {
 		err = p.join(challenge, hash, key, peer)
 		if err != nil {
@@ -114,6 +134,7 @@ func (p *BasePtt) join(challenge []byte, hash *common.Address, joinKey *ecdsa.Pr
 	}
 
 	pttData.Node = peer.GetID()[:]
+	log.Debug("join: to SendData")
 	err = peer.SendData(pttData)
 	if err != nil {
 		return err
@@ -128,6 +149,8 @@ func (p *BasePtt) HandleJoin(dataBytes []byte, hash *common.Address, entity Enti
 	if err != nil {
 		return err
 	}
+
+	log.Debug("HandleJoin: start")
 
 	if !reflect.DeepEqual(join.Hash, hash[:]) {
 		log.Error("handleJoinCore: Hash not the same", "hash", hash[:], "join.Hash", join.Hash)

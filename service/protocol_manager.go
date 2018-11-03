@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/event"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
@@ -52,30 +53,6 @@ type ProtocolManager interface {
 	BroadcastOplog(oplog *BaseOplog, msg OpType, pendingMsg OpType) error
 	BroadcastOplogs(oplogs []*BaseOplog, msg OpType, pendingMsg OpType) error
 
-	GetPendingOplogs(
-		setDB func(oplog *BaseOplog),
-	) ([]*BaseOplog, []*BaseOplog, error)
-
-	GetOplogMerkleNodeList(
-		merkle *Merkle,
-		level MerkleTreeLevel,
-		startKey []byte,
-		limit int,
-		listOrder pttdb.ListOrder,
-	) ([]*MerkleNode, error)
-
-	RemoveNonSyncOplog(
-		setDB func(oplog *BaseOplog),
-		logID *types.PttID,
-		isRetainValid bool,
-		isLocked bool,
-	) (*BaseOplog, error)
-
-	SetOplogIsSync(
-		oplog *BaseOplog, isBroadcast bool,
-		broadcastLog func(oplog *BaseOplog) error,
-	) (bool, error)
-
 	SignOplog(oplog *BaseOplog) error
 
 	IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error)
@@ -85,6 +62,7 @@ type ProtocolManager interface {
 	IsMyDevice(peer *PttPeer) bool
 	IsImportantPeer(peer *PttPeer) bool
 	IsMemberPeer(peer *PttPeer) bool
+	IsPendingPeer(peer *PttPeer) bool
 
 	IsSuspiciousID(id *types.PttID, nodeID *discover.NodeID) bool
 	IsGoodID(id *types.PttID, nodeID *discover.NodeID) bool
@@ -162,7 +140,8 @@ type ProtocolManager interface {
 	NoMorePeers() chan struct{}
 	SetNoMorePeers(noMorePeers chan struct{})
 
-	RegisterPeer(peer *PttPeer) error
+	RegisterPeer(peer *PttPeer, peerType PeerType) error
+	RegisterPendingPeer(peer *PttPeer) error
 	UnregisterPeer(peer *PttPeer) error
 
 	GetPeerType(peer *PttPeer) PeerType
@@ -333,19 +312,6 @@ func NewBaseProtocolManager(
 		dbLock: dbLock,
 	}
 
-	// op-key
-	opKeyInfos, err := pm.loadOpKeyInfos()
-	if err != nil {
-		return nil, err
-	}
-
-	pm.lockOpKeyInfo.Lock()
-	defer pm.lockOpKeyInfo.Unlock()
-
-	for _, keyInfo := range opKeyInfos {
-		pm.RegisterOpKeyInfo(keyInfo, true)
-	}
-
 	// master-log-id
 	newestMasterLogID, err := pm.loadNewestMasterLogID()
 	if err != nil {
@@ -363,6 +329,28 @@ func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *
 }
 
 func (pm *BaseProtocolManager) Start() error {
+	// op-key
+	opKeyInfos, err := pm.loadOpKeyInfos()
+	if err != nil {
+		return err
+	}
+
+	log.Debug("Start: after loadOpKeyInfos", "opKeyInfos", opKeyInfos)
+
+	pm.lockOpKeyInfo.Lock()
+	defer pm.lockOpKeyInfo.Unlock()
+
+	for _, keyInfo := range opKeyInfos {
+		pm.RegisterOpKeyInfo(keyInfo, true)
+	}
+
+	if len(opKeyInfos) == 0 {
+		err = pm.CreateOpKeyInfo()
+		if err != nil {
+			return err
+		}
+	}
+
 	pm.isStart = true
 
 	return nil

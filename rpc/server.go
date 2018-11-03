@@ -89,7 +89,7 @@ func (s *Server) RegisterName(name string, rcvr interface{}) error {
 		return fmt.Errorf("no service name for type %s", svc.typ.String())
 	}
 
-	log.Debug("to check isExported", "rcvrVal", rcvrVal)
+	//log.Debug("to check isExported", "rcvrVal", rcvrVal)
 	if !isExported(reflect.Indirect(rcvrVal).Type().Name()) {
 		return fmt.Errorf("%s is not exported", reflect.Indirect(rcvrVal).Type().Name())
 	}

@@ -31,12 +31,14 @@ type LockMap struct {
 	lock      sync.Mutex
 	lockMap   map[PttID]int
 	sleepTime int
+	isSet     bool
 }
 
 func NewLockMap(sleepTime int) (*LockMap, error) {
 	return &LockMap{
 		lockMap:   make(map[PttID]int),
 		sleepTime: sleepTime,
+		isSet:     true,
 	}, nil
 }
 
@@ -109,7 +111,7 @@ func (l *LockMap) Lock(id *PttID) error {
 		if err == nil {
 			return nil
 		}
-		log.Debug("Lock: to sleep", "sleepTime", sleepTime)
+		log.Warn("Lock: to sleep", "sleepTime", sleepTime)
 		time.Sleep(sleepTime)
 	}
 

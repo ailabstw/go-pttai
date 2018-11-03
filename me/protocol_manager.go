@@ -42,6 +42,9 @@ type ProtocolManager struct {
 	joinFriendRequests    map[common.Address]*pkgservice.JoinRequest
 	joinFriendSub         *event.TypeMuxSubscription
 
+	// merkle
+	meOplogMerkle *pkgservice.Merkle
+
 	// my-nodes
 	lockJoinMeRequest sync.RWMutex
 	joinMeRequests    map[common.Address]*pkgservice.JoinRequest
@@ -94,16 +97,27 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		return nil, err
 	}
 
+	myID := myInfo.ID
+	meOplogMerkle, err := pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbMe)
+	if err != nil {
+		return nil, err
+	}
+
 	pm := &ProtocolManager{
 		myPtt: ptt,
 
+		// dblock
 		dbMeLock:     dbMeLock,
 		dbMasterLock: dbMasterLock,
 
+		// join
 		joinFriendKeyInfos: make([]*pkgservice.KeyInfo, 0),
 		joinFriendRequests: make(map[common.Address]*pkgservice.JoinRequest),
 
 		joinMeRequests: make(map[common.Address]*pkgservice.JoinRequest),
+
+		// merkle
+		meOplogMerkle: meOplogMerkle,
 
 		//raft
 		raftProposeC:         make(chan string),
@@ -113,7 +127,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		raftErrorC:           make(chan error),
 	}
 
-	b, err := pkgservice.NewBaseProtocolManager(ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, pm.IsValidOplog, pm.IsMaster, myInfo, dbMeBatch)
+	b, err := pkgservice.NewBaseProtocolManager(ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, pm.IsValidOplog, pm.IsMaster, myInfo, dbMe)
 	if err != nil {
 		return nil, err
 	}
@@ -129,17 +143,12 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 }
 
 func (pm *ProtocolManager) Start() error {
-	// ptt-register
-	myInfo := pm.Entity().(*MyInfo)
 	ptt := pm.myPtt
-	err := ptt.RegisterEntity(myInfo, false)
-	if err != nil {
-		return err
-	}
+	myInfo := pm.Entity().(*MyInfo)
 
 	// start
-	log.Debug("Start: start", "me", pm.Entity().GetID())
-	err = pm.BaseProtocolManager.Start()
+	log.Debug("Start: start", "me", myInfo.GetID())
+	err := pm.BaseProtocolManager.Start()
 	if err != nil {
 		return err
 	}
@@ -172,10 +181,9 @@ func (pm *ProtocolManager) Start() error {
 
 	// oplog-merkle-tree
 
-	myEntity := pm.Entity().(*MyInfo)
-	go pkgservice.PMOplogMerkleTreeLoop(pm, myEntity.MeOplogMerkle())
-	go pkgservice.PMOplogMerkleTreeLoop(pm, myEntity.MasterOplogMerkle())
+	go pkgservice.PMOplogMerkleTreeLoop(pm, pm.meOplogMerkle)
 
+	// init me info
 	go pm.InitMeInfoLoop()
 
 	log.Debug("Start: done")
@@ -204,8 +212,7 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 		return nil
 	}
 
-	myEntity := pm.Entity().(*MyInfo)
-	err := pm.SyncOplog(peer, myEntity.MeOplogMerkle(), SyncMeOplogMsg)
+	err := pm.SyncOplog(peer, pm.meOplogMerkle, SyncMeOplogMsg)
 	if err != nil {
 		return err
 	}

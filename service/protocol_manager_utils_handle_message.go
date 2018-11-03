@@ -16,17 +16,20 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common"
+import (
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/log"
+)
 
 func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []byte, peer *PttPeer) error {
 	opKeyInfo, err := pm.GetOpKeyInfoFromHash(hash, false)
-
+	log.Debug("PMHandleMessageWrapper: after GetOpKeyInfoFromHash", "e", err)
 	if err != nil {
 		return err
 	}
 
 	op, dataBytes, err := pm.Ptt().DecryptData(encData, opKeyInfo)
-	//log.Debug("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op)
+	log.Debug("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op, "NMsg", NMsg)
 	if err != nil {
 		return err
 	}
@@ -37,7 +40,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	case IdentifyPeerAckMsg:
 		return pm.HandleIdentifyPeerAck(dataBytes, peer)
 
-	// op-key
+	// op-key-oplog
 	case SyncOpKeyOplogMsg:
 		return pm.HandleSyncOpKeyOplog(dataBytes, peer, SyncOpKeyOplogMsg)
 	case SyncOpKeyOplogAckMsg:
@@ -56,17 +59,21 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	case AddPendingOpKeyOplogsMsg:
 		return pm.HandleAddPendingOpKeyOplogs(dataBytes, peer)
 
+	// sync create-op-key
 	case SyncCreateOpKeyMsg:
 		return pm.HandleSyncCreateOpKey(dataBytes, peer)
-
 	case SyncCreateOpKeyAckMsg:
 		return pm.HandleSyncCreateOpKeyAck(dataBytes, peer)
 
 	}
 
+	log.Debug("PMHandleMessageWrapper: to GetPeerType", "peer", peer, "entity", pm.Entity().GetID())
+
 	fitPeerType := pm.GetPeerType(peer)
 
-	if fitPeerType < PeerTypeMember {
+	log.Debug("PMHandleMessageWrapper: after GetPeerType", "peer", peer, "entity", pm.Entity().GetID(), "fitPeerType", fitPeerType)
+
+	if fitPeerType < PeerTypePending {
 		return ErrInvalidEntity
 	}
 

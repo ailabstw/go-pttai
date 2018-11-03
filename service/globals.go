@@ -28,8 +28,10 @@ import (
 var (
 	DefaultConfig = Config{
 		MaxPeers:          350,
+		MaxHubPeers:       5,
 		MaxImportantPeers: 100,
 		MaxMemberPeers:    200,
+		MaxPendingPeers:   50,
 		MaxRandomPeers:    50,
 
 		NodeType: NodeTypeDesktop,
@@ -38,13 +40,13 @@ var (
 
 // protocol
 const (
-	_ uint = iota
-	Ptt1
+	_ uint = iota + 1
+	Ptt2
 )
 
 var (
-	ProtocolVersions = [1]uint{Ptt1}
-	ProtocolName     = "ptt1"
+	ProtocolVersions = [1]uint{Ptt2}
+	ProtocolName     = "ptt2"
 	ProtocolLengths  = [1]uint64{uint64(NCodeType)}
 )
 
@@ -114,12 +116,11 @@ const (
 )
 
 var (
-	DBOpKeyIdxOplogPrefix    = []byte(".okig")
-	DBOpKeyOplogPrefix       = []byte(".oklg")
-	DBOpKeyMerkleOplogPrefix []byte
-	DBOpKeyPrefix            = []byte(".okdb")
-	DBOpKeyIdxPrefix         = []byte(".okix")
-	DBOpKeyIdx2Prefix        = []byte(".oki2")
+	DBOpKeyIdxOplogPrefix = []byte(".okig")
+	DBOpKeyOplogPrefix    = []byte(".oklg")
+	DBOpKeyPrefix         = []byte(".okdb")
+	DBOpKeyIdxPrefix      = []byte(".okix")
+	DBOpKeyIdx2Prefix     = []byte(".oki2")
 )
 
 // db
@@ -142,10 +143,9 @@ var (
 
 	DBCountPttOplogPrefix = []byte(".ptct")
 
-	DBPttOplogPrefix       = []byte(".ptlg") // .ptlm, .ptli is used as well
-	DBPttIdxOplogPrefix    = []byte(".ptig")
-	DBPttMerkleOplogPrefix = []byte(".ptmk")
-	DBPttLockMap           *types.LockMap
+	DBPttOplogPrefix    = []byte(".ptlg") // .ptlm, .ptli is used as well
+	DBPttIdxOplogPrefix = []byte(".ptig")
+	DBPttLockMap        *types.LockMap
 
 	DBLocalePrefix     = []byte(".locl")
 	DBPttLogSeenPrefix = []byte(".ptsn")

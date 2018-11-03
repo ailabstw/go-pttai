@@ -22,6 +22,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
@@ -33,7 +34,9 @@ func renewMe(c *Config, newKey *ecdsa.PrivateKey, newPostfixBytes []byte) error 
 
 	newKeyHex := hex.EncodeToString(crypto.FromECDSA(newKey))
 
+	log.Debug("renewMe: to SetMyKey")
 	err = c.SetMyKey(newKeyHex, "", string(newPostfixBytes), true)
+	log.Debug("renewMe: after SetMyKey", "e", err)
 	if err != nil {
 		return err
 	}

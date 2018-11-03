@@ -21,6 +21,8 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
 func (spm *ServiceProtocolManager) GetMeList(myID *types.PttID, contentBackend *content.Backend, startingID *types.PttID, limit int) (*MyInfo, []*MyInfo, error) {
@@ -56,4 +58,27 @@ func (spm *ServiceProtocolManager) GetMeList(myID *types.PttID, contentBackend *
 	}
 
 	return myInfo, meList, nil
+}
+
+func getMeIter(startingID *types.PttID) (iterator.Iterator, error) {
+	if startingID == nil {
+		return dbMe.DB().NewIteratorWithPrefix(nil, DBMePrefix, pttdb.ListOrderNext)
+	}
+
+	// key
+	myInfo := &MyInfo{}
+	myInfo.SetID(startingID)
+
+	key, err := myInfo.MarshalKey()
+	if err != nil {
+		return nil, err
+	}
+
+	// iter
+	iter, err := dbMe.DB().NewIteratorWithPrefix(key, DBMePrefix, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+
+	return iter, nil
 }

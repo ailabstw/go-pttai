@@ -64,6 +64,9 @@ func (pm *BaseProtocolManager) syncCreateObjectLog(
 	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
 ) error {
 
+	objID := oplog.ObjID
+	obj.SetID(objID)
+
 	err := oplog.GetData(opData)
 	if err != nil {
 		return err

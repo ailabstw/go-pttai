@@ -70,3 +70,8 @@ type SignInfo struct {
 	Pubkey []byte        `json:"K"`
 	Extra  *KeyExtraInfo `json:"e,omitempty"`
 }
+
+type SyncID struct {
+	ID    *types.PttID
+	LogID *types.PttID `json:"l"`
+}

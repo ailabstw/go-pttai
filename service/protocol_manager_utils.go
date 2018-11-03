@@ -18,21 +18,24 @@ package service
 
 import (
 	"encoding/json"
-	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/p2p"
 )
 
 /*
 StartPM starts the pm
-	1. go PMSync
-	2. go PMSyncOpKeyLoop
-	3. pm.Start
+	1. pm.Start
+	2. go PMSync
+	3. go PMCreateOpKeyLoop
 */
 func StartPM(pm ProtocolManager) error {
 	log.Info("StartPM: start", "entity", pm.Entity().Name())
+
+	// 3. pm.Start
+	err := pm.Start()
+	if err != nil {
+		return err
+	}
 
 	// 1. PMSync
 	pm.SyncWG().Add(1)
@@ -42,11 +45,12 @@ func StartPM(pm ProtocolManager) error {
 		PMSync(pm)
 	}()
 
-	// 3. pm.Start
-	err := pm.Start()
-	if err != nil {
-		return err
-	}
+	// op-key
+	pm.SyncWG().Add(1)
+	go func() {
+		defer pm.SyncWG().Done()
+		pm.CreateOpKeyLoop()
+	}()
 
 	return nil
 }
@@ -63,68 +67,6 @@ func StopPM(pm ProtocolManager) error {
 	log.Info("Stop PM: done", "entity", pm.Entity().Name())
 
 	return nil
-}
-
-func PMSync(pm ProtocolManager) error {
-	var err error
-	forceSyncTicker := time.NewTicker(pm.ForceSyncCycle())
-
-looping:
-	for {
-		select {
-		case peer, ok := <-pm.NewPeerCh():
-			if !ok {
-				break looping
-			}
-
-			err = pm.Sync(peer)
-			if err != nil {
-				log.Error("unable to Sync after newPeer", "e", err)
-			}
-		case <-forceSyncTicker.C:
-			forceSyncTicker.Stop()
-			forceSyncTicker = time.NewTicker(pm.ForceSyncCycle())
-
-			err = pm.Sync(nil)
-			if err != nil {
-				log.Error("unable to Sync after forceSync", "e", err)
-			}
-		case <-pm.QuitSync():
-			return p2p.DiscQuitting
-		}
-	}
-	forceSyncTicker.Stop()
-
-	return nil
-}
-
-func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []byte, peer *PttPeer) error {
-	opKeyInfo, err := pm.GetOpKeyInfoFromHash(hash)
-
-	if err != nil {
-		return err
-	}
-
-	op, dataBytes, err := pm.Ptt().DecryptData(encData, opKeyInfo)
-	//log.Debug("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op)
-	if err != nil {
-		return err
-	}
-
-	switch op {
-	case IdentifyPeerMsg:
-		return pm.HandleIdentifyPeer(dataBytes, peer)
-	case IdentifyPeerAckMsg:
-		return pm.HandleIdentifyPeerAck(dataBytes, peer)
-	}
-
-	fitPeerType := pm.GetPeerType(peer)
-
-	if fitPeerType < PeerTypeMember {
-		return ErrInvalidEntity
-	}
-
-	return pm.HandleMessage(op, dataBytes, peer)
 }
 
 /*

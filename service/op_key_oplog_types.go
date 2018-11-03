@@ -16,18 +16,14 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common"
-
 const (
 	_ OpType = iota
-	OpKeyOpTypeAddKey
-	OpKeyOpTypeRevokeKey
+	OpKeyOpTypeCreateOpKey
+	OpKeyOpTypeRevokeOpKey
 )
 
-type OpKeyOpAddKey struct {
-	Hash *common.Address `json:"H"`
+type OpKeyOpCreateOpKey struct {
 }
 
-type OpKeyOpRevokeKey struct {
-	Hash *common.Address `json:"H"`
+type OpKeyOpRevokeOpKey struct {
 }

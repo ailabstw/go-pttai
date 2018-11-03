@@ -20,7 +20,65 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/p2p"
 )
+
+func PMSync(pm ProtocolManager) error {
+	var err error
+	forceSyncTicker := time.NewTicker(pm.ForceSyncCycle())
+
+	var peer *PttPeer
+looping:
+	for {
+		select {
+		case peer, ok := <-pm.NewPeerCh():
+			if !ok {
+				break looping
+			}
+
+			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
+			err = pm.Sync(peer)
+			if err != nil {
+				log.Error("unable to Sync after newPeer", "e", err)
+			}
+		case <-forceSyncTicker.C:
+			forceSyncTicker.Stop()
+			forceSyncTicker = time.NewTicker(pm.ForceSyncCycle())
+
+			peer, err = pmSyncPeer(pm)
+			if err != nil {
+				break looping
+			}
+			if peer == nil {
+				continue
+			}
+
+			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
+			err = pm.Sync(peer)
+			if err != nil {
+				log.Error("unable to Sync after forceSync", "e", err)
+			}
+		case <-pm.QuitSync():
+			err = p2p.DiscQuitting
+			break looping
+		}
+	}
+	forceSyncTicker.Stop()
+
+	return err
+}
+
+func pmSyncPeer(pm ProtocolManager) (*PttPeer, error) {
+	peerList := pm.Peers().PeerList(false)
+	if len(peerList) == 0 {
+		return nil, nil
+	}
+	peer := RandomPeer(peerList)
+
+	return peer, nil
+}
 
 func (pm *BaseProtocolManager) ForceSyncCycle() time.Duration {
 	randNum := rand.Intn(pm.maxSyncRandomSeconds-pm.minSyncRandomSeconds) + pm.minSyncRandomSeconds
@@ -30,10 +88,6 @@ func (pm *BaseProtocolManager) ForceSyncCycle() time.Duration {
 
 func (pm *BaseProtocolManager) QuitSync() chan struct{} {
 	return pm.quitSync
-}
-
-func (pm *BaseProtocolManager) SetQuitSync(quitSync chan struct{}) {
-	pm.quitSync = quitSync
 }
 
 func (pm *BaseProtocolManager) SyncWG() *sync.WaitGroup {

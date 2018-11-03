@@ -22,38 +22,62 @@ import (
 )
 
 type OpKeyOplog struct {
-	*Oplog `json:"O"`
+	*BaseOplog `json:"O"`
+}
+
+func (o *OpKeyOplog) GetBaseOplog() *BaseOplog {
+	return o.BaseOplog
 }
 
 func NewOpKeyOplog(keyID *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}, db *pttdb.LDBBatch, entityID *types.PttID, dbLock *types.LockMap) (*OpKeyOplog, error) {
 
-	log, err := NewOplog(keyID, ts, doerID, op, data, db, entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, dbLock)
+	oplog, err := NewOplog(keyID, ts, doerID, op, data, db, entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, dbLock)
 	if err != nil {
 		return nil, err
 	}
 
 	return &OpKeyOplog{
-		Oplog: log,
+		BaseOplog: oplog,
 	}, nil
 }
 
-func (pm *BaseProtocolManager) setOpKeyDB(log *Oplog) {
+func (pm *BaseProtocolManager) NewOpKeyOplog(keyID *types.PttID, op OpType, opData OpData) (Oplog, error) {
+
+	myID := pm.Ptt().GetMyEntity().GetID()
 	entityID := pm.Entity().GetID()
-	log.SetDB(pm.DBOpKeyInfo(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, pm.DBOpKeyLock())
+
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewOpKeyOplog(keyID, ts, myID, op, opData, pm.DBOpKeyInfo(), entityID, pm.DBOpKeyLock())
 }
 
-func OplogsToOpKeyOplogs(logs []*Oplog) []*OpKeyOplog {
-	opKeyLogs := make([]*OpKeyOplog, len(logs))
-	for i, log := range logs {
-		opKeyLogs[i] = &OpKeyOplog{Oplog: log}
-	}
-	return opKeyLogs
+func (pm *BaseProtocolManager) SetOpKeyDB(oplog *BaseOplog) {
+	entityID := pm.Entity().GetID()
+	oplog.SetDB(pm.DBOpKeyInfo(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, pm.dbOpKeyLock)
 }
 
-func OpKeyOplogsToOplogs(opKeyLogs []*OpKeyOplog) []*Oplog {
-	logs := make([]*Oplog, len(opKeyLogs))
-	for i, log := range opKeyLogs {
-		logs[i] = log.Oplog
+func OplogsToOpKeyOplogs(oplogs []*BaseOplog) []*OpKeyOplog {
+	typedLogs := make([]*OpKeyOplog, len(oplogs))
+	for i, oplog := range oplogs {
+		typedLogs[i] = &OpKeyOplog{BaseOplog: oplog}
 	}
-	return logs
+	return typedLogs
+}
+
+func OpKeyOplogsToOplogs(typedLogs []*OpKeyOplog) []*BaseOplog {
+	oplogs := make([]*BaseOplog, len(typedLogs))
+	for i, oplog := range typedLogs {
+		oplogs[i] = oplog.BaseOplog
+	}
+	return oplogs
+}
+
+func OplogToOpKeyOplog(oplog *BaseOplog) *OpKeyOplog {
+	if oplog == nil {
+		return nil
+	}
+	return &OpKeyOplog{BaseOplog: oplog}
 }

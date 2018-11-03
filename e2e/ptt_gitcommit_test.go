@@ -24,6 +24,8 @@ import (
 )
 
 func TestPttGitcommit(t *testing.T) {
+	NNodes = 1
+
 	assert := assert.New(t)
 
 	// setup test
@@ -34,7 +36,7 @@ func TestPttGitcommit(t *testing.T) {
 
 	bodyString := `{"id": "testID", "method": "ptt_getGitCommit", "params": []}`
 
-	body := testCore(t0, bodyString, nil, t, true)
+	body, _ := testCore(t0, bodyString, nil, t, true)
 
 	assert.Equal(84, len(body))
 }

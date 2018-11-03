@@ -25,7 +25,7 @@ type Backend struct {
 	*pkgservice.BaseService
 }
 
-func NewBackend(ctx *pkgservice.ServiceContext, config *Config, ptt *pkgservice.BasePtt) (*Backend, error) {
+func NewBackend(ctx *pkgservice.ServiceContext, config *Config, ptt pkgservice.Ptt) (*Backend, error) {
 	// init account
 	err := InitAccount(config.DataDir)
 	if err != nil {

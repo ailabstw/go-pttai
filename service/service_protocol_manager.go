@@ -16,6 +16,12 @@
 
 package service
 
+import (
+	"sync"
+
+	"github.com/ailabstw/go-pttai/common/types"
+)
+
 /*
 ServiceProtocolManager manage service-level operations.
 
@@ -32,18 +38,33 @@ type ServiceProtocolManager interface {
 	Start() error
 	Stop() error
 
+	// entities
+	Entities() map[types.PttID]Entity
+	Entity(id *types.PttID) Entity
+
+	RegisterEntity(id *types.PttID, e Entity) error
+	UnregisterEntity(id *types.PttID) error
+
 	Ptt() Ptt
 	Service() Service
 }
 
 type BaseServiceProtocolManager struct {
+	lock     sync.RWMutex
+	entities map[types.PttID]Entity
+
+	noMorePeers chan struct{}
+
 	ptt     Ptt
 	service Service
 }
 
 func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtocolManager, error) {
 	spm := &BaseServiceProtocolManager{
-		ptt: ptt,
+		entities: make(map[types.PttID]Entity),
+
+		noMorePeers: ptt.NoMorePeers(),
+		ptt:         ptt,
 
 		service: service,
 	}
@@ -51,18 +72,18 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 	return spm, nil
 }
 
-func (b *BaseServiceProtocolManager) Start() error {
-	return nil
+func (spm *BaseServiceProtocolManager) Start() error {
+	return spm.StartEntities()
 }
 
-func (b *BaseServiceProtocolManager) Stop() error {
-	return nil
+func (spm *BaseServiceProtocolManager) Stop() error {
+	return spm.StopEntities()
 }
 
-func (b *BaseServiceProtocolManager) Ptt() Ptt {
-	return b.ptt
+func (spm *BaseServiceProtocolManager) Ptt() Ptt {
+	return spm.ptt
 }
 
-func (b *BaseServiceProtocolManager) Service() Service {
-	return b.service
+func (spm *BaseServiceProtocolManager) Service() Service {
+	return spm.service
 }

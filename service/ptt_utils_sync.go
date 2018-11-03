@@ -16,34 +16,8 @@
 
 package service
 
-import (
-	"encoding/binary"
+import "sync"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/common/types"
-)
-
-func (p *BasePtt) CreateMasterOplog(raftIdx uint64, ts types.Timestamp, op OpType, data interface{}) (*MasterOplog, error) {
-	key := p.SignKey()
-	myID := p.myEntity.GetID()
-	nodeSignID := p.myEntity.GetNodeSignID()
-
-	oplog, err := NewMasterOplog(myID, ts, nodeSignID, op, data)
-	if err != nil {
-		return nil, err
-	}
-
-	// oplog.ID
-	binary.BigEndian.PutUint64(oplog.ID[OffsetMasterOplogRaftIdx:], raftIdx)
-	copy(oplog.ID[common.AddressLength:], myID[:common.AddressLength])
-
-	err = oplog.Sign(key)
-	if err != nil {
-		return nil, err
-	}
-
-	p.myEntity.PM().SetNewestMasterLogID(oplog.ID)
-	oplog.MasterLogID = oplog.ID
-
-	return oplog, nil
+func (p *BasePtt) SyncWG() *sync.WaitGroup {
+	return &p.syncWG
 }

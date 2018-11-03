@@ -30,15 +30,9 @@ type Backend struct {
 	contentBackend *content.Backend
 }
 
-func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, id *types.PttID, ptt *pkgservice.BasePtt, accountBackend *account.Backend, contentBackend *content.Backend) (*Backend, error) {
+func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, id *types.PttID, ptt pkgservice.Ptt, accountBackend *account.Backend, contentBackend *content.Backend) (*Backend, error) {
 	// init friend
 	err := InitFriend(cfg.DataDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// init myinfo
-	err = initMyInfo(id, ptt.MyNodeID())
 	if err != nil {
 		return nil, err
 	}

@@ -28,12 +28,10 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
-	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type Config struct {
-	DataDir  string
-	NodeType pkgservice.NodeType
+	DataDir string
 
 	PrivateKey *ecdsa.PrivateKey `toml:"-"`
 	ID         *types.PttID      `toml:"-"` // we also need ID because other services need to know ID, but cannot directly acccess private-key and postfix.
@@ -156,13 +154,46 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 		return nil, "", nil, err
 	}
 
+	// save DataDirPrivKey
 	keyfile = c.ResolvePath(DataDirPrivateKey)
 	if err := c.SaveKey(keyfile, key, postfix); err != nil {
 		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
 		return nil, "", nil, err
 	}
 
+	// save DataDirPrivKeyWithID
+	keyfile, err = c.ResolvePrivateKeyWithIDPath(id)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	if err := c.SaveKey(keyfile, key, postfix); err != nil {
+		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
+		return nil, "", nil, err
+	}
+
 	return key, postfix, id, err
+}
+
+func (c *Config) GetDataPrivateKeyByID(myID *types.PttID) (*ecdsa.PrivateKey, error) {
+	keyfile, err := c.ResolvePrivateKeyWithIDPath(myID)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.LoadECDSA(keyfile)
+}
+
+func (c *Config) ResolvePrivateKeyWithIDPath(myID *types.PttID) (string, error) {
+	idBytes, err := myID.MarshalText()
+	if err != nil {
+		return "", err
+	}
+	idStr := string(idBytes)
+
+	dataDirPrivateKeyPostfix := DataDirPrivateKey + "." + idStr
+
+	keyfile := c.ResolvePath(dataDirPrivateKeyPostfix)
+
+	return keyfile, nil
 }
 
 // resolvePath resolves path in the instance directory.

@@ -21,6 +21,7 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -32,29 +33,26 @@ type Backend struct {
 	accountBackend *account.Backend
 	contentBackend *content.Backend
 	friendBackend  *friend.Backend
+
+	myPtt pkgservice.MyPtt
 }
 
-func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt *pkgservice.BasePtt, accountBackend *account.Backend, contentBackend *content.Backend, friendBacked *friend.Backend) (*Backend, error) {
+func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt pkgservice.MyPtt, accountBackend *account.Backend, contentBackend *content.Backend, friendBacked *friend.Backend) (*Backend, error) {
 	err := InitMe(cfg.DataDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// init-id
-	err = initMyInfo(cfg.ID, ptt.MyNodeID(), cfg.PrivateKey, cfg.NodeType)
 	if err != nil {
 		return nil, err
 	}
 
 	backend := &Backend{
 		Config: cfg,
+		myPtt:  ptt,
 
 		accountBackend: accountBackend,
 		contentBackend: contentBackend,
 		friendBackend:  friendBacked,
 	}
 
-	spm, err := NewServiceProtocolManager(ptt, backend)
+	spm, err := NewServiceProtocolManager(cfg.ID, ptt, backend, contentBackend)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +62,15 @@ func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt *pkgservice.Bas
 		return nil, err
 	}
 	backend.BaseService = svc
+
+	if spm.MyInfo != nil {
+		return backend, nil
+	}
+
+	err = spm.CreateMe(cfg.ID, cfg.PrivateKey, contentBackend)
+	if err != nil {
+		return nil, err
+	}
 
 	return backend, nil
 }
@@ -83,6 +90,21 @@ func (b *Backend) Stop() error {
 	log.Debug("Stop: after TeardownMe")
 
 	return nil
+}
+
+func (b *Backend) APIs() []rpc.API {
+	return []rpc.API{
+		{
+			Namespace: "me",
+			Version:   "1.0",
+			Service:   NewPrivateAPI(b),
+		},
+		{
+			Namespace: "me",
+			Version:   "1.0",
+			Service:   NewPublicAPI(b),
+		},
+	}
 }
 
 func (b *Backend) Name() string {

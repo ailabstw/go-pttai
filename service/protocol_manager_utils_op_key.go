@@ -23,6 +23,109 @@ import (
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
+func (pm *BaseProtocolManager) RegisterOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error {
+	if !isLocked {
+		pm.lockOpKeyInfo.Lock()
+		defer pm.lockOpKeyInfo.Unlock()
+	}
+
+	if keyInfo.Status != types.StatusAlive {
+		return nil
+	}
+
+	pm.opKeyInfos[*keyInfo.Hash] = keyInfo
+
+	expireRenewTS, err := pm.getExpireRenewOpKeyTS()
+	if err != nil {
+		return err
+	}
+
+	pm.checkNewestOpKeyInfo(keyInfo, expireRenewTS)
+	if pm.oldestOpKeyInfo == nil {
+		pm.checkOldestOpKeyInfo(keyInfo, expireRenewTS)
+	}
+
+	ptt := pm.Ptt()
+	entityID := pm.Entity().GetID()
+	ptt.AddOpKey(keyInfo.Hash, entityID, false)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
+	e := pm.Entity()
+	entityID := e.GetID()
+
+	dbPrefix, err := DBPrefix(DBOpKeyPrefix, entityID)
+	if err != nil {
+		return nil, err
+	}
+
+	iter, err := pm.DBOpKeyInfo().DB().NewIteratorWithPrefix(dbPrefix, dbPrefix, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Release()
+
+	expireTS, err := pm.getExpireOpKeyTS()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("loadOpKeyInfo: to for-loop")
+
+	opKeyInfos := make([]*KeyInfo, 0)
+	toRemoveOpKeys := make([][]byte, 0)
+	toExpireOpKeyInfos := make([]*KeyInfo, 0)
+	for iter.Next() {
+		key := iter.Key()
+		val := iter.Value()
+
+		keyInfo := &KeyInfo{}
+		err = keyInfo.Unmarshal(val)
+		if err != nil {
+			log.Warn("loadOpKeyInfo: unable to unmarshal", "key", key)
+			toRemoveOpKeys = append(toRemoveOpKeys, common.CloneBytes(key))
+			continue
+		}
+
+		pm.SetOpKeyObjDB(keyInfo)
+
+		if keyInfo.UpdateTS.IsLess(expireTS) {
+			log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
+			toExpireOpKeyInfos = append(toExpireOpKeyInfos, keyInfo)
+			continue
+		}
+
+		if err != nil {
+			log.Warn("loadOpKeyInfo: unable to init", "key", key)
+			toExpireOpKeyInfos = append(toExpireOpKeyInfos, keyInfo)
+			continue
+		}
+
+		opKeyInfos = append(opKeyInfos, keyInfo)
+	}
+
+	log.Debug("loadOpKeyInfo: after for-loop", "opKeyInfos", len(opKeyInfos), "toRemoveOpKeys", len(toRemoveOpKeys), "toExpireOpKeyInfos", len(toExpireOpKeyInfos))
+
+	// to remove
+	keyInfo := NewEmptyKeyInfo()
+	for _, key := range toRemoveOpKeys {
+		err = keyInfo.DeleteKey(key)
+		if err != nil {
+			log.Error("loadOpKeyInfos: unable to delete key", "name", e.Name(), "dbPrefix", dbPrefix, "e", err)
+		}
+	}
+
+	pm.lockOpKeyInfo.Lock()
+	defer pm.lockOpKeyInfo.Unlock()
+	for _, eachKeyInfo := range toExpireOpKeyInfos {
+		pm.ExpireOpKeyInfo(eachKeyInfo, true)
+	}
+
+	return opKeyInfos, nil
+}
+
 func (pm *BaseProtocolManager) GetOpKeyInfoFromHash(hash *common.Address, isLocked bool) (*KeyInfo, error) {
 	if !isLocked {
 		pm.lockOpKeyInfo.RLock()
@@ -125,31 +228,6 @@ func (pm *BaseProtocolManager) getOldestOpKeyFullScan(isLocked bool) (*KeyInfo, 
 	return pm.oldestOpKeyInfo, nil
 }
 
-func (pm *BaseProtocolManager) RegisterOpKeyInfo(keyInfo *KeyInfo, isLocked bool, isPttLocked bool) error {
-	if !isLocked {
-		pm.lockOpKeyInfo.Lock()
-		defer pm.lockOpKeyInfo.Unlock()
-	}
-
-	pm.opKeyInfos[*keyInfo.Hash] = keyInfo
-
-	expireRenewTS, err := pm.getExpireRenewOpKeyTS()
-	if err != nil {
-		return err
-	}
-
-	pm.checkNewestOpKeyInfo(keyInfo, expireRenewTS)
-	if pm.oldestOpKeyInfo == nil {
-		pm.checkOldestOpKeyInfo(keyInfo, expireRenewTS)
-	}
-
-	ptt := pm.Ptt()
-	entityID := pm.Entity().GetID()
-	ptt.AddOpKey(keyInfo.Hash, entityID, isPttLocked)
-
-	return nil
-}
-
 func (pm *BaseProtocolManager) getExpireOpKeyTS() (types.Timestamp, error) {
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -171,15 +249,16 @@ func (pm *BaseProtocolManager) getExpireRenewOpKeyTS() (types.Timestamp, error) 
 	return now, nil
 }
 
-func (pm *BaseProtocolManager) RemoveOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error {
+func (pm *BaseProtocolManager) ExpireOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error {
 	if !isLocked {
 		pm.lockOpKeyInfo.Lock()
 		defer pm.lockOpKeyInfo.Unlock()
 	}
-	return pm.RemoveOpKeyInfoFromHash(keyInfo.Hash, true)
+
+	return pm.RemoveOpKeyInfoFromHash(keyInfo.Hash, true, true, true)
 }
 
-func (pm *BaseProtocolManager) RemoveOpKeyInfoFromHash(hash *common.Address, isLocked bool) error {
+func (pm *BaseProtocolManager) RemoveOpKeyInfoFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error {
 	entityID := pm.Entity().GetID()
 
 	if !isLocked {
@@ -187,7 +266,7 @@ func (pm *BaseProtocolManager) RemoveOpKeyInfoFromHash(hash *common.Address, isL
 		defer pm.lockOpKeyInfo.Unlock()
 	}
 
-	removeOpKeyInfo, ok := pm.opKeyInfos[*hash]
+	keyInfo, ok := pm.opKeyInfos[*hash]
 	if !ok {
 		return nil
 	}
@@ -195,79 +274,42 @@ func (pm *BaseProtocolManager) RemoveOpKeyInfoFromHash(hash *common.Address, isL
 	// delete pm.opKeyInfos
 	delete(pm.opKeyInfos, *hash)
 
-	// delete db
-	removeOpKeyInfo.Delete(pm.DBOpKeyInfo(), false)
+	if isDeleteOplog {
+		pm.removeOpKeyOplog(keyInfo.LogID, false)
+		if keyInfo.CreateLogID != nil {
+			pm.removeOpKeyOplog(keyInfo.CreateLogID, false)
+		}
+	}
 
-	pm.getNewestOpKeyFullScan(true)
+	// delete db
+	if isDeleteDB {
+		keyInfo.Delete(false)
+	}
 
 	// ptt
 	ptt := pm.Ptt()
 	ptt.RemoveOpKey(hash, entityID, false)
 
+	pm.getNewestOpKeyFullScan(true)
+
 	return nil
 }
 
-func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
-	e := pm.Entity()
-	entityID := e.GetID()
-
-	dbPrefix, err := DBPrefix(DBOpKeyPrefix, entityID)
-	if err != nil {
-		return nil, err
-	}
-
-	iter, err := pm.db.DB().NewIteratorWithPrefix(dbPrefix, dbPrefix, pttdb.ListOrderNext)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Release()
-
-	expireTS, err := pm.getExpireOpKeyTS()
-	if err != nil {
-		return nil, err
-	}
-
-	opKeyInfos := make([]*KeyInfo, 0)
-	toRemoveOpKeys := make([][]byte, 0)
-	for iter.Next() {
-		key := iter.Key()
-		val := iter.Value()
-
-		keyInfo := &KeyInfo{}
-		err = keyInfo.Unmarshal(val)
+func (pm *BaseProtocolManager) removeOpKeyOplog(logID *types.PttID, isLocked bool) error {
+	if !isLocked {
+		err := pm.dbOpKeyLock.Lock(logID)
 		if err != nil {
-			log.Warn("loadOpKeyInfo: unable to unmarshal", "key", key)
-			toRemoveOpKeys = append(toRemoveOpKeys, common.CloneBytes(key))
-			continue
+			return err
 		}
-
-		if keyInfo.UpdateTS.IsLess(expireTS) {
-			log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
-			toRemoveOpKeys = append(toRemoveOpKeys, common.CloneBytes(key))
-			continue
-		}
-
-		err = keyInfo.Init(pm.dbOpKeyLock)
-		if err != nil {
-			log.Warn("loadOpKeyInfo: unable to init", "key", key)
-			toRemoveOpKeys = append(toRemoveOpKeys, common.CloneBytes(key))
-			continue
-		}
-
-		opKeyInfos = append(opKeyInfos, keyInfo)
+		defer pm.dbOpKeyLock.Unlock(logID)
 	}
 
-	log.Debug("loadOpKeyInfo: after loop", "toRemoveOpKeys", toRemoveOpKeys)
+	// delete oplog
+	oplog := &BaseOplog{ID: logID}
+	pm.SetOpKeyDB(oplog)
+	oplog.Delete(false)
 
-	for _, key := range toRemoveOpKeys {
-		keyInfo := &KeyInfo{}
-		err := keyInfo.DeleteKey(key, pm.db)
-		if err != nil {
-			log.Error("loadOpKeyInfos: unable to delete key", "name", e.Name(), "dbPrefix", dbPrefix, "e", err)
-		}
-	}
-
-	return opKeyInfos, nil
+	return nil
 }
 
 func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
@@ -292,6 +334,25 @@ func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRene
 	}
 
 	return
+}
+
+func (pm *BaseProtocolManager) OpKeyInfos() map[common.Address]*KeyInfo {
+	return pm.opKeyInfos
+}
+
+func (pm *BaseProtocolManager) OpKeyInfoList() []*KeyInfo {
+	pm.lockOpKeyInfo.RLock()
+	defer pm.lockOpKeyInfo.RUnlock()
+
+	lenOpKeyInfos := len(pm.opKeyInfos)
+	opKeyInfoList := make([]*KeyInfo, lenOpKeyInfos)
+	i := 0
+	for _, keyInfo := range pm.opKeyInfos {
+		opKeyInfoList[i] = keyInfo
+		i++
+	}
+
+	return opKeyInfoList
 }
 
 func (pm *BaseProtocolManager) RenewOpKeySeconds() uint64 {

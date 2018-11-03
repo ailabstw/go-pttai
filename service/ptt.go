@@ -17,6 +17,7 @@
 package service
 
 import (
+	"crypto/ecdsa"
 	"sync"
 
 	"github.com/ailabstw/go-pttai/common"
@@ -25,6 +26,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/ailabstw/go-pttai/rpc"
 )
 
@@ -43,35 +45,65 @@ type Ptt interface {
 
 	FinishIdentifyPeer(peer *PttPeer, isLocked bool) error
 
+	NoMorePeers() chan struct{}
+
+	AddDial(nodeID *discover.NodeID, opKey *common.Address) error
+
+	// entities
+
+	RegisterEntity(e Entity, isLocked bool) error
+	UnregisterEntity(e Entity, isLocked bool) error
+
 	// join
-	LockJoins()
-	UnlockJoins()
 
 	AddJoinKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
 	RemoveJoinKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
 
+	TryJoin(challenge []byte, hash *common.Address, key *ecdsa.PrivateKey, request *JoinRequest) error
+
 	// op
-	LockOps()
-	UnlockOps()
 
 	AddOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
 	RemoveOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
 
+	// sync
+
+	SyncWG() *sync.WaitGroup
+
 	// me
-	MyEntity() MyEntity
-	MyNodeID() *discover.NodeID
 
-	SignKey() *KeyInfo
-
-	// master
-	CreateMasterOplog(raftIdx uint64, ts types.Timestamp, op OpType, data interface{}) (*MasterOplog, error)
+	GetMyEntity() MyEntity
 
 	// data
+
 	EncryptData(op OpType, data []byte, keyInfo *KeyInfo) ([]byte, error)
 	DecryptData(ciphertext []byte, keyInfo *KeyInfo) (OpType, []byte, error)
 
 	MarshalData(code CodeType, hash *common.Address, encData []byte) (*PttData, error)
 	UnmarshalData(pttData *PttData) (CodeType, *common.Address, []byte, error)
+}
+
+type MyPtt interface {
+	Ptt
+
+	// event-mux
+
+	NotifyNodeRestart() *types.Chan
+	NotifyNodeStop() *types.Chan
+
+	// MyEntity
+
+	SetMyEntity(m PttMyEntity) error
+	MyNodeID() *discover.NodeID
+	MyRaftID() uint64
+	MyNodeType() NodeType
+	MyNodeKey() *ecdsa.PrivateKey
+
+	DBOplog() *pttdb.LDBBatch
+
+	// SetPeerType
+
+	SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error
 }
 
 type BasePtt struct {
@@ -136,30 +168,31 @@ type BasePtt struct {
 	networkID uint32
 
 	// me
-	myEntity PttMyEntity
-	myNodeID *discover.NodeID // ptt knows only my-node-id
-
-	meSub *event.TypeMuxSubscription
-
-	// MeOplog
-	meOplogMerkle *Merkle
-
-	meOplogSub  *event.TypeMuxSubscription
-	meOplogsSub *event.TypeMuxSubscription
-
-	// MasterOplog
-	masterOplogMerkle *Merkle
+	myEntity   PttMyEntity
+	myNodeID   *discover.NodeID // ptt knows only my-node-id
+	myRaftID   uint64
+	myNodeType NodeType
+	myNodeKey  *ecdsa.PrivateKey
 }
 
-func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*BasePtt, error) {
+func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID, myNodeKey *ecdsa.PrivateKey) (*BasePtt, error) {
 	// init-service
 	InitService(cfg.DataDir)
+
+	myRaftID, err := myNodeID.ToRaftID()
+	if err != nil {
+		return nil, err
+	}
 
 	p := &BasePtt{
 		config: cfg,
 
-		myNodeID: myNodeID,
+		myNodeID:   myNodeID,
+		myRaftID:   myRaftID,
+		myNodeType: cfg.NodeType,
+		myNodeKey:  myNodeKey,
 
+		// event-mux
 		eventMux: new(event.TypeMux),
 
 		notifyNodeRestart: types.NewChan(1),
@@ -176,6 +209,16 @@ func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID) (*BaseP
 		userPeerMap: make(map[types.PttID]*discover.NodeID),
 
 		dialHist: NewDialHistory(),
+
+		// entities
+		entities: make(map[types.PttID]Entity),
+
+		// joins
+		joins:        make(map[common.Address]*types.PttID),
+		confirmJoins: make(map[string]*ConfirmJoin),
+
+		// ops
+		ops: make(map[common.Address]*types.PttID),
 
 		// sync
 		quitSync: make(chan struct{}),
@@ -255,9 +298,6 @@ func (p *BasePtt) Stop() error {
 
 	// remove ptt-level chan
 
-	p.meOplogSub.Unsubscribe()
-	p.meOplogsSub.Unsubscribe()
-
 	p.eventMux.Stop()
 
 	log.Debug("Stop: done")
@@ -297,39 +337,6 @@ func (p *BasePtt) RegisterService(service Service) error {
 	log.Info("RegisterService: done", "name", service.Name())
 
 	return nil
-}
-
-/**********
- * Me
- **********/
-
-func (p *BasePtt) MyNodeID() *discover.NodeID {
-	return p.myNodeID
-}
-
-func (p *BasePtt) SetMyEntity(myEntity PttMyEntity) error {
-	var err error
-	p.myEntity = myEntity
-
-	p.meOplogMerkle, err = NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myEntity.GetID(), dbOplog)
-	if err != nil {
-		return err
-	}
-
-	p.masterOplogMerkle, err = NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, myEntity.GetID(), dbOplog)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *BasePtt) MyEntity() MyEntity {
-	return p.myEntity
-}
-
-func (p *BasePtt) SignKey() *KeyInfo {
-	return p.myEntity.SignKey()
 }
 
 /**********

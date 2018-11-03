@@ -17,77 +17,9 @@
 package service
 
 import (
-	"encoding/binary"
-
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
-
-// CodeType
-type CodeType uint64
-
-const (
-	CodeTypeInvalid CodeType = iota
-	CodeTypeStatus
-	CodeTypeJoin
-	CodeTypeJoinAck
-	CodeTypeOp
-	CodeTypeOpAck
-	CodeTypeOpFail
-	CodeTypeRequestOp
-	CodeTypeRequestOpAck
-
-	CodeTypeIdentifyPeer
-	CodeTypeIdentifyPeerAck
-	CodeTypeIdentifyPeerFail
-
-	CodeTypeIdentifyPeerWithMyID
-	CodeTypeIdentifyPeerWithMyIDChallenge
-	CodeTypeIdentifyPeerWithMyIDChallengeAck
-	CodeTypeIdentifyPeerWithMyIDAck
-
-	NCodeType
-)
-
-func MarshalCode(code CodeType) ([]byte, error) {
-	codeBytes := make([]byte, SizeCodeType)
-	binary.BigEndian.PutUint64(codeBytes, uint64(code))
-
-	return codeBytes, nil
-
-}
-
-func UnmarshalCode(codeBytes []byte) (CodeType, error) {
-	if len(codeBytes) != SizeCodeType {
-		return 0, ErrInvalidOp
-	}
-	code := CodeType(binary.BigEndian.Uint64(codeBytes))
-	return code, nil
-}
-
-// OpType
-type OpType uint32
-
-const (
-	ZeroOpType OpType = 0
-	MaxOpType  OpType = 0xffffffff
-)
-
-func MarshalOp(op OpType) ([]byte, error) {
-	opBytes := make([]byte, SizeOpType)
-	binary.BigEndian.PutUint32(opBytes, uint32(op))
-
-	return opBytes, nil
-
-}
-
-func UnmarshalOp(opBytes []byte) (OpType, error) {
-	if len(opBytes) != SizeOpType {
-		return 0, ErrInvalidOp
-	}
-	op := OpType(binary.BigEndian.Uint32(opBytes))
-	return op, nil
-}
 
 // PttEventData
 type PttEventData struct {
@@ -119,7 +51,6 @@ func (p *PttData) Clone() *PttData {
 }
 
 // PttStatus
-
 type PttStatus struct {
 	Version   uint32
 	NetworkID uint32

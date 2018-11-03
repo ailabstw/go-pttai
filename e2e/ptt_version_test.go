@@ -23,6 +23,8 @@ import (
 )
 
 func TestPttVersion(t *testing.T) {
+	NNodes = 1
+
 	// setup test
 	setupTest(t)
 	defer teardownTest(t)

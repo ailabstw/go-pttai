@@ -16,6 +16,12 @@
 
 package service
 
+import (
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
+)
+
 func (p *BasePtt) GetVersion() (string, error) {
 	return p.config.Version, nil
 }
@@ -23,6 +29,20 @@ func (p *BasePtt) GetVersion() (string, error) {
 func (p *BasePtt) GetGitCommit() (string, error) {
 	return p.config.GitCommit, nil
 }
+
+func (p *BasePtt) Shutdown() (bool, error) {
+	p.notifyNodeStop.PassChan(struct{}{})
+	return true, nil
+}
+
+func (p *BasePtt) Restart() (bool, error) {
+	p.notifyNodeRestart.PassChan(struct{}{})
+	return true, nil
+}
+
+/**********
+ * Peer
+ **********/
 
 func (p *BasePtt) CountPeers() (*BackendCountPeers, error) {
 	p.peerLock.RLock()
@@ -66,12 +86,101 @@ func (p *BasePtt) BEGetPeers() ([]*BackendPeer, error) {
 	return peerList, nil
 }
 
-func (p *BasePtt) Shutdown() (bool, error) {
-	p.notifyNodeStop.PassChan(struct{}{})
-	return true, nil
+/**********
+ * Entities
+ **********/
+
+func (p *BasePtt) CountEntities() (int, error) {
+	return len(p.entities), nil
 }
 
-func (p *BasePtt) Restart() (bool, error) {
-	p.notifyNodeRestart.PassChan(struct{}{})
-	return true, nil
+/**********
+ * Join
+ **********/
+
+func (p *BasePtt) GetJoins() map[common.Address]*types.PttID {
+	return p.joins
+}
+
+func (p *BasePtt) GetConfirmJoins() ([]*BackendConfirmJoin, error) {
+	p.lockConfirmJoin.RLock()
+	defer p.lockConfirmJoin.RUnlock()
+
+	results := make([]*BackendConfirmJoin, len(p.confirmJoins))
+
+	i := 0
+	for _, confirmJoin := range p.confirmJoins {
+		backendConfirmJoin := &BackendConfirmJoin{
+			ID:         confirmJoin.JoinEntity.ID,
+			Name:       confirmJoin.JoinEntity.Name,
+			EntityID:   confirmJoin.Entity.GetID(),
+			EntityName: []byte(confirmJoin.Entity.Name()),
+			UpdateTS:   confirmJoin.UpdateTS,
+			NodeID:     confirmJoin.Peer.GetID(),
+			JoinType:   confirmJoin.JoinType,
+		}
+		results[i] = backendConfirmJoin
+
+		i++
+	}
+
+	return results, nil
+}
+
+/**********
+ * Op
+ **********/
+
+func (p *BasePtt) GetOps() map[common.Address]*types.PttID {
+	return p.ops
+}
+
+/**********
+ * PttOplog
+ **********/
+
+func (p *BasePtt) BEGetPttOplogList(logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*PttOplog, error) {
+
+	var logID *types.PttID = nil
+	if len(logIDBytes) != 0 {
+		err := logID.Unmarshal(logIDBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return p.GetPttOplogList(logID, limit, listOrder, types.StatusAlive)
+}
+
+func (p *BasePtt) MarkPttOplogSeen() (types.Timestamp, error) {
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	tsBytes, err := ts.Marshal()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	err = dbMeta.Put(DBPttLogSeenPrefix, tsBytes)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return ts, nil
+}
+
+func (p *BasePtt) GetPttOplogSeen() (types.Timestamp, error) {
+	tsBytes, err := dbMeta.Get(DBPttLogSeenPrefix)
+	if err != nil {
+		return types.ZeroTimestamp, nil
+	}
+
+	ts, err := types.UnmarshalTimestamp(tsBytes)
+	if err != nil {
+		return types.ZeroTimestamp, nil
+	}
+
+	return ts, nil
 }

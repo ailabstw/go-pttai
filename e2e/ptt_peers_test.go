@@ -26,6 +26,7 @@ import (
 
 func TestPttPeers(t *testing.T) {
 	var bodyString string
+	NNodes = 3
 
 	assert := assert.New(t)
 
@@ -38,7 +39,7 @@ func TestPttPeers(t *testing.T) {
 
 	// 1. ptt_countPeers. ensure connecting to each other.
 	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
-	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":4}}`
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":2}}`
 	testBodyEqualCore(t0, bodyString, resultString, t)
 	testBodyEqualCore(t1, bodyString, resultString, t)
 	testBodyEqualCore(t2, bodyString, resultString, t)
@@ -51,7 +52,7 @@ func TestPttPeers(t *testing.T) {
 	}{}
 
 	testListCore(t0, bodyString, dataGetPeers0_2, t, true)
-	assert.Equal(4, len(dataGetPeers0_2.Result))
+	assert.Equal(2, len(dataGetPeers0_2.Result))
 	peer0 := dataGetPeers0_2.Result[0]
 	assert.Equal(pkgservice.PeerTypeRandom, peer0.PeerType)
 }

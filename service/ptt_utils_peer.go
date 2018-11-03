@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
@@ -106,16 +107,9 @@ func (p *BasePtt) AddNewPeer(peer *PttPeer) error {
 		return err
 	}
 
-	// 3. check dial-entity
-	entity, err := p.checkDialEntity(peer)
+	err = p.CheckDialEntityAndIdentifyPeer(peer)
 	if err != nil {
 		return err
-	}
-
-	// 4. identify peer
-	if entity != nil {
-		entity.PM().IdentifyPeer(peer)
-		return nil
 	}
 
 	return nil
@@ -149,7 +143,7 @@ func (p *BasePtt) determinePeerTypeFromAllEntities(peer *PttPeer, isLocked bool)
 	defer p.entityLock.RUnlock()
 
 	// me
-	if p.myEntity != nil && p.myEntity.PM().IsMyDevice(peer) {
+	if p.myEntity != nil && p.myEntity.MyPM().IsMyDevice(peer) {
 		return PeerTypeMe, nil
 	}
 
@@ -478,23 +472,22 @@ func (p *BasePtt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
 		defer p.peerLock.RUnlock()
 	}
 
-	idVal := *id
-	peer := p.myPeers[idVal]
+	peer := p.myPeers[*id]
 	if peer != nil {
 		return peer
 	}
 
-	peer = p.importantPeers[idVal]
+	peer = p.importantPeers[*id]
 	if peer != nil {
 		return peer
 	}
 
-	peer = p.memberPeers[idVal]
+	peer = p.memberPeers[*id]
 	if peer != nil {
 		return peer
 	}
 
-	peer = p.randomPeers[idVal]
+	peer = p.randomPeers[*id]
 	if peer != nil {
 		return peer
 	}
@@ -555,20 +548,44 @@ func (p *BasePtt) dropAnyPeerCore(peers map[discover.NodeID]*PttPeer) error {
 }
 
 /**********
- * Misc
+ * Dail
  **********/
 
-func (p *BasePtt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
-	return p.myPeers, p.importantPeers, p.memberPeers, p.randomPeers, &p.peerLock
+func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address) error {
+	peer := p.GetPeer(nodeID, false)
+
+	if peer != nil && peer.UserID != nil {
+		return nil
+	}
+
+	err := p.dialHist.Add(nodeID, opKey)
+	if err != nil {
+		return err
+	}
+
+	if peer != nil {
+		return p.CheckDialEntityAndIdentifyPeer(peer)
+	}
+
+	p.Server().AddPeer(&discover.Node{ID: *nodeID})
+
+	return nil
 }
 
-func randomPttPeers(peers []*PttPeer) []*PttPeer {
-	newPeers := make([]*PttPeer, len(peers))
-	perm := mrand.Perm(len(peers))
-	for i, v := range perm {
-		newPeers[v] = peers[i]
+func (p *BasePtt) CheckDialEntityAndIdentifyPeer(peer *PttPeer) error {
+	// 1. check dial-entity
+	entity, err := p.checkDialEntity(peer)
+	if err != nil {
+		return err
 	}
-	return newPeers
+
+	// 2. identify peer
+	if entity != nil {
+		entity.PM().IdentifyPeer(peer)
+		return nil
+	}
+
+	return nil
 }
 
 func (p *BasePtt) checkDialEntity(peer *PttPeer) (Entity, error) {
@@ -591,4 +608,21 @@ func (p *BasePtt) checkDialEntity(peer *PttPeer) (Entity, error) {
 	entity := p.entities[*entityID]
 
 	return entity, nil
+}
+
+/**********
+ * Misc
+ **********/
+
+func (p *BasePtt) GetPeers() (map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, map[discover.NodeID]*PttPeer, *sync.RWMutex) {
+	return p.myPeers, p.importantPeers, p.memberPeers, p.randomPeers, &p.peerLock
+}
+
+func randomPttPeers(peers []*PttPeer) []*PttPeer {
+	newPeers := make([]*PttPeer, len(peers))
+	perm := mrand.Perm(len(peers))
+	for i, v := range perm {
+		newPeers[v] = peers[i]
+	}
+	return newPeers
 }

@@ -45,6 +45,8 @@ func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, e
 		return nil, nil, nil, nil, err
 	}
 
+	keyInfo.Count++
+
 	return bytesWithSalt, hash, sig, keyInfo.PubKeyBytes, nil
 }
 
@@ -140,4 +142,8 @@ func RandomPeer(peerList []*PttPeer) *PttPeer {
 
 	randNum := mrand.Intn(lenPeerList)
 	return peerList[randNum]
+}
+
+func randNum(minNum int, maxNum int) int {
+	return mrand.Intn(maxNum-minNum) + minNum
 }

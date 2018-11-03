@@ -39,7 +39,7 @@ func (pm *BaseProtocolManager) saveNewestMasterLogID() error {
 		return err
 	}
 
-	err = pm.db.DB().Put(key, pm.newestMasterLogID[:])
+	err = pm.DB().DB().Put(key, pm.newestMasterLogID[:])
 	if err != nil {
 		return err
 	}
@@ -76,5 +76,9 @@ func (pm *BaseProtocolManager) Master0Hash() []byte {
 }
 
 func (pm *BaseProtocolManager) IsMaster(id *types.PttID) bool {
+	if pm.isMaster != nil {
+		return pm.isMaster(id)
+	}
+
 	return false
 }

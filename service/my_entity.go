@@ -17,21 +17,26 @@
 package service
 
 import (
-	"crypto/ecdsa"
-
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 type MyEntity interface {
 	GetID() *types.PttID
+	GetStatus() types.Status
+
+	PM() ProtocolManager
 
 	Name() string
 
-	MasterKey() *ecdsa.PrivateKey
+	NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap) (*KeyInfo, error)
 
-	SignKey() *KeyInfo
 	GetNodeSignID() *types.PttID
+
+	Sign(oplog *BaseOplog) error
+	InternalSign(oplog *BaseOplog) error
+	MasterSign(oplog *BaseOplog) error
 
 	IsValidInternalOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 }
@@ -39,10 +44,9 @@ type MyEntity interface {
 type PttMyEntity interface {
 	MyEntity
 
-	PM() ProtocolManager
+	MyPM() MyProtocolManager
 
-	// board
-	GetMyBoard() Entity
+	SignKey() *KeyInfo
 
 	// join
 	GetJoinRequest(hash *common.Address) (*JoinRequest, error)
@@ -50,7 +54,4 @@ type PttMyEntity interface {
 
 	// node
 	GetLenNodes() int
-
-	// oplog
-	IsValidOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 }

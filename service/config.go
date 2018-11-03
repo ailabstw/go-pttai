@@ -24,4 +24,6 @@ type Config struct {
 	DataDir           string
 	Version           string
 	GitCommit         string
+
+	NodeType NodeType
 }

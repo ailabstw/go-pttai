@@ -19,9 +19,7 @@ package friend
 import (
 	"path/filepath"
 
-	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/node"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -30,12 +28,6 @@ var (
 	DefaultConfig = Config{
 		DataDir: filepath.Join(node.DefaultDataDir(), "friend"),
 	}
-)
-
-// MyInfo
-var (
-	MyID     *types.PttID     = nil
-	MyNodeID *discover.NodeID = nil
 )
 
 // db
@@ -75,13 +67,6 @@ func InitFriend(dataDir string) error {
 	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-func initMyInfo(id *types.PttID, nodeID *discover.NodeID) error {
-	MyID = id
-	MyNodeID = nodeID
 
 	return nil
 }

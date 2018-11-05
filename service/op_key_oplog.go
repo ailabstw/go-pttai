@@ -29,9 +29,9 @@ func (o *OpKeyOplog) GetBaseOplog() *BaseOplog {
 	return o.BaseOplog
 }
 
-func NewOpKeyOplog(keyID *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}, db *pttdb.LDBBatch, entityID *types.PttID, dbLock *types.LockMap) (*OpKeyOplog, error) {
+func NewOpKeyOplog(keyID *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, opData OpData, db *pttdb.LDBBatch, entityID *types.PttID, dbLock *types.LockMap) (*OpKeyOplog, error) {
 
-	oplog, err := NewOplog(keyID, ts, doerID, op, data, db, entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, dbLock)
+	oplog, err := NewOplog(keyID, ts, doerID, op, opData, db, entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, nil, dbLock)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (pm *BaseProtocolManager) NewOpKeyOplog(keyID *types.PttID, op OpType, opDa
 
 func (pm *BaseProtocolManager) SetOpKeyDB(oplog *BaseOplog) {
 	entityID := pm.Entity().GetID()
-	oplog.SetDB(pm.DBOpKeyInfo(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, DBOpKeyMerkleOplogPrefix, pm.dbOpKeyLock)
+	oplog.SetDB(pm.DBOpKeyInfo(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, nil, pm.dbOpKeyLock)
 }
 
 func OplogsToOpKeyOplogs(oplogs []*BaseOplog) []*OpKeyOplog {

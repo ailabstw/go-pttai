@@ -43,9 +43,12 @@ const (
 	PeerTypeErr PeerType = iota
 	PeerTypeRemoved
 	PeerTypeRandom
+	PeerTypePending
 	PeerTypeMember
 	PeerTypeImportant
+	PeerTypeHub
 	PeerTypeMe
+	NPeerType
 )
 
 // NodeType

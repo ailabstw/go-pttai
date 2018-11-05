@@ -119,10 +119,9 @@ func InitApp() *cli.App {
 }
 
 func main() {
-	f, _ := os.OpenFile("/tmp/log.gptt.err", os.O_WRONLY|os.O_CREATE|os.O_SYNC,
-		0666)
+	//f, _ := os.OpenFile("/tmp/log.gptt.err", os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
 
-	os.Stderr = f
+	//os.Stderr = f
 
 running:
 	for {

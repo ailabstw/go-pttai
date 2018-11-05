@@ -154,7 +154,7 @@ func TestMerkle_GetMerkleTreeList(t *testing.T) {
 				t.Errorf("Merkle.GetMerkleTreeList() = %v, want %v", got[0], tt.want[0])
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Merkle.GetMerkleTreeList() = %v, want %v", got1[0], tt.want1[0])
+				t.Errorf("Merkle.GetMerkleTreeList() = %v, want %v", got1[1], tt.want1[1])
 				//t.Errorf("Merkle.GetMerkleTreeList() = %v, want1 %v", got1[0], tt.want1[0])
 			}
 		})

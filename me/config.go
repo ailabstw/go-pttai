@@ -74,15 +74,33 @@ func (c *Config) SetMyKey(hex string, file string, postfix string, isSave bool) 
 	c.ID = id
 
 	if isSave {
-		keyfile := c.ResolvePath(DataDirPrivateKey)
-		if err := c.SaveKey(keyfile, key, postfix); err != nil {
-			log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
-			return err
-		}
+		c.saveKeyFile(DataDirPrivateKey, key, postfix, id)
 	}
 
 	return nil
 
+}
+
+func (c *Config) saveKeyFile(DataDirPrivateKey string, key *ecdsa.PrivateKey, postfix string, id *types.PttID) error {
+
+	// save DataDirPrivKey
+	keyfile := c.ResolvePath(DataDirPrivateKey)
+	if err := c.SaveKey(keyfile, key, postfix); err != nil {
+		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
+		return err
+	}
+
+	// save DataDirPrivKeyWithID
+	keyfile, err := c.ResolvePrivateKeyWithIDPath(id)
+	if err != nil {
+		return err
+	}
+	if err := c.SaveKey(keyfile, key, postfix); err != nil {
+		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
+		return err
+	}
+
+	return nil
 }
 
 func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
@@ -154,20 +172,8 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 		return nil, "", nil, err
 	}
 
-	// save DataDirPrivKey
-	keyfile = c.ResolvePath(DataDirPrivateKey)
-	if err := c.SaveKey(keyfile, key, postfix); err != nil {
-		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
-		return nil, "", nil, err
-	}
-
-	// save DataDirPrivKeyWithID
-	keyfile, err = c.ResolvePrivateKeyWithIDPath(id)
+	err = c.saveKeyFile(DataDirPrivateKey, key, postfix, id)
 	if err != nil {
-		return nil, "", nil, err
-	}
-	if err := c.SaveKey(keyfile, key, postfix); err != nil {
-		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
 		return nil, "", nil, err
 	}
 

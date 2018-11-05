@@ -27,24 +27,14 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type MyInfo struct {
-	*pkgservice.BaseEntity `json:"-"`
+	*pkgservice.BaseEntity `json:"e"`
 
-	V        types.Version
-	ID       *types.PttID
-	CreateTS types.Timestamp `json:"CT"`
 	UpdateTS types.Timestamp `json:"UT"`
-
-	Status types.Status `json:"S"`
-
-	LogID *types.PttID `json:"l"`
-
-	OwnerID *types.PttID `json:"o"`
 
 	signKeyInfo     *pkgservice.KeyInfo
 	nodeSignKeyInfo *pkgservice.KeyInfo
@@ -53,9 +43,6 @@ type MyInfo struct {
 
 	myKey   *ecdsa.PrivateKey
 	nodeKey *ecdsa.PrivateKey
-
-	meOplogMerkle     *pkgservice.Merkle
-	masterOplogMerkle *pkgservice.Merkle
 
 	validateKey *types.PttID
 }
@@ -70,14 +57,13 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		return nil, err
 	}
 
+	e := pkgservice.NewBaseEntity(id, ts, id, types.StatusPending, id, dbMe)
+
 	m := &MyInfo{
-		V:        types.CurrentVersion,
-		ID:       id,
-		CreateTS: ts,
-		UpdateTS: ts,
-		myKey:    myKey,
+		BaseEntity: e,
+		UpdateTS:   ts,
+		myKey:      myKey,
 	}
-	m.Status = types.StatusPending
 
 	// nodeSignID
 	myNodeID := ptt.MyNodeID()
@@ -103,6 +89,14 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 	m.OwnerID = id
 
 	return m, nil
+}
+
+func (m *MyInfo) GetUpdateTS() types.Timestamp {
+	return m.UpdateTS
+}
+
+func (m *MyInfo) SetUpdateTS(ts types.Timestamp) {
+	m.UpdateTS = ts
 }
 
 func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, MyID *types.PttID) error {
@@ -132,20 +126,7 @@ func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, MyID *ty
 		}
 	}
 
-	// merkle
-
-	m.meOplogMerkle, err = pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbOplog)
-	if err != nil {
-		return err
-	}
-
-	m.masterOplogMerkle, err = pkgservice.NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, myID, dbOplog)
-	if err != nil {
-		return err
-	}
-
 	// sign-key
-
 	err = m.CreateSignKeyInfo()
 	if err != nil {
 		return err
@@ -193,13 +174,7 @@ func (m *MyInfo) InitPM(ptt pkgservice.MyPtt, service pkgservice.Service) error 
 		name = []byte{}
 	}
 
-	baseEntity, err := pkgservice.NewBaseEntity(pm, string(name), ptt, service)
-	if err != nil {
-		log.Error("InitPM: unable to NewBaseEntity", "e", err)
-		return err
-	}
-
-	m.BaseEntity = baseEntity
+	m.BaseEntity.Init(pm, string(name), ptt, service)
 
 	return nil
 }
@@ -236,7 +211,7 @@ func (m *MyInfo) Save() error {
 		return err
 	}
 
-	_, err = dbMe.TryPut(key, marshaled, m.UpdateTS)
+	_, err = dbMeCore.TryPut(key, marshaled, m.UpdateTS)
 
 	if err != nil {
 		return err
@@ -254,7 +229,7 @@ func (m *MyInfo) Get(id *types.PttID, ptt pkgservice.Ptt, service pkgservice.Ser
 		return err
 	}
 
-	theBytes, err := dbMe.Get(key)
+	theBytes, err := dbMeCore.Get(key)
 	log.Debug("Get: after get from dbMe", "theBytes", theBytes, "e", err)
 	if err != nil {
 		return err
@@ -308,18 +283,6 @@ func (m *MyInfo) Revoke(keyBytes []byte) error {
 	return nil
 }
 
-func (m *MyInfo) GetID() *types.PttID {
-	return m.ID
-}
-
-func (m *MyInfo) GetCreateTS() types.Timestamp {
-	return m.CreateTS
-}
-
-func (m *MyInfo) DB() *pttdb.LDBBatch {
-	return dbMeBatch
-}
-
 func (m *MyInfo) GetJoinRequest(hash *common.Address) (*pkgservice.JoinRequest, error) {
 	return m.PM().(*ProtocolManager).GetJoinRequest(hash)
 }
@@ -332,20 +295,8 @@ func (m *MyInfo) IsValidInternalOplog(signInfos []*pkgservice.SignInfo) (*types.
 	return m.PM().(*ProtocolManager).IsValidInternalOplog(signInfos)
 }
 
-func (m *MyInfo) GetStatus() types.Status {
-	return m.Status
-}
-
 func (m *MyInfo) MyPM() pkgservice.MyProtocolManager {
 	return m.PM().(*ProtocolManager)
-}
-
-func (m *MyInfo) MeOplogMerkle() *pkgservice.Merkle {
-	return m.meOplogMerkle
-}
-
-func (m *MyInfo) MasterOplogMerkle() *pkgservice.Merkle {
-	return m.masterOplogMerkle
 }
 
 func (m *MyInfo) GetMasterKey() *ecdsa.PrivateKey {

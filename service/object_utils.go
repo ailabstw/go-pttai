@@ -16,7 +16,9 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 func NewObjectWithOplog(obj Object, oplog *BaseOplog) {
 	obj.SetVersion(types.CurrentVersion)

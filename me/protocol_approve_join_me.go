@@ -32,42 +32,21 @@ type ApproveJoinMe struct {
 
 /*
 ApproveJoinMe deals with procedure of approving-join-me:
-
-    1. create-my-node with unknown node-type
-    2. master-oplog
-    2. ptt set peer type
-    3. private-key-bytes
-    4. op-key
-    5. my-info
-    6. user-name
-    7. board-data
-    8. register-peer
-    9. sign-key-info
-    10. me-oplogs
-    11. master-oplogs
+	1. set peer-type as me
+	2. propose raft.
 */
 func (pm *ProtocolManager) ApproveJoinMe(joinEntity *pkgservice.JoinEntity, keyInfo *pkgservice.KeyInfo, peer *pkgservice.PttPeer) (*pkgservice.KeyInfo, interface{}, error) {
 	log.Debug("ApproveJoinMe: start")
 
+	myInfo := pm.Entity().(*MyInfo)
+	myID := myInfo.ID
+
 	pm.lockMyNodes.Lock()
 	defer pm.lockMyNodes.Unlock()
 
+	// 1. add my node
 	peerID := peer.GetID()
 	raftID, err := peerID.ToRaftID()
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ptt := pm.myPtt
-
-	ptt.SetPeerType(peer, pkgservice.PeerTypeMe, false, false)
-
-	myID := pm.Entity().GetID()
-	pm.ProposeRaftAddNode(peerID, 1)
-
-	// get-opkey
-	myOpKeyInfo, err := pm.GetNewestOpKey(false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,16 +61,21 @@ func (pm *ProtocolManager) ApproveJoinMe(joinEntity *pkgservice.JoinEntity, keyI
 		return nil, nil, err
 	}
 
-	// my-info
-	myInfo := pm.Entity().(*MyInfo)
-
-	// set my-node to pm
 	pm.MyNodes[raftID] = myNode
 
-	// XXX Hack for user-id register-peer
+	// 2. register pending peer
 	peer.UserID = myID
+	pm.RegisterPendingPeer(peer)
 
-	pm.RegisterPeer(peer)
+	// 3. propose raft.
+	pm.ProposeRaftAddNode(peerID, 1)
+
+	// 4. get-opkey
+	myOpKeyInfo, err := pm.GetNewestOpKey(false)
+	if err != nil {
+		log.Error("ApproveJoinMe: unable to get newest op key", "e", err)
+		return nil, nil, err
+	}
 
 	// data
 	data := &ApproveJoinMe{
@@ -100,27 +84,17 @@ func (pm *ProtocolManager) ApproveJoinMe(joinEntity *pkgservice.JoinEntity, keyI
 		MyInfo: myInfo,
 	}
 
+	log.Debug("ApproveJoinMe: done")
+
 	return myOpKeyInfo, data, nil
 }
 
 /*
 HandleApproveJoinMe deals with procedure of handling-approve-join-me:
-
-    1. migrate personal board
-    2. remaster other entities (boards / friends)
-    3. invalidate original my-info. (retain the opkey, but we will not use the opkey anymore.)
-    8. new private-key
-    4. new opkey
-    5. new me (with status pending)
-    6. sign-key
-    7. user-name
-    7. board
-    9. new me-oplogs
-    10. renew-me
-    11. remove-join-requests.
-    12. restart.
 */
 func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pkgservice.JoinRequest, peer *pkgservice.PttPeer) error {
+
+	log.Debug("HandleApproveJoinMe: start", "peer", peer)
 
 	approveJoin := &pkgservice.ApproveJoin{Data: &ApproveJoinMe{}}
 	err := json.Unmarshal(dataBytes, approveJoin)
@@ -128,7 +102,10 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 		log.Error("HandleApproveJoinMe: unable to unmarshal", "e", err)
 		return err
 	}
-	approveJoinMe := approveJoin.Data.(*ApproveJoinMe)
+	approveJoinMe, ok := approveJoin.Data.(*ApproveJoinMe)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -138,32 +115,31 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	ptt := pm.myPtt
 	service := pm.Entity().Service().(*Backend)
 	spm := service.SPM().(*ServiceProtocolManager)
-	MyID := ptt.GetMyEntity().GetID()
+	myID := ptt.GetMyEntity().GetID()
+	myNodeID := pm.myPtt.MyNodeID()
 
-	// new me
+	// 1. new me
 	newMyInfo := approveJoinMe.MyInfo
 
-	// my-node
+	// 2. my-node
+	newMyNode, err := NewMyNode(ts, joinRequest.ID, myNodeID, 0)
+	if err != nil {
+		return err
+	}
+	newMyNode.Status = types.StatusInit
+	_, err = newMyNode.Save()
+	log.Debug("HandleApproveJoinMe: after myNode2.Save", "myNode2", newMyNode, "ID", newMyNode.ID, "e", err)
+	if err != nil {
+		return err
+	}
 
-	myNode, err := NewMyNode(ts, joinRequest.ID, peer.GetID(), 0)
+	newMyNode2, err := NewMyNode(ts, joinRequest.ID, peer.GetID(), 0)
 	if err != nil {
 		return err
 	}
-	myNode.Status = types.StatusAlive
-	_, err = myNode.Save()
-	log.Debug("HandleApproveJoinMe: after myNode.Save", "myNode", myNode, "ID", myNode.ID, "e", err)
-	if err != nil {
-		return err
-	}
-
-	myNodeID := pm.myPtt.MyNodeID()
-	myNode2, err := NewMyNode(ts, joinRequest.ID, myNodeID, 0)
-	if err != nil {
-		return err
-	}
-	myNode2.Status = types.StatusInit
-	_, err = myNode2.Save()
-	log.Debug("HandleApproveJoinMe: after myNode2.Save", "myNode2", myNode2, "ID", myNode2.ID, "e", err)
+	newMyNode2.Status = types.StatusAlive
+	_, err = newMyNode2.Save()
+	log.Debug("HandleApproveJoinMe: after myNode.Save", "myNode", newMyNode2, "ID", newMyNode2.ID, "e", err)
 	if err != nil {
 		return err
 	}
@@ -171,7 +147,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	// my-info init
 	newMyInfo.Status = types.StatusInit
 	newMyInfo.UpdateTS = ts
-	err = newMyInfo.Init(ptt, service, MyID)
+	err = newMyInfo.Init(ptt, service, myID)
 
 	err = newMyInfo.Save()
 	if err != nil {
@@ -179,23 +155,35 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	}
 
 	// new op-key
+	newPM := newMyInfo.PM()
+
 	newMyOpKeyInfo := approveJoinMe.OpKeyInfo
-	newMyOpKeyInfo.Init(pm.DBOpKeyInfo(), pm.DBObjLock())
+	newMyOpKeyInfo.Init(newPM.DBOpKeyInfo(), newPM.DBObjLock())
 	err = newMyOpKeyInfo.Save(false)
 	if err != nil {
 		return err
 	}
 
-	err = newMyInfo.PM().RegisterOpKeyInfo(newMyOpKeyInfo, false)
+	err = newPM.RegisterOpKeyInfo(newMyOpKeyInfo, false)
 	if err != nil {
 		return err
 	}
 
+	// register peer
+	log.Debug("HandleApproveJoinMe: to RegisterPeer")
+
+	peer.UserID = newMyInfo.ID
+	newPM.RegisterPendingPeer(peer)
+
+	log.Debug("HandleApproveJoinMe: after RegisterPeer")
+
 	// add to entities
+	log.Debug("HandleApproveJoinMe: to RegisterEntity")
 	err = spm.RegisterEntity(newMyInfo.ID, newMyInfo)
 	if err != nil {
 		return err
 	}
+	log.Debug("HandleApproveJoinMe: after RegisterEntity")
 
 	// me-start
 	newMyInfo.Start()
@@ -205,7 +193,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	defer pm.lockJoinMeRequest.Unlock()
 	delete(pm.joinMeRequests, *joinRequest.Hash)
 
-	log.Debug("HandleApproveJoineMe: done")
+	log.Debug("HandleApproveJoinMe: done")
 
 	return nil
 }

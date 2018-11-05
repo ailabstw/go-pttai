@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -29,11 +30,15 @@ type InitMeInfo struct {
 }
 
 func (pm *ProtocolManager) InitMeInfo(peer *pkgservice.PttPeer) error {
+	log.Debug("InitMeInfo: start")
+
 	data := &InitMeInfo{}
 	err := pm.SendDataToPeer(InitMeInfoMsg, data, peer)
 	if err != nil {
 		return err
 	}
+
+	log.Debug("InitMeInfo: done")
 
 	return nil
 }
@@ -70,7 +75,11 @@ func (pm *ProtocolManager) initMeInfoLoopCore() {
 		return
 	}
 
+	pendingPeerList := pm.Peers().PendingPeerList(false)
 	peerList := pm.Peers().PeerList(false)
+	peerList = append(peerList, pendingPeerList...)
+
+	log.Debug("initMeInfoLoopCore", "peerList", peerList, "me", myInfo.ID)
 
 	myNodeID := pm.myPtt.MyNodeID()
 	for _, peer := range peerList {
@@ -86,10 +95,13 @@ func (pm *ProtocolManager) initMeInfoLoopCore() {
 
 		myNode := pm.MyNodes[raftID]
 		if myNode == nil {
+			log.Warn("initMeInfoLoopCore: myNode as nil", "peer", peer)
 			continue
 		}
 
-		if myNode.Status == types.StatusInternalPending {
+		log.Debug("initMeInfoLoopCore: to check status", "peer", peer, "status", myNode.Status)
+
+		if myNode.Status != types.StatusAlive {
 			pm.InitMeInfo(peer)
 		}
 	}

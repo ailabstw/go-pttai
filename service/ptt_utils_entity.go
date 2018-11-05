@@ -21,6 +21,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
@@ -42,7 +43,7 @@ func (p *BasePtt) getEntityFromHash(hash *common.Address, lock *sync.RWMutex, ha
 	return entity, nil
 }
 
-func (p *BasePtt) RegisterEntity(e Entity, isLocked bool) error {
+func (p *BasePtt) RegisterEntity(e Entity, isLocked bool, isPeerLocked bool) error {
 	if !isLocked {
 		p.entityLock.Lock()
 		defer p.entityLock.Unlock()
@@ -51,33 +52,61 @@ func (p *BasePtt) RegisterEntity(e Entity, isLocked bool) error {
 	id := e.GetID()
 	p.entities[*id] = e
 
-	return p.registerEntityPeers(e)
+	log.Debug("RegisterEntity: to registerEntityPeers")
+
+	return p.registerEntityPeers(e, isPeerLocked)
 }
 
-func (p *BasePtt) registerEntityPeers(e Entity) error {
-	p.peerLock.Lock()
-	defer p.peerLock.Unlock()
+func (p *BasePtt) registerEntityPeers(e Entity, isLocked bool) error {
+	if !isLocked {
+		p.peerLock.Lock()
+		defer p.peerLock.Unlock()
+	}
+
+	log.Debug("registerEntityPeers: after lock")
 
 	toMyPeers := make([]*PttPeer, 0)
 	toImportantPeers := make([]*PttPeer, 0)
 	toMemberPeers := make([]*PttPeer, 0)
+	toPendingPeers := make([]*PttPeer, 0)
+
+	pm := e.PM()
 
 	// my-peers: always my-peer and register the entity
-	for _, peer := range p.myPeers {
-		e.PM().RegisterPeer(peer)
+	var peer *PttPeer
+	log.Debug("registerEntityPeers: to myPeers")
+	for _, peer = range p.myPeers {
+		pm.RegisterPeer(peer, PeerTypeMe)
+	}
+
+	// hub-peers
+	log.Debug("registerEntityPeers: to hubPeers")
+	for _, peer = range p.hubPeers {
+		if pm.IsMyDevice(peer) {
+			pm.RegisterPeer(peer, PeerTypeMe)
+		} else if pm.IsImportantPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeImportant)
+		} else if pm.IsMemberPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeMember)
+		} else if pm.IsPendingPeer(peer) {
+			pm.RegisterPendingPeer(peer)
+		}
 	}
 
 	// important-peers
 	toRemovePeers := make([]*discover.NodeID, 0)
-	for nodeID, peer := range p.importantPeers {
-		if e.PM().IsMyDevice(peer) {
-			e.PM().RegisterPeer(peer)
+	log.Debug("registerEntityPeers: to importantPeers")
+	for _, peer = range p.importantPeers {
+		if pm.IsMyDevice(peer) {
+			pm.RegisterPeer(peer, PeerTypeMe)
 			toMyPeers = append(toMyPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
-		} else if e.PM().IsImportantPeer(peer) {
-			e.PM().RegisterPeer(peer)
-		} else if e.PM().IsMemberPeer(peer) {
-			e.PM().RegisterPeer(peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsImportantPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeImportant)
+		} else if pm.IsMemberPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeMember)
+		} else if pm.IsPendingPeer(peer) {
+			pm.RegisterPendingPeer(peer)
 		}
 	}
 	for _, nodeID := range toRemovePeers {
@@ -86,17 +115,44 @@ func (p *BasePtt) registerEntityPeers(e Entity) error {
 
 	// member-peers
 	toRemovePeers = make([]*discover.NodeID, 0)
-	for nodeID, peer := range p.memberPeers {
-		if e.PM().IsMyDevice(peer) {
-			//e.PM().RegisterPeer(peer)
+	log.Debug("registerEntityPeers: to memberPeers")
+	for _, peer = range p.memberPeers {
+		if pm.IsMyDevice(peer) {
+			pm.RegisterPeer(peer, PeerTypeMe)
 			toMyPeers = append(toMyPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
-		} else if e.PM().IsImportantPeer(peer) {
-			//e.PM().RegisterPeer(peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsImportantPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeImportant)
 			toImportantPeers = append(toImportantPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
-		} else if e.PM().IsMemberPeer(peer) {
-			//e.PM().RegisterPeer(peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsMemberPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeMember)
+		} else if pm.IsPendingPeer(peer) {
+			pm.RegisterPendingPeer(peer)
+		}
+	}
+	for _, nodeID := range toRemovePeers {
+		delete(p.memberPeers, *nodeID)
+	}
+
+	// pending-peers
+	toRemovePeers = make([]*discover.NodeID, 0)
+	log.Debug("registerEntityPeers: to pendingPeers")
+	for _, peer = range p.pendingPeers {
+		if pm.IsMyDevice(peer) {
+			pm.RegisterPeer(peer, PeerTypeMe)
+			toMyPeers = append(toMyPeers, peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsImportantPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeImportant)
+			toImportantPeers = append(toImportantPeers, peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsMemberPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeMember)
+			toMemberPeers = append(toMemberPeers, peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsPendingPeer(peer) {
+			pm.RegisterPendingPeer(peer)
 		}
 	}
 	for _, nodeID := range toRemovePeers {
@@ -105,19 +161,24 @@ func (p *BasePtt) registerEntityPeers(e Entity) error {
 
 	// random-peers
 	toRemovePeers = make([]*discover.NodeID, 0)
-	for nodeID, peer := range p.randomPeers {
-		if e.PM().IsMyDevice(peer) {
-			e.PM().RegisterPeer(peer)
+	log.Debug("registerEntityPeers: to randomPeers", "randomPeers", len(p.randomPeers))
+	for _, peer = range p.randomPeers {
+		if pm.IsMyDevice(peer) {
+			pm.RegisterPeer(peer, PeerTypeMe)
 			toMyPeers = append(toMyPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
-		} else if e.PM().IsImportantPeer(peer) {
-			e.PM().RegisterPeer(peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsImportantPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeImportant)
 			toImportantPeers = append(toImportantPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
-		} else if e.PM().IsMemberPeer(peer) {
-			e.PM().RegisterPeer(peer)
-			toImportantPeers = append(toMemberPeers, peer)
-			toRemovePeers = append(toRemovePeers, &nodeID)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsMemberPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypeMember)
+			toMemberPeers = append(toMemberPeers, peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
+		} else if pm.IsPendingPeer(peer) {
+			pm.RegisterPeer(peer, PeerTypePending)
+			toPendingPeers = append(toPendingPeers, peer)
+			toRemovePeers = append(toRemovePeers, peer.GetID())
 		}
 	}
 	for _, nodeID := range toRemovePeers {
@@ -125,22 +186,34 @@ func (p *BasePtt) registerEntityPeers(e Entity) error {
 	}
 
 	// to my-peers
-	for _, peer := range toMyPeers {
+	log.Debug("registerEntityPeers", "toMyPeers", len(toMyPeers))
+	for _, peer = range toMyPeers {
 		id := peer.ID()
 		p.myPeers[id] = peer
 	}
 
 	// to important-peers
-	for _, peer := range toImportantPeers {
+	log.Debug("registerEntityPeers", "toImportantPeers", len(toImportantPeers))
+	for _, peer = range toImportantPeers {
 		id := peer.ID()
 		p.importantPeers[id] = peer
 	}
 
 	// to member
-	for _, peer := range toMemberPeers {
+	log.Debug("registerEntityPeers", "toMemberPeers", len(toMemberPeers))
+	for _, peer = range toMemberPeers {
 		id := peer.ID()
 		p.memberPeers[id] = peer
 	}
+
+	// to pending
+	log.Debug("registerEntityPeers", "toPendingPeers", len(toPendingPeers))
+	for _, peer = range toPendingPeers {
+		id := peer.ID()
+		p.pendingPeers[id] = peer
+	}
+
+	log.Debug("registerEntityPeers: done")
 
 	return nil
 }

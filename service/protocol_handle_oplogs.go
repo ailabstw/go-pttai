@@ -133,7 +133,7 @@ func handleOplog(
 	defer oplog.Unlock()
 
 	// select
-	err = oplog.SelectExisting(false)
+	err = oplog.SelectExisting(true)
 	if err != nil {
 		return false, nil, err
 	}

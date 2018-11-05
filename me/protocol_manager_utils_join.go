@@ -34,6 +34,7 @@ func (pm *ProtocolManager) GetJoinRequest(hash *common.Address) (*pkgservice.Joi
 }
 
 func (pm *ProtocolManager) getJoinRequestCore(hash *common.Address, lock *sync.RWMutex, requests map[common.Address]*pkgservice.JoinRequest) (*pkgservice.JoinRequest, error) {
+
 	lock.RLock()
 	defer lock.RUnlock()
 
@@ -46,6 +47,7 @@ func (pm *ProtocolManager) getJoinRequestCore(hash *common.Address, lock *sync.R
 }
 
 func (pm *ProtocolManager) GetJoinMeRequests() (map[common.Address]*pkgservice.JoinRequest, *sync.RWMutex) {
+
 	return pm.joinMeRequests, &pm.lockJoinMeRequest
 }
 

@@ -31,7 +31,10 @@ type PttPeerSet struct {
 	importantPeerList []*PttPeer
 	memberPeers       map[discover.NodeID]*PttPeer
 	memberPeerList    []*PttPeer
-	peerList          []*PttPeer
+	pendingPeers      map[discover.NodeID]*PttPeer
+	pendingPeerList   []*PttPeer
+
+	peerList []*PttPeer
 
 	lock   sync.RWMutex
 	closed bool
@@ -41,13 +44,17 @@ func NewPttPeerSet() (*PttPeerSet, error) {
 	return &PttPeerSet{
 		peerTypes: make(map[discover.NodeID]PeerType),
 
-		mePeers:           make(map[discover.NodeID]*PttPeer),
-		importantPeers:    make(map[discover.NodeID]*PttPeer),
-		memberPeers:       make(map[discover.NodeID]*PttPeer),
+		mePeers:        make(map[discover.NodeID]*PttPeer),
+		importantPeers: make(map[discover.NodeID]*PttPeer),
+		memberPeers:    make(map[discover.NodeID]*PttPeer),
+		pendingPeers:   make(map[discover.NodeID]*PttPeer),
+
 		mePeerList:        make([]*PttPeer, 0),
 		importantPeerList: make([]*PttPeer, 0),
 		memberPeerList:    make([]*PttPeer, 0),
-		peerList:          make([]*PttPeer, 0),
+		pendingPeerList:   make([]*PttPeer, 0),
+
+		peerList: make([]*PttPeer, 0),
 	}, nil
 }
 
@@ -103,6 +110,7 @@ func (ps *PttPeerSet) Register(peer *PttPeer, peerType PeerType, isLocked bool) 
 	if ok {
 		origPeer := ps.GetPeerWithPeerType(pid, origPeerType, true)
 		if origPeer != nil && origPeer != peer {
+			// XXX should not happen: same node id but different connection.
 			return ErrAlreadyRegistered
 		}
 
@@ -120,6 +128,8 @@ func (ps *PttPeerSet) Register(peer *PttPeer, peerType PeerType, isLocked bool) 
 		delete(ps.importantPeers, id)
 	case PeerTypeMember:
 		delete(ps.memberPeers, id)
+	case PeerTypePending:
+		delete(ps.pendingPeers, id)
 	}
 
 	switch peerType {
@@ -129,8 +139,11 @@ func (ps *PttPeerSet) Register(peer *PttPeer, peerType PeerType, isLocked bool) 
 		ps.importantPeers[id] = peer
 	case PeerTypeMember:
 		ps.memberPeers[id] = peer
+	case PeerTypePending:
+		ps.pendingPeers[id] = peer
 	}
 
+	// TODO: reduce to O(logn)
 	if origPeerType == PeerTypeMe || peerType == PeerTypeMe {
 		ps.mePeerList = ps.PeersToPeerList(ps.mePeers, true)
 	}
@@ -139,6 +152,9 @@ func (ps *PttPeerSet) Register(peer *PttPeer, peerType PeerType, isLocked bool) 
 	}
 	if origPeerType == PeerTypeMember || peerType == PeerTypeMember {
 		ps.memberPeerList = ps.PeersToPeerList(ps.memberPeers, true)
+	}
+	if origPeerType == PeerTypePending || peerType == PeerTypePending {
+		ps.pendingPeerList = ps.PeersToPeerList(ps.pendingPeers, true)
 	}
 
 	ps.peerList = append(append(ps.mePeerList, ps.importantPeerList...), ps.memberPeerList...)
@@ -159,6 +175,8 @@ func (ps *PttPeerSet) GetPeerWithPeerType(id *discover.NodeID, peerType PeerType
 		return ps.importantPeers[*id]
 	case PeerTypeMember:
 		return ps.memberPeers[*id]
+	case PeerTypePending:
+		return ps.pendingPeers[*id]
 	}
 
 	return nil
@@ -183,10 +201,13 @@ func (ps *PttPeerSet) Unregister(peer *PttPeer, isLocked bool) error {
 		delete(ps.importantPeers, id)
 	case PeerTypeMember:
 		delete(ps.memberPeers, id)
+	case PeerTypePending:
+		delete(ps.pendingPeers, id)
 	}
 
 	delete(ps.peerTypes, id)
 
+	// TODO: reduce to O(logn)
 	if origPeerType == PeerTypeMe {
 		ps.mePeerList = ps.PeersToPeerList(ps.mePeers, true)
 	}
@@ -195,6 +216,9 @@ func (ps *PttPeerSet) Unregister(peer *PttPeer, isLocked bool) error {
 	}
 	if origPeerType == PeerTypeMember {
 		ps.memberPeerList = ps.PeersToPeerList(ps.memberPeers, true)
+	}
+	if origPeerType == PeerTypePending {
+		ps.pendingPeerList = ps.PeersToPeerList(ps.pendingPeers, true)
 	}
 
 	ps.peerList = append(append(ps.mePeerList, ps.importantPeerList...), ps.memberPeerList...)
@@ -210,7 +234,7 @@ func (ps *PttPeerSet) PeersToPeerList(peers map[discover.NodeID]*PttPeer, isLock
 
 	lenPeers := len(peers)
 
-	peerList := make([]*PttPeer, 0, lenPeers)
+	peerList := make([]*PttPeer, lenPeers)
 	i := 0
 	for _, peer := range peers {
 		peerList[i] = peer
@@ -256,6 +280,15 @@ func (ps *PttPeerSet) PeerList(isLocked bool) []*PttPeer {
 	return ps.peerList
 }
 
+func (ps *PttPeerSet) PendingPeerList(isLocked bool) []*PttPeer {
+	if !isLocked {
+		ps.RLock()
+		defer ps.RUnlock()
+	}
+
+	return ps.pendingPeerList
+}
+
 // Peer retrieves the registered peer with the given id.
 func (ps *PttPeerSet) Peer(id *discover.NodeID, isLocked bool) *PttPeer {
 	if !isLocked {
@@ -275,6 +308,8 @@ func (ps *PttPeerSet) Peer(id *discover.NodeID, isLocked bool) *PttPeer {
 		return ps.importantPeers[*id]
 	case PeerTypeMember:
 		return ps.memberPeers[*id]
+	case PeerTypePending:
+		return ps.pendingPeers[*id]
 	}
 
 	return nil
@@ -304,5 +339,11 @@ func (ps *PttPeerSet) Close(isLocked bool) {
 	ps.mePeers = make(map[discover.NodeID]*PttPeer)
 	ps.importantPeers = make(map[discover.NodeID]*PttPeer)
 	ps.memberPeers = make(map[discover.NodeID]*PttPeer)
+	ps.pendingPeers = make(map[discover.NodeID]*PttPeer)
 
+	ps.mePeerList = make([]*PttPeer, 0)
+	ps.importantPeerList = make([]*PttPeer, 0)
+	ps.memberPeerList = make([]*PttPeer, 0)
+	ps.pendingPeerList = make([]*PttPeer, 0)
+	ps.peerList = make([]*PttPeer, 0)
 }

@@ -255,7 +255,7 @@ func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts
 	}
 
 	if myNode.Status == types.StatusInit {
-		log.Debug("publishEntriesAddNode: Status change", "raftID", raftID, "NodeID", myNode.NodeID)
+		log.Debug("publishEntriesAddNode: Status change from Init to InternalPending", "raftID", raftID, "NodeID", myNode.NodeID)
 		myNode.Status = types.StatusInternalPending
 	}
 

@@ -21,7 +21,6 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 /**********
@@ -52,10 +51,6 @@ func (p *BasePtt) SetMyEntity(myEntity PttMyEntity) error {
 
 func (p *BasePtt) GetMyEntity() MyEntity {
 	return p.myEntity
-}
-
-func (p *BasePtt) DBOplog() *pttdb.LDBBatch {
-	return dbOplog
 }
 
 func (p *BasePtt) GetMyEntityFromMe(myID *types.PttID) Entity {

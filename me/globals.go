@@ -57,7 +57,7 @@ const (
 	JoinFriendMsg
 
 	// me
-	AddMeOplogMsg
+	AddMeOplogMsg //30
 	AddMeOplogsMsg
 
 	AddPendingMeOplogMsg
@@ -71,7 +71,7 @@ const (
 	SyncPendingMeOplogMsg
 	SyncPendingMeOplogAckMsg
 
-	SendRaftMsgsMsg
+	SendRaftMsgsMsg //40
 
 	InitMeInfoMsg
 	InitMeInfoAckMsg
@@ -86,9 +86,11 @@ const (
 
 // db
 var (
+	SleepTimeLock = 10
+
 	DBMePrefix                    = []byte(".medb")
-	dbMe       *pttdb.LDBDatabase = nil
-	dbMeBatch  *pttdb.LDBBatch    = nil
+	dbMeCore   *pttdb.LDBDatabase = nil
+	dbMe       *pttdb.LDBBatch    = nil
 
 	DBMyNodePrefix = []byte(".mndb")
 
@@ -143,12 +145,8 @@ var (
 	DBMeIdxOplogPrefix    = []byte(".meig")
 	DBMeMerkleOplogPrefix = []byte(".memk")
 
-	DBMasterOplogPrefix       = []byte(".malg")
-	DBMasterIdxOplogPrefix    = []byte(".maig")
-	DBMasterMerkleOplogPrefix = []byte(".mamk")
-
-	dbOplog     *pttdb.LDBBatch
-	dbOplogCore *pttdb.LDBDatabase
+	DBMasterOplogPrefix    = []byte(".malg")
+	DBMasterIdxOplogPrefix = []byte(".maig")
 )
 
 // me-oplog
@@ -195,22 +193,12 @@ func InitMe(dataDir string) error {
 	var err error
 
 	// db
-	dbOplogCore, err := pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
+	dbMeCore, err = pttdb.NewLDBDatabase("me", dataDir, 0, 0)
 	if err != nil {
 		return err
 	}
 
-	dbOplog, err = pttdb.NewLDBBatch(dbOplogCore)
-	if err != nil {
-		return err
-	}
-
-	dbMe, err = pttdb.NewLDBDatabase("me", dataDir, 0, 0)
-	if err != nil {
-		return err
-	}
-
-	dbMeBatch, err = pttdb.NewLDBBatch(dbMe)
+	dbMe, err = pttdb.NewLDBBatch(dbMeCore)
 	if err != nil {
 		return err
 	}
@@ -244,22 +232,13 @@ func InitMe(dataDir string) error {
 }
 
 func TeardownMe() {
-	if dbOplog != nil {
-		dbOplog = nil
-	}
-
-	if dbOplogCore != nil {
-		dbOplogCore.Close()
-		dbOplogCore = nil
+	if dbMeCore != nil {
+		dbMeCore.Close()
+		dbMeCore = nil
 	}
 
 	if dbMe != nil {
-		dbMe.Close()
 		dbMe = nil
-	}
-
-	if dbMeBatch != nil {
-		dbMeBatch = nil
 	}
 
 	if dbMyNodes != nil {

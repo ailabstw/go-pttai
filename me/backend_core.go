@@ -457,24 +457,6 @@ func (b *Backend) BEGetMasterOplogList(logIDBytes []byte, limit int, listOrder p
 	return pm.GetMasterOplogList(logID, limit, listOrder, types.StatusAlive)
 }
 
-func (b *Backend) BEGetMasterOplogMerkleNodeList(level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
-
-	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
-	pm := myInfo.PM().(*ProtocolManager)
-
-	merkleNodeList, err := pm.GetMasterOplogMerkleNodeList(level, startKey, limit, listOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]*pkgservice.BackendMerkleNode, len(merkleNodeList))
-	for i, eachMerkleNode := range merkleNodeList {
-		results[i] = pkgservice.MerkleNodeToBackendMerkleNode(eachMerkleNode)
-	}
-
-	return results, nil
-}
-
 /**********
  * OpKeyOplog
  **********/

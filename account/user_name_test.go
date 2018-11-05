@@ -84,7 +84,7 @@ func TestUserName_Marshal(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			u:    tUserNameA,
-			want: []byte("{\"V\":1,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null,\"bID\":null,\"l\":null}"),
+			want: []byte("{\"V\":2,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null,\"bID\":null,\"l\":null}"),
 		},
 	}
 
@@ -125,7 +125,7 @@ func TestUserName_Unmarshal(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			u:    &UserName{},
-			args: args{[]byte("{\"V\":1,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null}")},
+			args: args{[]byte("{\"V\":2,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null}")},
 			want: tUserNameA,
 		},
 	}

@@ -24,7 +24,7 @@ type PttOplog struct {
 
 func NewPttOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, op OpType, data interface{}, myID *types.PttID) (*PttOplog, error) {
 
-	oplog, err := NewOplog(objID, ts, doerID, op, data, dbOplog, myID, DBPttOplogPrefix, DBPttIdxOplogPrefix, DBPttMerkleOplogPrefix, DBPttLockMap)
+	oplog, err := NewOplog(objID, ts, doerID, op, data, dbOplog, myID, DBPttOplogPrefix, DBPttIdxOplogPrefix, nil, DBPttLockMap)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,11 @@ func NewPttOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, op
 	return &PttOplog{
 		BaseOplog: oplog,
 	}, nil
+}
+
+func (pm *BaseProtocolManager) SetPttDB(oplog *BaseOplog) {
+	myID := pm.Entity().GetID()
+	oplog.SetDB(dbOplog, myID, DBPttOplogPrefix, DBPttIdxOplogPrefix, nil, DBPttLockMap)
 }
 
 func OplogsToPttOplogs(logs []*BaseOplog) []*PttOplog {

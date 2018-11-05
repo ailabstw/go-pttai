@@ -29,6 +29,7 @@ type InitMeInfoAck struct {
 }
 
 func (pm *ProtocolManager) InitMeInfoAck(data *InitMeInfo, peer *pkgservice.PttPeer) error {
+	log.Debug("InitMeInfoAck: start")
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -67,9 +68,13 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 		return err
 	}
 
+	log.Debug("HandleInitMeInfoAck: start", "peer", peer, "status", data.Status)
+
 	if data.Status == types.StatusInternalPending {
 		return pm.InitMeInfoSync(peer)
 	}
+
+	log.Debug("HandleInitMeInfoAck: to get raftID", "peer", peer, "status", data.Status)
 
 	nodeID := peer.GetID()
 	raftID, err := nodeID.ToRaftID()
@@ -79,6 +84,7 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 
 	myNode := pm.MyNodes[raftID]
 	if myNode == nil {
+		log.Warn("HandleInitMeInfoAck: possibly not my node", "peer", peer)
 		return ErrInvalidNode
 	}
 
@@ -99,6 +105,11 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 	if err != nil {
 		return err
 	}
+
+	// set peer
+
+	ptt := pm.myPtt
+	ptt.SetupPeer(peer, pkgservice.PeerTypeMe, false)
 
 	return nil
 }

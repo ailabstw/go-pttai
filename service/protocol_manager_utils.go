@@ -24,18 +24,12 @@ import (
 
 /*
 StartPM starts the pm
-	1. pm.Start
-	2. go PMSync
+	1. go PMSync (require sync first to receive new-peer-ch)
+	2. pm.Start
 	3. go PMCreateOpKeyLoop
 */
 func StartPM(pm ProtocolManager) error {
-	log.Info("StartPM: start", "entity", pm.Entity().Name())
-
-	// 3. pm.Start
-	err := pm.Start()
-	if err != nil {
-		return err
-	}
+	log.Info("StartPM: start", "entity", pm.Entity().GetID())
 
 	// 1. PMSync
 	pm.SyncWG().Add(1)
@@ -45,7 +39,21 @@ func StartPM(pm ProtocolManager) error {
 		PMSync(pm)
 	}()
 
-	// op-key
+	ptt := pm.Ptt()
+	err := ptt.RegisterEntity(pm.Entity(), false, false)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("StartPM: after RegisterEntity", "entity", pm.Entity().GetID())
+
+	// 2. pm.Start
+	err = pm.Start()
+	if err != nil {
+		return err
+	}
+
+	// 3. op-key
 	pm.SyncWG().Add(1)
 	go func() {
 		defer pm.SyncWG().Done()

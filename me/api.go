@@ -183,10 +183,6 @@ func (api *PrivateAPI) GetMasterOplogList(logID string, limit int, listOrder ptt
 	return api.b.BEGetMasterOplogList([]byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetMasterOplogMerkleNodeList(level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
-	return api.b.BEGetMasterOplogMerkleNodeList(pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
-}
-
 /**********
  * OpKeyOplog
  **********/

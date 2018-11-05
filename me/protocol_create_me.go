@@ -23,6 +23,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (spm *ServiceProtocolManager) CreateMe(myID *types.PttID, myKey *ecdsa.PrivateKey, contentBackend *content.Backend) error {
@@ -102,6 +103,16 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 
 	// meOplog save
 	meOplog.Save(false)
+
+	// op-key
+	if len(pm.OpKeyInfos()) == 0 {
+		err = pm.CreateOpKeyInfo()
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Debug("CreateFullMe: done")
 
 	return nil
 }

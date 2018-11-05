@@ -25,9 +25,13 @@ type MeOplog struct {
 	*pkgservice.BaseOplog `json:"O"`
 }
 
-func NewMeOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, op pkgservice.OpType, data interface{}, myID *types.PttID, dbLock *types.LockMap) (*MeOplog, error) {
+func (o *MeOplog) GetBaseOplog() *pkgservice.BaseOplog {
+	return o.BaseOplog
+}
 
-	oplog, err := pkgservice.NewOplog(objID, ts, doerID, op, data, dbOplog, myID, DBMeOplogPrefix, DBMeIdxOplogPrefix, DBMeMerkleOplogPrefix, dbLock)
+func NewMeOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, op pkgservice.OpType, opData pkgservice.OpData, myID *types.PttID, dbLock *types.LockMap) (*MeOplog, error) {
+
+	oplog, err := pkgservice.NewOplog(objID, ts, doerID, op, opData, dbMe, myID, DBMeOplogPrefix, DBMeIdxOplogPrefix, DBMeMerkleOplogPrefix, dbLock)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +41,22 @@ func NewMeOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, op 
 	}, nil
 }
 
-func (pm *ProtocolManager) SetMeDB(log *pkgservice.BaseOplog) {
+func (pm *ProtocolManager) NewMeOplog(objID *types.PttID, op pkgservice.OpType, opData pkgservice.OpData) (pkgservice.Oplog, error) {
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	entityID := pm.Entity().GetID()
+
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewMeOplog(objID, ts, myID, op, opData, entityID, pm.dbMeLock)
+}
+
+func (pm *ProtocolManager) SetMeDB(oplog *pkgservice.BaseOplog) {
 	myID := pm.Entity().GetID()
-	log.SetDB(dbOplog, myID, DBMeOplogPrefix, DBMeIdxOplogPrefix, DBMeMerkleOplogPrefix, pm.dbMeLock)
+	oplog.SetDB(dbMe, myID, DBMeOplogPrefix, DBMeIdxOplogPrefix, DBMeMerkleOplogPrefix, pm.dbMeLock)
 }
 
 func OplogsToMeOplogs(logs []*pkgservice.BaseOplog) []*MeOplog {

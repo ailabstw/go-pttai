@@ -23,6 +23,6 @@ import (
 
 func (pm *ProtocolManager) GetMeOplogMerkleNodeList(level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MerkleNode, error) {
 
-	merkle := pm.Entity().(*MyInfo).MeOplogMerkle()
+	merkle := pm.meOplogMerkle
 	return pm.GetOplogMerkleNodeList(merkle, level, startKey, limit, listOrder)
 }

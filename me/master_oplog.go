@@ -30,18 +30,18 @@ type MasterOplog struct {
 
 func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op pkgservice.OpType, data interface{}, dbLock *types.LockMap) (*MasterOplog, error) {
 
-	log, err := pkgservice.NewOplog(id, ts, doerID, op, data, dbOplog, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, dbLock)
+	oplog, err := pkgservice.NewOplog(id, ts, doerID, op, data, dbMe, id, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, nil, dbLock)
 	if err != nil {
 		return nil, err
 	}
 	return &MasterOplog{
-		BaseOplog: log,
+		BaseOplog: oplog,
 	}, nil
 }
 
-func (pm *ProtocolManager) SetMasterDB(log *pkgservice.BaseOplog) {
+func (pm *ProtocolManager) SetMasterDB(oplog *pkgservice.BaseOplog) {
 	myID := pm.Entity().GetID()
-	log.SetDB(dbOplog, myID, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, DBMasterMerkleOplogPrefix, pm.dbMasterLock)
+	oplog.SetDB(dbMe, myID, DBMasterOplogPrefix, DBMasterIdxOplogPrefix, nil, pm.dbMasterLock)
 }
 
 func OplogsToMasterOplogs(logs []*pkgservice.BaseOplog) []*MasterOplog {
@@ -53,9 +53,9 @@ func OplogsToMasterOplogs(logs []*pkgservice.BaseOplog) []*MasterOplog {
 }
 
 func MasterOplogsToOplogs(typedLogs []*MasterOplog) []*pkgservice.BaseOplog {
-	logs := make([]*pkgservice.BaseOplog, len(typedLogs))
+	oplogs := make([]*pkgservice.BaseOplog, len(typedLogs))
 	for i, log := range typedLogs {
-		logs[i] = log.BaseOplog
+		oplogs[i] = log.BaseOplog
 	}
-	return logs
+	return oplogs
 }

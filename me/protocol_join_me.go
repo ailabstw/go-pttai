@@ -133,7 +133,7 @@ func (pm *ProtocolManager) JoinMeLoop() error {
 
 		err := pm.processJoinMeEvent(ev.JoinMeRequest)
 		if err != nil {
-			log.Error("unable to process join friend event", "e", err)
+			log.Error("unable to process join me event", "e", err)
 		}
 	}
 
@@ -149,6 +149,8 @@ func (pm *ProtocolManager) processJoinMeEvent(request *pkgservice.JoinRequest) e
 	}
 
 	hash, key, challenge := request.Hash, request.Key, request.Challenge
+
+	log.Debug("processJoinMeEvent: TryJoin")
 
 	ptt := pm.myPtt
 	err := ptt.TryJoin(challenge, hash, key, request)

@@ -126,8 +126,8 @@ var (
 	tDefaultMerkleNode1Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			103, 99, 210, 12, 26, 198, 176, 24, 72, 166,
-			70, 230, 235, 68, 43, 57, 167, 220, 164, 249,
+			109, 106, 68, 249, 1, 105, 182, 107, 234, 50,
+			192, 218, 27, 70, 8, 195, 36, 191, 156, 238,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 0,
@@ -165,8 +165,8 @@ var (
 	tDefaultMerkleNode2Now = &MerkleNode{
 		Level: MerkleTreeLevelNow,
 		Addr: []byte{
-			58, 243, 157, 167, 232, 159, 98, 220, 117, 152,
-			133, 92, 99, 173, 179, 192, 32, 162, 137, 168,
+			204, 115, 234, 18, 43, 72, 250, 130, 156, 41,
+			190, 100, 149, 69, 92, 238, 118, 154, 246, 82,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567891, NanoTs: 0},
 		NChildren: 0,
@@ -188,8 +188,8 @@ var (
 	tDefaultMerkleNodeDay = &MerkleNode{
 		Level: MerkleTreeLevelDay,
 		Addr: []byte{
-			26, 76, 7, 254, 219, 99, 186, 212, 72, 200,
-			122, 184, 97, 249, 85, 124, 78, 218, 162, 224,
+			204, 99, 169, 130, 205, 128, 96, 0, 2, 125,
+			192, 198, 207, 136, 119, 152, 20, 207, 118, 168,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -199,8 +199,8 @@ var (
 	tDefaultMerkleNodeMonth = &MerkleNode{
 		Level: MerkleTreeLevelMonth,
 		Addr: []byte{
-			234, 253, 227, 237, 110, 103, 98, 119, 51, 21,
-			69, 92, 150, 75, 228, 71, 6, 223, 233, 1,
+			175, 138, 104, 31, 200, 172, 68, 11, 101, 23,
+			0, 182, 43, 40, 66, 255, 173, 90, 227, 26,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,
@@ -210,8 +210,8 @@ var (
 	tDefaultMerkleNodeYear = &MerkleNode{
 		Level: MerkleTreeLevelYear,
 		Addr: []byte{
-			50, 191, 42, 148, 116, 63, 198, 94, 68, 147,
-			246, 221, 71, 221, 4, 97, 89, 2, 244, 178,
+			104, 254, 151, 251, 87, 216, 126, 172, 249, 32,
+			67, 2, 36, 209, 51, 142, 133, 53, 58, 70,
 		},
 		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
 		NChildren: 1,

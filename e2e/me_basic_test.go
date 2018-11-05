@@ -68,7 +68,9 @@ func TestMeBasic(t *testing.T) {
 
 	assert.Equal(types.StatusAlive, me0_3.Status)
 	assert.Equal(me0_1.ID, me0_3.ID)
-	assert.Equal(me0_3.ID, me0_3.OwnerID)
+	assert.Equal(1, len(me0_3.OwnerIDs))
+	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
+	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
 
 	// 4. show-my-key
 	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`

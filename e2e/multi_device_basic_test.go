@@ -60,13 +60,17 @@ func TestMultiDeviceBasic(t *testing.T) {
 	testCore(t0, bodyString, me0_3, t, isDebug)
 	assert.Equal(types.StatusAlive, me0_3.Status)
 	assert.Equal(me0_1.ID, me0_3.ID)
-	assert.Equal(me0_3.ID, me0_3.OwnerID)
+	assert.Equal(1, len(me0_3.OwnerIDs))
+	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
+	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
 
 	me1_3 := &me.MyInfo{}
 	testCore(t1, bodyString, me1_3, t, isDebug)
 	assert.Equal(types.StatusAlive, me1_3.Status)
 	assert.Equal(me1_1.ID, me1_3.ID)
-	assert.Equal(me1_3.ID, me1_3.OwnerID)
+	assert.Equal(1, len(me1_3.OwnerIDs))
+	assert.Equal(me1_3.ID, me1_3.OwnerIDs[0])
+	assert.Equal(true, me1_3.IsOwner(me1_3.ID))
 
 	// 4. show-my-key
 	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
@@ -146,13 +150,16 @@ func TestMultiDeviceBasic(t *testing.T) {
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
 	assert.Equal(types.StatusAlive, me0_8_1.Status)
-	assert.Equal(me1_3.ID, me0_8_1.ID)
-	assert.Equal(me1_3.ID, me0_8_1.OwnerID)
+	assert.Equal(1, len(me0_8_1.OwnerIDs))
+	assert.Equal(me1_3.ID, me0_8_1.OwnerIDs[0])
+	assert.Equal(true, me0_8_1.IsOwner(me1_3.ID))
 
 	me1_8_1 := &me.MyInfo{}
 	testCore(t1, bodyString, me1_8_1, t, isDebug)
 	assert.Equal(types.StatusAlive, me1_8_1.Status)
 	assert.Equal(me1_3.ID, me1_8_1.ID)
-	assert.Equal(me1_3.ID, me1_8_1.OwnerID)
+	assert.Equal(1, len(me1_8_1.OwnerIDs))
+	assert.Equal(me1_3.ID, me1_8_1.OwnerIDs[0])
+	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
 }

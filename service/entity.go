@@ -17,6 +17,10 @@
 package service
 
 import (
+	"bytes"
+	"reflect"
+	"sort"
+
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
@@ -53,8 +57,10 @@ type Entity interface {
 	GetStatus() types.Status
 	SetStatus(status types.Status)
 
-	GetOwnerID() *types.PttID
-	SetOwnerID(id *types.PttID)
+	GetOwnerIDs() []*types.PttID
+	AddOwnerID(id *types.PttID)
+	RemoveOwnerID(id *types.PttID)
+	IsOwner(id *types.PttID) bool
 
 	PM() ProtocolManager
 	Ptt() Ptt
@@ -78,7 +84,7 @@ type BaseEntity struct {
 
 	Status types.Status `json:"S"`
 
-	OwnerID *types.PttID `json:"o,omitempty"`
+	OwnerIDs []*types.PttID `json:"o,omitempty"`
 
 	pm      ProtocolManager
 	name    string
@@ -88,7 +94,7 @@ type BaseEntity struct {
 	db *pttdb.LDBBatch
 }
 
-func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, ownerID *types.PttID, db *pttdb.LDBBatch) *BaseEntity {
+func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, db *pttdb.LDBBatch) *BaseEntity {
 
 	e := &BaseEntity{
 		V:         types.CurrentVersion,
@@ -97,9 +103,10 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 		CreatorID: creatorID,
 		UpdaterID: creatorID,
 		Status:    status,
-		OwnerID:   ownerID,
+		OwnerIDs:  make([]*types.PttID, 0),
 		db:        db,
 	}
+	e.OwnerIDs = append(e.OwnerIDs, creatorID)
 
 	return e
 }
@@ -168,12 +175,56 @@ func (e *BaseEntity) SetStatus(status types.Status) {
 	e.Status = status
 }
 
-func (e *BaseEntity) GetOwnerID() *types.PttID {
-	return e.OwnerID
+func (e *BaseEntity) GetOwnerIDs() []*types.PttID {
+	return e.OwnerIDs
 }
 
-func (e *BaseEntity) SetOwnerID(id *types.PttID) {
-	e.OwnerID = id
+func (e *BaseEntity) AddOwnerID(id *types.PttID) {
+	ownerIDs := e.OwnerIDs
+	idx := sort.Search(len(ownerIDs), func(i int) bool {
+		return bytes.Compare(ownerIDs[i][:], id[:]) >= 0
+	})
+
+	if idx == len(ownerIDs) {
+		e.OwnerIDs = append(e.OwnerIDs, id)
+		return
+	}
+
+	if reflect.DeepEqual(id, ownerIDs[idx]) {
+		return
+	}
+
+	e.OwnerIDs = append(append(ownerIDs[:idx], id), ownerIDs[idx:]...)
+}
+
+func (e *BaseEntity) RemoveOwnerID(id *types.PttID) {
+	ownerIDs := e.OwnerIDs
+	idx := sort.Search(len(ownerIDs), func(i int) bool {
+		return bytes.Compare(ownerIDs[i][:], id[:]) >= 0
+	})
+
+	if idx == len(ownerIDs) {
+		return
+	}
+
+	if !reflect.DeepEqual(id, ownerIDs[idx]) {
+		return
+	}
+
+	e.OwnerIDs = append(ownerIDs[:idx], ownerIDs[(idx+1):]...)
+}
+
+func (e *BaseEntity) IsOwner(id *types.PttID) bool {
+	ownerIDs := e.OwnerIDs
+	idx := sort.Search(len(ownerIDs), func(i int) bool {
+		return bytes.Compare(ownerIDs[i][:], id[:]) >= 0
+	})
+
+	if idx == len(ownerIDs) {
+		return false
+	}
+
+	return reflect.DeepEqual(id, ownerIDs[idx])
 }
 
 func (e *BaseEntity) PM() ProtocolManager {

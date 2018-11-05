@@ -99,6 +99,7 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 		return err
 	}
 
+	// set new info
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return err

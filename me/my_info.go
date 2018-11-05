@@ -57,7 +57,7 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		return nil, err
 	}
 
-	e := pkgservice.NewBaseEntity(id, ts, id, types.StatusPending, id, dbMe)
+	e := pkgservice.NewBaseEntity(id, ts, id, types.StatusPending, dbMe)
 
 	m := &MyInfo{
 		BaseEntity: e,
@@ -86,7 +86,6 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 	if err != nil {
 		return nil, err
 	}
-	m.OwnerID = id
 
 	return m, nil
 }

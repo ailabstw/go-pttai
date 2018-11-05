@@ -681,7 +681,7 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 	// post-sign
 	// XXX master-signs in order
 	idx := sort.Search(len(origMasterSigns), func(i int) bool {
-		return bytes.Compare(origMasterSigns[i].ID[:], masterSign.ID[:]) > 0
+		return bytes.Compare(origMasterSigns[i].ID[:], masterSign.ID[:]) >= 0
 	})
 	o.MasterSigns = append(append(origMasterSigns[:idx], masterSign), origMasterSigns[idx:]...)
 
@@ -752,7 +752,7 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	// post-sign
 	// XXX internal-signs in order
 	idx := sort.Search(len(origInternalSigns), func(i int) bool {
-		return bytes.Compare(origInternalSigns[i].ID[:], internalSign.ID[:]) > 0
+		return bytes.Compare(origInternalSigns[i].ID[:], internalSign.ID[:]) >= 0
 	})
 	o.InternalSigns = append(append(origInternalSigns[:idx], internalSign), origInternalSigns[idx:]...)
 

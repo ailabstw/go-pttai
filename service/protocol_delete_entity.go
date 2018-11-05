@@ -17,89 +17,63 @@
 package service
 
 import (
-	"reflect"
-
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) DeleteObject(
-	id *types.PttID,
-
-	origObj Object,
+func (pm *BaseProtocolManager) DeleteEntity(
 	deleteOp OpType,
 	opData OpData,
+	status types.Status,
 
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
-	indelete func(origObj Object, opData OpData, oplog *BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
-	postdelete func(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error,
+	postdelete func(opData OpData) error,
 ) error {
 
-	myEntity := pm.Ptt().GetMyEntity()
-	myID := myEntity.GetID()
+	entity := pm.Entity()
 
 	// 1. lock object
-	origObj.SetID(id)
-	err := origObj.Lock()
+	err := entity.Lock()
 	if err != nil {
 		return err
 	}
-	defer origObj.Unlock()
-
-	// 2. get obj
-	err = origObj.GetByID(true)
-	if err != nil {
-		return err
-	}
+	defer entity.Unlock()
 
 	// 3. check validity
-	origStatus := origObj.GetStatus()
-	if origStatus > types.StatusFailed {
+	origStatus := entity.GetStatus()
+	origStatusClass := types.StatusToStatusClass(origStatus)
+	if origStatusClass == types.StatusClassDeleted {
 		return nil
 	}
 
-	creatorID := origObj.GetCreatorID()
-	if !reflect.DeepEqual(myID, creatorID) && !pm.IsMaster(myID) {
+	myID := pm.Ptt().GetMyEntity().GetID()
+	if !pm.IsMaster(myID) {
 		return types.ErrInvalidID
 	}
 
 	// 4. oplog
-	theOplog, err := newOplog(id, deleteOp, opData)
+	entityID := entity.GetID()
+	theOplog, err := newOplog(entityID, deleteOp, opData)
 	if err != nil {
 		return err
 	}
 	oplog := theOplog.GetBaseOplog()
-
-	origLogID := origObj.GetLogID()
-	if origStatus <= types.StatusAlive {
-		oplog.SetPreLogID(origLogID)
-	}
 
 	err = pm.SignOplog(oplog)
 	if err != nil {
 		return err
 	}
 
-	// 4.1 get orig-block-info
-	if indelete != nil {
-		err = indelete(origObj, opData, oplog)
-		if err != nil {
-			return err
-		}
-	}
-
 	// 5. update obj
 	oplogStatus := oplog.ToStatus()
 	if oplogStatus == types.StatusAlive {
-		SetDeleteObjectWithOplog(origObj, oplog)
+		EntitySetStatusWithOplog(entity, status, oplog)
 	} else {
-		origObj.SetPendingDeleteSyncInfo(oplog)
+		entity.SetPendingDeleteSyncInfo(status, oplog)
 	}
 
-	err = origObj.Save(true)
+	err = entity.Save(true)
 	if err != nil {
-		log.Error("DeleteObject: unable to update obj", "e", err, "origObj", origObj)
 		return err
 	}
 
@@ -111,13 +85,13 @@ func (pm *BaseProtocolManager) DeleteObject(
 
 	broadcastLog(oplog)
 
-	// 6.2 postdelete
+	// 6.1. postdelete
 	if oplogStatus != types.StatusAlive {
 		return nil
 	}
 
 	if postdelete != nil {
-		postdelete(id, oplog, origObj, opData)
+		postdelete(opData)
 	}
 
 	return nil

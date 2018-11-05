@@ -30,13 +30,13 @@ func (spm *ServiceProtocolManager) CreateMe(myID *types.PttID, myKey *ecdsa.Priv
 	ptt := spm.myPtt
 
 	// new my info
-	myInfo, err := NewMyInfo(myID, myKey, ptt, spm.Service())
+	myInfo, err := NewMyInfo(myID, myKey, ptt, spm.Service(), spm, spm.GetDBLock())
 	if err != nil {
 		return err
 	}
 
 	// save
-	err = myInfo.Save()
+	err = myInfo.Save(false)
 	if err != nil {
 		return err
 	}
@@ -58,6 +58,11 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	ptt := pm.myPtt
 
 	// create-me-oplog
+	err := myInfo.Lock()
+	if err != nil {
+		return err
+	}
+	defer myInfo.Unlock()
 
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -86,7 +91,7 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	myInfo.UpdateTS = meOplog.UpdateTS
 	myInfo.LogID = meOplog.ID
 
-	err = myInfo.Save()
+	err = myInfo.Save(true)
 	if err != nil {
 		return err
 	}
@@ -106,7 +111,7 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 
 	// op-key
 	if len(pm.OpKeyInfos()) == 0 {
-		err = pm.CreateOpKeyInfo()
+		pm.CreateOpKeyInfo()
 		if err != nil {
 			return err
 		}

@@ -18,49 +18,34 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/content"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type ServiceProtocolManager struct {
-	*pkgservice.BaseServiceProtocolManager
+func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
-	MyInfo *MyInfo
+	opData := &MeOpMigrateMe{}
 
-	myPtt pkgservice.MyPtt
+	toBroadcastLogs, err := pm.HandleDeleteEntityLog(oplog, info, opData, types.StatusMigrated, pm.SetMeDB, pm.postdeleteMigrateMe)
+	if err != nil {
+		return nil, err
+	}
+
+	return toBroadcastLogs, nil
 }
 
-func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service pkgservice.Service, contentBackend *content.Backend) (*ServiceProtocolManager, error) {
+func (pm *ProtocolManager) handlePendingMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
-	spm := &ServiceProtocolManager{myPtt: ptt}
-	b, err := pkgservice.NewBaseServiceProtocolManager(ptt, service)
-	if err != nil {
-		return nil, err
-	}
+	opData := &MeOpMigrateMe{}
+	return pm.HandlePendingDeleteEntityLog(oplog, info, types.StatusPendingMigrate, MeOpTypeMigrateMe, opData, pm.SetMeDB)
+}
 
-	spm.BaseServiceProtocolManager = b
+func (pm *ProtocolManager) setNewestMigrateMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
 
-	// load me
-	myInfo, myInfos, err := spm.GetMeList(myID, contentBackend, nil, 0)
-	if err != nil {
-		return nil, err
-	}
+	return pm.SetNewestDeleteEntityLog(oplog)
+}
 
-	for _, eachMyInfo := range myInfos {
-		err = eachMyInfo.Init(ptt, service, spm, myID)
-		if err != nil {
-			return nil, err
-		}
+func (pm *ProtocolManager) handleFailedMigrateMeLog(oplog *pkgservice.BaseOplog) error {
 
-		err = spm.RegisterEntity(eachMyInfo.ID, eachMyInfo)
-		if err != nil {
-			return nil, err
-		}
+	return pm.HandleFailedDeleteEntityLog(oplog)
 
-	}
-
-	// Me
-	spm.MyInfo = myInfo
-
-	return spm, nil
 }

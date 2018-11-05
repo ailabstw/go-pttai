@@ -22,7 +22,7 @@ import (
 )
 
 type ProcessMeInfo struct {
-	MeInfo          map[types.PttID]*pkgservice.BaseOplog
+	DeleteMeInfo    map[types.PttID]*pkgservice.BaseOplog
 	MetaInfo        map[types.PttID]*pkgservice.BaseOplog
 	CreateBoardInfo map[types.PttID]*pkgservice.BaseOplog
 	JoinBoardInfo   map[types.PttID]*pkgservice.BaseOplog
@@ -31,7 +31,7 @@ type ProcessMeInfo struct {
 
 func NewProcessMeInfo() *ProcessMeInfo {
 	return &ProcessMeInfo{
-		MeInfo:          make(map[types.PttID]*pkgservice.BaseOplog),
+		DeleteMeInfo:    make(map[types.PttID]*pkgservice.BaseOplog),
 		MetaInfo:        make(map[types.PttID]*pkgservice.BaseOplog),
 		CreateBoardInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		BoardInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
@@ -43,12 +43,14 @@ func NewProcessMeInfo() *ProcessMeInfo {
  **********/
 
 func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessMeInfo)
+	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
+	case MeOpTypeMigrateMe:
+		origLogs, err = pm.handleMigrateMeLog(oplog, info)
 	}
 	return
 }
@@ -58,12 +60,14 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
  **********/
 
 func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessMeInfo)
+	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
+	case MeOpTypeMigrateMe:
+		origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
 	}
 	return
 }
@@ -73,10 +77,20 @@ func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, proc
  **********/
 
 func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInfo, toBroadcastLogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isPending bool) (err error) {
-	_, ok := processInfo.(*ProcessMeInfo)
+	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
 		err = pkgservice.ErrInvalidData
 	}
+
+	deleteMeInfo := info.DeleteMeInfo
+
+	if isPending {
+		for _, eachLog := range deleteMeInfo {
+			toBroadcastLogs = pm.PostprocessPendingDeleteOplog(eachLog, toBroadcastLogs)
+		}
+	}
+
+	pm.broadcastMeOplogsCore(toBroadcastLogs)
 
 	return
 }

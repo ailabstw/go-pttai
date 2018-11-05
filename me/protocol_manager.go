@@ -150,6 +150,7 @@ func (pm *ProtocolManager) Start() error {
 	log.Debug("Start: start", "me", myInfo.GetID())
 	err := pm.BaseProtocolManager.Start()
 	if err != nil {
+		log.Debug("Start: unable to start BaseProtocolManager", "e", err)
 		return err
 	}
 

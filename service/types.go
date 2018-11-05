@@ -61,6 +61,16 @@ const (
 	NodeTypeServer
 )
 
+// EntityType
+type EntityType int
+
+const (
+	EntityTypeInvalid EntityType = iota
+	EntityTypePersonal
+	EntityTypePrivate
+	EntityTypePublic
+)
+
 // SignInfo
 
 type SignInfo struct {

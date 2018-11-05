@@ -24,6 +24,7 @@ import (
 )
 
 func (pm *BaseProtocolManager) RegisterOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error {
+	log.Debug("RegisterOpKeyInfo: start", "isLocked", isLocked)
 	if !isLocked {
 		pm.lockOpKeyInfo.Lock()
 		defer pm.lockOpKeyInfo.Unlock()
@@ -123,6 +124,10 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 	defer pm.lockOpKeyInfo.Unlock()
 	for _, eachKeyInfo := range toExpireOpKeyInfos {
 		pm.ExpireOpKeyInfo(eachKeyInfo, true)
+	}
+
+	for _, keyInfo := range opKeyInfos {
+		pm.RegisterOpKeyInfo(keyInfo, true)
 	}
 
 	return opKeyInfos, nil

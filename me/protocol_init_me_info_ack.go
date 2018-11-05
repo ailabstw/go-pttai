@@ -40,9 +40,15 @@ func (pm *ProtocolManager) InitMeInfoAck(data *InitMeInfo, peer *pkgservice.PttP
 
 	myRaftID := pm.myPtt.MyRaftID()
 	if myInfo.Status == types.StatusInit {
+		err = myInfo.Lock()
+		if err != nil {
+			return err
+		}
+		defer myInfo.Unlock()
+
 		myInfo.Status = types.StatusInternalPending
 		myInfo.UpdateTS = ts
-		err = myInfo.Save()
+		err = myInfo.Save(true)
 		if err != nil {
 			return err
 		}

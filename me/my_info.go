@@ -47,7 +47,7 @@ type MyInfo struct {
 	validateKey *types.PttID
 }
 
-func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, service pkgservice.Service) (*MyInfo, error) {
+func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*MyInfo, error) {
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		return nil, err
 	}
 
-	e := pkgservice.NewBaseEntity(id, ts, id, types.StatusPending, dbMe)
+	e := pkgservice.NewBaseEntity(id, ts, id, types.StatusPending, dbMe, dbLock)
 
 	m := &MyInfo{
 		BaseEntity: e,
@@ -82,7 +82,7 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		return nil, err
 	}
 
-	err = m.Init(ptt, service, id)
+	err = m.Init(ptt, service, spm, id)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,9 @@ func (m *MyInfo) SetUpdateTS(ts types.Timestamp) {
 	m.UpdateTS = ts
 }
 
-func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, MyID *types.PttID) error {
+func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, MyID *types.PttID) error {
+	m.SetDB(dbMe, spm.GetDBLock())
+
 	err := m.InitPM(ptt, service)
 	if err != nil {
 		return err
@@ -199,7 +201,15 @@ func (m *MyInfo) Unmarshal(theBytes []byte) error {
 	return nil
 }
 
-func (m *MyInfo) Save() error {
+func (m *MyInfo) Save(isLocked bool) error {
+	if !isLocked {
+		err := m.Lock()
+		if err != nil {
+			return err
+		}
+		defer m.Unlock()
+	}
+
 	key, err := m.MarshalKey()
 	if err != nil {
 		return err
@@ -259,7 +269,14 @@ Revoke intends to Revoke the id.
     7. exit.
 */
 
-func (m *MyInfo) Revoke(keyBytes []byte) error {
+func (m *MyInfo) Revoke(keyBytes []byte, isLocked bool) error {
+	if !isLocked {
+		err := m.Lock()
+		if err != nil {
+			return err
+		}
+		defer m.Unlock()
+	}
 	// check me
 	key, err := crypto.ToECDSA(keyBytes)
 	if err != nil {
@@ -274,7 +291,7 @@ func (m *MyInfo) Revoke(keyBytes []byte) error {
 
 	m.Status = types.StatusDeleted
 
-	err = m.Save()
+	err = m.Save(false)
 	if err != nil {
 		return err
 	}
@@ -304,4 +321,29 @@ func (m *MyInfo) GetMasterKey() *ecdsa.PrivateKey {
 
 func (m *MyInfo) GetValidateKey() *types.PttID {
 	return m.validateKey
+}
+
+func (m *MyInfo) SetPendingDeleteSyncInfo(status types.Status, oplog *pkgservice.BaseOplog) {
+	syncInfo := &pkgservice.BaseSyncInfo{
+		LogID:     oplog.ID,
+		UpdateTS:  oplog.UpdateTS,
+		UpdaterID: oplog.CreatorID,
+		Status:    status,
+	}
+	m.IntegrateSyncInfo(syncInfo)
+}
+
+func (m *MyInfo) RemoveSyncInfo(oplog *pkgservice.BaseOplog, opData pkgservice.OpData, syncInfo pkgservice.SyncInfo, info pkgservice.ProcessInfo) error {
+	return types.ErrNotImplemented
+}
+
+func (m *MyInfo) UpdateDeleteInfo(oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) {
+	info, ok := theInfo.(*ProcessMeInfo)
+	if !ok {
+		return
+	}
+
+	info.DeleteMeInfo[*m.ID] = oplog
+
+	return
 }

@@ -18,7 +18,6 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) GetPendingOpKeyOplogs() ([]*OpKeyOplog, []*OpKeyOplog, error) {
@@ -73,65 +72,4 @@ func (pm *BaseProtocolManager) RemoveNonSyncOpKeyOplog(logID *types.PttID, isRet
 		return nil, err
 	}
 	return OplogToOpKeyOplog(oplog), nil
-}
-
-/**********
- * Handle Oplogs
- **********/
-
-func (pm *BaseProtocolManager) CreateOpKeyPostprocess(theOpKey Object, oplog *BaseOplog) error {
-	opKey, ok := theOpKey.(*KeyInfo)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	pm.RegisterOpKeyInfo(opKey, false)
-
-	return nil
-}
-
-func (pm *BaseProtocolManager) FailedCreateOpKeyPostprocess(theOpKey Object, oplog *BaseOplog) error {
-	opKey, ok := theOpKey.(*KeyInfo)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	log.Debug("FailedCreateOpKeyPostprocess: to Remove OpKeyInfoFromHash")
-
-	return pm.RemoveOpKeyInfoFromHash(opKey.Hash, false, true, true)
-}
-
-func (pm *BaseProtocolManager) CreateOpKeyExistsInInfo(oplog *BaseOplog, theInfo ProcessInfo) (bool, error) {
-	info, ok := theInfo.(*ProcessOpKeyInfo)
-	if !ok {
-		return false, ErrInvalidData
-	}
-
-	objID := oplog.ObjID
-	_, ok = info.DeleteOpKeyInfo[*objID]
-	if ok {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (pm *BaseProtocolManager) DeleteOpKeyPostprocess(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
-	hash := keyInfoIDToHash(id)
-
-	opKey, ok := origObj.(*KeyInfo)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	opKey.CreateLogID = oplog.PreLogID
-
-	err := opKey.Save(true)
-	if err != nil {
-		return err
-	}
-
-	log.Debug("DeleteOpKeyPostprocess: to RemoveOpKeyInfoFromHash")
-
-	return pm.RemoveOpKeyInfoFromHash(hash, false, false, false)
 }

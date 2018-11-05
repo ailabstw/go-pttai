@@ -18,17 +18,26 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32) error {
 
 	// my-info
 	myInfo := pm.Entity().(*MyInfo)
+
+	log.Debug("InternalSyncToAlive: start")
+	err := myInfo.Lock()
+	if err != nil {
+		return err
+	}
+	defer myInfo.Unlock()
+
 	myInfo.Status = types.StatusAlive
 	myInfo.LogID = oplog.ID
 	myInfo.UpdateTS = oplog.UpdateTS
 
-	err := myInfo.Save()
+	err = myInfo.Save(true)
 	if err != nil {
 		return err
 	}
@@ -49,6 +58,8 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	if weight != expectedWeight {
 		pm.ProposeRaftAddNode(myNodeID, expectedWeight)
 	}
+
+	log.Debug("InternalSyncToAlive: done")
 
 	return nil
 }

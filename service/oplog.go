@@ -256,8 +256,6 @@ func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 		return nil, nil, nil, err
 	}
 
-	log.Debug("SaveCore: with MasterLogID", "dbPrefix", o.dbPrefix, "key", key, "isSync", o.IsSync)
-
 	marshaled, err := o.Marshal()
 	if err != nil {
 		return nil, nil, nil, err
@@ -372,7 +370,6 @@ func (o *BaseOplog) Get(id *types.PttID, isLocked bool) error {
 	}
 
 	key, err := o.GetKey(id, true)
-	log.Debug("Get: after GetKey", "id", id, "key", key, "e", err)
 	if err != nil {
 		return err
 	}
@@ -683,7 +680,12 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 	idx := sort.Search(len(origMasterSigns), func(i int) bool {
 		return bytes.Compare(origMasterSigns[i].ID[:], masterSign.ID[:]) >= 0
 	})
-	o.MasterSigns = append(append(origMasterSigns[:idx], masterSign), origMasterSigns[idx:]...)
+
+	// insert-into-slice
+	origMasterSigns = append(origMasterSigns, nil)
+	copy(origMasterSigns[(idx+1):], origMasterSigns[idx:])
+	origMasterSigns[idx] = masterSign
+	o.MasterSigns = origMasterSigns
 
 	o.UpdateTS = ts
 	o.Hash, _ = o.SignsHash()
@@ -754,7 +756,12 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	idx := sort.Search(len(origInternalSigns), func(i int) bool {
 		return bytes.Compare(origInternalSigns[i].ID[:], internalSign.ID[:]) >= 0
 	})
-	o.InternalSigns = append(append(origInternalSigns[:idx], internalSign), origInternalSigns[idx:]...)
+
+	// insert-into-slice
+	origInternalSigns = append(origInternalSigns, nil)
+	copy(origInternalSigns[(idx+1):], origInternalSigns[idx:])
+	origInternalSigns[idx] = internalSign
+	o.InternalSigns = origInternalSigns
 
 	o.UpdateTS = ts
 	o.Hash, _ = o.SignsHash()
@@ -763,7 +770,6 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 }
 
 func (o *BaseOplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
-	log.Debug("SetMasterOplogID", "oplogID", oplogID)
 	o.MasterLogID = oplogID
 	o.InternalSigns = nil
 	o.Hash, _ = o.SignsHash()
@@ -842,7 +848,6 @@ func (o *BaseOplog) Verify() error {
 			bytesWithSalt = append(marshaled, masterSign.Salt[:]...)
 
 			err = VerifyData(bytesWithSalt, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
-			log.Debug("Verify (master-sign): after VerifyData", "e", err)
 			if err != nil {
 				return err
 			}
@@ -859,7 +864,6 @@ func (o *BaseOplog) Verify() error {
 			bytesWithSalt = append(marshaled, internalSign.Salt[:]...)
 
 			err = VerifyData(bytesWithSalt, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
-			log.Debug("Verify (internal-sign): after VerifyData", "e", err)
 			if err != nil {
 				return err
 			}
@@ -1015,7 +1019,6 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 	orig.SetDB(o.db, o.dbPrefixID, o.dbPrefix, o.dbIdxPrefix, o.dbMerklePrefix, o.dbLock)
 	// no orig-log
 	err := orig.Get(o.ID, true)
-	log.Debug("IntegrateExisting: after orig.Get", "id", o.ID, "e", err)
 	if err == leveldb.ErrNotFound {
 		return false, nil
 	}
@@ -1026,7 +1029,6 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 	// is-sync
 	status := o.ToStatus()
 	origStatus := orig.ToStatus()
-	log.Debug("IntegrateExisting: to isSync", "id", o.ID, "status", status, "origStatus", origStatus)
 	if status <= origStatus {
 		o.IsSync = orig.IsSync
 	}
@@ -1034,20 +1036,17 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 
 	// same
 	if reflect.DeepEqual(o.Hash, orig.Hash) {
-		log.Debug("IntegrateExisting: same hash", "id", o.ID)
 		return false, nil
 	}
 
 	// o valid
 	if o.MasterLogID != nil {
-		log.Debug("IntegrateExisting: o with MasterLogID", "id", o.ID, "masterLogID", o.MasterLogID)
 		err = o.SelectExisting(true)
 		return false, err
 	}
 
 	// orig valid
 	if orig.MasterLogID != nil {
-		log.Debug("IntegrateExisting: orig with MasterLogID", "id", orig.ID, "masterLogID", orig.MasterLogID)
 		o.UpdateTS = orig.UpdateTS
 		o.Hash = orig.Hash
 		o.MasterLogID = orig.MasterLogID
@@ -1068,8 +1067,6 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 		return false, err
 	}
 	o.InternalSigns = newInternalSigns
-
-	log.Debug("IntegrateExisting: new signs", "id", orig.ID, "newMasterSigns", newMasterSigns, "newInternalSigns", newInternalSigns, "isAllInternals", isAllInternals, "isAllMasters", isAllMasters, "isAllOrigInternals", isAllOrigInternals, "isAllOrigMasters", isAllOrigMasters)
 
 	if isAllOrigMasters && isAllOrigInternals {
 		o.UpdateTS = orig.UpdateTS

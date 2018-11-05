@@ -47,6 +47,8 @@ type ServiceProtocolManager interface {
 
 	Ptt() Ptt
 	Service() Service
+
+	GetDBLock() *types.LockMap
 }
 
 type BaseServiceProtocolManager struct {
@@ -57,9 +59,16 @@ type BaseServiceProtocolManager struct {
 
 	ptt     Ptt
 	service Service
+
+	dbLock *types.LockMap
 }
 
 func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtocolManager, error) {
+	dbLock, err := types.NewLockMap(SleepTimeLock)
+	if err != nil {
+		return nil, err
+	}
+
 	spm := &BaseServiceProtocolManager{
 		entities: make(map[types.PttID]Entity),
 
@@ -67,9 +76,15 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 		ptt:         ptt,
 
 		service: service,
+
+		dbLock: dbLock,
 	}
 
 	return spm, nil
+}
+
+func (spm *BaseServiceProtocolManager) GetDBLock() *types.LockMap {
+	return spm.dbLock
 }
 
 func (spm *BaseServiceProtocolManager) Start() error {

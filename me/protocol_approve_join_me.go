@@ -147,9 +147,9 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	// my-info init
 	newMyInfo.Status = types.StatusInit
 	newMyInfo.UpdateTS = ts
-	err = newMyInfo.Init(ptt, service, myID)
+	err = newMyInfo.Init(ptt, service, service.SPM(), myID)
 
-	err = newMyInfo.Save()
+	err = newMyInfo.Save(false)
 	if err != nil {
 		return err
 	}

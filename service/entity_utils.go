@@ -16,26 +16,12 @@
 
 package service
 
-import "encoding/json"
+import "github.com/ailabstw/go-pttai/common/types"
 
-type SyncCreateOpKeyAck struct {
-	Objs []*KeyInfo `json:"o"`
-}
-
-func (pm *BaseProtocolManager) HandleSyncCreateOpKeyAck(dataBytes []byte, peer *PttPeer) error {
-	data := &SyncCreateOpKeyAck{}
-	err := json.Unmarshal(dataBytes, data)
-	if err != nil {
-		return err
-	}
-
-	origObj := NewEmptyKeyInfo()
-	pm.SetOpKeyObjDB(origObj)
-	for _, obj := range data.Objs {
-		pm.SetOpKeyObjDB(obj)
-
-		pm.HandleSyncCreateObjectAck(obj, peer, pm.SetOpKeyDB, origObj, pm.postcreateOpKey, pm.broadcastOpKeyOplogCore)
-	}
-
+func EntitySetStatusWithOplog(entity Entity, status types.Status, oplog *BaseOplog) error {
+	entity.SetStatus(status)
+	entity.SetUpdateTS(oplog.UpdateTS)
+	entity.SetLogID(oplog.ID)
+	entity.SetUpdaterID(oplog.CreatorID)
 	return nil
 }

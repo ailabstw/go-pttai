@@ -34,6 +34,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	isDebug := true
 
 	var bodyString string
+	var marshaled []byte
 	assert := assert.New(t)
 
 	setupTest(t)
@@ -162,4 +163,14 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(me1_3.ID, me1_8_1.OwnerIDs[0])
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
+	// 9. getRawMeByID
+	marshaled, _ = me0_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+
+	me0_9 := &me.MyInfo{}
+	testCore(t0, bodyString, me0_9, t, isDebug)
+	assert.Equal(types.StatusMigrated, me0_9.Status)
+	assert.Equal(2, len(me0_9.OwnerIDs))
+	assert.Equal(true, me0_9.IsOwner(me1_3.ID))
+	assert.Equal(true, me0_9.IsOwner(me0_3.ID))
 }

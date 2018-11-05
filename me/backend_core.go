@@ -219,6 +219,17 @@ func (b *Backend) GetRawMe() (*MyInfo, error) {
 	return myInfo, nil
 }
 
+func (b *Backend) GetRawMeByID(idBytes []byte) (*MyInfo, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(id)
+
+	return entity.(*MyInfo), nil
+}
+
 func (b *Backend) Revoke(keyBytes []byte) error {
 	return nil
 }

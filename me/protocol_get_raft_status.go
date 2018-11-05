@@ -17,6 +17,10 @@
 package me
 
 func (pm *ProtocolManager) GetRaftStatus() (*RaftStatus, error) {
+	if pm.rs == nil {
+		return nil, ErrInvalidMe
+	}
+
 	rs := &RaftStatus{
 		Lead:          pm.raftLead,
 		LastIndex:     pm.raftLastIndex,

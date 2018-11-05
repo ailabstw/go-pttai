@@ -31,6 +31,8 @@ const (
 	MeOpTypeCreateFriend
 	MeOpTypeJoinFriend
 
+	MeOpTypeMigrateMe
+
 	NMeOpType
 )
 
@@ -57,4 +59,8 @@ type MeOpJoinBoard struct {
 
 type MeOpJoinFriend struct {
 	FriendID *types.PttID `json:"FID"`
+}
+
+type MeOpMigrateMe struct {
+	ID *types.PttID
 }

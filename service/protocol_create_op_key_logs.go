@@ -27,7 +27,7 @@ func (pm *BaseProtocolManager) handleCreateOpKeyLog(oplog *BaseOplog, info *Proc
 
 	opData := &OpKeyOpCreateOpKey{}
 
-	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.CreateOpKeyPostprocess)
+	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.postcreateOpKey)
 }
 
 func (pm *BaseProtocolManager) handlePendingCreateOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
@@ -37,7 +37,7 @@ func (pm *BaseProtocolManager) handlePendingCreateOpKeyLog(oplog *BaseOplog, inf
 
 	opData := &OpKeyOpCreateOpKey{}
 
-	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.CreateOpKeyPostprocess)
+	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.postcreateOpKey)
 }
 
 func (pm *BaseProtocolManager) setNewestCreateOpKeyLog(oplog *BaseOplog) (types.Bool, error) {
@@ -52,7 +52,7 @@ func (pm *BaseProtocolManager) handleFailedCreateOpKeyLog(oplog *BaseOplog) erro
 	opKey := NewEmptyKeyInfo()
 	pm.SetOpKeyObjDB(opKey)
 
-	pm.HandleFailedCreateObjectLog(oplog, opKey, pm.FailedCreateOpKeyPostprocess)
+	pm.HandleFailedCreateObjectLog(oplog, opKey, pm.postfailedCreateOpKey)
 
 	return nil
 }

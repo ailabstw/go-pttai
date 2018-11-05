@@ -16,7 +16,10 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
+)
 
 func (pm *BaseProtocolManager) RevokeOpKeyInfo(keyID *types.PttID) (bool, error) {
 
@@ -25,10 +28,69 @@ func (pm *BaseProtocolManager) RevokeOpKeyInfo(keyID *types.PttID) (bool, error)
 
 	opData := &OpKeyOpRevokeOpKey{}
 
-	err := pm.DeleteObject(keyID, opKey, OpKeyOpTypeRevokeOpKey, opData, pm.NewOpKeyOplog, pm.broadcastOpKeyOplogCore, pm.DeleteOpKeyPostprocess)
+	err := pm.DeleteObject(keyID, opKey, OpKeyOpTypeRevokeOpKey, opData, pm.NewOpKeyOplog, nil, pm.broadcastOpKeyOplogCore, pm.postdeleteOpKey)
 	if err != nil {
 		return false, err
 	}
 
 	return true, nil
+}
+
+/**********
+ * delete
+ **********/
+
+func (k *KeyInfo) UpdateDeleteInfo(oplog *BaseOplog, theInfo ProcessInfo) error {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	info.CreateOpKeyInfo[*oplog.ObjID] = oplog
+	info.DeleteOpKeyInfo[*oplog.ObjID] = oplog
+
+	return nil
+}
+
+func (k *KeyInfo) SetPendingDeleteSyncInfo(oplog *BaseOplog) error {
+
+	syncInfo := EmptySyncKeyInfo()
+	syncInfo.InitWithOplog(oplog)
+	syncInfo.Status = types.StatusToDeleteStatus(syncInfo.Status)
+
+	k.SyncInfo = syncInfo
+
+	return nil
+}
+
+/*
+postdeleteOpKey deals with ops after deletingOpKey. Assuming obj already locked (in DeleteObject and DeleteObjectLogs).
+*/
+func (pm *BaseProtocolManager) postdeleteOpKey(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
+	hash := keyInfoIDToHash(id)
+
+	opKey, ok := origObj.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	opKey.CreateLogID = oplog.PreLogID
+
+	err := opKey.Save(true)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("DeleteOpKeyPostprocess: to RemoveOpKeyInfoFromHash")
+
+	return pm.RemoveOpKeyInfoFromHash(hash, false, false, false)
+}
+
+func (k *KeyInfo) RemoveMeta() {
+	k.Hash = nil
+	k.Key = nil
+	k.KeyBytes = nil
+	k.PubKeyBytes = nil
+	k.Extra = nil
+	k.Count = 0
 }

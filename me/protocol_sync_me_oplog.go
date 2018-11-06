@@ -16,29 +16,8 @@
 
 package me
 
-import (
-	"github.com/ailabstw/go-pttai/common/types"
-	pkgservice "github.com/ailabstw/go-pttai/service"
-)
+import pkgservice "github.com/ailabstw/go-pttai/service"
 
-func (pm *ProtocolManager) MigrateMe(newMyInfo *MyInfo) error {
-	opData := &MeOpMigrateMe{ID: newMyInfo.ID}
-
-	return pm.DeleteEntity(MeOpTypeMigrateMe, opData, types.StatusPendingDeleted, types.StatusMigrated, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteMigrateMe)
-}
-
-/*
-postdeleteMigrateMe deals with ops after deletingMigrateMe. Assuming entity already locked (in DeleteEntity and DeleteEntityLogs).
-*/
-func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) (err error) {
-	myInfo := pm.Entity().(*MyInfo)
-
-	opData, ok := theOpData.(*MeOpMigrateMe)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
-
-	myInfo.AddOwnerID(opData.ID)
-
-	return myInfo.Save(true)
+func (pm *ProtocolManager) SyncPendingMeOplog(peer *pkgservice.PttPeer) error {
+	return pm.SyncPendingOplog(peer, pm.SetMeDB, pm.HandleFailedMeOplog, SyncPendingMeOplogMsg)
 }

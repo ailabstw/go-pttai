@@ -23,6 +23,7 @@ import (
 func (pm *BaseProtocolManager) DeleteEntity(
 	deleteOp OpType,
 	opData OpData,
+	pendingStatus types.Status,
 	status types.Status,
 
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
@@ -69,7 +70,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	if oplogStatus == types.StatusAlive {
 		EntitySetStatusWithOplog(entity, status, oplog)
 	} else {
-		entity.SetPendingDeleteSyncInfo(status, oplog)
+		entity.SetPendingDeleteSyncInfo(pendingStatus, oplog)
 	}
 
 	err = entity.Save(true)

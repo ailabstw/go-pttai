@@ -22,6 +22,7 @@ import (
 	"sort"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -114,6 +115,8 @@ func (pm *BaseProtocolManager) BroadcastOplog(oplog *BaseOplog, msg OpType, pend
 		toSendPeers = peers.ImportantPeerList(false)
 		op = pendingMsg
 	}
+
+	log.Debug("BroadcastOplog: to SendDataToPeers", "e", pm.Entity().GetID(), "op", op, "toSendPeers", toSendPeers)
 
 	if len(toSendPeers) == 0 {
 		return nil

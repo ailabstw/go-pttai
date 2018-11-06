@@ -21,24 +21,12 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) MigrateMe(newMyInfo *MyInfo) error {
-	opData := &MeOpMigrateMe{ID: newMyInfo.ID}
+func (pm *ProtocolManager) RevokeMe() error {
+	opData := &MeOpRevokeMe{}
 
-	return pm.DeleteEntity(MeOpTypeMigrateMe, opData, types.StatusPendingDeleted, types.StatusMigrated, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteMigrateMe)
+	return pm.DeleteEntity(MeOpTypeRevokeMe, opData, types.StatusPendingDeleted, types.StatusDeleted, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteRevokeMe)
 }
 
-/*
-postdeleteMigrateMe deals with ops after deletingMigrateMe. Assuming entity already locked (in DeleteEntity and DeleteEntityLogs).
-*/
-func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) (err error) {
-	myInfo := pm.Entity().(*MyInfo)
-
-	opData, ok := theOpData.(*MeOpMigrateMe)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
-
-	myInfo.AddOwnerID(opData.ID)
-
-	return myInfo.Save(true)
+func (pm *ProtocolManager) postdeleteRevokeMe(theOpData pkgservice.OpData) (err error) {
+	return
 }

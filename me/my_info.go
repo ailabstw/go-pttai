@@ -25,7 +25,6 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -250,48 +249,6 @@ func (m *MyInfo) Get(id *types.PttID, ptt pkgservice.Ptt, service pkgservice.Ser
 
 	err = m.Unmarshal(theBytes)
 	log.Debug("Get: after Unmarshal", "theBytes", theBytes, "m", m, "e", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/*
-Revoke intends to Revoke the id.
-
-    1. check me
-    2. check whether revoke channel is busy.
-    3. mark deleted in local-db.
-    4. broadcast to the network.
-    5. stop node.
-    6. clear node.key-store.
-    7. exit.
-*/
-
-func (m *MyInfo) Revoke(keyBytes []byte, isLocked bool) error {
-	if !isLocked {
-		err := m.Lock()
-		if err != nil {
-			return err
-		}
-		defer m.Unlock()
-	}
-	// check me
-	key, err := crypto.ToECDSA(keyBytes)
-	if err != nil {
-		return err
-	}
-
-	if !m.ID.IsSameKey(key) {
-		return ErrInvalidMe
-	}
-
-	log.Info("Same Key. To revoke", "m.ID", m.ID, "key", key)
-
-	m.Status = types.StatusDeleted
-
-	err = m.Save(false)
 	if err != nil {
 		return err
 	}

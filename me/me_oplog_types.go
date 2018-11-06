@@ -32,6 +32,7 @@ const (
 	MeOpTypeJoinFriend
 
 	MeOpTypeMigrateMe
+	MeOpTypeRevokeMe
 
 	NMeOpType
 )
@@ -64,3 +65,5 @@ type MeOpJoinFriend struct {
 type MeOpMigrateMe struct {
 	ID *types.PttID
 }
+
+type MeOpRevokeMe struct{}

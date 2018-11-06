@@ -103,7 +103,7 @@ func MarshalBackendJoinURL(id *types.PttID, nodeID *discover.NodeID, keyInfo *Ke
 	v.Add("h", keyHashStr)
 	v.Add("k", keyStr)
 	v.Add("n", nameStr)
-	v.Add("t", strconv.FormatUint(keyInfo.UpdateTS.Ts+IntRenewJoinKeySeconds, 10))
+	v.Add("t", strconv.FormatInt(keyInfo.UpdateTS.Ts+IntRenewJoinKeySeconds, 10))
 
 	return &BackendJoinURL{
 		CreatorID:    creatorIDStr,

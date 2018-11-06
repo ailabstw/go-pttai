@@ -17,8 +17,10 @@
 package service
 
 import (
+	"reflect"
 	"sync"
 
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
@@ -224,6 +226,43 @@ func (ps *PttPeerSet) Unregister(peer *PttPeer, isLocked bool) error {
 	ps.peerList = append(append(ps.mePeerList, ps.importantPeerList...), ps.memberPeerList...)
 
 	return nil
+}
+
+func (ps *PttPeerSet) UnregisterPeerByOtherUserID(id *types.PttID, isLocked bool) (*PttPeer, PeerType, error) {
+	if !isLocked {
+		ps.Lock()
+		defer ps.Unlock()
+	}
+
+	// important peers
+	var origPeer *PttPeer
+	for _, peer := range ps.importantPeerList {
+		if reflect.DeepEqual(peer.UserID, id) {
+			origPeer = peer
+			ps.Unregister(peer, true)
+			return origPeer, PeerTypeImportant, nil
+		}
+	}
+
+	// member peers
+	for _, peer := range ps.memberPeerList {
+		if reflect.DeepEqual(peer.UserID, id) {
+			origPeer = peer
+			ps.Unregister(peer, true)
+			return origPeer, PeerTypeMember, nil
+		}
+	}
+
+	// pending peers
+	for _, peer := range ps.pendingPeerList {
+		if reflect.DeepEqual(peer.UserID, id) {
+			origPeer = peer
+			ps.Unregister(peer, true)
+			return origPeer, PeerTypePending, nil
+		}
+	}
+
+	return nil, PeerTypeRandom, nil
 }
 
 func (ps *PttPeerSet) PeersToPeerList(peers map[discover.NodeID]*PttPeer, isLocked bool) []*PttPeer {

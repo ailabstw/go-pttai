@@ -35,11 +35,11 @@ func TestPttRestart(t *testing.T) {
 
 	t0 := baloo.New("http://127.0.0.1:9450")
 
-	// 2. ptt_countEntities
+	// 2. ptt_restart
 	bodyString = `{"id": "testID", "method": "ptt_restart", "params": []}`
 
 	resultString := `{"jsonrpc":"2.0","id":"testID","result":true}`
 	testBodyEqualCore(t0, bodyString, resultString, t)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 }

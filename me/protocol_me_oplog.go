@@ -84,14 +84,6 @@ func (pm *ProtocolManager) SetMeOplogIsSync(oplog *MeOplog, isBroadcast bool) (b
 	return pm.SetOplogIsSync(oplog.BaseOplog, isBroadcast, pm.broadcastMeOplogCore)
 }
 
-func (pm *ProtocolManager) RemoveNonSyncMeOplog(logID *types.PttID, isRetainValid bool, isLocked bool) (*MeOplog, error) {
-	oplog, err := pm.RemoveNonSyncOplog(pm.SetOpKeyDB, logID, isRetainValid, isLocked)
-	if err != nil {
-		return nil, err
-	}
-	return OplogToMeOplog(oplog), nil
-}
-
 /**********
  * CleanMeOplog
  **********/

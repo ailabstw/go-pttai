@@ -61,6 +61,8 @@ HandleMessage handles message
 func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) error {
 	var err error
 
+	log.Debug("HandleMessage: start", "code", code, "peer", peer, "peerType", peer.PeerType)
+
 	if !reflect.DeepEqual(data.Node, discover.EmptyNodeID) && !reflect.DeepEqual(data.Node, p.myNodeID[:]) {
 		log.Error("HandleMessage: the msg is not for me or not for broadcast", "code", code, "data.Node", data.Node, "peer", peer)
 		return ErrInvalidData
@@ -72,7 +74,9 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 		return err
 	}
 
-	if evCode != code || !reflect.DeepEqual(evHash[:], data.Hash[:]) {
+	log.Debug("HandleMessage: to check code", "evCode", evCode, "code", code, "evHash", evHash, "dataHash", data.Hash)
+
+	if evCode != code || (code < CodeTypeIdentifyPeerFail && !reflect.DeepEqual(evHash[:], data.Hash[:])) {
 		log.Error("HandleMessage: hash not match", "evHash", evHash, "dataHash", data.Hash)
 		return ErrInvalidData
 	}
@@ -92,12 +96,17 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 		err = p.HandleCodeIdentifyPeerWithMyID(evHash, encData, peer)
 	case CodeTypeIdentifyPeerWithMyIDChallenge:
 		err = p.HandleCodeIdentifyPeerWithMyIDChallenge(evHash, encData, peer)
+	case CodeTypeIdentifyPeerWithMyIDChallengeAck:
+		err = p.HandleCodeIdentifyPeerWithMyIDChallengeAck(evHash, encData, peer)
+	case CodeTypeIdentifyPeerWithMyIDAck:
+		err = p.HandleCodeIdentifyPeerWithMyIDAck(evHash, encData, peer)
 	default:
 		err = ErrInvalidMsgCode
 	}
 
 	if err != nil {
 		log.Error("Ptt.HandleMessage", "code", code, "e", err)
+
 	}
 
 	return nil
@@ -111,9 +120,9 @@ func (p *BasePtt) HandleCodeJoin(hash *common.Address, encData []byte, peer *Ptt
 	}
 
 	pm := entity.PM()
-	keyInfo, err := pm.GetJoinKeyInfo(hash)
+	keyInfo, err := pm.GetJoinKeyFromHash(hash)
 	if err != nil {
-		log.Error("HandleCodeJoin: unable to get JoinKeyInfo", "e", err)
+		log.Error("HandleCodeJoin: unable to get JoinKeyInfo", "hash", hash, "e", err)
 		return err
 	}
 

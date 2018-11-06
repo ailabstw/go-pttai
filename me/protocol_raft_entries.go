@@ -220,7 +220,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 			if err != nil {
 				return err
 			}
-		case types.StatusInternalSync:
+		case types.StatusSync:
 			err = pm.InternalSyncToAlive(oplog, weight)
 			if err != nil {
 				return err
@@ -255,6 +255,9 @@ func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts
 
 	masters := make(map[discover.NodeID]uint32)
 	for _, eachNode := range pm.MyNodes {
+		if eachNode.Weight == 0 {
+			continue
+		}
 		masters[*eachNode.NodeID] = eachNode.Weight
 	}
 	masters[*nodeID] = weight
@@ -349,10 +352,14 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 	delete(pm.MyNodes, raftID)
 	delete(pm.MyNodeByNodeSignIDs, *nodeSignID)
 
+	// reset masters and totalWeight
 	masters := make(map[discover.NodeID]uint32)
+	var totalWeight uint32
 	for _, eachNode := range pm.MyNodes {
+		totalWeight += eachNode.Weight
 		masters[*eachNode.NodeID] = eachNode.Weight
 	}
+	pm.totalWeight = totalWeight
 
 	opData := &MasterOpRevokeMaster{
 		ID:      nodeID,
@@ -380,9 +387,7 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 	myRaftID := pm.myPtt.MyRaftID()
 	if raftID == myRaftID {
 		return pm.HandleRevokeMyNode(oplog, false, true)
-	} else {
-		return pm.HandleRevokeOtherNode(oplog, myNode)
 	}
 
-	return nil
+	return pm.HandleRevokeOtherNode(oplog, myNode)
 }

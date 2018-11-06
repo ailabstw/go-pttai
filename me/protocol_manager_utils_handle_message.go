@@ -24,7 +24,7 @@ import (
 func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) (err error) {
 
 	myInfo := pm.Entity().(*MyInfo)
-	log.Debug("HandleMessage: Received msg", "myID", myInfo.ID, "op", op, "SyncMeOplogMsg", SyncMeOplogMsg)
+	log.Debug("HandleMessage: Received msg", "myID", myInfo.ID, "op", op, "SyncMeOplogMsg", SyncMeOplogMsg, "peer", peer, "peerType", peer.PeerType)
 
 	switch op {
 	// init me info
@@ -66,6 +66,7 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case AddMeOplogsMsg:
 		err = pm.HandleAddMeOplogs(dataBytes, peer)
 	case AddPendingMeOplogMsg:
+		log.Debug("HandleMessage: to AddPendingMeOplogMsg")
 		err = pm.HandleAddPendingMeOplog(dataBytes, peer)
 	case AddPendingMeOplogsMsg:
 		err = pm.HandleAddPendingMeOplogs(dataBytes, peer)

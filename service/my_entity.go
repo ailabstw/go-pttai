@@ -30,7 +30,7 @@ type MyEntity interface {
 
 	Name() string
 
-	NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap) (*KeyInfo, error)
+	NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error)
 
 	GetNodeSignID() *types.PttID
 
@@ -39,6 +39,8 @@ type MyEntity interface {
 	MasterSign(oplog *BaseOplog) error
 
 	IsValidInternalOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
+
+	CreateJoinEntityOplog(entity Entity) error
 }
 
 type PttMyEntity interface {
@@ -54,4 +56,6 @@ type PttMyEntity interface {
 
 	// node
 	GetLenNodes() int
+
+	Service() Service
 }

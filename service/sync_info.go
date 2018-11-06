@@ -16,7 +16,9 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 type SyncInfo interface {
 	GetLogID() *types.PttID
@@ -27,6 +29,9 @@ type SyncInfo interface {
 
 	GetStatus() types.Status
 	SetStatus(status types.Status)
+
+	SetBlock(block BlockInfo) error
+	GetBlock() BlockInfo
 }
 
 type BaseSyncInfo struct {
@@ -34,6 +39,7 @@ type BaseSyncInfo struct {
 	UpdateTS  types.Timestamp `json:"UT"`
 	UpdaterID *types.PttID    `json:"UID"`
 	Status    types.Status    `json:"S"`
+	BlockInfo BlockInfo       `json:"b,omitempty"`
 }
 
 func (s *BaseSyncInfo) SetLogID(id *types.PttID) {
@@ -67,31 +73,18 @@ func (s *BaseSyncInfo) InitWithOplog(oplog *BaseOplog) {
 	s.Status = oplog.ToStatus()
 }
 
-func IntegrateSyncInfo(s SyncInfo, s2 SyncInfo) SyncInfo {
-	if s == nil {
-		return s2
-	}
+func (s *BaseSyncInfo) InitWithDeleteOplog(status types.Status, oplog *BaseOplog) {
+	s.LogID = oplog.ID
+	s.UpdateTS = oplog.UpdateTS
+	s.UpdaterID = oplog.CreatorID
+	s.Status = status
+}
 
-	if s2 == nil {
-		return s
-	}
+func (s *BaseSyncInfo) SetBlock(blockInfo BlockInfo) error {
+	s.BlockInfo = blockInfo
+	return nil
+}
 
-	statusClass := types.StatusToStatusClass(s.GetStatus())
-	statusClass2 := types.StatusToStatusClass(s2.GetStatus())
-
-	switch {
-	case statusClass > statusClass2:
-		return s
-	case statusClass < statusClass2:
-		return s2
-	}
-
-	updateTS := s.GetUpdateTS()
-	updateTS2 := s2.GetUpdateTS()
-
-	if updateTS.IsLess(updateTS2) {
-		return s2
-	}
-
-	return s
+func (s *BaseSyncInfo) GetBlock() BlockInfo {
+	return s.BlockInfo
 }

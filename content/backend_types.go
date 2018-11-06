@@ -16,7 +16,10 @@
 
 package content
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 type BackendCreateBoard struct {
 }
@@ -89,15 +92,15 @@ type BackendGetBoard struct {
 	UpdateTS        types.Timestamp
 	ArticleCreateTS types.Timestamp
 	LastSeen        types.Timestamp
-	CreatorID       *types.PttID `json:"C"`
-	BoardType       BoardType    `json:"BT"`
+	CreatorID       *types.PttID          `json:"C"`
+	BoardType       pkgservice.EntityType `json:"BT"`
 }
 
 func boardToBackendGetBoard(b *Board, myName string) *BackendGetBoard {
 	title := b.Title
 
 	myID := b.Ptt().GetMyEntity().GetID()
-	if len(title) == 0 && b.BoardType == BoardTypePersonal {
+	if len(title) == 0 && b.EntityType == pkgservice.EntityTypePersonal {
 		title = DefaultTitle(myID, b.CreatorID, myName)
 	}
 
@@ -114,7 +117,7 @@ func boardToBackendGetBoard(b *Board, myName string) *BackendGetBoard {
 		ArticleCreateTS: b.ArticleCreateTS,
 		LastSeen:        b.LastSeen,
 		CreatorID:       b.CreatorID,
-		BoardType:       b.BoardType,
+		BoardType:       b.EntityType,
 	}
 }
 

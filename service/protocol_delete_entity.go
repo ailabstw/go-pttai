@@ -18,20 +18,35 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) DeleteEntity(
 	deleteOp OpType,
 	opData OpData,
+	internalPendingStatus types.Status,
 	pendingStatus types.Status,
 	status types.Status,
 
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
+
+	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
+
 	broadcastLog func(oplog *BaseOplog) error,
 	postdelete func(opData OpData) error,
 ) error {
 
+	myEntity := pm.Ptt().GetMyEntity()
+	myID := myEntity.GetID()
 	entity := pm.Entity()
+
+	// validate
+	if entity.GetStatus() > types.StatusFailed {
+		return types.ErrInvalidStatus
+	}
+	if myEntity.GetStatus() != types.StatusAlive {
+		return types.ErrInvalidStatus
+	}
 
 	// 1. lock object
 	err := entity.Lock()
@@ -42,13 +57,11 @@ func (pm *BaseProtocolManager) DeleteEntity(
 
 	// 3. check validity
 	origStatus := entity.GetStatus()
-	origStatusClass := types.StatusToStatusClass(origStatus)
-	if origStatusClass == types.StatusClassDeleted {
+	if origStatus >= types.StatusDeleted {
 		return nil
 	}
 
-	myID := pm.Ptt().GetMyEntity().GetID()
-	if !pm.IsMaster(myID) {
+	if !pm.IsMaster(myID, false) {
 		return types.ErrInvalidID
 	}
 
@@ -60,18 +73,29 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	}
 	oplog := theOplog.GetBaseOplog()
 
+	origLogID := entity.GetLogID()
+	if origStatus == types.StatusAlive {
+		oplog.SetPreLogID(origLogID)
+	}
+
 	err = pm.SignOplog(oplog)
 	if err != nil {
 		return err
 	}
 
 	// 5. update obj
-	oplogStatus := oplog.ToStatus()
-	if oplogStatus == types.StatusAlive {
+	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), internalPendingStatus, pendingStatus, status)
+	if oplogStatus >= types.StatusDeleted {
 		EntitySetStatusWithOplog(entity, status, oplog)
 	} else {
-		entity.SetPendingDeleteSyncInfo(pendingStatus, oplog)
+		if !isReplaceOrigSyncInfo(entity.GetSyncInfo(), oplogStatus, oplog.UpdateTS, oplog.ID) {
+			return types.ErrAlreadyPendingDelete
+		}
+
+		setPendingDeleteSyncInfo(entity, oplogStatus, oplog)
 	}
+
+	log.Debug("DeleteEntity: entity to save", "status", entity.GetStatus(), "syncInfo", entity.GetSyncInfo())
 
 	err = entity.Save(true)
 	if err != nil {
@@ -87,7 +111,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	broadcastLog(oplog)
 
 	// 6.1. postdelete
-	if oplogStatus != types.StatusAlive {
+	if oplogStatus < types.StatusDeleted {
 		return nil
 	}
 
@@ -96,4 +120,22 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	}
 
 	return nil
+}
+
+func (pm *BaseProtocolManager) PostdeleteEntity() {
+	pm.postdeleteEntity()
+}
+
+func (pm *BaseProtocolManager) DefaultPostdeleteEntity() {
+	// peer
+	pm.CleanPeers()
+
+	// join-key
+	pm.CleanJoinKey()
+
+	// op-key
+	pm.CleanOpKey()
+
+	pm.CleanOpKeyOplog()
+
 }

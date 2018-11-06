@@ -24,7 +24,7 @@ import (
 )
 
 type Timestamp struct {
-	Ts     uint64 `json:"T"`
+	Ts     int64  `json:"T"` // uint64 is only for
 	NanoTs uint32 `json:"NT"`
 }
 
@@ -35,7 +35,7 @@ var GetTimestamp = func() (Timestamp, error) {
 }
 
 func TimeToTimestamp(t time.Time) Timestamp {
-	return Timestamp{uint64(t.Unix()), uint32(t.Nanosecond())}
+	return Timestamp{int64(t.Unix()), uint32(t.Nanosecond())}
 }
 
 func (t *Timestamp) ToMilli() Timestamp {
@@ -53,7 +53,7 @@ func (t *Timestamp) ToDayTimestamp() (Timestamp, Timestamp) {
 }
 
 func (t *Timestamp) ToMonthTimestamp() (Timestamp, Timestamp) {
-	theTime := time.Unix(int64(t.Ts), int64(t.NanoTs)).UTC()
+	theTime := time.Unix(t.Ts, int64(t.NanoTs)).UTC()
 	year, month, _ := theTime.Date()
 
 	newTime := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
@@ -63,7 +63,7 @@ func (t *Timestamp) ToMonthTimestamp() (Timestamp, Timestamp) {
 }
 
 func (t *Timestamp) ToYearTimestamp() (Timestamp, Timestamp) {
-	theTime := time.Unix(int64(t.Ts), int64(t.NanoTs)).UTC()
+	theTime := time.Unix(t.Ts, int64(t.NanoTs)).UTC()
 	year, _, _ := theTime.Date()
 
 	newTime := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -78,7 +78,7 @@ func (t *Timestamp) IsEqMilli(t2 Timestamp) bool {
 
 func (t *Timestamp) Marshal() ([]byte, error) {
 	theBytes := make([]byte, 12) // uint64 + uint32
-	binary.BigEndian.PutUint64(theBytes[:8], t.Ts)
+	binary.BigEndian.PutUint64(theBytes[:8], uint64(t.Ts))
 	binary.BigEndian.PutUint32(theBytes[8:], t.NanoTs)
 
 	return theBytes, nil
@@ -92,7 +92,7 @@ func UnmarshalTimestamp(theBytes []byte) (Timestamp, error) {
 		return Timestamp{}, ErrInvalidTimestamp
 	}
 
-	return Timestamp{ts, nanoTs}, nil
+	return Timestamp{int64(ts), nanoTs}, nil
 }
 
 func (t *Timestamp) IsEqual(t2 Timestamp) bool {

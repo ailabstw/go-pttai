@@ -45,6 +45,7 @@ func (p *BasePtt) MyNodeKey() *ecdsa.PrivateKey {
 
 func (p *BasePtt) SetMyEntity(myEntity PttMyEntity) error {
 	p.myEntity = myEntity
+	p.myService = myEntity.Service()
 
 	return nil
 }
@@ -55,4 +56,8 @@ func (p *BasePtt) GetMyEntity() MyEntity {
 
 func (p *BasePtt) GetMyEntityFromMe(myID *types.PttID) Entity {
 	return nil
+}
+
+func (p *BasePtt) GetMyService() Service {
+	return p.myService
 }

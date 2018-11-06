@@ -17,6 +17,10 @@
 package service
 
 import (
+	"bytes"
+	"reflect"
+	"sort"
+
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -144,4 +148,20 @@ func getOplogsFromKeys(setDB func(oplog *BaseOplog), keys [][]byte) ([]*BaseOplo
 	}
 
 	return oplogs, nil
+}
+
+func IDInOplogSigns(id *types.PttID, signs []*SignInfo) bool {
+	lenSigns := len(signs)
+	if lenSigns == 0 {
+		return false
+	}
+
+	idx := sort.Search(len(signs), func(i int) bool {
+		return bytes.Compare(signs[i].ID[:], id[:]) >= 0
+	})
+	if idx >= 0 && idx < lenSigns && reflect.DeepEqual(signs[idx].ID, id) {
+		return true
+	}
+
+	return false
 }

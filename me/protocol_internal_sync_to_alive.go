@@ -34,8 +34,6 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	defer myInfo.Unlock()
 
 	myInfo.Status = types.StatusAlive
-	myInfo.LogID = oplog.ID
-	myInfo.UpdateTS = oplog.UpdateTS
 
 	err = myInfo.Save(true)
 	if err != nil {
@@ -46,6 +44,7 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	myNode := pm.MyNodes[myRaftID]
 	myNode.Status = types.StatusAlive
 	myNode.UpdateTS = oplog.UpdateTS
+	myNode.LogID = oplog.ID
 
 	_, err = myNode.Save()
 	if err != nil {

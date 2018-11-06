@@ -33,6 +33,8 @@ The reason why entity is not an object is because:
 	2. We may recover a deleted entity.
 */
 type Entity interface {
+	PrestartAndStart() error
+	Prestart() error
 	Start() error
 	Stop() error
 
@@ -41,12 +43,7 @@ type Entity interface {
 
 	Save(isLocked bool) error
 
-	// sync-info
-
-	RemoveSyncInfo(oplog *BaseOplog, opData OpData, syncInfo SyncInfo, info ProcessInfo) error
-	SetPendingDeleteSyncInfo(status types.Status, oplog *BaseOplog)
-
-	UpdateDeleteInfo(oplog *BaseOplog, info ProcessInfo)
+	Init(ptt Ptt, service Service, spm ServiceProtocolManager) error
 
 	/**********
 	 * implemented in BaseEntity
@@ -146,7 +143,7 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 
 func (e *BaseEntity) Init(pm ProtocolManager, name string, ptt Ptt, service Service) {
 	e.pm = pm
-	e.name = ProtocolName
+	e.name = name
 	e.ptt = ptt
 	e.service = service
 }
@@ -154,6 +151,18 @@ func (e *BaseEntity) Init(pm ProtocolManager, name string, ptt Ptt, service Serv
 func (e *BaseEntity) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
 	e.db = db
 	e.dbLock = dbLock
+}
+
+func (e *BaseEntity) PrestartAndStart() error {
+	err := e.Prestart()
+	if err != nil {
+		return err
+	}
+	return e.Start()
+}
+
+func (e *BaseEntity) Prestart() error {
+	return PrestartPM(e.pm)
 }
 
 func (e *BaseEntity) Start() error {
@@ -267,9 +276,13 @@ func (e *BaseEntity) IsOwner(id *types.PttID) bool {
 		return bytes.Compare(ownerIDs[i][:], id[:]) >= 0
 	})
 
+	log.Debug("IsOwner: after Search idx", "id", id, "idx", idx, "ownerIDs", ownerIDs)
+
 	if idx == len(ownerIDs) {
 		return false
 	}
+
+	log.Debug("IsOwner: to DeepEqual", "id", id, "owerID", ownerIDs[idx])
 
 	return reflect.DeepEqual(id, ownerIDs[idx])
 }
@@ -334,9 +347,10 @@ func (e *BaseEntity) SetSyncInfo(syncInfo SyncInfo) {
 }
 
 func (e *BaseEntity) GetSyncInfo() SyncInfo {
+	if e.SyncInfo == nil {
+		return nil
+	}
 	return e.SyncInfo
 }
 
-func (e *BaseEntity) IntegrateSyncInfo(syncInfo SyncInfo) {
-	e.SyncInfo = IntegrateSyncInfo(syncInfo, e.SyncInfo)
-}
+func (e *BaseEntity) ResetJoinMeta() {}

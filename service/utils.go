@@ -26,7 +26,6 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, error) {
@@ -89,25 +88,8 @@ func GenChallenge() []byte {
 	return challenge
 }
 
-func NewPttIDWithKey(myID *types.PttID, db *pttdb.LDBDatabase) (*types.PttID, error) {
-	key, err := crypto.GenerateKey()
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := types.NewPttIDWithRefID(key, myID)
-	if err != nil {
-		return nil, err
-	}
-
-	keyBytes := crypto.FromECDSA(key)
-
-	err = db.Put(id[:], keyBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return id, nil
+func NewPttIDWithMyID(myID *types.PttID) (*types.PttID, error) {
+	return types.NewPttIDWithPostifx(myID[:common.AddressLength])
 }
 
 func NewPttIDWithMixedIDs(pttIDs []*types.PttID) (*types.PttID, error) {

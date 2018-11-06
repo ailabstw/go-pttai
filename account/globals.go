@@ -21,6 +21,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 // config
@@ -28,6 +29,25 @@ var (
 	DefaultConfig = Config{
 		DataDir: filepath.Join(node.DefaultDataDir(), "account"),
 	}
+)
+
+// protocol
+const (
+	_ pkgservice.OpType = iota + pkgservice.NMsg
+	// me-oplog
+	AddUserOplogMsg //30
+	AddUserOplogsMsg
+
+	AddPendingUserOplogMsg
+	AddPendingUserOplogsMsg
+
+	SyncUserOplogMsg
+	SyncUserOplogAckMsg
+	SyncUserOplogNewOplogsMsg
+	SyncUserOplogNewOplogsAckMsg
+
+	SyncPendingUserOplogMsg
+	SyncPendingUserOplogAckMsg
 )
 
 // user-profile
@@ -44,9 +64,12 @@ const (
 
 // db
 var (
-	dbAccount *pttdb.LDBDatabase = nil
+	dbAccount     *pttdb.LDBBatch    = nil
+	dbAccountCore *pttdb.LDBDatabase = nil
 
 	dbMeta *pttdb.LDBDatabase = nil
+
+	DBProfilePrefix = []byte(".pfdb")
 
 	DBUserNamePrefix = []byte(".urnm")
 	DBUserImgPrefix  = []byte(".urim")
@@ -55,10 +78,34 @@ var (
 	DBUserNodeIdxPrefix = []byte(".unix")
 )
 
+// op-key
+var (
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
+)
+
+// sync
+const (
+	MaxSyncRandomSeconds = 30
+	MinSyncRandomSeconds = 15
+)
+
+// oplog
+var (
+	DBUserOplogPrefix       = []byte(".urlg")
+	DBUserIdxOplogPrefix    = []byte(".urig")
+	DBUserMerkleOplogPrefix = []byte(".urmk")
+)
+
 func InitAccount(dataDir string) error {
 	var err error
 
-	dbAccount, err = pttdb.NewLDBDatabase("account", dataDir, 0, 0)
+	dbAccountCore, err = pttdb.NewLDBDatabase("account", dataDir, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	dbAccount, err = pttdb.NewLDBBatch(dbAccountCore)
 	if err != nil {
 		return err
 	}
@@ -72,8 +119,12 @@ func InitAccount(dataDir string) error {
 }
 
 func TeardownAccount() {
+	if dbAccountCore != nil {
+		dbAccountCore.Close()
+		dbAccountCore = nil
+	}
+
 	if dbAccount != nil {
-		dbAccount.Close()
 		dbAccount = nil
 	}
 

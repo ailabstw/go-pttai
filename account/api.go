@@ -16,7 +16,10 @@
 
 package account
 
-import "github.com/ailabstw/go-pttai/pttdb"
+import (
+	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 type PrivateAPI struct {
 	b *Backend
@@ -26,12 +29,92 @@ func NewPrivateAPI(b *Backend) *PrivateAPI {
 	return &PrivateAPI{b}
 }
 
+/**********
+ * MasterOplog
+ **********/
+
+func (api *PrivateAPI) GetMasterOplogList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+	return api.b.BEGetMasterOplogList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingMasterOplogMasterList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+	return api.b.BEGetPendingMasterOplogMasterList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingMasterOplogInternalList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+	return api.b.BEGetPendingMasterOplogInternalList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetMasterOplogMerkleNodeList(profileID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+	return api.b.BEGetMasterOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+}
+
+/**********
+ * MemberOplog
+ **********/
+
+func (api *PrivateAPI) GetMemberOplogList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+	return api.b.BEGetMemberOplogList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingMemberOplogMemberList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+	return api.b.BEGetPendingMemberOplogMemberList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingMemberOplogInternalList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+	return api.b.BEGetPendingMemberOplogInternalList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetMemberOplogMerkleNodeList(profileID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+	return api.b.BEGetMemberOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+}
+
+/**********
+ * UserOplog
+ **********/
+
+func (api *PrivateAPI) GetUserOplogList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+	return api.b.BEGetUserOplogList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingUserOplogMemberList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+	return api.b.BEGetPendingUserOplogMemberList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetPendingUserOplogInternalList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+	return api.b.BEGetPendingUserOplogInternalList([]byte(profileID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetUserOplogMerkleNodeList(profileID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+	return api.b.BEGetUserOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+}
+
+/**********
+ * Raw Data
+ **********/
+
 func (api *PrivateAPI) GetRawUserName(idStr string) (*UserName, error) {
 	return api.b.GetRawUserName([]byte(idStr))
 }
 
 func (api *PrivateAPI) GetRawUserImg(idStr string) (*UserImg, error) {
 	return api.b.GetRawUserImg([]byte(idStr))
+}
+
+func (api *PrivateAPI) GetRawProfile(idStr string) (*Profile, error) {
+	return api.b.GetRawProfile([]byte(idStr))
+}
+
+func (api *PrivateAPI) GetMasterList(idStr string) ([]*pkgservice.Master, error) {
+	return api.b.GetMasterList([]byte(idStr))
+}
+
+func (api *PrivateAPI) GetMasterListFromDB(idStr string, startID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.Master, error) {
+	return api.b.GetMasterListFromDB([]byte(idStr), []byte(startID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetMemberList(idStr string, startID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.Member, error) {
+	return api.b.GetMemberList([]byte(idStr), []byte(startID), limit, listOrder)
 }
 
 type PublicAPI struct {

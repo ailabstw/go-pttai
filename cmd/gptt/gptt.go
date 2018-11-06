@@ -145,6 +145,12 @@ func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.P
 		return nil, err
 	}
 
+	err = ptt.Prestart()
+	if err != nil {
+		log.Error("unable to do Prestart", "e", err)
+		return nil, err
+	}
+
 	return ptt, nil
 }
 

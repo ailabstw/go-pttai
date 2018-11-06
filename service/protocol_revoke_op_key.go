@@ -21,14 +21,18 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) RevokeOpKeyInfo(keyID *types.PttID) (bool, error) {
+func (pm *BaseProtocolManager) RevokeOpKey(keyID *types.PttID) (bool, error) {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	opData := &OpKeyOpRevokeOpKey{}
 
-	err := pm.DeleteObject(keyID, opKey, OpKeyOpTypeRevokeOpKey, opData, pm.NewOpKeyOplog, nil, pm.broadcastOpKeyOplogCore, pm.postdeleteOpKey)
+	err := pm.DeleteObject(
+		keyID, OpKeyOpTypeRevokeOpKey,
+		opKey, opData,
+		pm.SetOpKeyDB, pm.NewOpKeyOplog, nil, pm.setPendingDeleteOpKeySyncInfo, pm.broadcastOpKeyOplogCore, pm.postdeleteOpKey)
+	log.Debug("RevokeOpKeyInfo: after DeleteObject", "e", err)
 	if err != nil {
 		return false, err
 	}
@@ -36,29 +40,17 @@ func (pm *BaseProtocolManager) RevokeOpKeyInfo(keyID *types.PttID) (bool, error)
 	return true, nil
 }
 
-/**********
- * delete
- **********/
+func (pm *BaseProtocolManager) setPendingDeleteOpKeySyncInfo(theOpKey Object, status types.Status, oplog *BaseOplog) error {
 
-func (k *KeyInfo) UpdateDeleteInfo(oplog *BaseOplog, theInfo ProcessInfo) error {
-	info, ok := theInfo.(*ProcessOpKeyInfo)
+	opKey, ok := theOpKey.(*KeyInfo)
 	if !ok {
 		return ErrInvalidData
 	}
 
-	info.CreateOpKeyInfo[*oplog.ObjID] = oplog
-	info.DeleteOpKeyInfo[*oplog.ObjID] = oplog
+	syncInfo := &BaseSyncInfo{}
+	syncInfo.InitWithDeleteOplog(status, oplog)
 
-	return nil
-}
-
-func (k *KeyInfo) SetPendingDeleteSyncInfo(oplog *BaseOplog) error {
-
-	syncInfo := EmptySyncKeyInfo()
-	syncInfo.InitWithOplog(oplog)
-	syncInfo.Status = types.StatusToDeleteStatus(syncInfo.Status)
-
-	k.SyncInfo = syncInfo
+	opKey.SyncInfo = syncInfo
 
 	return nil
 }
@@ -66,14 +58,24 @@ func (k *KeyInfo) SetPendingDeleteSyncInfo(oplog *BaseOplog) error {
 /*
 postdeleteOpKey deals with ops after deletingOpKey. Assuming obj already locked (in DeleteObject and DeleteObjectLogs).
 */
-func (pm *BaseProtocolManager) postdeleteOpKey(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
-	hash := keyInfoIDToHash(id)
+func (pm *BaseProtocolManager) postdeleteOpKey(
+	id *types.PttID,
+
+	oplog *BaseOplog,
+	opData OpData,
+
+	origObj Object,
+	blockInfo BlockInfo,
+) error {
 
 	opKey, ok := origObj.(*KeyInfo)
 	if !ok {
 		return ErrInvalidData
 	}
 
+	hash := keyInfoIDToHash(id)
+
+	// update create-log-id
 	opKey.CreateLogID = oplog.PreLogID
 
 	err := opKey.Save(true)
@@ -81,10 +83,14 @@ func (pm *BaseProtocolManager) postdeleteOpKey(id *types.PttID, oplog *BaseOplog
 		return err
 	}
 
-	log.Debug("DeleteOpKeyPostprocess: to RemoveOpKeyInfoFromHash")
+	log.Debug("postdeleteOpKey: to RemoveOpKeyInfoFromHash")
 
-	return pm.RemoveOpKeyInfoFromHash(hash, false, false, false)
+	return pm.RemoveOpKeyFromHash(hash, false, false, false)
 }
+
+/**********
+ * KeyInfo
+ **********/
 
 func (k *KeyInfo) RemoveMeta() {
 	k.Hash = nil

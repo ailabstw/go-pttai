@@ -22,6 +22,23 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
+func PrestartPM(pm ProtocolManager) error {
+	// 2. register entity
+	ptt := pm.Ptt()
+	err := ptt.RegisterEntity(pm.Entity(), false, false)
+	if err != nil {
+		return err
+	}
+
+	// 3. pre-start
+	err = pm.Prestart()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 /*
 StartPM starts the pm
 	1. go PMSync (require sync first to receive new-peer-ch)
@@ -39,16 +56,8 @@ func StartPM(pm ProtocolManager) error {
 		PMSync(pm)
 	}()
 
-	ptt := pm.Ptt()
-	err := ptt.RegisterEntity(pm.Entity(), false, false)
-	if err != nil {
-		return err
-	}
-
-	log.Debug("StartPM: after RegisterEntity", "entity", pm.Entity().GetID())
-
 	// 2. pm.Start
-	err = pm.Start()
+	err := pm.Start()
 	if err != nil {
 		return err
 	}
@@ -153,6 +162,7 @@ func (pm *BaseProtocolManager) SendDataToPeerWithCode(code CodeType, op OpType, 
 	pttData.Node = peer.GetID()[:]
 
 	err = peer.SendData(pttData)
+	log.Debug("SendDataToPeerWithCode: after SendData", "code", code, "peer", peer.PeerType, "e", err)
 	if err != nil {
 		return ErrNotSent
 	}

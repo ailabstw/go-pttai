@@ -32,7 +32,7 @@ func (p *BasePtt) JoinAckChallenge(keyInfo *KeyInfo, join *Join, peer *PttPeer, 
 	challenge := join.Challenge
 	id := entity.GetID()
 	name := entity.Name()
-	hash := entity.PM().Master0Hash()
+	hash := entity.PM().MasterLog0Hash()
 
 	joinAckCallenge := &JoinAckChallenge{
 		Challenge:   challenge,

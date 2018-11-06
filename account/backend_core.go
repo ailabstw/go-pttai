@@ -20,7 +20,360 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
+
+func (b *Backend) GetRawProfile(idBytes []byte) (*Profile, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+
+	return profile, nil
+}
+
+/**********
+ * MasterOplog
+ **********/
+
+func (b *Backend) BEGetMasterOplogList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMasterOplogList(logID, limit, listOrder, types.StatusAlive)
+}
+
+func (b *Backend) BEGetPendingMasterOplogMasterList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMasterOplogList(logID, limit, listOrder, types.StatusPending)
+}
+
+func (b *Backend) BEGetPendingMasterOplogInternalList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MasterOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMasterOplogList(logID, limit, listOrder, types.StatusInternalPending)
+}
+
+func (b *Backend) BEGetMasterOplogMerkleNodeList(profileIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	merkleNodeList, err := pm.GetMasterOplogMerkleNodeList(level, startKey, limit, listOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*pkgservice.BackendMerkleNode, len(merkleNodeList))
+	for i, eachMerkleNode := range merkleNodeList {
+		results[i] = pkgservice.MerkleNodeToBackendMerkleNode(eachMerkleNode)
+	}
+
+	return results, nil
+}
+
+/**********
+ * MemberOplog
+ **********/
+
+func (b *Backend) BEGetMemberOplogList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMemberOplogList(logID, limit, listOrder, types.StatusAlive)
+}
+
+func (b *Backend) BEGetPendingMemberOplogMemberList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMemberOplogList(logID, limit, listOrder, types.StatusPending)
+}
+
+func (b *Backend) BEGetPendingMemberOplogInternalList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.MemberOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetMemberOplogList(logID, limit, listOrder, types.StatusInternalPending)
+}
+
+func (b *Backend) BEGetMemberOplogMerkleNodeList(profileIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	merkleNodeList, err := pm.GetMemberOplogMerkleNodeList(level, startKey, limit, listOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*pkgservice.BackendMerkleNode, len(merkleNodeList))
+	for i, eachMerkleNode := range merkleNodeList {
+		results[i] = pkgservice.MerkleNodeToBackendMerkleNode(eachMerkleNode)
+	}
+
+	return results, nil
+}
+
+/**********
+ * UserOplog
+ **********/
+
+func (b *Backend) BEGetUserOplogList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusAlive)
+}
+
+func (b *Backend) BEGetPendingUserOplogMemberList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusPending)
+}
+
+func (b *Backend) BEGetPendingUserOplogInternalList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusInternalPending)
+}
+
+func (b *Backend) BEGetUserOplogMerkleNodeList(profileIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+
+	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(profileID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	merkleNodeList, err := pm.GetUserOplogMerkleNodeList(level, startKey, limit, listOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*pkgservice.BackendMerkleNode, len(merkleNodeList))
+	for i, eachMerkleNode := range merkleNodeList {
+		results[i] = pkgservice.MerkleNodeToBackendMerkleNode(eachMerkleNode)
+	}
+
+	return results, nil
+}
+
+/**********
+ * Master List
+ **********/
+
+func (b *Backend) GetMasterList(idBytes []byte) ([]*pkgservice.Master, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+	if profile == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return profile.PM().(*ProtocolManager).GetMasterListFromCache(false)
+}
+
+func (b *Backend) GetMasterListFromDB(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.Master, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var startID *types.PttID
+	if len(startIDBytes) != 0 {
+		startID, err = types.UnmarshalTextPttID(startIDBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+	if profile == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return profile.PM().(*ProtocolManager).GetMasterList(startID, limit, listOrder, false)
+}
+
+func (b *Backend) GetMemberList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.Member, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var startID *types.PttID
+	if len(startIDBytes) != 0 {
+		startID, err = types.UnmarshalTextPttID(startIDBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+	if profile == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return profile.PM().(*ProtocolManager).GetMemberList(startID, limit, listOrder, false)
+}
 
 func (b *Backend) GetRawUserName(idBytes []byte) (*UserName, error) {
 	id, err := types.UnmarshalTextPttID(idBytes)

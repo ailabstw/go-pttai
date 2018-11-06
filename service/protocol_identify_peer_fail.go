@@ -44,8 +44,8 @@ func (p *BasePtt) HandleIdentifyPeerFail(dataBytes []byte, peer *PttPeer) error 
 		return err
 	}
 
-	hash := data.Hash
-	p.RemoveOpHash(hash)
+	//hash := data.Hash
+	//p.RemoveOpHash(hash)
 
 	return p.IdentifyPeerWithMyID(peer)
 }

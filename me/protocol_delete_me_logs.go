@@ -25,7 +25,9 @@ func (pm *ProtocolManager) handleDeleteMeLog(oplog *pkgservice.BaseOplog, info *
 
 	opData := &MeOpDeleteMe{}
 
-	toBroadcastLogs, err := pm.HandleDeleteEntityLog(oplog, info, opData, types.StatusDeleted, pm.SetMeDB, pm.postdeleteDeleteMe)
+	toBroadcastLogs, err := pm.HandleDeleteEntityLog(
+		oplog, info, opData, types.StatusDeleted,
+		pm.SetMeDB, pm.postdeleteDeleteMe, pm.updateDeleteMeInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,11 @@ func (pm *ProtocolManager) handleDeleteMeLog(oplog *pkgservice.BaseOplog, info *
 func (pm *ProtocolManager) handlePendingDeleteMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
 	opData := &MeOpDeleteMe{}
-	return pm.HandlePendingDeleteEntityLog(oplog, info, types.StatusPendingDeleted, MeOpTypeDeleteMe, opData, pm.SetMeDB)
+	return pm.HandlePendingDeleteEntityLog(
+		oplog, info,
+		types.StatusInternalDeleted, types.StatusPendingDeleted,
+		MeOpTypeDeleteMe, opData,
+		pm.SetMeDB, pm.setPendingDeleteMeSyncInfo, pm.updateDeleteMeInfo)
 }
 
 func (pm *ProtocolManager) setNewestDeleteMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -47,5 +53,4 @@ func (pm *ProtocolManager) setNewestDeleteMeLog(oplog *pkgservice.BaseOplog) (ty
 func (pm *ProtocolManager) handleFailedDeleteMeLog(oplog *pkgservice.BaseOplog) error {
 
 	return pm.HandleFailedDeleteEntityLog(oplog)
-
 }

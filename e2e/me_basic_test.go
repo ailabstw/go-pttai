@@ -23,6 +23,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/me"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/stretchr/testify/assert"
@@ -50,6 +51,9 @@ func TestMeBasic(t *testing.T) {
 	testCore(t0, bodyString, me0_1, t, isDebug)
 
 	assert.Equal(types.StatusAlive, me0_1.Status)
+	nodeID0_1 := me0_1.NodeID
+	pubKey0_1, _ := nodeID0_1.Pubkey()
+	nodeAddr0_1 := crypto.PubkeyToAddress(*pubKey0_1)
 
 	// 2. get total weight
 	bodyString = `{"id": "testID", "method": "me_getTotalWeight", "params": []}`
@@ -168,5 +172,28 @@ func TestMeBasic(t *testing.T) {
 	assert.Equal(nilPttID, opKeyOplog0_9_1.PreLogID)
 	assert.Equal(types.Bool(true), opKeyOplog0_9_1.IsSync)
 	assert.Equal(masterOplog0_9.ID, opKeyOplog0_9_1.MasterLogID)
+	assert.Equal(1, len(opKeyOplog0_9_1.MasterSigns))
+	masterSign0_9_1 := opKeyOplog0_9_1.MasterSigns[0]
+	assert.Equal(nodeAddr0_1[:], masterSign0_9_1.ID[:common.AddressLength])
+	assert.Equal(me0_3.ID[:common.AddressLength], masterSign0_9_1.ID[common.AddressLength:])
 
+	// 9.2. MeOplog
+	bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`
+
+	dataMeOplogs0_9_2 := &struct {
+		Result []*me.MeOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataMeOplogs0_9_2, t, isDebug)
+	assert.Equal(1, len(dataMeOplogs0_9_2.Result))
+	meOplog0_9_2 := dataMeOplogs0_9_2.Result[0]
+	assert.Equal(me0_3.ID, meOplog0_9_2.CreatorID)
+	assert.Equal(me0_3.ID, meOplog0_9_2.ObjID)
+	assert.Equal(me.MeOpTypeCreateMe, meOplog0_9_2.Op)
+	assert.Equal(nilPttID, meOplog0_9_2.PreLogID)
+	assert.Equal(types.Bool(true), meOplog0_9_2.IsSync)
+	assert.Equal(masterOplog0_9.ID, meOplog0_9_2.MasterLogID)
+	assert.Equal(me0_3.LogID, meOplog0_9_2.ID)
+	masterSign0_9_2 := meOplog0_9_2.MasterSigns[0]
+	assert.Equal(nodeAddr0_1[:], masterSign0_9_2.ID[:common.AddressLength])
+	assert.Equal(me0_3.ID[:common.AddressLength], masterSign0_9_2.ID[common.AddressLength:])
 }

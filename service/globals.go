@@ -86,7 +86,7 @@ const (
 
 	// op-key
 
-	AddOpKeyOplogMsg
+	AddOpKeyOplogMsg // 7
 	AddOpKeyOplogsMsg
 	AddPendingOpKeyOplogMsg
 	AddPendingOpKeyOplogsMsg
@@ -99,13 +99,63 @@ const (
 	SyncCreateOpKeyMsg
 	SyncCreateOpKeyAckMsg
 
+	// master
+	AddMasterOplogMsg // 17
+	AddMasterOplogsMsg
+
+	AddPendingMasterOplogMsg
+	AddPendingMasterOplogsMsg
+
+	SyncMasterOplogMsg
+	SyncMasterOplogAckMsg
+	SyncMasterOplogNewOplogsMsg
+	SyncMasterOplogNewOplogsAckMsg
+
+	SyncPendingMasterOplogMsg
+	SyncPendingMasterOplogAckMsg
+
+	// member
+	AddMemberOplogMsg // 27
+	AddMemberOplogsMsg
+
+	AddPendingMemberOplogMsg
+	AddPendingMemberOplogsMsg
+
+	SyncMemberOplogMsg
+	SyncMemberOplogAckMsg
+	SyncMemberOplogNewOplogsMsg
+	SyncMemberOplogNewOplogsAckMsg
+
+	SyncPendingMemberOplogMsg
+	SyncPendingMemberOplogAckMsg
+
 	// peer
-	IdentifyPeerMsg
+	IdentifyPeerMsg // 37
 	IdentifyPeerAckMsg
 
 	BoardLastSeenMsg
 	ArticleLastSeenMsg
 	NMsg
+)
+
+// member
+var (
+	DBMasterPrefix    = []byte(".MAdb")
+	DBMasterIdxPrefix = []byte(".MAix")
+
+	DBMasterOplogPrefix       = []byte(".MAlg")
+	DBMasterIdxOplogPrefix    = []byte(".MAig")
+	DBMasterMerkleOplogPrefix = []byte(".MAmk")
+)
+
+// member
+var (
+	DBMemberPrefix    = []byte(".mbdb")
+	DBMemberIdxPrefix = []byte(".mbix")
+
+	DBMemberOplogPrefix       = []byte(".mblg")
+	DBMemberIdxOplogPrefix    = []byte(".mbig")
+	DBMemberMerkleOplogPrefix = []byte(".mbmk")
 )
 
 // op-key
@@ -116,11 +166,12 @@ const (
 )
 
 var (
-	DBOpKeyIdxOplogPrefix = []byte(".okig")
+	DBOpKeyPrefix     = []byte(".okdb")
+	DBOpKeyIdxPrefix  = []byte(".okix")
+	DBOpKeyIdx2Prefix = []byte(".oki2")
+
 	DBOpKeyOplogPrefix    = []byte(".oklg")
-	DBOpKeyPrefix         = []byte(".okdb")
-	DBOpKeyIdxPrefix      = []byte(".okix")
-	DBOpKeyIdx2Prefix     = []byte(".oki2")
+	DBOpKeyIdxOplogPrefix = []byte(".okig")
 )
 
 // db
@@ -140,6 +191,7 @@ var (
 	dbMeta *pttdb.LDBDatabase
 
 	DBNewestMasterLogIDPrefix = []byte(".nmld")
+	DBMasterLog0HashPrefix    = []byte(".ml0h")
 
 	DBCountPttOplogPrefix = []byte(".ptct")
 
@@ -168,16 +220,16 @@ var (
 	DBMerkleSyncTimePrefix     = []byte(".mtst")
 	DBMerkleFailSyncTimePrefix = []byte(".mtft")
 
-	OffsetMerkleSyncTime uint64 = 3600 // validate until 2-hr ago, and sync with data starting 2-hr ago.
+	OffsetMerkleSyncTime int64 = 3600 // validate until 2-hr ago, and sync with data starting 2-hr ago.
 
-	GenerateOplogMerkleTreeSeconds              = 900 * time.Second // 15 mins
-	ExpireGenerateOplogMerkleTreeSeconds uint64 = 450               // 7.5 mins
+	GenerateOplogMerkleTreeSeconds             = 900 * time.Second // 15 mins
+	ExpireGenerateOplogMerkleTreeSeconds int64 = 450               // 7.5 mins
 )
 
 // dial-history
 var (
-	ExpireDialHistorySeconds = uint64(30)
-	DialHistoryLoopInterval  = 30 * time.Second
+	ExpireDialHistorySeconds int64 = 30
+	DialHistoryLoopInterval        = 30 * time.Second
 )
 
 // locale

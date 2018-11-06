@@ -47,20 +47,22 @@ func (pm *ProtocolManager) SendRaftMsgs(msgs []pb.Message) error {
 	defer pm.lockMyNodes.RUnlock()
 
 	peers := pm.Peers()
+	log.Debug("SendRaftMsgs: to for-loop", "peers", peers, "msgByPeers", msgByPeers)
 	var data *SendRaftMsgs
 	for raftID, eachMsgs := range msgByPeers {
 		myNode := pm.MyNodes[raftID]
 		if myNode == nil {
-			log.Debug("SendRaftMsgs: unable to send peer not myNode", "raftID", raftID)
+			log.Warn("SendRaftMsgs: unable to send peer not myNode", "raftID", raftID)
 			continue
 		}
 
 		if myNode.Status == types.StatusInit || myNode.Status == types.StatusInternalPending {
-			log.Debug("SendRaftMsgs: myNode status invalid", "raftID", raftID, "status", myNode.Status)
+			log.Warn("SendRaftMsgs: myNode status invalid", "raftID", raftID, "status", myNode.Status)
 			continue
 		}
 
 		peer := peers.Peer(myNode.NodeID, false)
+		log.Debug("SendRaftMsgs: after get Peer", "peer", peer)
 		if peer == nil {
 			continue
 		}
@@ -68,6 +70,8 @@ func (pm *ProtocolManager) SendRaftMsgs(msgs []pb.Message) error {
 		data = &SendRaftMsgs{
 			Msgs: eachMsgs,
 		}
+
+		log.Debug("SendRaftMsgs: to send to Peer", "peer", peer)
 
 		pm.SendDataToPeer(SendRaftMsgsMsg, data, peer)
 	}

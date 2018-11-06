@@ -16,6 +16,6 @@
 
 package service
 
-func (pm *BaseProtocolManager) GetOpKeyInfosFromDB() ([]*KeyInfo, error) {
+func (pm *BaseProtocolManager) GetOpKeyListFromDB() ([]*KeyInfo, error) {
 	return pm.loadOpKeyInfos()
 }

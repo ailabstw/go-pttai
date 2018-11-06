@@ -16,7 +16,11 @@
 
 package service
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/ailabstw/go-pttai/crypto"
+)
 
 type SyncCreateOpKeyAck struct {
 	Objs []*KeyInfo `json:"o"`
@@ -29,13 +33,47 @@ func (pm *BaseProtocolManager) HandleSyncCreateOpKeyAck(dataBytes []byte, peer *
 		return err
 	}
 
-	origObj := NewEmptyKeyInfo()
+	origObj := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(origObj)
 	for _, obj := range data.Objs {
 		pm.SetOpKeyObjDB(obj)
 
-		pm.HandleSyncCreateObjectAck(obj, peer, pm.SetOpKeyDB, origObj, pm.postcreateOpKey, pm.broadcastOpKeyOplogCore)
+		pm.HandleSyncCreateObjectAck(
+			obj, peer, origObj,
+			pm.SetOpKeyDB, pm.updateCreateOpKey, pm.postcreateOpKey, pm.broadcastOpKeyOplogCore)
 	}
+
+	return nil
+}
+
+/***
+ * syncCreateObject
+ ***/
+
+func (pm *BaseProtocolManager) updateCreateOpKey(theToObj Object, theFromObj Object) error {
+	toObj, ok := theToObj.(*KeyInfo)
+	if !ok {
+		return ErrInvalidObject
+	}
+
+	fromObj, ok := theFromObj.(*KeyInfo)
+	if !ok {
+		return ErrInvalidObject
+	}
+
+	key, err := crypto.ToECDSA(fromObj.KeyBytes)
+	if err != nil {
+		return err
+	}
+
+	toObj.BaseObject = fromObj.BaseObject
+	pm.SetOpKeyObjDB(toObj)
+
+	toObj.Hash = fromObj.Hash
+	toObj.Key = key
+	toObj.KeyBytes = fromObj.KeyBytes
+	toObj.PubKeyBytes = crypto.FromECDSAPub(&key.PublicKey)
+	toObj.Extra = fromObj.Extra
 
 	return nil
 }

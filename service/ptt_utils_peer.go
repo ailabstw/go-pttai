@@ -121,12 +121,14 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 		defer p.peerLock.Unlock()
 	}
 
+	log.Debug("FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
+
 	if peer.UserID == nil {
 		return ErrPeerUserID
 	}
 
 	if isResetPeerType {
-		peer.PeerType = PeerTypeRandom
+		p.SetPeerType(peer, PeerTypeRandom, true, true)
 	}
 
 	peerType, err := p.determinePeerTypeFromAllEntities(peer, true)
@@ -259,7 +261,7 @@ func (p *BasePtt) RemovePeer(peer *PttPeer, isLocked bool) error {
 		log.Error("unable to unregister peer from entities", "peer", peer, "e", err)
 	}
 
-	log.Debug("RemovePeer: to UnsetPeerType", "registeredPeer", peer)
+	log.Debug("RemovePeer: to UnsetPeerType", "registeredPeer", registeredPeer, "peerType", registeredPeer.PeerType)
 	err = p.UnsetPeerType(registeredPeer, true)
 	if err != nil {
 		log.Error("unable to remove peer", "peer", peer, "e", err)
@@ -374,6 +376,7 @@ func (p *BasePtt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, is
 
 	switch peerType {
 	case PeerTypeMe:
+		log.Debug("SetPeerType: set as myPeer", "peer", peer)
 		p.myPeers[peer.ID()] = peer
 	case PeerTypeHub:
 		p.hubPeers[peer.ID()] = peer
@@ -384,6 +387,7 @@ func (p *BasePtt) SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, is
 	case PeerTypePending:
 		p.pendingPeers[peer.ID()] = peer
 	case PeerTypeRandom:
+		log.Debug("SetPeerType: set as randomPeers", "peer", peer)
 		p.randomPeers[peer.ID()] = peer
 	}
 
@@ -486,6 +490,50 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 	return nil
 }
 
+func (p *BasePtt) GetPeerByUserID(id *types.PttID, isLocked bool) (*PttPeer, error) {
+	if !isLocked {
+		p.peerLock.RLock()
+		defer p.peerLock.RUnlock()
+	}
+
+	// hub-peers
+	for _, peer := range p.hubPeers {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	// important-peers
+	for _, peer := range p.importantPeers {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	// member-peers
+	for _, peer := range p.memberPeers {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	// pending-peers
+	for _, peer := range p.pendingPeers {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	// random-peers
+	for _, peer := range p.randomPeers {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	return nil, types.ErrInvalidID
+}
+
 /*
 UnregisterPeerFromEntities unregisters the peer from all the existing entities.
 */
@@ -505,7 +553,7 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer, isLocked bool) error
 	for _, entity := range p.entities {
 		pm = entity.PM()
 
-		err = pm.UnregisterPeer(peer, false, true)
+		err = pm.UnregisterPeer(peer, false, true, true)
 		if err != nil {
 			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}
@@ -528,31 +576,37 @@ func (p *BasePtt) GetPeer(id *discover.NodeID, isLocked bool) *PttPeer {
 
 	peer := p.myPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "myPeer", "peerType", peer.PeerType)
 		return peer
 	}
 
 	peer = p.hubPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "hubPeer", "peerType", peer.PeerType)
 		return peer
 	}
 
 	peer = p.importantPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "importantPeer", "peerType", peer.PeerType)
 		return peer
 	}
 
 	peer = p.memberPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "memberPeer", "peerType", peer.PeerType)
 		return peer
 	}
 
 	peer = p.pendingPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "pendingPeer", "peerType", peer.PeerType)
 		return peer
 	}
 
 	peer = p.randomPeers[*id]
 	if peer != nil {
+		log.Debug("GetPeer: got peer", "pttType", "randomPeer", "peerType", peer.PeerType)
 		return peer
 	}
 

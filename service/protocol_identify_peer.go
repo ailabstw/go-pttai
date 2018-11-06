@@ -53,11 +53,15 @@ func (pm *BaseProtocolManager) IdentifyPeer(peer *PttPeer) {
 HandleIdentifyPeer handles IdentifyPeer (acker)
 */
 func (pm *BaseProtocolManager) HandleIdentifyPeer(dataBytes []byte, peer *PttPeer) error {
-	log.Debug("HandleIdentifyPeer: start", "peer", peer.ID())
+	log.Debug("HandleIdentifyPeer: start", "peer", peer.ID(), "userID", peer.UserID)
 	data := &IdentifyPeer{}
 	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
+	}
+
+	if pm.Entity().GetStatus() > types.StatusAlive {
+		return types.ErrAlreadyDeleted
 	}
 
 	return pm.IdentifyPeerAck(data, peer)

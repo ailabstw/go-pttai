@@ -19,6 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (p *BasePtt) AddOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error {
@@ -26,6 +27,8 @@ func (p *BasePtt) AddOpKey(hash *common.Address, entityID *types.PttID, isLocked
 		p.LockOps()
 		defer p.UnlockOps()
 	}
+
+	log.Debug("AddOpkey: to add key", "hash", hash, "entityID", entityID)
 
 	p.ops[*hash] = entityID
 
@@ -37,6 +40,8 @@ func (p *BasePtt) RemoveOpKey(hash *common.Address, entityID *types.PttID, isLoc
 		p.LockOps()
 		defer p.UnlockOps()
 	}
+
+	log.Debug("RemoveOpKey: to remove key", "hash", hash, "entityID", entityID)
 
 	delete(p.ops, *hash)
 
@@ -62,5 +67,5 @@ func (p *BasePtt) RemoveOpHash(hash *common.Address) error {
 		return p.RemoveOpKey(hash, entityID, false)
 	}
 
-	return entity.PM().RemoveOpKeyInfoFromHash(hash, false, true, true)
+	return entity.PM().RemoveOpKeyFromHash(hash, false, true, true)
 }

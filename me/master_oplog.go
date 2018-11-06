@@ -34,6 +34,7 @@ func NewMasterOplog(id *types.PttID, ts types.Timestamp, doerID *types.PttID, op
 	if err != nil {
 		return nil, err
 	}
+
 	return &MasterOplog{
 		BaseOplog: oplog,
 	}, nil

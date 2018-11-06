@@ -22,9 +22,13 @@ import (
 )
 
 func (pm *ProtocolManager) DeleteMe() error {
+
 	opData := &MeOpDeleteMe{}
 
-	return pm.DeleteEntity(MeOpTypeDeleteMe, opData, types.StatusPendingDeleted, types.StatusDeleted, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteDeleteMe)
+	return pm.DeleteEntity(
+		MeOpTypeDeleteMe, opData,
+		types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted,
+		pm.NewMeOplog, pm.setPendingDeleteMeSyncInfo, pm.broadcastMeOplogCore, pm.postdeleteDeleteMe)
 }
 
 func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData) (err error) {

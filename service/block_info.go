@@ -16,4 +16,6 @@
 
 package service
 
-type BlockInfo interface{}
+type BlockInfo interface {
+	Remove() error
+}

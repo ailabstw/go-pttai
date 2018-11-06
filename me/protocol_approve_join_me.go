@@ -115,7 +115,6 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	ptt := pm.myPtt
 	service := pm.Entity().Service().(*Backend)
 	spm := service.SPM().(*ServiceProtocolManager)
-	myID := ptt.GetMyEntity().GetID()
 	myNodeID := pm.myPtt.MyNodeID()
 
 	// 1. new me
@@ -147,7 +146,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	// my-info init
 	newMyInfo.Status = types.StatusInit
 	newMyInfo.UpdateTS = ts
-	err = newMyInfo.Init(ptt, service, service.SPM(), myID)
+	err = newMyInfo.Init(ptt, service, service.SPM())
 
 	err = newMyInfo.Save(false)
 	if err != nil {
@@ -158,13 +157,13 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	newPM := newMyInfo.PM()
 
 	newMyOpKeyInfo := approveJoinMe.OpKeyInfo
-	newMyOpKeyInfo.Init(newPM.DBOpKeyInfo(), newPM.DBObjLock())
+	newMyOpKeyInfo.Init(newPM.DBOpKey(), newPM.DBObjLock(), newMyInfo.ID, newPM.DBOpKeyPrefix(), newPM.DBOpKeyIdxPrefix())
 	err = newMyOpKeyInfo.Save(false)
 	if err != nil {
 		return err
 	}
 
-	err = newPM.RegisterOpKeyInfo(newMyOpKeyInfo, false)
+	err = newPM.RegisterOpKey(newMyOpKeyInfo, false)
 	if err != nil {
 		return err
 	}
@@ -186,7 +185,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	log.Debug("HandleApproveJoinMe: after RegisterEntity")
 
 	// me-start
-	newMyInfo.Start()
+	newMyInfo.PrestartAndStart()
 
 	// remove join-me-request
 	pm.lockJoinMeRequest.Lock()

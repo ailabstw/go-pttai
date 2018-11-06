@@ -52,11 +52,14 @@ func NewBackend(ctx *pkgservice.ServiceContext, config *Config, ptt pkgservice.P
 }
 
 func (b *Backend) Start() error {
+	b.SPM().(*ServiceProtocolManager).Start()
 	return nil
 }
 
 func (b *Backend) Stop() error {
+	b.SPM().(*ServiceProtocolManager).Stop()
 	TeardownAccount()
+
 	return nil
 }
 

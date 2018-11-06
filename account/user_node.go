@@ -50,7 +50,7 @@ func (u *UserNode) Save() error {
 		return err
 	}
 
-	_, err = dbAccount.TryPut(key, marshaled, u.UpdateTS)
+	_, err = dbAccountCore.TryPut(key, marshaled, u.UpdateTS)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (u *UserNode) Save() error {
 		return err
 	}
 
-	err = dbAccount.Put(idxKey, marshaled)
+	err = dbAccountCore.Put(idxKey, marshaled)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (u *UserNode) Get(userID *types.PttID) error {
 		return err
 	}
 
-	val, err := dbAccount.Get(idxKey)
+	val, err := dbAccountCore.Get(idxKey)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (u *UserNode) Count() (int, error) {
 		return 0, err
 	}
 
-	iter, err := dbAccount.NewIteratorWithPrefix(nil, prefix, pttdb.ListOrderNext)
+	iter, err := dbAccountCore.NewIteratorWithPrefix(nil, prefix, pttdb.ListOrderNext)
 	if err != nil {
 		return 0, err
 	}

@@ -23,7 +23,7 @@ import (
 )
 
 /*
-HandleOplogs handles a list of MeOplog.
+HandleOplogs handles a list of Oplog.
     1. verify all the oplogs, return if any of the log is invalid.
     2. preset oplog (isSync as false and setDB)
     3. check pre-log-id
@@ -34,7 +34,8 @@ HandleOplogs handles a list of MeOplog.
     8. save sync-time.
 */
 func HandleOplogs(
-	oplogs []*BaseOplog, peer *PttPeer,
+	oplogs []*BaseOplog,
+	peer *PttPeer,
 	isUpdateSyncTime bool,
 
 	info ProcessInfo,
@@ -47,7 +48,7 @@ func HandleOplogs(
 
 	var err error
 
-	oplogs, err = preprocessOplogs(oplogs, setDB)
+	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, merkle, peer)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,8 @@ func HandleOplogs(
 }
 
 func handleOplogs(
-	oplogs []*BaseOplog, peer *PttPeer,
+	oplogs []*BaseOplog,
+	peer *PttPeer,
 
 	info ProcessInfo,
 
@@ -123,7 +125,8 @@ func handleOplogs(
 }
 
 func handleOplog(
-	oplog *BaseOplog, info ProcessInfo,
+	oplog *BaseOplog,
+	info ProcessInfo,
 
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) (bool, []*BaseOplog, error) {
@@ -170,7 +173,8 @@ func handleOplog(
  **********/
 
 func HandlePendingOplogs(
-	oplogs []*BaseOplog, peer *PttPeer,
+	oplogs []*BaseOplog,
+	peer *PttPeer,
 
 	pm ProtocolManager,
 	info ProcessInfo,
@@ -183,13 +187,16 @@ func HandlePendingOplogs(
 
 	var err error
 
-	oplogs, err = preprocessOplogs(oplogs, setDB)
+	log.Debug("HandlePendingOplogs: to preprocessOplogs", "e", err, "oplogs", oplogs)
+	oplogs, err = preprocessOplogs(oplogs, setDB, false, nil, peer)
+	log.Debug("HandlePendingOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs)
 	if err != nil {
 		return err
 	}
 
 	// process
 	err = handlePendingOplogs(oplogs, peer, pm, info, processPendingLog, processLog, postprocessLogs)
+	log.Debug("HandlePendingOplogs: after handlePendingOplogs", "e", err)
 	if err != nil {
 		return err
 	}
@@ -246,7 +253,8 @@ HandlePendingOplog Handles single pending oplog.
     5. save-with-is-sync
 */
 func handlePendingOplog(
-	oplog *BaseOplog, pm ProtocolManager,
+	oplog *BaseOplog,
+	pm ProtocolManager,
 	info ProcessInfo,
 
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
@@ -346,9 +354,66 @@ func HandleFailedOplogs(
 	return nil
 }
 
-func preprocessOplogs(oplogs []*BaseOplog, setDB func(oplog *BaseOplog)) ([]*BaseOplog, error) {
+func preprocessOplogs(
+	oplogs []*BaseOplog,
+	setDB func(oplog *BaseOplog),
+	isUpdateSyncTime bool,
+	merkle *Merkle,
+	peer *PttPeer,
+) ([]*BaseOplog, error) {
 	var err error
 
+	// expire-ts
+	now, err := types.GetTimestamp()
+	if err != nil {
+		return nil, err
+	}
+	expireTS := now
+	if isUpdateSyncTime {
+		ts, err := merkle.GetSyncTime()
+		if err != nil {
+			return nil, err
+		}
+		expireTS = ts
+	}
+	expireTS.Ts -= OffsetMerkleSyncTime
+
+	log.Debug("preprocessOplogs: start", "oplogs", oplogs, "expireTS", expireTS, "merkle", merkle)
+
+	// expire-ts: start-idx
+	startIdx := len(oplogs)
+	for i, oplog := range oplogs {
+		if expireTS.IsLess(oplog.UpdateTS) {
+			startIdx = i
+			break
+		}
+	}
+	if startIdx != 0 {
+		expiredLog := oplogs[0]
+		log.Warn("preprocessOplogs: received expired oplogs", "expiredLog", expiredLog, "peer", peer)
+	}
+	oplogs = oplogs[startIdx:]
+
+	log.Debug("preprocessOplogs: after startIdx", "startIdx", startIdx, "oplogs", oplogs)
+
+	// expire-ts: end-idx
+	lenLogs := len(oplogs)
+	endIdx := 0
+	for i := lenLogs - 1; i >= 0; i-- {
+		if oplogs[i].UpdateTS.IsLess(now) {
+			endIdx = i + 1
+			break
+		}
+	}
+	if endIdx != lenLogs {
+		futureLog := oplogs[endIdx-1]
+		log.Warn("preprocessOplogs: received future oplogs", "futureLog", futureLog, "peer", peer)
+	}
+	oplogs = oplogs[:endIdx]
+
+	log.Debug("preprocessOplogs: after endIdx", "endIdx", endIdx, "oplogs", oplogs)
+
+	// init
 	for _, oplog := range oplogs {
 		oplog.IsSync = false
 		setDB(oplog)
@@ -363,6 +428,7 @@ func preprocessOplogs(oplogs []*BaseOplog, setDB func(oplog *BaseOplog)) ([]*Bas
 
 		err = oplog.Verify()
 		if err != nil {
+			log.Debug("preprocessOplogs: unable to verify oplog", "op", oplog.Op, "e", err)
 			return nil, err
 		}
 	}
@@ -375,16 +441,20 @@ func preprocessOplogs(oplogs []*BaseOplog, setDB func(oplog *BaseOplog)) ([]*Bas
 	badIdx := len(oplogs)
 	for i, oplog := range oplogs {
 		err = checkPreOplog(oplog, prelog, existIDs)
+		log.Debug("preprocessOplogs: (in-for-loop) after checkPreOplog", "i", i, "e", err, "preLogID", oplog.PreLogID)
 		if err != nil {
 			badIdx = i
 			break
 		}
 	}
 
+	log.Debug("preprocessOplogs: after for-loop", "badIdx", badIdx)
+
 	return oplogs[:badIdx], nil
 }
 
 func checkPreOplog(oplog *BaseOplog, prelog *BaseOplog, existIDs map[types.PttID]*BaseOplog) error {
+
 	if oplog.PreLogID == nil {
 		existIDs[*oplog.ID] = oplog
 		return nil

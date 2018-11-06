@@ -85,7 +85,7 @@ func (p *BasePtt) HandleJoinEntity(dataBytes []byte, hash *common.Address, entit
 		return err
 	}
 
-	if !reflect.DeepEqual(joinEntity.Master0Hash, entity.PM().Master0Hash()) {
+	if !reflect.DeepEqual(joinEntity.Master0Hash, entity.PM().MasterLog0Hash()) {
 		return ErrInvalidData
 	}
 

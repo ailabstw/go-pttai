@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	_ pkgservice.OpType = iota
+	MeOpTypeInvalid pkgservice.OpType = iota
 	MeOpTypeCreateMe
 	MeOpTypeSetNodeName
 	MeOpTypeCreateBoard
@@ -48,18 +48,10 @@ type MeOpSetNodeName struct {
 	Name   []byte           `json:"n"`
 }
 
-type MeOpCreateBoard struct {
+type MeOpCreateEntity struct {
 }
 
-type MeOpCreateFriend struct {
-	FriendID *types.PttID `json:"FID"`
-}
-
-type MeOpJoinBoard struct {
-}
-
-type MeOpJoinFriend struct {
-	FriendID *types.PttID `json:"FID"`
+type MeOpJoinEntity struct {
 }
 
 type MeOpMigrateMe struct {

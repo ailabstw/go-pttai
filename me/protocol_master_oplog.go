@@ -21,6 +21,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -29,7 +30,7 @@ func (pm *ProtocolManager) CreateMasterOplog(raftIdx uint64, ts types.Timestamp,
 	myEntity := pm.Entity().(*MyInfo)
 	key := myEntity.SignKey()
 	myID := myEntity.ID
-	nodeSignID := myEntity.nodeSignID
+	nodeSignID := myEntity.NodeSignID
 
 	oplog, err := NewMasterOplog(myID, ts, nodeSignID, op, data, pm.dbMasterLock)
 	if err != nil {
@@ -37,8 +38,11 @@ func (pm *ProtocolManager) CreateMasterOplog(raftIdx uint64, ts types.Timestamp,
 	}
 
 	// oplog.ID
+	log.Debug("CreateMasterOplog: to set ID", "raftIdx", raftIdx, "myID", myID[:common.AddressLength], "offset", OffsetMasterOplogRaftIdx)
+	copy(oplog.ID[:OffsetMasterOplogRaftIdx], MasterIDZeros)
 	binary.BigEndian.PutUint64(oplog.ID[OffsetMasterOplogRaftIdx:], raftIdx)
 	copy(oplog.ID[common.AddressLength:], myID[:common.AddressLength])
+	log.Debug("CreateMasterOplog: after set ID", "raftIdx", raftIdx, "id", oplog.ID)
 
 	err = oplog.Sign(key)
 	if err != nil {

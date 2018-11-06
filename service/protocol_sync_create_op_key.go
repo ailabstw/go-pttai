@@ -22,7 +22,7 @@ func (pm *BaseProtocolManager) SyncCreateOpKey(syncIDs []*SyncID, peer *PttPeer)
 
 func (pm *BaseProtocolManager) HandleSyncCreateOpKey(dataBytes []byte, peer *PttPeer) error {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 	return pm.HandleSyncCreateObject(dataBytes, peer, opKey, SyncCreateOpKeyAckMsg)
 }

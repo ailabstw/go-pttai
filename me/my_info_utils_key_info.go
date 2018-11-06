@@ -28,31 +28,39 @@ import (
  * OpKey
  **********/
 
-func (m *MyInfo) NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap) (*pkgservice.KeyInfo, error) {
-	return pkgservice.NewOpKeyInfo(entityID, m.ID, m.myKey, db, dbLock)
+func (m *MyInfo) NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*pkgservice.KeyInfo, error) {
+	return pkgservice.NewOpKeyInfo(entityID, m.ID, m.myKey, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
 }
 
 /**********
  * Sign
  **********/
 
-func (m *MyInfo) Sign(log *pkgservice.BaseOplog) error {
+func (m *MyInfo) Sign(oplog *pkgservice.BaseOplog) error {
 	signKey := m.SignKey()
 
-	return log.Sign(signKey)
+	return oplog.Sign(signKey)
 }
 
-func (m *MyInfo) InternalSign(log *pkgservice.BaseOplog) error {
-	nodeSignID := m.nodeSignID
+func (m *MyInfo) InternalSign(oplog *pkgservice.BaseOplog) error {
+	nodeSignID := m.NodeSignID
 	nodeSignKey := m.NodeSignKey()
 
-	return log.InternalSign(nodeSignID, nodeSignKey)
+	return oplog.InternalSign(nodeSignID, nodeSignKey)
 }
 
-func (m *MyInfo) MasterSign(log *pkgservice.BaseOplog) error {
+func (m *MyInfo) MasterSign(oplog *pkgservice.BaseOplog) error {
 	signKey := m.SignKey()
 
-	return log.MasterSign(m.ID, signKey)
+	return oplog.MasterSign(m.ID, signKey)
+}
+
+func (m *MyInfo) MyMasterSign(oplog *pkgservice.BaseOplog) error {
+
+	nodeSignID := m.NodeSignID
+	nodeSignKey := m.NodeSignKey()
+
+	return oplog.MasterSign(nodeSignID, nodeSignKey)
 }
 
 /**********
@@ -87,7 +95,7 @@ func (m *MyInfo) GetMyKey() *ecdsa.PrivateKey {
  **********/
 
 func (m *MyInfo) CreateNodeSignKeyInfo() error {
-	keyInfo, err := pkgservice.NewSignKeyInfo(m.nodeSignID, m.nodeKey)
+	keyInfo, err := pkgservice.NewSignKeyInfo(m.NodeSignID, m.nodeKey)
 	if err != nil {
 		return err
 	}
@@ -98,7 +106,7 @@ func (m *MyInfo) CreateNodeSignKeyInfo() error {
 }
 
 func (m *MyInfo) GetNodeSignID() *types.PttID {
-	return m.nodeSignID
+	return m.NodeSignID
 }
 
 func (m *MyInfo) NodeSignKey() *pkgservice.KeyInfo {

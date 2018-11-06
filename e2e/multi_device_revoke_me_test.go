@@ -163,6 +163,21 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(me1_3.ID, me1_8_1.OwnerIDs[0])
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
+	// 8.2. getPeers
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
+
+	dataPeers0_8_2 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_8_2, t, isDebug)
+	assert.Equal(1, len(dataPeers0_8_2.Result))
+
+	dataPeers1_8_2 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_8_2, t, isDebug)
+	assert.Equal(1, len(dataPeers1_8_2.Result))
+
 	// 9. getRawMeByID
 	marshaled, _ = me0_3.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
@@ -210,7 +225,7 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal("", err.Msg)
 
 	// wait 5 seconds
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// 10.4. getRawMe
 	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`

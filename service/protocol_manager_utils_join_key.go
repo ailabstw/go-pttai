@@ -22,14 +22,18 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
-func (b *BaseProtocolManager) GetJoinKeyInfo(hash *common.Address) (*KeyInfo, error) {
+func (b *BaseProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error) {
 	b.lockJoinKeyInfo.RLock()
 	defer b.lockJoinKeyInfo.RUnlock()
 
+	log.Debug("GetJoinKeyFromHash: to for-loop", "e", b.Entity().GetID(), "hash", hash, "joinKeyInfos", b.joinKeyInfos)
+
 	var keyInfo *KeyInfo = nil
 	for _, eachKeyInfo := range b.joinKeyInfos {
+		log.Debug("GetJoinKeyFromHash (in for-loop)", "eachHash", eachKeyInfo.Hash)
 		if reflect.DeepEqual(hash, eachKeyInfo.Hash) {
 			keyInfo = eachKeyInfo
 			break
@@ -56,7 +60,7 @@ func (b *BaseProtocolManager) GetJoinKey() (*KeyInfo, error) {
 	return b.joinKeyInfos[lenKeyInfo-1], nil
 }
 
-func (b *BaseProtocolManager) CreateJoinKeyInfoLoop() error {
+func (b *BaseProtocolManager) CreateJoinKeyLoop() error {
 	ticker := time.NewTicker(RenewJoinKeySeconds)
 	defer ticker.Stop()
 
@@ -76,6 +80,23 @@ loop:
 }
 
 func (b *BaseProtocolManager) createJoinKeyInfo() error {
+	status := b.Entity().GetStatus()
+	statusClass := types.StatusToStatusClass(status)
+	if statusClass >= types.StatusClassDeleted {
+		return nil
+	}
+
+	myEntity := b.Ptt().GetMyEntity()
+	status = myEntity.GetStatus()
+	statusClass = types.StatusToStatusClass(status)
+	if statusClass >= types.StatusClassDeleted {
+		return nil
+	}
+
+	if !b.IsMaster(myEntity.GetID(), false) {
+		return nil
+	}
+
 	b.lockJoinKeyInfo.Lock()
 	defer b.lockJoinKeyInfo.Unlock()
 
@@ -92,12 +113,13 @@ func (b *BaseProtocolManager) createJoinKeyInfo() error {
 	}
 
 	b.joinKeyInfos = append(b.joinKeyInfos, newKeyInfo)
+	log.Debug("createJoinKeyInfo: to AddJoinKey", "e", b.Entity().GetID(), "joinKeyInfos", b.joinKeyInfos)
 	b.ptt.AddJoinKey(newKeyInfo.Hash, entityID, false)
 
 	return nil
 }
 
-func (pm *BaseProtocolManager) JoinKeyInfos() []*KeyInfo {
+func (pm *BaseProtocolManager) JoinKeyList() []*KeyInfo {
 	return pm.joinKeyInfos
 }
 
@@ -114,10 +136,17 @@ func (pm *BaseProtocolManager) IsJoinKeyHash(hash *common.Address) bool {
 	return false
 }
 
-func (pm *BaseProtocolManager) ApproveJoin(joinEntity *JoinEntity, keyInfo *KeyInfo, peer *PttPeer) (*KeyInfo, interface{}, error) {
-	return nil, nil, types.ErrNotImplemented
-}
-
 func (pm *BaseProtocolManager) GetJoinType(hash *common.Address) (JoinType, error) {
 	return JoinTypeInvalid, types.ErrNotImplemented
+}
+
+func (pm *BaseProtocolManager) CleanJoinKey() {
+	pm.lockJoinKeyInfo.Lock()
+	defer pm.lockJoinKeyInfo.Unlock()
+
+	entityID := pm.Entity().GetID()
+
+	for _, keyInfo := range pm.opKeyInfos {
+		pm.ptt.RemoveJoinKey(keyInfo.Hash, entityID, false)
+	}
 }

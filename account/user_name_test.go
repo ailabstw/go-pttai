@@ -175,7 +175,7 @@ func TestUserName_Save(t *testing.T) {
 			}
 
 			key, _ := u.MarshalKey()
-			if isHas, _ := dbAccount.Has(key); !isHas {
+			if isHas, _ := dbAccountCore.Has(key); !isHas {
 				t.Errorf("UserName.Save() id not exists: u: %v", u)
 			}
 		})

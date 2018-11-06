@@ -22,7 +22,7 @@ import (
 )
 
 /*
-GetOpKeyOplogList gets the MeOplogs specifically from myEntity.
+GetOpKeyOplogList gets the OpKeyOplogs.
 */
 func (pm *BaseProtocolManager) GetOpKeyOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*OpKeyOplog, error) {
 

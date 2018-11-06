@@ -95,7 +95,7 @@ func (u *UserImg) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbAccount.TryPut(key, marshaled, u.UpdateTS)
+	_, err = dbAccountCore.TryPut(key, marshaled, u.UpdateTS)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (u *UserImg) Get(id *types.PttID, isLocked bool) error {
 		return err
 	}
 
-	theBytes, err := dbAccount.Get(key)
+	theBytes, err := dbAccountCore.Get(key)
 	//log.Debug("Get: after dbAccount", "theBytes", theBytes, "e", err)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (u *UserImg) Delete(id *types.PttID, isLocked bool) error {
 		return err
 	}
 
-	err = dbAccount.Delete(key)
+	err = dbAccountCore.Delete(key)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (u *UserImg) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder)
 	}
 
 	userImgs := make([]*UserImg, 0)
-	iter, err := dbAccount.NewIteratorWithPrefix(key, nil, listOrder)
+	iter, err := dbAccountCore.NewIteratorWithPrefix(key, nil, listOrder)
 	if err != nil {
 		return nil, err
 	}

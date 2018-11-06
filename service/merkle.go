@@ -32,7 +32,7 @@ import (
 )
 
 /*
-Merkle is the representation / op of ther merkle-tree-over-time for the oplog.
+Merkle is the representation / op of the merkle-tree-over-time for the oplog.
 */
 type Merkle struct {
 	DBOplogPrefix         []byte
@@ -45,7 +45,7 @@ type Merkle struct {
 	LastSyncTS            types.Timestamp
 	LastFailSyncTS        types.Timestamp
 	GenerateSeconds       time.Duration
-	ExpireGenerateSeconds uint64
+	ExpireGenerateSeconds int64
 }
 
 func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttID, db *pttdb.LDBBatch) (*Merkle, error) {
@@ -329,6 +329,7 @@ func (m *Merkle) MarshalGenerateTimeKey() ([]byte, error) {
 }
 
 func (m *Merkle) MarshalSyncTimeKey() ([]byte, error) {
+	log.Debug("MarshalSyncTimeKey: to concat", "m", m)
 	return common.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleSyncTimePrefix, m.PrefixID[:]})
 }
 

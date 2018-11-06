@@ -16,65 +16,22 @@
 
 package service
 
-import (
-	"github.com/ailabstw/go-pttai/log"
-)
-
-// Save
-// Delete
-// GetByID
-// GetNewObjByID
-
-// SetUpdateTS
-// GetUpdateTS
-
-/**********
- * data
- **********/
-
-/*
-GetBlockInfo implements Object method
-*/
-func (k *KeyInfo) GetBlockInfo() BlockInfo {
-	return nil
+func NewEmptyOpKey() *KeyInfo {
+	return &KeyInfo{BaseObject: &BaseObject{}}
 }
 
-/*
-RemoveBlock implements Object method
-*/
-func (k *KeyInfo) RemoveBlock(blockInfo BlockInfo, info ProcessInfo, isRemoveDB bool) error {
-	return nil
-}
-
-/**********
- * Sync Info
- **********/
-
-func (k *KeyInfo) GetSyncInfo() SyncInfo {
-	return k.SyncInfo
-}
-
-func (k *KeyInfo) SetSyncInfo(theSyncInfo SyncInfo) error {
-	syncInfo, ok := theSyncInfo.(*SyncKeyInfo)
-	if !ok {
-		return ErrInvalidSyncInfo
+func OpKeysToObjs(typedObjs []*KeyInfo) []Object {
+	objs := make([]Object, len(typedObjs))
+	for i, obj := range typedObjs {
+		objs[i] = obj
 	}
-
-	k.SyncInfo = syncInfo
-
-	return nil
+	return objs
 }
 
-func (k *KeyInfo) RemoveSyncInfo(oplog *BaseOplog, theOpData OpData, syncInfo SyncInfo, info ProcessInfo) error {
-	return nil
-}
-
-/**********
- * SetObjDB
- **********/
-
-func (pm *BaseProtocolManager) SetOpKeyObjDB(opKey *KeyInfo) {
-	opKey.SetEntityID(pm.Entity().GetID())
-	log.Debug("SetOpKeyObjDB: to SetDB", "dblock", pm.DBObjLock())
-	opKey.SetDB(pm.DBOpKeyInfo(), pm.DBObjLock(), DBOpKeyPrefix)
+func ObjsToOpKeys(objs []Object) []*KeyInfo {
+	typedObjs := make([]*KeyInfo, len(objs))
+	for i, obj := range objs {
+		typedObjs[i] = obj.(*KeyInfo)
+	}
+	return typedObjs
 }

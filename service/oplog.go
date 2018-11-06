@@ -594,14 +594,14 @@ func (o *BaseOplog) SignsHash() ([]byte, error) {
 	theBytes[offset], theBytes[offset+1], theBytes[offset+2], theBytes[offset+3] = o.CreatorHash, o.Salt[:], o.Sig, o.Pubkey
 	offset += 4
 
-	// XXX need to do clone-and-sort
+	// already sorted by id
 	// masters
 	for _, eachSign := range o.MasterSigns {
 		theBytes[offset], theBytes[offset+1], theBytes[offset+2], theBytes[offset+3] = eachSign.Hash, eachSign.Salt[:], eachSign.Sig, eachSign.Pubkey
 		offset += 4
 	}
 
-	// XXX need to do clone-and-sort
+	// already sorted by id
 	// internals
 	for _, eachSign := range o.InternalSigns {
 		theBytes[offset], theBytes[offset+1], theBytes[offset+2], theBytes[offset+3] = eachSign.Hash, eachSign.Salt[:], eachSign.Sig, eachSign.Pubkey
@@ -849,6 +849,7 @@ func (o *BaseOplog) Verify() error {
 
 			err = VerifyData(bytesWithSalt, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
 			if err != nil {
+				log.Warn("Verify (master-sign)", "masterSign", masterSign)
 				return err
 			}
 		}
@@ -865,6 +866,7 @@ func (o *BaseOplog) Verify() error {
 
 			err = VerifyData(bytesWithSalt, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
 			if err != nil {
+				log.Warn("Verify (internal-sign)", "internalSign", internalSign)
 				return err
 			}
 		}

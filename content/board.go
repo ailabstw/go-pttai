@@ -17,53 +17,47 @@
 package content
 
 import (
-	"sync"
-
 	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type SyncTitleInfo struct {
-	LogID    *types.PttID    `json:"pl"`
-	Title    []byte          `json:"T"`
-	UpdateTS types.Timestamp `json:"UT"`
-	Status   types.Status    `json:"S"`
+	*pkgservice.BaseSyncInfo `json:"b"`
+
+	Title []byte `json:"T"`
 }
 
 type Board struct {
-	*pkgservice.BaseEntity `json:"b"`
+	*pkgservice.BaseEntity `json:"e"`
 
-	V         types.Version
-	ID        *types.PttID
-	CreateTS  types.Timestamp `json:"CT"`
-	UpdateTS  types.Timestamp `json:"UT"`
-	CreatorID *types.PttID    `json:"CID"`
-	UpdaterID *types.PttID    `json:"UID"`
+	UpdateTS types.Timestamp `json:"UT"`
 
-	Status types.Status `json:"S"`
-
-	Title         []byte         `json:"T"`
-	TitleLogID    *types.PttID   `json:"TID,omitempty"`
+	Title         []byte         `json:"T,omitempty"`
 	SyncTitleInfo *SyncTitleInfo `json:"st,omitempty"`
-
-	BoardType BoardType `json:"BT"`
 
 	// get from other dbs
 	LastSeen        types.Timestamp `json:"-"`
 	ArticleCreateTS types.Timestamp `json:"-"`
 
-	lockMaster sync.RWMutex
-	lockMember sync.RWMutex
+	BoardMerkle *pkgservice.Merkle `json:"-"`
+}
 
-	Masters map[types.PttID]*Member `json:"-"`
+func NewEmptyBoard() *Board {
+	return &Board{BaseEntity: &pkgservice.BaseEntity{}}
+}
 
-	MasterMerkle  *pkgservice.Merkle `json:"-"`
-	MemberMerkle  *pkgservice.Merkle `json:"-"`
-	BoardMerkle   *pkgservice.Merkle `json:"-"`
-	CommentMerkle *pkgservice.Merkle `json:"-"`
-	NodeMerkle    *pkgservice.Merkle `json:"_"`
+func (b *Board) GetUpdateTS() types.Timestamp {
+	return b.UpdateTS
+}
 
-	LogID *types.PttID `json:"l"`
+func (b *Board) SetUpdateTS(ts types.Timestamp) {
+	b.UpdateTS = ts
+}
 
-	dbLock *types.LockMap
+func (b *Board) Save(isLocked bool) error {
+	return types.ErrNotImplemented
+}
+
+func (b *Board) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager) error {
+	return types.ErrNotImplemented
 }

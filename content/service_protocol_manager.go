@@ -35,3 +35,7 @@ func NewServiceProtocolManager(ptt pkgservice.Ptt, service pkgservice.Service) (
 
 	return spm, nil
 }
+
+func (spm *ServiceProtocolManager) NewEmptyEntity() pkgservice.Entity {
+	return NewEmptyBoard()
+}

@@ -243,7 +243,7 @@ func (b *Backend) Revoke(myKey []byte) (bool, error) {
 
 	pm := myInfo.PM().(*ProtocolManager)
 
-	err = pm.RevokeMe()
+	err = pm.DeleteMe()
 	if err != nil {
 		return false, err
 	}
@@ -343,11 +343,27 @@ func (b *Backend) GetRaftStatus(idBytes []byte) (*RaftStatus, error) {
 	return pm.GetRaftStatus()
 }
 
-func (b *Backend) GetTotalWeight() uint32 {
+func (b *Backend) GetTotalWeight() (uint32, error) {
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 	pm := myInfo.PM().(*ProtocolManager)
 
-	return pm.totalWeight
+	return pm.totalWeight, nil
+}
+
+func (b *Backend) RemoveNode(nodeIDStr string) (bool, error) {
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+
+	nodeID, err := discover.HexID(nodeIDStr)
+	if err != nil {
+		return false, err
+	}
+
+	pm := myInfo.PM().(*ProtocolManager)
+	err = pm.RevokeNode(&nodeID)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (b *Backend) ForceRemoveNode(nodeIDStr string) (bool, error) {
@@ -556,4 +572,13 @@ func (b *Backend) RevokeOpKey(keyIDBytes []byte, myKey []byte) (bool, error) {
 	}
 
 	return pm.RevokeOpKeyInfo(keyID)
+}
+
+func (b *Backend) RequestRaftLead() (bool, error) {
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+	pm := myInfo.PM().(*ProtocolManager)
+
+	pm.ProposeRaftRequestLead()
+
+	return false, nil
 }

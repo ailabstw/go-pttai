@@ -102,6 +102,15 @@ func (m *MyNode) Save() ([]byte, error) {
 	return nil, nil
 }
 
+func (m *MyNode) Delete(isLocked bool) error {
+	key, err := m.MarshalKey()
+	if err != nil {
+		return err
+	}
+
+	return dbMyNodes.Delete(key)
+}
+
 func (m *MyNode) Get(myID *types.PttID, nodeID *discover.NodeID) error {
 	m.ID = myID
 	m.NodeID = nodeID
@@ -164,15 +173,6 @@ func (m *MyNode) Unmarshal(theBytes []byte) error {
 
 func (m *MyNode) DeleteRawKey(key []byte) error {
 	err := dbMyNodes.Delete(key)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *MyNode) Delete(nodeID *discover.NodeID) error {
-	err := dbMyNodes.Delete(nodeID[:])
 	if err != nil {
 		return err
 	}

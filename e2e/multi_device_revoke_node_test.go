@@ -29,12 +29,13 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceRevokeMe(t *testing.T) {
+func TestMultiDeviceRevokeNode(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
 	var bodyString string
 	var marshaled []byte
+	var dummyBool bool
 	assert := assert.New(t)
 
 	setupTest(t)
@@ -174,59 +175,88 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(true, me0_9.IsOwner(me1_3.ID))
 	assert.Equal(true, me0_9.IsOwner(me0_3.ID))
 
-	// 10 revoke-me
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": [""]}`)
+	// 9.1. getPeers
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
 
-	isOk := false
-	_, err := testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(false, isOk)
-	assert.Equal("invalid me", err.Msg)
+	dataPeers0_9_1 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_9_1, t, isDebug)
+	assert.Equal(1, len(dataPeers0_9_1.Result))
+	peer0_9_1_0 := dataPeers0_9_1.Result[0]
+	assert.Equal(me1_1.NodeID, peer0_9_1_0.NodeID)
+	assert.Equal(pkgservice.PeerTypeMe, peer0_9_1_0.PeerType)
 
-	// 10.1 revoke
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": ["%v"]}`, string(myKey0_4))
+	dataPeers1_9_1 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_9_1, t, isDebug)
+	assert.Equal(1, len(dataPeers1_9_1.Result))
+	peer1_9_1_0 := dataPeers1_9_1.Result[0]
+	assert.Equal(me0_1.NodeID, peer1_9_1_0.NodeID)
+	assert.Equal(pkgservice.PeerTypeMe, peer1_9_1_0.PeerType)
 
-	isOk = false
-	_, err = testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(false, isOk)
-	assert.Equal("invalid me", err.Msg)
+	// 10. revoke-node
+	marshaled, _ = me1_1.NodeID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_removeNode", "params": ["%v"]}`, string(marshaled))
 
-	// 10.2. show-my-key
-	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
-
-	var myKey0_10_2 string
-
-	testCore(t0, bodyString, &myKey0_10_2, t, isDebug)
-	if isDebug {
-		t.Logf("myKey0_10_2: %v\n", myKey0_10_2)
-	}
-
-	// 10.3 revoke
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": ["%v"]}`, string(myKey0_10_2))
-
-	isOk = false
-	_, err = testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(true, isOk)
-	assert.Equal(0, err.Code)
-	assert.Equal("", err.Msg)
+	testCore(t0, bodyString, &dummyBool, t, isDebug)
+	assert.Equal(true, dummyBool)
 
 	// wait 5 seconds
+
 	time.Sleep(5 * time.Second)
 
-	// 10.4. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	// 11. get my nodes
+	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
+	dataGetMyNodes0_11 := &struct {
+		Result []*me.MyNode `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMyNodes0_11, t, isDebug)
+	assert.Equal(1, len(dataGetMyNodes0_11.Result))
+	myNode0_11_0 := dataGetMyNodes0_11.Result[0]
 
-	me0_10_4 := &me.MyInfo{}
-	testCore(t0, bodyString, me0_10_4, t, isDebug)
-	assert.Equal(types.StatusDeleted, me0_10_4.Status)
-	assert.Equal(1, len(me0_10_4.OwnerIDs))
-	assert.Equal(me1_3.ID, me0_10_4.OwnerIDs[0])
-	assert.Equal(true, me0_10_4.IsOwner(me1_3.ID))
+	assert.Equal(types.StatusAlive, myNode0_11_0.Status)
+	assert.Equal(me0_1.NodeID, myNode0_11_0.NodeID)
 
-	me1_10_4 := &me.MyInfo{}
-	testCore(t1, bodyString, me1_10_4, t, isDebug)
-	assert.Equal(types.StatusDeleted, me1_10_4.Status)
-	assert.Equal(me1_3.ID, me1_10_4.ID)
-	assert.Equal(1, len(me1_10_4.OwnerIDs))
-	assert.Equal(me1_3.ID, me1_10_4.OwnerIDs[0])
-	assert.Equal(true, me1_10_4.IsOwner(me1_3.ID))
+	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
+	dataGetMyNodes1_11 := &struct {
+		Result []*me.MyNode `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMyNodes1_11, t, isDebug)
+	assert.Equal(0, len(dataGetMyNodes1_11.Result))
+
+	// 12. getPeers
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
+
+	dataPeers0_12 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_12, t, isDebug)
+	assert.Equal(0, len(dataPeers0_12.Result))
+
+	dataPeers1_12 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_12, t, isDebug)
+	assert.Equal(0, len(dataPeers1_12.Result))
+
+	// 13. getPeers
+	bodyString = `{"id": "testID", "method": "ptt_getPeers", "params": []}`
+
+	dataPeers0_13 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_13, t, isDebug)
+	assert.Equal(1, len(dataPeers0_13.Result))
+	dataPeer0_13_0 := dataPeers0_13.Result[0]
+	assert.Equal(pkgservice.PeerTypeRandom, dataPeer0_13_0.PeerType)
+
+	dataPeers1_13 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_13, t, isDebug)
+	assert.Equal(1, len(dataPeers1_13.Result))
+	dataPeer1_13_0 := dataPeers1_13.Result[0]
+	assert.Equal(pkgservice.PeerTypeRandom, dataPeer1_13_0.PeerType)
 }

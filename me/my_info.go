@@ -220,12 +220,36 @@ func (m *MyInfo) Save(isLocked bool) error {
 	}
 
 	_, err = dbMeCore.TryPut(key, marshaled, m.UpdateTS)
-
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (m *MyInfo) MustSave(isLocked bool) error {
+	if !isLocked {
+		m.MustLock()
+		defer m.Unlock()
+	}
+
+	key, err := m.MarshalKey()
+	if err != nil {
+		return err
+	}
+
+	marshaled, err := m.Marshal()
+	if err != nil {
+		return err
+	}
+
+	err = dbMeCore.Put(key, marshaled)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 // Remember to do InitPM when necessary.

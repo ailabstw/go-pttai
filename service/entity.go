@@ -19,7 +19,6 @@ package service
 import (
 	"bytes"
 	"reflect"
-	"runtime/debug"
 	"sort"
 
 	"github.com/ailabstw/go-pttai/common/types"
@@ -90,6 +89,7 @@ type Entity interface {
 	DBLock() *types.LockMap
 	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap)
 
+	MustLock() error
 	Lock() error
 	Unlock() error
 	RLock() error
@@ -310,23 +310,22 @@ func (e *BaseEntity) DBLock() *types.LockMap {
 }
 
 func (e *BaseEntity) Lock() error {
-	log.Debug("Lock: to lock", "e", e.GetID())
-	debug.PrintStack()
 	return e.dbLock.Lock(e.GetID())
 }
 
+func (e *BaseEntity) MustLock() error {
+	return e.dbLock.MustLock(e.GetID())
+}
+
 func (e *BaseEntity) Unlock() error {
-	log.Debug("Unlock: to unlock", "e", e.GetID())
 	return e.dbLock.Unlock(e.GetID())
 }
 
 func (e *BaseEntity) RLock() error {
-	log.Debug("RLock: to lock", "e", e.GetID())
 	return e.dbLock.RLock(e.GetID())
 }
 
 func (e *BaseEntity) RUnlock() error {
-	log.Debug("RUnLock: to unlock", "e", e.GetID())
 	return e.dbLock.RUnlock(e.GetID())
 }
 

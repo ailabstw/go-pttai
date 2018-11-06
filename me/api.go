@@ -147,6 +147,10 @@ func (api *PrivateAPI) GetRaftStatus(id string) (*RaftStatus, error) {
 	return api.b.GetRaftStatus([]byte(id))
 }
 
+func (api *PrivateAPI) RemoveNode(nodeID string) (bool, error) {
+	return api.b.RemoveNode(nodeID)
+}
+
 func (api *PrivateAPI) ForceRemoveNode(nodeID string) (bool, error) {
 	return api.b.ForceRemoveNode(nodeID)
 }
@@ -155,8 +159,12 @@ func (api *PrivateAPI) GetMyNodes() ([]*MyNode, error) {
 	return api.b.GetMyNodes()
 }
 
-func (api *PrivateAPI) GetTotalWeight() uint32 {
+func (api *PrivateAPI) GetTotalWeight() (uint32, error) {
 	return api.b.GetTotalWeight()
+}
+
+func (api *PrivateAPI) RequestRaftLead() (bool, error) {
+	return api.b.RequestRaftLead()
 }
 
 /**********

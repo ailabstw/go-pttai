@@ -17,6 +17,7 @@
 package me
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
@@ -86,9 +87,23 @@ func (pm *ProtocolManager) ProposeRaftRemoveNode(nodeID *discover.NodeID) error 
 }
 
 func (pm *ProtocolManager) ForceProposeRaftRemoveNode(nodeID *discover.NodeID) error {
+
+	raftLead := pm.GetRaftLead(false)
+	if raftLead != 0 {
+		return ErrWithLead
+	}
+
+	pm.lockMyNodes.RLock()
+	defer pm.lockMyNodes.RUnlock()
+
 	raftID, err := nodeID.ToRaftID()
 	if err != nil {
 		return err
+	}
+
+	_, ok := pm.MyNodes[raftID]
+	if !ok {
+		return ErrInvalidNode
 	}
 
 	ctx := make([]byte, discover.SizeNodeID)
@@ -101,6 +116,23 @@ func (pm *ProtocolManager) ForceProposeRaftRemoveNode(nodeID *discover.NodeID) e
 	}
 
 	pm.raftForceConfChangeC <- cc
+
+	return nil
+}
+
+func (pm *ProtocolManager) ProposeRaftRequestLead() error {
+	myRaftID := pm.myPtt.MyRaftID()
+
+	raftLead := pm.GetRaftLead(false)
+	if myRaftID == raftLead {
+		return nil
+	}
+
+	if raftLead == 0 {
+		return ErrInvalidNode
+	}
+
+	pm.raftNode.TransferLeadership(context.TODO(), raftLead, myRaftID)
 
 	return nil
 }
@@ -343,6 +375,13 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 	err = oplog.Save(false)
 	if err != nil {
 		return err
+	}
+
+	myRaftID := pm.myPtt.MyRaftID()
+	if raftID == myRaftID {
+		return pm.HandleRevokeMyNode(oplog, false, true)
+	} else {
+		return pm.HandleRevokeOtherNode(oplog, myNode)
 	}
 
 	return nil

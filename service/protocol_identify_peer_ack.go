@@ -162,5 +162,5 @@ func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPee
 
 	peer.FinishID(entityID)
 
-	return p.FinishIdentifyPeer(peer, false)
+	return p.FinishIdentifyPeer(peer, false, false)
 }

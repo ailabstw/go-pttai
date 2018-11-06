@@ -17,16 +17,29 @@
 package me
 
 import (
-	"github.com/ailabstw/go-pttai/common/types"
-	pkgservice "github.com/ailabstw/go-pttai/service"
+	"time"
 )
 
-func (pm *ProtocolManager) RevokeMe() error {
-	opData := &MeOpRevokeMe{}
+type RequestRaftLead struct{}
 
-	return pm.DeleteEntity(MeOpTypeRevokeMe, opData, types.StatusPendingDeleted, types.StatusDeleted, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteRevokeMe)
-}
+func (pm *ProtocolManager) EnsureRaftLead() error {
+	myRaftID := pm.myPtt.MyRaftID()
 
-func (pm *ProtocolManager) postdeleteRevokeMe(theOpData pkgservice.OpData) (err error) {
-	return
+	err := ErrUnableToBeLead
+	var raftLead uint64
+	for i := 0; i < NRequestRaftLead; i++ {
+		raftLead = pm.GetRaftLead(false)
+
+		if raftLead == myRaftID {
+			err = nil
+			break
+		}
+
+		if raftLead != 0 {
+			pm.ProposeRaftRequestLead()
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+	return err
 }

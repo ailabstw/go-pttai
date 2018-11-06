@@ -81,8 +81,11 @@ type ProtocolManager struct {
 	lockRaftAppliedIndex sync.RWMutex
 	raftAppliedIndex     uint64
 
-	raftNode raft.Node
-	rs       *RaftStorage
+	raftNode        raft.Node
+	rs              *RaftStorage
+	isStartRaftNode bool
+
+	lockRaft sync.Mutex
 }
 
 func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager, error) {

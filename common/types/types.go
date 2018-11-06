@@ -44,6 +44,10 @@ const (
 
 	StatusMigrated
 
+	StatusPendingRevoke
+
+	StatusRevoked
+
 	StatusInternalDeleted
 
 	StatusPendingDeleted
@@ -92,6 +96,8 @@ var statusToStatusClass = map[Status]StatusClass{
 	StatusTransferred:     StatusClassDeleted,
 	StatusPendingMigrate:  StatusClassPendingDelete,
 	StatusMigrated:        StatusClassDeleted,
+	StatusPendingRevoke:   StatusClassPendingDelete,
+	StatusRevoked:         StatusClassDeleted,
 	StatusInternalDeleted: StatusClassPendingDelete,
 	StatusPendingDeleted:  StatusClassDeleted,
 	StatusDeleted:         StatusClassDeleted,

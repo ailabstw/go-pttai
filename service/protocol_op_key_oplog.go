@@ -73,3 +73,14 @@ func (pm *BaseProtocolManager) RemoveNonSyncOpKeyOplog(logID *types.PttID, isRet
 	}
 	return OplogToOpKeyOplog(oplog), nil
 }
+
+/**********
+ * CleanOpKeyOplog
+ **********/
+
+func (pm *BaseProtocolManager) CleanOpKeyOplog() {
+	oplog := &BaseOplog{}
+	pm.SetOpKeyDB(oplog)
+
+	pm.CleanOplog(oplog, nil)
+}

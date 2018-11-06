@@ -431,3 +431,120 @@ func (pm *BaseProtocolManager) PostprocessPendingDeleteOplog(oplog *BaseOplog, t
 
 	return append(toBroadcastLogs, oplog)
 }
+
+func (pm *BaseProtocolManager) CleanOplog(oplog *BaseOplog, merkle *Merkle) {
+	db := oplog.GetDB().DB()
+	var key []byte
+	var val []byte
+
+	iter, err := GetOplogIterWithOplog(oplog, nil, pttdb.ListOrderNext, types.StatusAlive, false)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		val = iter.Value()
+		err = oplog.Unmarshal(val)
+		if err != nil {
+			db.Delete(key)
+			continue
+		}
+		oplog.Delete(true)
+	}
+
+	iter, err = GetOplogIterWithOplog(oplog, nil, pttdb.ListOrderNext, types.StatusPending, false)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		val = iter.Value()
+		err = oplog.Unmarshal(val)
+		if err != nil {
+			db.Delete(key)
+			continue
+		}
+		oplog.Delete(true)
+	}
+
+	iter, err = GetOplogIterWithOplog(oplog, nil, pttdb.ListOrderNext, types.StatusInternalPending, false)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		val = iter.Value()
+		err = oplog.Unmarshal(val)
+		if err != nil {
+			db.Delete(key)
+			continue
+		}
+		oplog.Delete(true)
+	}
+
+	// merkle
+	if merkle == nil {
+		return
+	}
+
+	iter, err = merkle.GetMerkleIter(MerkleTreeLevelNow, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		db.Delete(key)
+	}
+
+	iter, err = merkle.GetMerkleIter(MerkleTreeLevelHR, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		db.Delete(key)
+	}
+
+	iter, err = merkle.GetMerkleIter(MerkleTreeLevelDay, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		db.Delete(key)
+	}
+
+	iter, err = merkle.GetMerkleIter(MerkleTreeLevelMonth, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		db.Delete(key)
+	}
+
+	iter, err = merkle.GetMerkleIter(MerkleTreeLevelYear, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		db.Delete(key)
+	}
+}

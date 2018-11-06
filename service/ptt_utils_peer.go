@@ -115,7 +115,7 @@ func (p *BasePtt) AddNewPeer(peer *PttPeer) error {
 	return nil
 }
 
-func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool) error {
+func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerType bool) error {
 	if !isLocked {
 		p.peerLock.Lock()
 		defer p.peerLock.Unlock()
@@ -123,6 +123,10 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool) error {
 
 	if peer.UserID == nil {
 		return ErrPeerUserID
+	}
+
+	if isResetPeerType {
+		peer.PeerType = PeerTypeRandom
 	}
 
 	peerType, err := p.determinePeerTypeFromAllEntities(peer, true)
@@ -501,7 +505,7 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer, isLocked bool) error
 	for _, entity := range p.entities {
 		pm = entity.PM()
 
-		err = pm.UnregisterPeer(peer)
+		err = pm.UnregisterPeer(peer, false, true)
 		if err != nil {
 			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}

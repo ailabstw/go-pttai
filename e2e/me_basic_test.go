@@ -107,7 +107,7 @@ func TestMeBasic(t *testing.T) {
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaledID))
 
 	raftStatus0_7 := &me.RaftStatus{}
-	testCore(t0, bodyString, raftStatus0_7, t, true)
+	testCore(t0, bodyString, raftStatus0_7, t, isDebug)
 
 	assert.Equal(me0_1.RaftID, raftStatus0_7.Lead)
 	assert.Equal(me0_1.RaftID, raftStatus0_7.ConfState.Nodes[0])

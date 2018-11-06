@@ -21,11 +21,11 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) handleRevokeMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handleDeleteMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
-	opData := &MeOpRevokeMe{}
+	opData := &MeOpDeleteMe{}
 
-	toBroadcastLogs, err := pm.HandleDeleteEntityLog(oplog, info, opData, types.StatusDeleted, pm.SetMeDB, pm.postdeleteRevokeMe)
+	toBroadcastLogs, err := pm.HandleDeleteEntityLog(oplog, info, opData, types.StatusDeleted, pm.SetMeDB, pm.postdeleteDeleteMe)
 	if err != nil {
 		return nil, err
 	}
@@ -33,18 +33,18 @@ func (pm *ProtocolManager) handleRevokeMeLog(oplog *pkgservice.BaseOplog, info *
 	return toBroadcastLogs, nil
 }
 
-func (pm *ProtocolManager) handlePendingRevokeMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
-	opData := &MeOpRevokeMe{}
-	return pm.HandlePendingDeleteEntityLog(oplog, info, types.StatusPendingDeleted, MeOpTypeRevokeMe, opData, pm.SetMeDB)
+	opData := &MeOpDeleteMe{}
+	return pm.HandlePendingDeleteEntityLog(oplog, info, types.StatusPendingDeleted, MeOpTypeDeleteMe, opData, pm.SetMeDB)
 }
 
-func (pm *ProtocolManager) setNewestRevokeMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
+func (pm *ProtocolManager) setNewestDeleteMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
 
 	return pm.SetNewestDeleteEntityLog(oplog)
 }
 
-func (pm *ProtocolManager) handleFailedRevokeMeLog(oplog *pkgservice.BaseOplog) error {
+func (pm *ProtocolManager) handleFailedDeleteMeLog(oplog *pkgservice.BaseOplog) error {
 
 	return pm.HandleFailedDeleteEntityLog(oplog)
 

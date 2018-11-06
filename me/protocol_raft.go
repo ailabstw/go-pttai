@@ -29,6 +29,9 @@ import (
 )
 
 func (pm *ProtocolManager) StartRaft(peers []raft.Peer, isNew bool) error {
+	pm.lockRaft.Lock()
+	defer pm.lockRaft.Unlock()
+
 	myID := pm.Entity().GetID()
 
 	myRaftID := pm.myPtt.MyRaftID()
@@ -71,6 +74,8 @@ func (pm *ProtocolManager) StartRaft(peers []raft.Peer, isNew bool) error {
 
 	go pm.ServeRaftChannels()
 
+	pm.isStartRaftNode = true
+
 	if len(pm.MyNodes) == 1 {
 		log.Debug("StartRaft: to Step")
 		pm.raftNode.Step(context.TODO(), pb.Message{From: myRaftID, To: myRaftID, Type: pb.MsgHup})
@@ -81,9 +86,16 @@ func (pm *ProtocolManager) StartRaft(peers []raft.Peer, isNew bool) error {
 }
 
 func (pm *ProtocolManager) StopRaft() error {
+	pm.lockRaft.Lock()
+	defer pm.lockRaft.Unlock()
+
 	// XXX not init yet.
 	// for types.StatusInit
 	if pm.raftNode == nil {
+		return nil
+	}
+
+	if !pm.isStartRaftNode {
 		return nil
 	}
 
@@ -92,6 +104,7 @@ func (pm *ProtocolManager) StopRaft() error {
 	close(pm.raftCommitC)
 	close(pm.raftErrorC)
 	pm.raftNode.Stop()
+	pm.isStartRaftNode = false
 
 	return nil
 }
@@ -475,5 +488,70 @@ func (pm *ProtocolManager) LoadRaftConfState(isLocked bool) error {
 		return err
 	}
 
+	return nil
+}
+
+func (pm *ProtocolManager) CleanRaftStorage(isLocked bool) error {
+	if !isLocked {
+		pm.lockRaftAppliedIndex.RLock()
+		defer pm.lockRaftAppliedIndex.RUnlock()
+
+		pm.lockRaftSnapshotIndex.Lock()
+		defer pm.lockRaftSnapshotIndex.Unlock()
+
+		pm.lockRaftLastIndex.RLock()
+		defer pm.lockRaftLastIndex.RUnlock()
+
+		pm.lockRaftConfState.Lock()
+		defer pm.lockRaftConfState.Unlock()
+
+	}
+
+	// applied-index
+	key, err := pm.MarshalRaftAppliedIndexKey()
+	if err != nil {
+		return err
+	}
+	err = dbMeCore.Delete(key)
+	if err != nil {
+		return err
+	}
+
+	// snapshot-index
+	key, err = pm.MarshalRaftSnapshotIndexKey()
+	if err != nil {
+		return err
+	}
+	err = dbMeCore.Delete(key)
+	if err != nil {
+		return err
+	}
+
+	// last-index
+	key, err = pm.MarshalRaftLastIndexKey()
+	if err != nil {
+		return err
+	}
+	err = dbMeCore.Delete(key)
+	if err != nil {
+		return err
+	}
+
+	// conf-state
+	key, err = pm.MarshalRaftConfStateKey()
+	if err != nil {
+		return err
+	}
+	err = dbMeCore.Delete(key)
+	if err != nil {
+		return err
+	}
+
+	// raft-storage
+	myID := pm.Entity().GetID()
+	err = CleanRaftStorage(myID, pm.rs, false)
+	if err != nil {
+		return err
+	}
 	return nil
 }

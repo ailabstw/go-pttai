@@ -52,8 +52,8 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		origLogs, err = pm.handleMigrateMeLog(oplog, info)
-	case MeOpTypeRevokeMe:
-		origLogs, err = pm.handleRevokeMeLog(oplog, info)
+	case MeOpTypeDeleteMe:
+		origLogs, err = pm.handleDeleteMeLog(oplog, info)
 	}
 	return
 }
@@ -71,8 +71,8 @@ func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, proc
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
-	case MeOpTypeRevokeMe:
-		origLogs, err = pm.handlePendingRevokeMeLog(oplog, info)
+	case MeOpTypeDeleteMe:
+		origLogs, err = pm.handlePendingDeleteMeLog(oplog, info)
 	}
 	return
 }
@@ -112,8 +112,8 @@ func (pm *ProtocolManager) SetNewestMeOplog(oplog *pkgservice.BaseOplog) (err er
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		isNewer, err = pm.setNewestMigrateMeLog(oplog)
-	case MeOpTypeRevokeMe:
-		isNewer, err = pm.setNewestRevokeMeLog(oplog)
+	case MeOpTypeDeleteMe:
+		isNewer, err = pm.setNewestDeleteMeLog(oplog)
 	}
 
 	oplog.IsNewer = isNewer
@@ -129,8 +129,8 @@ func (pm *ProtocolManager) HandleFailedMeOplog(oplog *pkgservice.BaseOplog) (err
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		err = pm.handleFailedMigrateMeLog(oplog)
-	case MeOpTypeRevokeMe:
-		err = pm.handleFailedRevokeMeLog(oplog)
+	case MeOpTypeDeleteMe:
+		err = pm.handleFailedDeleteMeLog(oplog)
 	}
 
 	return

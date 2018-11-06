@@ -33,4 +33,8 @@ var (
 
 	ErrInvalidEntry     = errors.New("invalid raft entry")
 	ErrInvalidRaftIndex = errors.New("invalid raft index")
+
+	ErrUnableToBeLead = errors.New("unable to be lead")
+
+	ErrWithLead = errors.New("with lead")
 )

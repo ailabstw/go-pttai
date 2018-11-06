@@ -27,7 +27,7 @@ import (
 )
 
 func renewMe(c *Config, newKey *ecdsa.PrivateKey, newPostfixBytes []byte) error {
-	err := c.RevokeKey()
+	err := c.DeleteKey()
 	if err != nil {
 		return err
 	}

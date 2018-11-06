@@ -56,6 +56,7 @@ func NewRaftStorage(isClean bool, myID *types.PttID) (*RaftStorage, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer iter.Release()
 
 	isItered := false
 
@@ -88,6 +89,7 @@ func NewRaftStorage(isClean bool, myID *types.PttID) (*RaftStorage, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer iter.Release()
 
 	isItered = false
 	for iter.Prev() {
@@ -124,17 +126,12 @@ func NewRaftStorage(isClean bool, myID *types.PttID) (*RaftStorage, error) {
 }
 
 func NewRaftStorageWithClean(myID *types.PttID) (*RaftStorage, error) {
-	rs := &RaftStorage{myID: myID}
-
-	iter, err := rs.GetIter(0)
+	err := CleanRaftStorage(myID, nil, true)
 	if err != nil {
 		return nil, err
 	}
 
-	for iter.Next() {
-		key := iter.Key()
-		dbRaft.Delete(key)
-	}
+	rs := &RaftStorage{myID: myID}
 
 	rs.SaveEntry(pb.Entry{}, false)
 	rs.firstIdx = 1
@@ -142,6 +139,29 @@ func NewRaftStorageWithClean(myID *types.PttID) (*RaftStorage, error) {
 	rs.SetHardState(pb.HardState{})
 	rs.ApplySnapshot(pb.Snapshot{})
 	return rs, nil
+}
+
+func CleanRaftStorage(myID *types.PttID, rs *RaftStorage, isLocked bool) error {
+	if rs == nil {
+		rs = &RaftStorage{myID: myID}
+	}
+
+	if !isLocked {
+		rs.Lock()
+		defer rs.Unlock()
+	}
+
+	iter, err := rs.GetIter(0)
+	if err != nil {
+		return err
+	}
+
+	for iter.Next() {
+		key := iter.Key()
+		dbRaft.Delete(key)
+	}
+
+	return nil
 }
 
 func (rs *RaftStorage) InitialState() (pb.HardState, pb.ConfState, error) {
@@ -548,4 +568,12 @@ func (rs *RaftStorage) GetPrevIter(idx uint64) (iterator.Iterator, error) {
 	iter := dbRaft.NewIteratorWithRange(r, pttdb.ListOrderPrev)
 
 	return iter, nil
+}
+
+func (rs *RaftStorage) Lock() {
+	rs.lock.Lock()
+}
+
+func (rs *RaftStorage) Unlock() {
+	rs.lock.Unlock()
 }

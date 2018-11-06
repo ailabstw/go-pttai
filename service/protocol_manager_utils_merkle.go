@@ -27,13 +27,13 @@ func PMOplogMerkleTreeLoop(pm ProtocolManager, merkle *Merkle) error {
 	ticker := time.NewTicker(merkle.GenerateSeconds)
 	defer ticker.Stop()
 
-	pmGenerateOplogMerkleTree(merkle)
+	pmGenerateOplogMerkleTree(pm, merkle)
 
 loop:
 	for {
 		select {
 		case <-ticker.C:
-			pmGenerateOplogMerkleTree(merkle)
+			pmGenerateOplogMerkleTree(pm, merkle)
 		case <-pm.QuitSync():
 			break loop
 		}
@@ -42,7 +42,13 @@ loop:
 	return nil
 }
 
-func pmGenerateOplogMerkleTree(merkle *Merkle) error {
+func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
+	status := pm.Entity().GetStatus()
+	statusClass := types.StatusToStatusClass(status)
+	if statusClass != types.StatusClassAlive {
+		return nil
+	}
+
 	now, err := types.GetTimestamp()
 	if err != nil {
 		return err

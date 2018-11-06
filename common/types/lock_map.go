@@ -118,6 +118,15 @@ func (l *LockMap) Lock(id *PttID) error {
 	return err
 }
 
+func (l *LockMap) MustLock(id *PttID) (err error) {
+	for {
+		err = l.Lock(id)
+		if err == nil {
+			return
+		}
+	}
+}
+
 func (l *LockMap) RLock(id *PttID) error {
 	sleepTime := time.Duration((rand.Intn(l.sleepTime) + 1)) * time.Millisecond
 	var err error

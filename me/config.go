@@ -242,14 +242,36 @@ func (c *Config) LoadKey(filename string) (*ecdsa.PrivateKey, *types.PttID, erro
 	return key, id, nil
 }
 
-func (c *Config) RevokeKey() error {
+func (c *Config) DeleteKey() error {
 	keyfile := c.ResolvePath(DataDirPrivateKey)
 
 	tsStr := time.Now().UTC().Format("2006-01-02_15-04-05.000")
 
-	revokeFile := keyfile + "." + tsStr + ".revoke"
+	deleteFile := keyfile + "." + tsStr + ".deleted"
 
-	log.Warn("to Remove keyfile", "keyfile", keyfile, "revokeFile", revokeFile)
+	log.Warn("to Remove keyfile", "keyfile", keyfile, "deleteFile", deleteFile)
 
-	return os.Rename(keyfile, revokeFile)
+	return os.Rename(keyfile, deleteFile)
+}
+
+func (c *Config) RevokeMyKey(myID *types.PttID) error {
+	keyfile, err := c.ResolvePrivateKeyWithIDPath(myID)
+	if err != nil {
+		return err
+	}
+
+	os.Remove(keyfile)
+
+	postfixFilename := keyfile + ".postfix"
+	os.Remove(postfixFilename)
+
+	return nil
+}
+
+func (c *Config) RevokeKey() error {
+	keyfile := c.ResolvePath(DataDirPrivateKey)
+
+	log.Warn("to Revoke keyfile", "keyfile", keyfile)
+
+	return os.Remove(keyfile)
 }

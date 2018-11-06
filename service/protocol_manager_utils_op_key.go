@@ -290,7 +290,11 @@ func (pm *BaseProtocolManager) RemoveOpKeyInfoFromHash(hash *common.Address, isL
 	delete(pm.opKeyInfos, *hash)
 
 	if isDeleteOplog {
-		pm.removeOpKeyOplog(keyInfo.LogID, false)
+		if keyInfo.LogID != nil {
+			pm.removeOpKeyOplog(keyInfo.LogID, false)
+		} else {
+			log.Error("keyInfo: unable to get", "keyInfo", keyInfo)
+		}
 		if keyInfo.CreateLogID != nil {
 			pm.removeOpKeyOplog(keyInfo.CreateLogID, false)
 		}
@@ -386,4 +390,13 @@ func (pm *BaseProtocolManager) DBOpKeyInfo() *pttdb.LDBBatch {
 
 func (pm *BaseProtocolManager) DBOpKeyLock() *types.LockMap {
 	return pm.dbOpKeyLock
+}
+
+func (pm *BaseProtocolManager) CleanOpKey() {
+	pm.lockOpKeyInfo.Lock()
+	defer pm.lockOpKeyInfo.Unlock()
+
+	for _, keyInfo := range pm.opKeyInfos {
+		pm.RemoveOpKeyInfoFromHash(keyInfo.Hash, true, true, true)
+	}
 }

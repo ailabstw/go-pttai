@@ -43,20 +43,9 @@ var (
 const (
 	_ pkgservice.OpType = iota + pkgservice.NMsg
 
-	AddDeviceMsg
-	AddDeviceAckMsg
-
-	RemoveDeviceMsg
-	RemoveDeviceAckMsg
-
-	RevokeMeMsg
-	RevokeMeAckMsg
-
-	SyncDoneMsg
-
 	JoinFriendMsg
 
-	// me
+	// me-oplog
 	AddMeOplogMsg //30
 	AddMeOplogsMsg
 
@@ -71,17 +60,15 @@ const (
 	SyncPendingMeOplogMsg
 	SyncPendingMeOplogAckMsg
 
-	SendRaftMsgsMsg //40
+	// raft
 
+	SendRaftMsgsMsg //40
+	RequestRaftLeadMsg
+
+	// init-me-info
 	InitMeInfoMsg
 	InitMeInfoAckMsg
 	InitMeInfoSyncMsg
-
-	SyncCreateBoardMsg
-	SyncCreateBoardAckMsg
-
-	SyncCreateFriendMsg
-	SyncCreateFriendAckMsg
 )
 
 // db
@@ -174,6 +161,8 @@ const (
 	RaftHeartbeatTick   = 5
 	RaftMaxSizePerMsg   = 1024 * 1024
 	RaftMaxInflightMsgs = 16
+
+	NRequestRaftLead = 10
 )
 
 // weight

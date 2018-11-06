@@ -59,8 +59,24 @@ func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer) error {
 	return pm.peers.Register(peer, PeerTypePending, false)
 }
 
-func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer) error {
-	return pm.peers.Unregister(peer, false)
+func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isResetPeerType bool, isPttLocked bool) error {
+	peerType := pm.GetPeerType(peer)
+	err := pm.peers.Unregister(peer, false)
+	if err != nil {
+		return err
+	}
+
+	if peerType < peer.PeerType {
+		return nil
+	}
+
+	if !isResetPeerType {
+		return nil
+	}
+
+	pm.Ptt().FinishIdentifyPeer(peer, isPttLocked, true)
+
+	return nil
 }
 
 func (pm *BaseProtocolManager) GetPeerType(peer *PttPeer) PeerType {

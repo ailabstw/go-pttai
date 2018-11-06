@@ -18,52 +18,19 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-const (
-	_ pkgservice.OpType = iota
-	MeOpTypeCreateMe
-	MeOpTypeSetNodeName
-	MeOpTypeCreateBoard
-	MeOpTypeJoinBoard
-	MeOpTypeCreateFriend
-	MeOpTypeJoinFriend
+func (pm *ProtocolManager) DeleteMe() error {
+	opData := &MeOpDeleteMe{}
 
-	MeOpTypeMigrateMe
-	MeOpTypeDeleteMe
-
-	NMeOpType
-)
-
-type MeOpCreateMe struct {
-	NodeID   *discover.NodeID    `json:"NID"`
-	NodeType pkgservice.NodeType `json:"NT"`
-	NodeName []byte              `json:"n"`
+	return pm.DeleteEntity(MeOpTypeDeleteMe, opData, types.StatusPendingDeleted, types.StatusDeleted, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteDeleteMe)
 }
 
-type MeOpSetNodeName struct {
-	NodeID *discover.NodeID `json:"NID"`
-	Name   []byte           `json:"n"`
+func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData) (err error) {
+	return
 }
 
-type MeOpCreateBoard struct {
+func (pm *ProtocolManager) postdeleteMeCore(logID *types.PttID) (err error) {
+	return
 }
-
-type MeOpCreateFriend struct {
-	FriendID *types.PttID `json:"FID"`
-}
-
-type MeOpJoinBoard struct {
-}
-
-type MeOpJoinFriend struct {
-	FriendID *types.PttID `json:"FID"`
-}
-
-type MeOpMigrateMe struct {
-	ID *types.PttID
-}
-
-type MeOpDeleteMe struct{}

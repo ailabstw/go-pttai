@@ -51,6 +51,8 @@ func (pm *ProtocolManager) IsMyDevice(peer *pkgservice.PttPeer) bool {
 
 	myNode, ok := pm.MyNodes[raftID]
 	if !ok {
+		log.Debug("IsMyDevice: not my device")
+
 		return false
 	}
 

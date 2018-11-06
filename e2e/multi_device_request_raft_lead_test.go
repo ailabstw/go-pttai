@@ -29,7 +29,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceRevokeMe(t *testing.T) {
+func TestMultiDeviceRequestRaftLead(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
@@ -174,59 +174,115 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(true, me0_9.IsOwner(me1_3.ID))
 	assert.Equal(true, me0_9.IsOwner(me0_3.ID))
 
-	// 10 revoke-me
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": [""]}`)
+	// 10. raft-satus
+	marshaled, _ = me1_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaled))
 
-	isOk := false
-	_, err := testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(false, isOk)
-	assert.Equal("invalid me", err.Msg)
+	raftStatus0_10 := &me.RaftStatus{}
+	testCore(t0, bodyString, raftStatus0_10, t, isDebug)
 
-	// 10.1 revoke
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": ["%v"]}`, string(myKey0_4))
+	assert.Equal(2, len(raftStatus0_10.ConfState.Nodes))
 
-	isOk = false
-	_, err = testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(false, isOk)
-	assert.Equal("invalid me", err.Msg)
+	raftStatus1_10 := &me.RaftStatus{}
+	testCore(t1, bodyString, raftStatus1_10, t, isDebug)
 
-	// 10.2. show-my-key
-	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
+	assert.Equal(2, len(raftStatus1_10.ConfState.Nodes))
+	assert.Equal(raftStatus0_10.Lead, raftStatus1_10.Lead)
 
-	var myKey0_10_2 string
+	// 11. request-raft
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_requestRaftLead", "params": []}`)
 
-	testCore(t0, bodyString, &myKey0_10_2, t, isDebug)
-	if isDebug {
-		t.Logf("myKey0_10_2: %v\n", myKey0_10_2)
-	}
+	requestRaftLead1_10 := false
+	testCore(t1, bodyString, &requestRaftLead1_10, t, isDebug)
 
-	// 10.3 revoke
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revoke", "params": ["%v"]}`, string(myKey0_10_2))
-
-	isOk = false
-	_, err = testCore(t0, bodyString, &isOk, t, isDebug)
-	assert.Equal(true, isOk)
-	assert.Equal(0, err.Code)
-	assert.Equal("", err.Msg)
-
-	// wait 5 seconds
 	time.Sleep(5 * time.Second)
 
-	// 10.4. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	// 12. raft-satus
+	marshaled, _ = me1_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaled))
 
-	me0_10_4 := &me.MyInfo{}
-	testCore(t0, bodyString, me0_10_4, t, isDebug)
-	assert.Equal(types.StatusDeleted, me0_10_4.Status)
-	assert.Equal(1, len(me0_10_4.OwnerIDs))
-	assert.Equal(me1_3.ID, me0_10_4.OwnerIDs[0])
-	assert.Equal(true, me0_10_4.IsOwner(me1_3.ID))
+	raftStatus0_12 := &me.RaftStatus{}
+	testCore(t0, bodyString, raftStatus0_12, t, isDebug)
 
-	me1_10_4 := &me.MyInfo{}
-	testCore(t1, bodyString, me1_10_4, t, isDebug)
-	assert.Equal(types.StatusDeleted, me1_10_4.Status)
-	assert.Equal(me1_3.ID, me1_10_4.ID)
-	assert.Equal(1, len(me1_10_4.OwnerIDs))
-	assert.Equal(me1_3.ID, me1_10_4.OwnerIDs[0])
-	assert.Equal(true, me1_10_4.IsOwner(me1_3.ID))
+	assert.Equal(2, len(raftStatus0_12.ConfState.Nodes))
+
+	raftStatus1_12 := &me.RaftStatus{}
+	testCore(t1, bodyString, raftStatus1_12, t, isDebug)
+
+	assert.Equal(2, len(raftStatus1_12.ConfState.Nodes))
+	assert.Equal(raftStatus0_12.Lead, raftStatus1_12.Lead)
+	assert.Equal(raftStatus0_12.Lead, me1_1.RaftID)
+
+	// 13. request-raft
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_requestRaftLead", "params": []}`)
+
+	requestRaftLead0_10 := false
+	testCore(t0, bodyString, &requestRaftLead0_10, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	// 14. raft-satus
+	marshaled, _ = me1_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaled))
+
+	raftStatus0_14 := &me.RaftStatus{}
+	testCore(t0, bodyString, raftStatus0_14, t, isDebug)
+
+	assert.Equal(2, len(raftStatus0_14.ConfState.Nodes))
+
+	raftStatus1_14 := &me.RaftStatus{}
+	testCore(t1, bodyString, raftStatus1_14, t, isDebug)
+
+	assert.Equal(2, len(raftStatus1_14.ConfState.Nodes))
+	assert.Equal(raftStatus0_14.Lead, raftStatus1_14.Lead)
+	assert.Equal(raftStatus0_14.Lead, me0_1.RaftID)
+
+	// 15. request-raft
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_requestRaftLead", "params": []}`)
+
+	requestRaftLead1_15 := false
+	testCore(t1, bodyString, &requestRaftLead1_15, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	// 16. raft-satus
+	marshaled, _ = me1_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaled))
+
+	raftStatus0_16 := &me.RaftStatus{}
+	testCore(t0, bodyString, raftStatus0_16, t, isDebug)
+
+	assert.Equal(2, len(raftStatus0_16.ConfState.Nodes))
+
+	raftStatus1_16 := &me.RaftStatus{}
+	testCore(t1, bodyString, raftStatus1_16, t, isDebug)
+
+	assert.Equal(2, len(raftStatus1_16.ConfState.Nodes))
+	assert.Equal(raftStatus0_16.Lead, raftStatus1_16.Lead)
+	assert.Equal(raftStatus0_16.Lead, me1_1.RaftID)
+
+	// 17. request-raft
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_requestRaftLead", "params": []}`)
+
+	requestRaftLead0_17 := false
+	testCore(t0, bodyString, &requestRaftLead0_17, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	// 18. raft-satus
+	marshaled, _ = me1_3.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRaftStatus", "params": ["%v"]}`, string(marshaled))
+
+	raftStatus0_18 := &me.RaftStatus{}
+	testCore(t0, bodyString, raftStatus0_18, t, isDebug)
+
+	assert.Equal(2, len(raftStatus0_18.ConfState.Nodes))
+
+	raftStatus1_18 := &me.RaftStatus{}
+	testCore(t1, bodyString, raftStatus1_18, t, isDebug)
+
+	assert.Equal(2, len(raftStatus1_18.ConfState.Nodes))
+	assert.Equal(raftStatus0_18.Lead, raftStatus1_18.Lead)
+	assert.Equal(raftStatus0_18.Lead, me0_1.RaftID)
+
 }

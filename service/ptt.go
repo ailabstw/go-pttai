@@ -42,7 +42,7 @@ type Ptt interface {
 	IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*IdentifyPeerAck, error)
 	HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error
 
-	FinishIdentifyPeer(peer *PttPeer, isLocked bool) error
+	FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerType bool) error
 	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
 	NoMorePeers() chan struct{}

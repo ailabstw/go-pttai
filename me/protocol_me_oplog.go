@@ -91,3 +91,15 @@ func (pm *ProtocolManager) RemoveNonSyncMeOplog(logID *types.PttID, isRetainVali
 	}
 	return OplogToMeOplog(oplog), nil
 }
+
+/**********
+ * CleanMeOplog
+ **********/
+
+func (pm *ProtocolManager) CleanMeOplog() {
+	oplog := &pkgservice.BaseOplog{}
+	pm.SetMeDB(oplog)
+
+	pm.CleanOplog(oplog, pm.meOplogMerkle)
+
+}

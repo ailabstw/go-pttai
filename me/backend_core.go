@@ -230,8 +230,25 @@ func (b *Backend) GetRawMeByID(idBytes []byte) (*MyInfo, error) {
 	return entity.(*MyInfo), nil
 }
 
-func (b *Backend) Revoke(keyBytes []byte) error {
-	return nil
+func (b *Backend) Revoke(myKey []byte) (bool, error) {
+	isValid, err := b.ValidateValidateKey(myKey)
+	if err != nil {
+		return false, err
+	}
+	if !isValid {
+		return false, ErrInvalidMe
+	}
+
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+
+	pm := myInfo.PM().(*ProtocolManager)
+
+	err = pm.RevokeMe()
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (b *Backend) GetMyNodes() ([]*MyNode, error) {

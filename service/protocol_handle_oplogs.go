@@ -83,7 +83,7 @@ func handleOplogs(
 	info ProcessInfo,
 
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
-	postprocessLogs func(i ProcessInfo, origLogs []*BaseOplog, p *PttPeer, isPending bool) error,
+	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
 ) (types.Timestamp, error) {
 
 	// handleOplogs
@@ -95,6 +95,8 @@ func handleOplogs(
 	toBroadcastLogs := make([]*BaseOplog, 0, len(oplogs))
 	for _, oplog := range oplogs {
 		isToBroadcast, origLogs, err = handleOplog(oplog, info, processLog)
+		log.Debug("handleOplogs: after handleOplog", "isToBroadcast", isToBroadcast, "origLogs", origLogs, "e", err)
+
 		if err == ErrSkipOplog {
 			continue
 		}
@@ -115,7 +117,7 @@ func handleOplogs(
 		}
 	}
 
-	postprocessLogs(info, origLogs, peer, false)
+	postprocessLogs(info, toBroadcastLogs, peer, false)
 
 	return newestUpdateTS, err
 }
@@ -143,6 +145,7 @@ func handleOplog(
 
 	// process log
 	origLogs, err := processLog(oplog, info)
+	log.Debug("handleOplog: after processLog", "oplog", oplog, "e", err, "IsSync", oplog.IsSync)
 	isSync := bool(oplog.IsSync)
 	if err == ErrNewerOplog {
 		oplog.IsSync = true
@@ -175,7 +178,7 @@ func HandlePendingOplogs(
 	setDB func(oplog *BaseOplog),
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
-	postprocessLogs func(i ProcessInfo, origLogs []*BaseOplog, p *PttPeer, isPending bool) error,
+	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
 ) error {
 
 	var err error
@@ -202,7 +205,7 @@ func handlePendingOplogs(
 
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
-	postprocessLogs func(i ProcessInfo, origLogs []*BaseOplog, p *PttPeer, isPending bool) error,
+	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
 ) error {
 
 	var err error

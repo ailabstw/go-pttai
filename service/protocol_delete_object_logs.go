@@ -119,6 +119,9 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 		postdelete(objID, oplog, origObj, opData)
 	}
 
+	// 8. set oplog is-sync
+	oplog.IsSync = true
+
 	// 8. updateDeleteInfo
 	origObj.UpdateDeleteInfo(oplog, info)
 

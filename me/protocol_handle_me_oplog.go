@@ -18,6 +18,7 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -51,6 +52,8 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		origLogs, err = pm.handleMigrateMeLog(oplog, info)
+	case MeOpTypeRevokeMe:
+		origLogs, err = pm.handleRevokeMeLog(oplog, info)
 	}
 	return
 }
@@ -68,6 +71,8 @@ func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, proc
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
 		origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
+	case MeOpTypeRevokeMe:
+		origLogs, err = pm.handlePendingRevokeMeLog(oplog, info)
 	}
 	return
 }
@@ -83,6 +88,8 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 	}
 
 	deleteMeInfo := info.DeleteMeInfo
+
+	log.Debug("postprocessMeOplog", "isPending", isPending, "toBroadcastLogs", toBroadcastLogs, "deleteMeInfo", deleteMeInfo)
 
 	if isPending {
 		for _, eachLog := range deleteMeInfo {
@@ -102,6 +109,13 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 func (pm *ProtocolManager) SetNewestMeOplog(oplog *pkgservice.BaseOplog) (err error) {
 	var isNewer types.Bool
 
+	switch oplog.Op {
+	case MeOpTypeMigrateMe:
+		isNewer, err = pm.setNewestMigrateMeLog(oplog)
+	case MeOpTypeRevokeMe:
+		isNewer, err = pm.setNewestRevokeMeLog(oplog)
+	}
+
 	oplog.IsNewer = isNewer
 
 	return
@@ -113,6 +127,10 @@ func (pm *ProtocolManager) SetNewestMeOplog(oplog *pkgservice.BaseOplog) (err er
 
 func (pm *ProtocolManager) HandleFailedMeOplog(oplog *pkgservice.BaseOplog) (err error) {
 	switch oplog.Op {
+	case MeOpTypeMigrateMe:
+		err = pm.handleFailedMigrateMeLog(oplog)
+	case MeOpTypeRevokeMe:
+		err = pm.handleFailedRevokeMeLog(oplog)
 	}
 
 	return
@@ -122,6 +140,9 @@ func (pm *ProtocolManager) HandleFailedMeOplog(oplog *pkgservice.BaseOplog) (err
  * Postsync Oplog
  **********/
 
-func (pm *ProtocolManager) postsyncMeOplogs(peer *pkgservice.PttPeer) error {
-	return types.ErrNotImplemented
+func (pm *ProtocolManager) postsyncMeOplogs(peer *pkgservice.PttPeer) (err error) {
+	err = pm.SyncPendingMeOplog(peer)
+	log.Debug("postsyncMeOplogs: after SyncPendingMeOplog", "e", err)
+
+	return
 }

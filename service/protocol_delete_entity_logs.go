@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) HandleDeleteEntityLog(
@@ -32,6 +33,8 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	setLogDB func(oplog *BaseOplog),
 	postdelete func(opData OpData) error,
 ) ([]*BaseOplog, error) {
+
+	log.Debug("HandleDeleteEntityLog: start", "e", pm.Entity().GetID(), "status", status)
 
 	entity := pm.Entity()
 
@@ -90,6 +93,11 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 		postdelete(opData)
 	}
 
+	// 6. set oplog is-sync
+	oplog.IsSync = true
+
+	log.Debug("HandleDeleteEntityLog: done", "e", pm.Entity().GetID())
+
 	return nil, nil
 }
 
@@ -108,6 +116,8 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 ) ([]*BaseOplog, error) {
 
 	entity := pm.Entity()
+
+	log.Debug("HandlePendingDeleteEntityLog: start", "e", pm.Entity().GetID())
 
 	// 1. lock obj
 	err := entity.Lock()
@@ -149,8 +159,10 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 		return nil, err
 	}
 
-	// 6. update delete info
+	// 7. update delete info
 	entity.UpdateDeleteInfo(oplog, info)
+
+	log.Debug("HandlePendingDeleteEntityLog: end", "e", pm.Entity().GetID())
 
 	return nil, nil
 }

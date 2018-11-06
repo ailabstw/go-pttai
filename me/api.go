@@ -52,8 +52,8 @@ func (api *PrivateAPI) SetMyImage(imgStr string) (*account.UserImg, error) {
  * Revoke
  **********/
 
-func (api *PrivateAPI) Revoke(keyBytes []byte) error {
-	return api.b.Revoke(keyBytes)
+func (api *PrivateAPI) Revoke(myKey string) (bool, error) {
+	return api.b.Revoke([]byte(myKey))
 }
 
 /**********

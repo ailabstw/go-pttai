@@ -419,7 +419,7 @@ func (pm *BaseProtocolManager) SetOplogIDIsSync(
 	return nil, types.ErrNotImplemented
 }
 
-func (pm *BaseProtocolManager) postprocessDeleteOplog(oplog *BaseOplog, toBroadcastLogs []*BaseOplog) []*BaseOplog {
+func (pm *BaseProtocolManager) PostprocessPendingDeleteOplog(oplog *BaseOplog, toBroadcastLogs []*BaseOplog) []*BaseOplog {
 
 	_, err := pm.InternalSign(oplog)
 	if err != nil {

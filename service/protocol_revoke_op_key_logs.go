@@ -24,7 +24,7 @@ func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *Proc
 	opKey := NewEmptyKeyInfo()
 	pm.SetOpKeyObjDB(opKey)
 
-	toBroadcastLogs, err := pm.HandleDeleteObjectLog(oplog, info, opKey, nil, pm.SetOpKeyDB, pm.DeleteOpKeyPostprocess)
+	toBroadcastLogs, err := pm.HandleDeleteObjectLog(oplog, info, opKey, nil, pm.SetOpKeyDB, pm.postdeleteOpKey)
 	if err != nil {
 		return nil, err
 	}

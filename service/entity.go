@@ -19,9 +19,11 @@ package service
 import (
 	"bytes"
 	"reflect"
+	"runtime/debug"
 	"sort"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -38,7 +40,19 @@ type Entity interface {
 	GetUpdateTS() types.Timestamp
 	SetUpdateTS(ts types.Timestamp)
 
-	// implemented in BaseEntity
+	Save(isLocked bool) error
+
+	// sync-info
+
+	RemoveSyncInfo(oplog *BaseOplog, opData OpData, syncInfo SyncInfo, info ProcessInfo) error
+	SetPendingDeleteSyncInfo(status types.Status, oplog *BaseOplog)
+
+	UpdateDeleteInfo(oplog *BaseOplog, info ProcessInfo)
+
+	/**********
+	 * implemented in BaseEntity
+	 **********/
+
 	GetID() *types.PttID
 	SetID(id *types.PttID)
 
@@ -62,6 +76,9 @@ type Entity interface {
 	RemoveOwnerID(id *types.PttID)
 	IsOwner(id *types.PttID) bool
 
+	GetEntityType() EntityType
+	SetEntityType(t EntityType)
+
 	PM() ProtocolManager
 	Ptt() Ptt
 	Service() Service
@@ -70,6 +87,16 @@ type Entity interface {
 	SetName(name string)
 
 	DB() *pttdb.LDBBatch
+	DBLock() *types.LockMap
+	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap)
+
+	Lock() error
+	Unlock() error
+	RLock() error
+	RUnlock() error
+
+	SetSyncInfo(syncInfo SyncInfo)
+	GetSyncInfo() SyncInfo
 }
 
 type BaseEntity struct {
@@ -86,15 +113,20 @@ type BaseEntity struct {
 
 	OwnerIDs []*types.PttID `json:"o,omitempty"`
 
+	EntityType EntityType `json:"e"`
+
 	pm      ProtocolManager
 	name    string
 	ptt     Ptt
 	service Service
 
-	db *pttdb.LDBBatch
+	db     *pttdb.LDBBatch
+	dbLock *types.LockMap
+
+	SyncInfo SyncInfo
 }
 
-func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, db *pttdb.LDBBatch) *BaseEntity {
+func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, db *pttdb.LDBBatch, dbLock *types.LockMap) *BaseEntity {
 
 	e := &BaseEntity{
 		V:         types.CurrentVersion,
@@ -105,6 +137,7 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 		Status:    status,
 		OwnerIDs:  make([]*types.PttID, 0),
 		db:        db,
+		dbLock:    dbLock,
 	}
 	e.OwnerIDs = append(e.OwnerIDs, creatorID)
 
@@ -116,6 +149,11 @@ func (e *BaseEntity) Init(pm ProtocolManager, name string, ptt Ptt, service Serv
 	e.name = ProtocolName
 	e.ptt = ptt
 	e.service = service
+}
+
+func (e *BaseEntity) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
+	e.db = db
+	e.dbLock = dbLock
 }
 
 func (e *BaseEntity) Start() error {
@@ -185,8 +223,10 @@ func (e *BaseEntity) AddOwnerID(id *types.PttID) {
 		return bytes.Compare(ownerIDs[i][:], id[:]) >= 0
 	})
 
+	log.Debug("AddOwnerID: after search", "idx", idx, "id", id)
+
 	if idx == len(ownerIDs) {
-		e.OwnerIDs = append(e.OwnerIDs, id)
+		e.OwnerIDs = append(ownerIDs, id)
 		return
 	}
 
@@ -194,7 +234,14 @@ func (e *BaseEntity) AddOwnerID(id *types.PttID) {
 		return
 	}
 
-	e.OwnerIDs = append(append(ownerIDs[:idx], id), ownerIDs[idx:]...)
+	// insert-into-slice
+	ownerIDs = append(ownerIDs, nil)
+	copy(ownerIDs[(idx+1):], ownerIDs[idx:])
+	ownerIDs[idx] = id
+
+	log.Debug("AddOwnerID: after append-append", "ownerIDs", ownerIDs)
+
+	e.OwnerIDs = ownerIDs
 }
 
 func (e *BaseEntity) RemoveOwnerID(id *types.PttID) {
@@ -247,6 +294,50 @@ func (e *BaseEntity) SetName(name string) {
 	e.name = name
 }
 
+func (e *BaseEntity) GetEntityType() EntityType {
+	return e.EntityType
+}
+
+func (e *BaseEntity) SetEntityType(t EntityType) {
+	e.EntityType = t
+}
 func (e *BaseEntity) DB() *pttdb.LDBBatch {
 	return e.db
+}
+
+func (e *BaseEntity) DBLock() *types.LockMap {
+	return e.dbLock
+}
+
+func (e *BaseEntity) Lock() error {
+	log.Debug("Lock: to lock", "e", e.GetID())
+	debug.PrintStack()
+	return e.dbLock.Lock(e.GetID())
+}
+
+func (e *BaseEntity) Unlock() error {
+	log.Debug("Unlock: to unlock", "e", e.GetID())
+	return e.dbLock.Unlock(e.GetID())
+}
+
+func (e *BaseEntity) RLock() error {
+	log.Debug("RLock: to lock", "e", e.GetID())
+	return e.dbLock.RLock(e.GetID())
+}
+
+func (e *BaseEntity) RUnlock() error {
+	log.Debug("RUnLock: to unlock", "e", e.GetID())
+	return e.dbLock.RUnlock(e.GetID())
+}
+
+func (e *BaseEntity) SetSyncInfo(syncInfo SyncInfo) {
+	e.SyncInfo = syncInfo
+}
+
+func (e *BaseEntity) GetSyncInfo() SyncInfo {
+	return e.SyncInfo
+}
+
+func (e *BaseEntity) IntegrateSyncInfo(syncInfo SyncInfo) {
+	e.SyncInfo = IntegrateSyncInfo(syncInfo, e.SyncInfo)
 }

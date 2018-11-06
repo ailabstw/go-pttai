@@ -337,18 +337,8 @@ func (pm *BaseProtocolManager) Start() error {
 
 	log.Debug("Start: after loadOpKeyInfos", "opKeyInfos", opKeyInfos)
 
-	pm.lockOpKeyInfo.Lock()
-	defer pm.lockOpKeyInfo.Unlock()
-
-	for _, keyInfo := range opKeyInfos {
-		pm.RegisterOpKeyInfo(keyInfo, true)
-	}
-
 	if len(opKeyInfos) == 0 {
-		err = pm.CreateOpKeyInfo()
-		if err != nil {
-			return err
-		}
+		pm.CreateOpKeyInfo()
 	}
 
 	pm.isStart = true

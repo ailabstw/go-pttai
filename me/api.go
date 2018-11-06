@@ -123,6 +123,10 @@ func (api *PrivateAPI) GetRawMe() (*MyInfo, error) {
 	return api.b.GetRawMe()
 }
 
+func (api *PrivateAPI) GetRawMeByID(id string) (*MyInfo, error) {
+	return api.b.GetRawMeByID([]byte(id))
+}
+
 /**********
  * Peer
  **********/

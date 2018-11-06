@@ -66,3 +66,32 @@ func (s *BaseSyncInfo) InitWithOplog(oplog *BaseOplog) {
 	s.UpdaterID = oplog.CreatorID
 	s.Status = oplog.ToStatus()
 }
+
+func IntegrateSyncInfo(s SyncInfo, s2 SyncInfo) SyncInfo {
+	if s == nil {
+		return s2
+	}
+
+	if s2 == nil {
+		return s
+	}
+
+	statusClass := types.StatusToStatusClass(s.GetStatus())
+	statusClass2 := types.StatusToStatusClass(s2.GetStatus())
+
+	switch {
+	case statusClass > statusClass2:
+		return s
+	case statusClass < statusClass2:
+		return s2
+	}
+
+	updateTS := s.GetUpdateTS()
+	updateTS2 := s2.GetUpdateTS()
+
+	if updateTS.IsLess(updateTS2) {
+		return s2
+	}
+
+	return s
+}

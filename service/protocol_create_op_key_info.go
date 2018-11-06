@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 )
 
@@ -27,9 +28,6 @@ func (pm *BaseProtocolManager) CreateOpKeyLoop() error {
 	log.Debug("CreateOpKeyLoop: start")
 	err := pm.TryCreateOpKeyInfo()
 	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err)
-	if err != nil {
-		return nil
-	}
 
 	toRenewSeconds := pm.GetToRenewOpKeySeconds()
 	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds)
@@ -98,73 +96,111 @@ func (pm *BaseProtocolManager) ToRenewOpKeyTS() (types.Timestamp, error) {
 
 func (pm *BaseProtocolManager) CreateOpKeyInfo() error {
 	ptt := pm.Ptt()
-	entity := pm.Entity()
+	myID := ptt.GetMyEntity().GetID()
 
-	entityID := pm.Entity().GetID()
-	myEntity := ptt.GetMyEntity()
-	myID := myEntity.GetID()
+	log.Debug("CreateOpKeyInfo: start")
 
 	// 1. validate
-	if entity.GetStatus() != types.StatusAlive {
-		log.Warn("CreateOpKeyInfo: status not alive", "status", entity.GetStatus())
-		return nil
-	}
-
 	if !pm.IsMaster(myID) {
 		log.Warn("CreateOpKeyInfo: not master")
 		return nil
 	}
 
-	// 2. new-key (new item)
-	keyInfo, err := myEntity.NewOpKeyInfo(entityID, pm.DBOpKeyInfo(), pm.DBObjLock())
+	_, err := pm.CreateObject(nil, OpKeyOpTypeCreateOpKey, pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
 	if err != nil {
-		log.Warn("CreateOpKeyInfo: unable to NewOpKeyInfo")
+		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
 		return err
 	}
 
-	// 3. new oplog
-	opData := &OpKeyOpCreateOpKey{}
-	oplog, err := NewOpKeyOplog(keyInfo.ID, keyInfo.UpdateTS, myID, OpKeyOpTypeCreateOpKey, opData, pm.DBOpKeyInfo(), entityID, pm.DBOpKeyLock())
+	log.Debug("CreateOpKeyInfo: done")
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) NewOpKey(data interface{}) (Object, OpData, error) {
+	entity := pm.Entity()
+	myEntity := pm.Ptt().GetMyEntity()
+
+	key_info, err := myEntity.NewOpKeyInfo(entity.GetID(), pm.DBOpKeyInfo(), pm.DBObjLock())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return key_info, &OpKeyOpCreateOpKey{}, nil
+}
+
+func (pm *BaseProtocolManager) postcreateOpKey(theOpKey Object, oplog *BaseOplog) error {
+	opKey, ok := theOpKey.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	pm.RegisterOpKeyInfo(opKey, false)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) postfailedCreateOpKey(theOpKey Object, oplog *BaseOplog) error {
+	opKey, ok := theOpKey.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	return pm.RemoveOpKeyInfoFromHash(opKey.Hash, false, true, true)
+}
+
+func (k *KeyInfo) UpdateCreateInfo(oplog *BaseOplog, theOpData OpData, theInfo ProcessInfo) error {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	info.CreateOpKeyInfo[*oplog.ObjID] = oplog
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) CreateOpKeyExistsInInfo(oplog *BaseOplog, theInfo ProcessInfo) (bool, error) {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return false, ErrInvalidData
+	}
+
+	objID := oplog.ObjID
+	_, ok = info.DeleteOpKeyInfo[*objID]
+	if ok {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (k *KeyInfo) UpdateCreateObject(theObj Object) error {
+	obj, ok := theObj.(*KeyInfo)
+	if !ok {
+		return ErrInvalidObject
+	}
+
+	key, err := crypto.ToECDSA(obj.KeyBytes)
 	if err != nil {
 		return err
 	}
 
-	err = pm.SignOplog(oplog.BaseOplog)
-	if err != nil {
-		return err
-	}
+	origDB, origDBLock := k.db, k.dbLock
+	k.BaseObject = obj.BaseObject
+	k.db = origDB
+	k.dbLock = origDBLock
 
-	// 4. key-info (item set oplog and save)
-	keyInfo.LogID = oplog.ID
-	keyInfo.UpdateTS = oplog.UpdateTS
-	keyInfo.Status = oplog.ToStatus()
+	k.Hash = obj.Hash
+	k.Key = key
+	k.KeyBytes = obj.KeyBytes
+	k.PubKeyBytes = crypto.FromECDSAPub(&key.PublicKey)
+	k.Extra = obj.Extra
 
-	err = keyInfo.Save(false)
-	if err != nil {
-		log.Warn("CreateOpKeyInfo: unable to save")
-		return err
-	}
+	return nil
+}
 
-	// 5. sign oplog and save
-
-	err = oplog.Save(false)
-	if err != nil {
-		return err
-	}
-
-	// 6. broadcast oplog
-	pm.BroadcastOpKeyOplog(oplog)
-
-	// 7. postprocess
-	if oplog.MasterLogID == nil {
-		return nil
-	}
-
-	err = pm.RegisterOpKeyInfo(keyInfo, false)
-	if err != nil {
-		log.Warn("CreateOpKeyInfo: unable to register")
-		return err
-	}
-
+func (k *KeyInfo) NewObjWithOplog(oplog *BaseOplog, theOpData OpData) error {
+	NewObjectWithOplog(k, oplog)
 	return nil
 }

@@ -139,11 +139,11 @@ func setupTest(t *testing.T) {
 	seconds := 0
 	switch {
 	case NNodes <= 3:
-		seconds = 5
-	case NNodes == 4:
-		seconds = 6
-	case NNodes == 5:
 		seconds = 7
+	case NNodes == 4:
+		seconds = 8
+	case NNodes == 5:
+		seconds = 9
 	}
 
 	log.Debug("wait for node starting", "seconds", seconds)

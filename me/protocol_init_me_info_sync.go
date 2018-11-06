@@ -41,6 +41,12 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 	myInfo := pm.Entity().(*MyInfo)
 	myID := myInfo.ID
 
+	err = myInfo.Lock()
+	if err != nil {
+		return err
+	}
+	defer myInfo.Unlock()
+
 	if myInfo.Status != types.StatusAlive {
 		return nil
 	}
@@ -93,8 +99,21 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 
 	log.Debug("HandleInitMeInfoSync: start")
 
+	err := myInfo.Lock()
+	if err != nil {
+		return err
+	}
+	defer myInfo.Unlock()
+
 	data := &InitMeInfoSync{}
-	err := json.Unmarshal(dataBytes, data)
+	err = json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	// migrate origin-me
+	origMe := pm.Ptt().GetMyEntity().(*MyInfo)
+	err = origMe.PM().(*ProtocolManager).MigrateMe(myInfo)
 	if err != nil {
 		return err
 	}
@@ -130,10 +149,9 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	if err != nil {
 		return err
 	}
-
 	myInfo.Status = types.StatusInternalSync
 	myInfo.UpdateTS = ts
-	err = myInfo.Save()
+	err = myInfo.Save(true)
 	if err != nil {
 		return err
 	}

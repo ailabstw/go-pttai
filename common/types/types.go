@@ -64,6 +64,43 @@ func StatusToDeleteStatus(status Status) Status {
 	return status
 }
 
+type StatusClass int
+
+const (
+	StatusClassInvalid StatusClass = iota
+	StatusClassPendingAlive
+	StatusClassAlive
+	StatusClassFailed
+	StatusClassPendingDelete
+	StatusClassDeleted
+)
+
+var statusToStatusClass = map[Status]StatusClass{
+	StatusInvalid: StatusClassInvalid,
+
+	StatusInit:            StatusClassPendingAlive,
+	StatusInternalSync:    StatusClassPendingAlive,
+	StatusInternalPending: StatusClassPendingAlive,
+	StatusPending:         StatusClassPendingAlive,
+	StatusSync:            StatusClassPendingAlive,
+
+	StatusAlive: StatusClassAlive,
+
+	StatusFailed: StatusClassFailed,
+
+	StatusPendingTransfer: StatusClassPendingDelete,
+	StatusTransferred:     StatusClassDeleted,
+	StatusPendingMigrate:  StatusClassPendingDelete,
+	StatusMigrated:        StatusClassDeleted,
+	StatusInternalDeleted: StatusClassPendingDelete,
+	StatusPendingDeleted:  StatusClassDeleted,
+	StatusDeleted:         StatusClassDeleted,
+}
+
+func StatusToStatusClass(status Status) StatusClass {
+	return statusToStatusClass[status]
+}
+
 // Sig
 type Sig []byte
 

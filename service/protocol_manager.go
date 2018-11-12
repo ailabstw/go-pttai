@@ -17,6 +17,7 @@
 package service
 
 import (
+	"reflect"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 )
 
 type ProtocolManager interface {
+	Prestart() error
 	Start() error
 	Stop() error
 
@@ -37,13 +39,27 @@ type ProtocolManager interface {
 	Sync(peer *PttPeer) error
 
 	// join
-	ApproveJoin(joinEntity *JoinEntity, keyInfo *KeyInfo, peer *PttPeer) (*KeyInfo, interface{}, error)
+	ApproveJoin(
+		joinEntity *JoinEntity,
+		keyInfo *KeyInfo,
+		peer *PttPeer,
+	) (*KeyInfo, interface{}, error)
 
 	GetJoinType(hash *common.Address) (JoinType, error)
 
 	// master
-	Master0Hash() []byte
-	IsMaster(id *types.PttID) bool
+	MasterLog0Hash() []byte
+	SetMasterLog0Hash(theBytes []byte) error
+
+	AddMaster(id *types.PttID, isForce bool) (*Master, *MasterOplog, error)
+	TransferMaster(id *types.PttID) error
+
+	IsMaster(id *types.PttID, isLocked bool) bool
+
+	// member
+
+	AddMember(id *types.PttID, isForce bool) (*Member, *MemberOplog, error)
+	TransferMember(fromID *types.PttID, toID *types.PttID) error
 
 	// owner-id
 	SetOwnerID(ownerID *types.PttID, isLocked bool)
@@ -78,42 +94,84 @@ type ProtocolManager interface {
 	SetNewestMasterLogID(id *types.PttID) error
 	GetNewestMasterLogID() *types.PttID
 
+	// master-oplog
+	BroadcastMasterOplog(log *MasterOplog) error
+
+	HandleAddMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddMasterOplogs(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingMasterOplogs(dataBytes []byte, peer *PttPeer) error
+
+	HandleSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncNewMasterOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncPendingMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncPendingMasterOplogAck(dataBytes []byte, peer *PttPeer) error
+
+	HandleMasterOplogs(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
+
+	// member
+	BroadcastMemberOplog(log *MemberOplog) error
+
+	HandleAddMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddMemberOplogs(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleAddPendingMemberOplogs(dataBytes []byte, peer *PttPeer) error
+
+	HandleSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncNewMemberOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncPendingMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleSyncPendingMemberOplogAck(dataBytes []byte, peer *PttPeer) error
+
+	HandleMemberOplogs(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
+	SetMemberSyncTime(ts types.Timestamp) error
+
+	// log0
+	SetLog0DB(oplog *BaseOplog)
+
 	// join
-	GetJoinKeyInfo(hash *common.Address) (*KeyInfo, error)
+	GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error)
 	GetJoinKey() (*KeyInfo, error)
 
-	CreateJoinKeyInfoLoop() error
+	CreateJoinKeyLoop() error
 
-	JoinKeyInfos() []*KeyInfo
+	JoinKeyList() []*KeyInfo
 
 	// op
 
-	GetOpKeyInfoFromHash(hash *common.Address, isLocked bool) (*KeyInfo, error)
+	GetOpKeyFromHash(hash *common.Address, isLocked bool) (*KeyInfo, error)
 	GetNewestOpKey(isLocked bool) (*KeyInfo, error)
 	GetOldestOpKey(isLocked bool) (*KeyInfo, error)
 
-	RegisterOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error
+	RegisterOpKey(keyInfo *KeyInfo, isLocked bool) error
 
-	RemoveOpKeyInfoFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error
+	RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error
 
-	OpKeyInfos() map[common.Address]*KeyInfo
-	OpKeyInfoList() []*KeyInfo
+	OpKeys() map[common.Address]*KeyInfo
+	OpKeyList() []*KeyInfo
 
-	RenewOpKeySeconds() uint64
-	ExpireOpKeySeconds() uint64
+	RenewOpKeySeconds() int64
+	ExpireOpKeySeconds() int64
 	GetToRenewOpKeySeconds() int
 	ToRenewOpKeyTS() (types.Timestamp, error)
 
 	DBOpKeyLock() *types.LockMap
-	DBOpKeyInfo() *pttdb.LDBBatch
+	DBOpKey() *pttdb.LDBBatch
+	DBOpKeyPrefix() []byte
+	DBOpKeyIdxPrefix() []byte
 
 	SetOpKeyDB(oplog *BaseOplog)
 
 	SetOpKeyObjDB(opKey *KeyInfo)
 
-	GetOpKeyInfosFromDB() ([]*KeyInfo, error)
+	GetOpKeyListFromDB() ([]*KeyInfo, error)
 
 	CreateOpKeyLoop() error
+
+	CreateOpKey() error
 
 	// op-key-oplog
 
@@ -142,7 +200,7 @@ type ProtocolManager interface {
 
 	RegisterPeer(peer *PttPeer, peerType PeerType) error
 	RegisterPendingPeer(peer *PttPeer) error
-	UnregisterPeer(peer *PttPeer, isResetPeerType bool, isPttLocked bool) error
+	UnregisterPeer(peer *PttPeer, isResetPeerType bool, isForceNotReset bool, isPttLocked bool) error
 
 	GetPeerType(peer *PttPeer) PeerType
 
@@ -164,6 +222,15 @@ type ProtocolManager interface {
 
 	// entity
 	Entity() Entity
+
+	SaveNewEntityWithOplog(oplog *BaseOplog, isLocked bool, isForce bool) error
+
+	MaybePostcreateEntity(
+		oplog *BaseOplog,
+		origStatus types.Status,
+		isForce bool,
+		postcreateEntity func(entity Entity, oplog *BaseOplog) error,
+	) error
 
 	// ptt
 	Ptt() Ptt
@@ -192,7 +259,36 @@ type BaseProtocolManager struct {
 	// master
 	newestMasterLogID *types.PttID
 
-	isMaster func(id *types.PttID) bool
+	isMaster          func(id *types.PttID, isLocked bool) bool
+	dbMasterPrefix    []byte
+	dbMasterIdxPrefix []byte
+
+	masterLog0Hash []byte
+
+	lockMaster sync.RWMutex
+	masters    map[types.PttID]*Master
+
+	// master-oplog
+	dbMasterLock *types.LockMap
+	masterMerkle *Merkle
+
+	// member
+	isMember          func(id *types.PttID, isLocked bool) bool
+	dbMemberPrefix    []byte
+	dbMemberIdxPrefix []byte
+
+	// member-oplog
+	dbMemberLock *types.LockMap
+	memberMerkle *Merkle
+	myMemberLog  *MemberOplog
+
+	// peer
+	getPeerType func(peer *PttPeer) PeerType
+
+	isMyDevice      func(peer *PttPeer) bool
+	isImportantPeer func(peer *PttPeer) bool
+	isMemberPeer    func(peer *PttPeer) bool
+	isPendingPeer   func(peer *PttPeer) bool
 
 	// owner-id
 	lockOwnerID sync.RWMutex
@@ -210,13 +306,22 @@ type BaseProtocolManager struct {
 	newestOpKeyInfo *KeyInfo
 	oldestOpKeyInfo *KeyInfo
 
-	renewOpKeySeconds  uint64
-	expireOpKeySeconds uint64
+	renewOpKeySeconds  int64
+	expireOpKeySeconds int64
 
+	dbOpKeyPrefix    []byte
+	dbOpKeyIdxPrefix []byte
+
+	// op-key-oplog
 	dbOpKeyLock *types.LockMap
 
 	// oplog
-	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool)
+	internalSign          func(oplog *BaseOplog) (bool, error)
+	isValidOplog          func(signInfos []*SignInfo) (*types.PttID, uint32, bool)
+	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error
+
+	oplog0    *BaseOplog
+	setLog0DB func(oplog *BaseOplog)
 
 	// peer
 	peers       *PttPeerSet
@@ -230,8 +335,12 @@ type BaseProtocolManager struct {
 	quitSync chan struct{}
 	syncWG   *sync.WaitGroup
 
+	postsyncMemberOplog func(peer *PttPeer) error
+
 	// entity
 	entity Entity
+
+	postdeleteEntity func()
 
 	// ptt
 	ptt Ptt
@@ -246,14 +355,35 @@ type BaseProtocolManager struct {
 
 func NewBaseProtocolManager(
 	ptt Ptt,
-	renewOpKeySeconds uint64,
-	expireOpKeySeconds uint64,
+	renewOpKeySeconds int64,
+	expireOpKeySeconds int64,
 	maxSyncRandomSeconds int,
 	minSyncRandomSeconds int,
+
+	internalSign func(oplog *BaseOplog) (bool, error),
 	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool),
-	isMaster func(id *types.PttID) bool,
+	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error,
+
+	setLog0DB func(oplog *BaseOplog),
+
+	isMaster func(id *types.PttID, isLocked bool) bool,
+	isMember func(id *types.PttID, isLocked bool) bool,
+
+	getPeerType func(peer *PttPeer) PeerType,
+	isMyDevice func(peer *PttPeer) bool,
+	isImportantPeer func(peer *PttPeer) bool,
+	isMemberPeer func(peer *PttPeer) bool,
+	isPendingPeer func(peer *PttPeer) bool,
+
+	postsyncMemberOplog func(peer *PttPeer) error,
+
+	postdeleteEntity func(),
+
 	e Entity,
-	db *pttdb.LDBBatch) (*BaseProtocolManager, error) {
+	db *pttdb.LDBBatch,
+) (*BaseProtocolManager, error) {
+
+	entityID := e.GetID()
 
 	peers, err := NewPttPeerSet()
 	if err != nil {
@@ -265,10 +395,36 @@ func NewBaseProtocolManager(
 		return nil, err
 	}
 
+	dbMasterLock, err := types.NewLockMap(SleepTimeLock)
+	if err != nil {
+		return nil, err
+	}
+	dbMasterPrefix := append(DBMasterPrefix, entityID[:]...)
+	dbMasterIdxPrefix := append(DBMasterIdxPrefix, entityID[:]...)
+	masterMerkle, err := NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, entityID, db)
+	if err != nil {
+		return nil, err
+	}
+
+	dbMemberLock, err := types.NewLockMap(SleepTimeLock)
+	if err != nil {
+		return nil, err
+	}
+	dbMemberPrefix := append(DBMemberPrefix, entityID[:]...)
+	dbMemberIdxPrefix := append(DBMemberIdxPrefix, entityID[:]...)
+	memberMerkle, err := NewMerkle(DBMemberOplogPrefix, DBMemberMerkleOplogPrefix, entityID, db)
+	if err != nil {
+		return nil, err
+	}
+
 	dbOpKeyLock, err := types.NewLockMap(SleepTimeOpKeyLock)
 	if err != nil {
 		return nil, err
 	}
+	dbOpKeyPrefix := append(DBOpKeyPrefix, entityID[:]...)
+	dbOpKeyIdxPrefix := append(DBOpKeyIdxPrefix, entityID[:]...)
+
+	log.Debug("NewBaseProtocolManager: start", "e", e.GetID())
 
 	pm := &BaseProtocolManager{
 		eventMux: new(event.TypeMux),
@@ -277,7 +433,23 @@ func NewBaseProtocolManager(
 		joinKeyInfos: make([]*KeyInfo, 0),
 
 		// master
-		isMaster: isMaster,
+		isMaster:          isMaster,
+		dbMasterPrefix:    dbMasterPrefix,
+		dbMasterIdxPrefix: dbMasterIdxPrefix,
+		masters:           make(map[types.PttID]*Master),
+
+		// master-oplog
+		dbMasterLock: dbMasterLock,
+		masterMerkle: masterMerkle,
+
+		// member
+		isMember:          isMember,
+		dbMemberPrefix:    dbMemberPrefix,
+		dbMemberIdxPrefix: dbMemberIdxPrefix,
+
+		// member-oplog
+		dbMemberLock: dbMemberLock,
+		memberMerkle: memberMerkle,
 
 		// op
 		renewOpKeySeconds:  renewOpKeySeconds,
@@ -285,14 +457,28 @@ func NewBaseProtocolManager(
 
 		opKeyInfos: make(map[common.Address]*KeyInfo),
 
+		dbOpKeyPrefix:    dbOpKeyPrefix,
+		dbOpKeyIdxPrefix: dbOpKeyIdxPrefix,
+
+		// op-key-oplog
 		dbOpKeyLock: dbOpKeyLock,
 
 		// oplog
-		isValidOplog: isValidOplog,
+		internalSign:          internalSign,
+		isValidOplog:          isValidOplog,
+		validateIntegrateSign: validateIntegrateSign,
+
+		setLog0DB: setLog0DB,
 
 		// peers
 		newPeerCh: make(chan *PttPeer),
 		peers:     peers,
+
+		getPeerType:     getPeerType,
+		isMyDevice:      isMyDevice,
+		isImportantPeer: isImportantPeer,
+		isMemberPeer:    isMemberPeer,
+		isPendingPeer:   isPendingPeer,
 
 		// sync
 		maxSyncRandomSeconds: maxSyncRandomSeconds,
@@ -301,8 +487,12 @@ func NewBaseProtocolManager(
 		quitSync: make(chan struct{}),
 		syncWG:   ptt.SyncWG(),
 
+		postsyncMemberOplog: postsyncMemberOplog,
+
 		// entity
 		entity: e,
+
+		postdeleteEntity: postdeleteEntity,
 
 		// ptt
 		ptt: ptt,
@@ -311,14 +501,39 @@ func NewBaseProtocolManager(
 		db:     db,
 		dbLock: dbLock,
 	}
-
-	// master-log-id
-	newestMasterLogID, err := pm.loadNewestMasterLogID()
-	if err != nil {
-		return nil, err
+	if pm.internalSign == nil {
+		pm.internalSign = pm.defaultInternalSign
 	}
-
-	pm.newestMasterLogID = newestMasterLogID
+	if pm.isValidOplog == nil {
+		pm.isValidOplog = pm.defaultIsValidOplog
+	}
+	if pm.validateIntegrateSign == nil {
+		pm.validateIntegrateSign = pm.defaultValidateIntegrateSign
+	}
+	if pm.isMaster == nil {
+		pm.isMaster = pm.defaultIsMaster
+	}
+	if pm.isMember == nil {
+		pm.isMember = pm.defaultIsMember
+	}
+	if pm.getPeerType == nil {
+		pm.getPeerType = pm.defaultGetPeerType
+	}
+	if pm.isMyDevice == nil {
+		pm.isMyDevice = pm.defaultIsMyDevice
+	}
+	if pm.isImportantPeer == nil {
+		pm.isImportantPeer = pm.defaultIsImportantPeer
+	}
+	if pm.isMemberPeer == nil {
+		pm.isMemberPeer = pm.defaultIsMemberPeer
+	}
+	if pm.isPendingPeer == nil {
+		pm.isPendingPeer = pm.defaultIsPendingPeer
+	}
+	if pm.postdeleteEntity == nil {
+		pm.postdeleteEntity = pm.DefaultPostdeleteEntity
+	}
 
 	return pm, nil
 
@@ -328,20 +543,104 @@ func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *
 	return types.ErrNotImplemented
 }
 
-func (pm *BaseProtocolManager) Start() error {
+func (pm *BaseProtocolManager) Prestart() error {
+	// master
+	log.Debug("Prestart: to loadMasters", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	masters, err := pm.loadMasters()
+	if err != nil {
+		return err
+	}
+
+	log.Debug("Prestart: after loadMasters", "entity", pm.Entity().GetID(), "masters", len(masters))
+	for _, master := range masters {
+		log.Debug("Prestart (in-for-loop)", "master", master.ID)
+	}
+
+	pm.registerMasters(masters, false)
+
+	// master-log-id
+	newestMasterLogID, err := pm.loadNewestMasterLogID()
+	if err != nil {
+		return err
+	}
+
+	pm.newestMasterLogID = newestMasterLogID
+
+	// master0hash
+	masterLog0hash, err := pm.loadMasterLog0Hash()
+	if err == nil {
+		pm.masterLog0Hash = masterLog0hash
+	}
+
 	// op-key
 	opKeyInfos, err := pm.loadOpKeyInfos()
 	if err != nil {
 		return err
 	}
 
-	log.Debug("Start: after loadOpKeyInfos", "opKeyInfos", opKeyInfos)
+	log.Debug("Prestart: after loadOpKeyInfos", "opKeyInfos", opKeyInfos)
 
+	pm.registerOpKeys(opKeyInfos, false)
+
+	log.Debug("Prestart: after registerOpKeys")
+
+	// to register
 	if len(opKeyInfos) == 0 {
-		pm.CreateOpKeyInfo()
+		pm.CreateOpKey()
 	}
 
+	// load myMemberLog
+	entity := pm.Entity()
+	service := entity.Service()
+	myService := pm.Ptt().GetMyService()
+	myEntity := pm.Ptt().GetMyEntity().(Entity)
+
+	if service != myService {
+		log.Debug("Prestart: to loadMyMemberLog")
+		err = pm.loadMyMemberLog()
+		log.Debug("Prestart: after loadMyMemberLog", "e", err, "service", pm.Entity().Service().Name())
+		if err != nil {
+			return err
+		}
+	}
+
+	// load oplog0
+	oplog := &BaseOplog{}
+	pm.SetLog0DB(oplog)
+	oplogs, err := GetOplogList(oplog, nil, 1, pttdb.ListOrderNext, types.StatusAlive, false)
+	log.Debug("Prestart: after GetOplogList", "entity", pm.Entity().GetID(), "e", err, "oplogs", len(oplogs))
+	if entity == myEntity && len(oplogs) == 0 {
+		return nil
+	}
+	if len(oplogs) != 1 {
+		return ErrInvalidOplog
+	}
+	pm.oplog0 = oplogs[0]
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) Start() error {
+	go PMOplogMerkleTreeLoop(pm, pm.masterMerkle)
+	go PMOplogMerkleTreeLoop(pm, pm.memberMerkle)
+
 	pm.isStart = true
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	entity := pm.Entity()
+	if !entity.IsOwner(myID) {
+		log.Debug("Start: I am not the owner", "myID", myID, "entityID", entity.GetID())
+		owners := pm.Entity().GetOwnerIDs()
+		for _, ownerID := range owners {
+			if !reflect.DeepEqual(myID, ownerID) {
+				log.Debug("Start: to TransferMember", "ownerID", ownerID, "myID", myID)
+				return pm.TransferMember(ownerID, myID)
+			}
+		}
+
+		return types.ErrInvalidID
+	}
 
 	return nil
 }
@@ -376,4 +675,28 @@ func (pm *BaseProtocolManager) DB() *pttdb.LDBBatch {
 
 func (pm *BaseProtocolManager) DBObjLock() *types.LockMap {
 	return pm.dbLock
+}
+
+func (pm *BaseProtocolManager) MasterMerkle() *Merkle {
+	return pm.masterMerkle
+}
+
+func (pm *BaseProtocolManager) MemberMerkle() *Merkle {
+	return pm.memberMerkle
+}
+
+func (pm *BaseProtocolManager) GetOplog0() *BaseOplog {
+	return pm.oplog0
+}
+
+func (pm *BaseProtocolManager) SetOplog0(oplog *BaseOplog) {
+	pm.oplog0 = oplog
+}
+
+func (pm *BaseProtocolManager) SetLog0DB(oplog *BaseOplog) {
+	pm.setLog0DB(oplog)
+}
+
+func (pm *BaseProtocolManager) IsStart() bool {
+	return pm.isStart
 }

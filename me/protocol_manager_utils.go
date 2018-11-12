@@ -22,7 +22,6 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -121,20 +120,8 @@ func (pm *ProtocolManager) LoadPeers() error {
 	return nil
 }
 
-func (pm *ProtocolManager) GetMasterList() []*discover.NodeID {
-	pm.lockMyNodes.RLock()
-	defer pm.lockMyNodes.RUnlock()
-
-	theList := make([]*discover.NodeID, 0, len(pm.MyNodes))
-	for _, node := range pm.MyNodes {
-		theList = append(theList, node.NodeID)
-	}
-
-	return theList
-}
-
-func (pm *ProtocolManager) GetJoinKeyInfo(hash *common.Address) (*pkgservice.KeyInfo, error) {
-	keyInfo, err := pm.BaseProtocolManager.GetJoinKeyInfo(hash)
+func (pm *ProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*pkgservice.KeyInfo, error) {
+	keyInfo, err := pm.BaseProtocolManager.GetJoinKeyFromHash(hash)
 	if err == nil {
 		return keyInfo, nil
 	}
@@ -154,56 +141,4 @@ func (pm *ProtocolManager) GetJoinKeyInfo(hash *common.Address) (*pkgservice.Key
 	}
 
 	return keyInfo, nil
-}
-
-func (pm *ProtocolManager) IsValidInternalOplog(signInfos []*pkgservice.SignInfo) (*types.PttID, uint32, bool) {
-	pm.lockMyNodes.RLock()
-	defer pm.lockMyNodes.RUnlock()
-
-	weight := uint32(0)
-	var node *MyNode
-	for _, signInfo := range signInfos {
-		node = pm.MyNodeByNodeSignIDs[*signInfo.ID]
-		if node == nil {
-			continue
-		}
-		weight += node.Weight
-	}
-
-	masterOplogID := pm.GetNewestMasterLogID()
-
-	log.Debug("IsValidOplog", "weight", weight, "quorum", pm.Quorum(), "masterOplogID", masterOplogID)
-
-	isValid := weight >= pm.Quorum()
-	if !isValid {
-		return nil, 0, false
-	}
-
-	return masterOplogID, weight, weight >= pm.Quorum()
-}
-
-func (pm *ProtocolManager) IsValidOplog(signInfos []*pkgservice.SignInfo) (*types.PttID, uint32, bool) {
-	if len(signInfos) == 0 {
-		return nil, 0, false
-	}
-
-	return pm.GetNewestMasterLogID(), 1, true
-}
-
-func (pm *ProtocolManager) Quorum() uint32 {
-	return pm.totalWeight/2 + 1
-}
-
-func (pm *ProtocolManager) nodeTypeToWeight(nodeType pkgservice.NodeType) uint32 {
-
-	switch nodeType {
-	case pkgservice.NodeTypeServer:
-		return WeightServer
-	case pkgservice.NodeTypeDesktop:
-		return WeightDesktop
-	case pkgservice.NodeTypeMobile:
-		return WeightMobile
-	}
-
-	return 0
 }

@@ -46,13 +46,13 @@ const (
 	JoinFriendMsg
 
 	// me-oplog
-	AddMeOplogMsg //30
+	AddMeOplogMsg
 	AddMeOplogsMsg
 
 	AddPendingMeOplogMsg
 	AddPendingMeOplogsMsg
 
-	SyncMeOplogMsg
+	SyncMeOplogMsg // 47
 	SyncMeOplogAckMsg
 	SyncMeOplogNewOplogsMsg
 	SyncMeOplogNewOplogsAckMsg
@@ -62,7 +62,7 @@ const (
 
 	// raft
 
-	SendRaftMsgsMsg //40
+	SendRaftMsgsMsg // 53
 	RequestRaftLeadMsg
 
 	// init-me-info
@@ -117,8 +117,8 @@ const (
 
 // op-key
 var (
-	RenewOpKeySeconds  uint64 = 86400
-	ExpireOpKeySeconds uint64 = 259200
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
 )
 
 // sign-key
@@ -151,6 +151,10 @@ const (
 	OffsetMasterOplogRaftIdx = 12
 
 	SleepTimeMasterLock = 10
+)
+
+var (
+	MasterIDZeros = make([]byte, OffsetMasterOplogRaftIdx)
 )
 
 // raft

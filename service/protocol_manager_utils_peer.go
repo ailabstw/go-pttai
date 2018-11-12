@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
@@ -38,7 +39,8 @@ func (pm *BaseProtocolManager) NoMorePeers() chan struct{} {
 	return pm.noMorePeers
 }
 
-func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) error {
+func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (err error) {
+	log.Debug("RegisterPeer: start", "peer", peer, "peerType", peerType)
 	if peerType == PeerTypeRandom {
 		return nil
 	}
@@ -47,39 +49,84 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) er
 		return pm.RegisterPendingPeer(peer)
 	}
 
+	// We just primitively check the existence without lock
+	// to avoid the deadlock in chan.
+	// The consequence of entering race-condition is just doing sync multiple-times.
+	origPeer := pm.Peers().Peer(peer.GetID(), true)
+	if origPeer != nil {
+		return pm.Peers().Register(peer, peerType, false)
+	}
+	if !pm.isStart {
+		return nil
+	}
+
+	log.Debug("RegisterPeer: to newPeerCh", "peer", peer, "peerType", peerType)
+
 	select {
 	case pm.NewPeerCh() <- peer:
-		return pm.Peers().Register(peer, peerType, false)
+		err = pm.Peers().Register(peer, peerType, false)
 	case <-pm.NoMorePeers():
-		return p2p.DiscQuitting
+		err = p2p.DiscQuitting
 	}
+
+	log.Debug("RegisterPeer: after newPeerCh", "e", err, "peer", peer, "peerType", peerType)
+
+	return err
 }
 
 func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer) error {
 	return pm.peers.Register(peer, PeerTypePending, false)
 }
 
-func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isResetPeerType bool, isPttLocked bool) error {
+func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isForceReset bool, isForceNotReset bool, isPttLocked bool) error {
+
 	peerType := pm.GetPeerType(peer)
+
+	log.Debug("UnregisterPeer: to peers.Unregister", "peer", peer, "peerType", peerType)
+
 	err := pm.peers.Unregister(peer, false)
 	if err != nil {
 		return err
 	}
 
-	if peerType < peer.PeerType {
+	if isForceNotReset {
 		return nil
 	}
 
-	if !isResetPeerType {
+	if !isForceReset && peerType < peer.PeerType {
 		return nil
 	}
 
-	pm.Ptt().FinishIdentifyPeer(peer, isPttLocked, true)
+	pm.Ptt().FinishIdentifyPeer(peer, isPttLocked, isForceReset)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) UnregisterPeerByOtherUserID(id *types.PttID, isResetPeerType bool, isPttLocked bool) error {
+
+	peer, peerType, err := pm.peers.UnregisterPeerByOtherUserID(id, false)
+	if err != nil {
+		return err
+	}
+
+	if peer == nil {
+		return nil
+	}
+
+	if !isResetPeerType && peerType < peer.PeerType {
+		return nil
+	}
+
+	pm.Ptt().FinishIdentifyPeer(peer, isPttLocked, isResetPeerType)
 
 	return nil
 }
 
 func (pm *BaseProtocolManager) GetPeerType(peer *PttPeer) PeerType {
+	return pm.getPeerType(peer)
+}
+
+func (pm *BaseProtocolManager) defaultGetPeerType(peer *PttPeer) PeerType {
 	switch {
 	case peer.PeerType == PeerTypeMe:
 		return PeerTypeMe
@@ -93,35 +140,47 @@ func (pm *BaseProtocolManager) GetPeerType(peer *PttPeer) PeerType {
 	return PeerTypeRandom
 }
 
-func (pm *BaseProtocolManager) CountPeers() (int, error) {
-	pm.peers.RLock()
-	defer pm.peers.RUnlock()
-
-	peerList := pm.peers.PeerList(true)
-	pendingPeerList := pm.peers.PendingPeerList(true)
-	return len(peerList) + len(pendingPeerList), nil
-}
-
-func (pm *BaseProtocolManager) GetPeers() ([]*PttPeer, error) {
-	pm.peers.RLock()
-	defer pm.peers.RUnlock()
-
-	peerList := pm.peers.PeerList(true)
-	pendingPeerList := pm.peers.PendingPeerList(true)
-	return append(peerList, pendingPeerList...), nil
-}
-
 func (pm *BaseProtocolManager) IsMyDevice(peer *PttPeer) bool {
-	return pm.Entity().PM().IsMyDevice(peer)
+	return pm.isMyDevice(peer)
 }
+func (pm *BaseProtocolManager) defaultIsMyDevice(peer *PttPeer) bool {
+	return peer.PeerType == PeerTypeMe
+}
+
 func (pm *BaseProtocolManager) IsImportantPeer(peer *PttPeer) bool {
-	return pm.Entity().PM().IsImportantPeer(peer)
+	return pm.isImportantPeer(peer)
 }
+
+func (pm *BaseProtocolManager) defaultIsImportantPeer(peer *PttPeer) bool {
+	if peer.UserID == nil {
+		return false
+	}
+
+	return pm.isMaster(peer.UserID, false)
+}
+
 func (pm *BaseProtocolManager) IsMemberPeer(peer *PttPeer) bool {
-	return pm.Entity().PM().IsMemberPeer(peer)
+	return pm.isMemberPeer(peer)
 }
+
+func (pm *BaseProtocolManager) defaultIsMemberPeer(peer *PttPeer) bool {
+	if peer.UserID == nil {
+		return false
+	}
+
+	return pm.IsMember(peer.UserID, false)
+}
+
 func (pm *BaseProtocolManager) IsPendingPeer(peer *PttPeer) bool {
-	return pm.Entity().PM().IsPendingPeer(peer)
+	return pm.isPendingPeer(peer)
+}
+
+func (pm *BaseProtocolManager) defaultIsPendingPeer(peer *PttPeer) bool {
+	if peer.UserID == nil {
+		return false
+	}
+
+	return pm.IsPendingMember(peer.UserID, false)
 }
 
 func (pm *BaseProtocolManager) IsSuspiciousID(id *types.PttID, nodeID *discover.NodeID) bool {
@@ -130,4 +189,34 @@ func (pm *BaseProtocolManager) IsSuspiciousID(id *types.PttID, nodeID *discover.
 
 func (pm *BaseProtocolManager) IsGoodID(id *types.PttID, nodeID *discover.NodeID) bool {
 	return true
+}
+
+func (pm *BaseProtocolManager) BECountPeers() (int, error) {
+	pm.peers.RLock()
+	defer pm.peers.RUnlock()
+
+	peerList := pm.peers.PeerList(true)
+	pendingPeerList := pm.peers.PendingPeerList(true)
+	return len(peerList) + len(pendingPeerList), nil
+}
+
+func (pm *BaseProtocolManager) BEGetPeers() ([]*PttPeer, error) {
+	pm.peers.RLock()
+	defer pm.peers.RUnlock()
+
+	peerList := pm.peers.PeerList(true)
+	pendingPeerList := pm.peers.PendingPeerList(true)
+	return append(peerList, pendingPeerList...), nil
+}
+
+func (pm *BaseProtocolManager) CleanPeers() {
+	peerList := pm.Peers().PeerList(false)
+	for _, peer := range peerList {
+		pm.UnregisterPeer(peer, false, false, false)
+	}
+
+	pendingPeerList := pm.Peers().PendingPeerList(false)
+	for _, peer := range pendingPeerList {
+		pm.UnregisterPeer(peer, false, false, false)
+	}
 }

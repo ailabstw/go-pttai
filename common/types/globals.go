@@ -64,7 +64,8 @@ var (
 	EmptyIDBytes = EmptyID[:]
 	quoteBytes   = []byte{'"'}
 
-	ZeroTimestamp = Timestamp{}
+	ZeroTimestamp = Timestamp{0, 0}
+
 	//                       12345678901234567  123456789
 	MaxTimestamp = Timestamp{99999999999999999, 999999999}
 	pttIDDataDir = ""

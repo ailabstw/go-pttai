@@ -54,6 +54,8 @@ type Ptt interface {
 	RegisterEntity(e Entity, isLocked bool, isPeerLock bool) error
 	UnregisterEntity(e Entity, isLocked bool) error
 
+	RegisterEntityPeerWithOtherUserID(e Entity, id *types.PttID, peerType PeerType, isLocked bool) error
+
 	// join
 
 	AddJoinKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
@@ -73,6 +75,7 @@ type Ptt interface {
 	// me
 
 	GetMyEntity() MyEntity
+	GetMyService() Service
 
 	// data
 
@@ -102,6 +105,8 @@ type MyPtt interface {
 	// SetPeerType
 
 	SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error
+
+	GetEntities() map[types.PttID]Entity
 }
 
 type BasePtt struct {
@@ -173,6 +178,7 @@ type BasePtt struct {
 	myRaftID   uint64
 	myNodeType NodeType
 	myNodeKey  *ecdsa.PrivateKey
+	myService  Service
 }
 
 func NewPtt(ctx *ServiceContext, cfg *Config, myNodeID *discover.NodeID, myNodeKey *ecdsa.PrivateKey) (*BasePtt, error) {
@@ -248,6 +254,24 @@ func (p *BasePtt) Protocols() []p2p.Protocol {
 
 func (p *BasePtt) APIs() []rpc.API {
 	return p.apis
+}
+
+func (p *BasePtt) Prestart() error {
+	var err error
+	errMap := make(map[string]error)
+	for name, service := range p.services {
+		err = service.Prestart()
+		if err != nil {
+			errMap[name] = err
+			break
+		}
+	}
+
+	if len(errMap) != 0 {
+		return errMapToErr(errMap)
+	}
+
+	return nil
 }
 
 func (p *BasePtt) Start(server *p2p.Server) error {

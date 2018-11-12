@@ -54,16 +54,23 @@ func (spm *ServiceProtocolManager) CreateMe(myID *types.PttID, myKey *ecdsa.Priv
 }
 
 func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
+	log.Debug("CreateFullMe: start")
 	myInfo := pm.Entity().(*MyInfo)
 	ptt := pm.myPtt
 
-	// create-me-oplog
 	err := myInfo.Lock()
 	if err != nil {
 		return err
 	}
 	defer myInfo.Unlock()
 
+	// masterLog0Hash
+	err = pm.SetMasterLog0Hash(oplog.Hash)
+	if err != nil {
+		return err
+	}
+
+	// create-me-oplog
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -81,6 +88,16 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	}
 
 	meOplog, err := pm.CreateMeOplog(myID, oplog.UpdateTS, MeOpTypeCreateMe, opData)
+	if err != nil {
+		return err
+	}
+	pm.SetOplog0(meOplog.BaseOplog)
+
+	// create profile
+	backend := myInfo.Service().(*Backend)
+
+	err = pm.CreateMyProfile(backend.accountBackend)
+	log.Debug("CreateFullMe: after CreateMyProfile", "e", err)
 	if err != nil {
 		return err
 	}
@@ -110,8 +127,8 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	meOplog.Save(false)
 
 	// op-key
-	if len(pm.OpKeyInfos()) == 0 {
-		pm.CreateOpKeyInfo()
+	if len(pm.OpKeys()) == 0 {
+		pm.CreateOpKey()
 		if err != nil {
 			return err
 		}

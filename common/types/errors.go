@@ -36,6 +36,10 @@ var (
 
 	ErrAlreadyDeleted = errors.New("already deleted")
 
+	ErrAlreadyPending = errors.New("already pending")
+
+	ErrAlreadyPendingDelete = errors.New("already pending delete")
+
 	ErrInvalidNode = errors.New("invalid node")
 
 	ErrNotImplemented = errors.New("not implemented")

@@ -56,12 +56,12 @@ func (pm *BaseProtocolManager) NewOpKeyOplogWithTS(keyID *types.PttID, ts types.
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entityID := pm.Entity().GetID()
 
-	return NewOpKeyOplog(keyID, ts, myID, op, opData, pm.DBOpKeyInfo(), entityID, pm.DBOpKeyLock())
+	return NewOpKeyOplog(keyID, ts, myID, op, opData, pm.DBOpKey(), entityID, pm.dbOpKeyLock)
 }
 
 func (pm *BaseProtocolManager) SetOpKeyDB(oplog *BaseOplog) {
 	entityID := pm.Entity().GetID()
-	oplog.SetDB(pm.DBOpKeyInfo(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, nil, pm.dbOpKeyLock)
+	oplog.SetDB(pm.DBOpKey(), entityID, DBOpKeyOplogPrefix, DBOpKeyIdxOplogPrefix, nil, pm.dbOpKeyLock)
 }
 
 func OplogsToOpKeyOplogs(oplogs []*BaseOplog) []*OpKeyOplog {

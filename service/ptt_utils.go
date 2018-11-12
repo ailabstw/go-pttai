@@ -171,6 +171,34 @@ func (p *BasePtt) MarshalData(code CodeType, hash *common.Address, encData []byt
 }
 
 /*
+MarshalData marshals the encrypted data based on ptt-protocol.
+	hash: entity-hash
+	enc: encrypted-data
+The purpose is to have checksum to ensure that the data is not randomly-modified (preventing machine-error)
+*/
+func (p *BasePtt) MarshalDataWithoutHash(code CodeType, encData []byte) (*PttData, error) {
+	// 2. forms pttEvent
+	ev := &PttEventData{
+		Code:    code,
+		EncData: encData,
+	}
+
+	// ptt-event signed
+	evWithSalt, checksum, err := p.checksumPttEventData(ev)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PttData{
+		Code:       code,
+		Hash:       nil,
+		EvWithSalt: evWithSalt,
+		Checksum:   checksum,
+		Relay:      0,
+	}, nil
+}
+
+/*
 ChecksumPttEventData do checksum on the ev
 
 Return: bytesWithSalt, checksum, error
@@ -254,10 +282,11 @@ func (p *BasePtt) SendDataToPeer(code CodeType, data interface{}, peer *PttPeer)
 		return err
 	}
 
-	pttData, err := p.MarshalData(code, nil, marshaledData)
+	pttData, err := p.MarshalDataWithoutHash(code, marshaledData)
 	if err != nil {
 		return err
 	}
+	pttData.Node = peer.GetID()[:]
 
 	return peer.SendData(pttData)
 }

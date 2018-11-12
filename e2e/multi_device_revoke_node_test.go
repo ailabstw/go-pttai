@@ -203,9 +203,9 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	testCore(t0, bodyString, &dummyBool, t, isDebug)
 	assert.Equal(true, dummyBool)
 
-	// wait 5 seconds
+	// wait 10 seconds
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// 11. get my nodes
 	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
@@ -224,7 +224,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 		Result []*me.MyNode `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetMyNodes1_11, t, isDebug)
-	assert.Equal(0, len(dataGetMyNodes1_11.Result))
+	assert.Equal(1, len(dataGetMyNodes1_11.Result))
 
 	// 12. getPeers
 	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`

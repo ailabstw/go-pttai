@@ -37,6 +37,8 @@ var (
 
 	ErrMsgTooLarge = errors.New("msg too large")
 
+	ErrInvalidMaster0 = errors.New("invalid master0")
+
 	ErrServiceUnknown = errors.New("service unknown")
 
 	ErrInvalidMsgCode = errors.New("invalid msg code")
@@ -57,6 +59,7 @@ var (
 	ErrOplogAlreadyExists = errors.New("oplog already exists")
 	ErrSkipOplog          = errors.New("skip oplog")
 	ErrNewerOplog         = errors.New("newer oplog")
+	ErrInvalidPreLog      = errors.New("invalid pre-log")
 
 	ErrInvalidKeyInfo = errors.New("invalid key info")
 
@@ -73,6 +76,8 @@ var (
 	ErrAlreadyMyNode = errors.New("already my node")
 
 	ErrInvalidSyncInfo = errors.New("invalid sync info")
+
+	ErrTooManyMasters = errors.New("too many masters")
 )
 
 func ErrResp(code error, format string, v ...interface{}) error {

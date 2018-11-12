@@ -44,6 +44,31 @@ const (
 	NCodeType
 )
 
+var codeTypeStr = map[CodeType]string{
+	CodeTypeInvalid:      "invalid",
+	CodeTypeStatus:       "status",
+	CodeTypeJoin:         "join",
+	CodeTypeJoinAck:      "join-ack",
+	CodeTypeOp:           "op",
+	CodeTypeOpAck:        "op-ack",
+	CodeTypeOpFail:       "fail",
+	CodeTypeRequestOp:    "request-op",
+	CodeTypeRequestOpAck: "request-op-ack",
+
+	CodeTypeIdentifyPeer:     "identify-peer",
+	CodeTypeIdentifyPeerAck:  "identify-peer-ack",
+	CodeTypeIdentifyPeerFail: "identify-peer-fail",
+
+	CodeTypeIdentifyPeerWithMyID:             "identify-peer-with-my-id",
+	CodeTypeIdentifyPeerWithMyIDChallenge:    "identify-peer-with-my-id-challenge",
+	CodeTypeIdentifyPeerWithMyIDChallengeAck: "identify-peer-with-my-id-challenge-ack",
+	CodeTypeIdentifyPeerWithMyIDAck:          "identify-peer-with-my-id-ack",
+}
+
+func (c CodeType) String() string {
+	return codeTypeStr[c]
+}
+
 func MarshalCode(code CodeType) ([]byte, error) {
 	codeBytes := make([]byte, SizeCodeType)
 	binary.BigEndian.PutUint64(codeBytes, uint64(code))

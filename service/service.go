@@ -25,6 +25,10 @@ type Service interface {
 	APIs() []rpc.API
 
 	// Start is called after all services have been constructed and the networking
+	// layer was not initialized yet.
+	Prestart() error
+
+	// Start is called after all services have been constructed and the networking
 	// layer was also initialized to spawn any goroutines required by the service.
 	Start() error
 
@@ -37,6 +41,10 @@ type Service interface {
 	Name() string
 
 	Ptt() Ptt
+}
+
+type MyService interface {
+	Service
 }
 
 /*
@@ -53,6 +61,10 @@ func NewBaseService(ptt Ptt, spm ServiceProtocolManager) (*BaseService, error) {
 
 func (svc *BaseService) APIs() []rpc.API {
 	return nil
+}
+
+func (svc *BaseService) Prestart() error {
+	return svc.SPM().Prestart()
 }
 
 func (svc *BaseService) Start() error {

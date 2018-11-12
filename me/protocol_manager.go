@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/event"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/ailabstw/go-pttai/raft"
 	pb "github.com/ailabstw/go-pttai/raft/raftpb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -42,9 +43,6 @@ type ProtocolManager struct {
 	joinFriendRequests    map[common.Address]*pkgservice.JoinRequest
 	joinFriendSub         *event.TypeMuxSubscription
 
-	// merkle
-	meOplogMerkle *pkgservice.Merkle
-
 	// my-nodes
 	lockJoinMeRequest sync.RWMutex
 	joinMeRequests    map[common.Address]*pkgservice.JoinRequest
@@ -55,9 +53,12 @@ type ProtocolManager struct {
 	MyNodeByNodeSignIDs map[types.PttID]*MyNode
 	totalWeight         uint32
 
-	// dbLock
-	dbMeLock     *types.LockMap
+	// master-oplog
 	dbMasterLock *types.LockMap
+
+	// me-oplog
+	dbMeLock      *types.LockMap
+	meOplogMerkle *pkgservice.Merkle
 
 	// raft
 	raftProposeC         chan string
@@ -106,6 +107,8 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		return nil, err
 	}
 
+	log.Debug("NewProtocolManager: start", "myInfo", myInfo.GetID())
+
 	pm := &ProtocolManager{
 		myPtt: ptt,
 
@@ -130,12 +133,25 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		raftErrorC:           make(chan error),
 	}
 
-	b, err := pkgservice.NewBaseProtocolManager(ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, pm.IsValidOplog, pm.IsMaster, myInfo, dbMe)
+	b, err := pkgservice.NewBaseProtocolManager(
+		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds,
+		pm.InternalSignMyOplog, pm.IsValidMyOplog, pm.ValidateIntegrateSignMyOplog, pm.SetMeDB,
+		pm.IsMaster, pm.IsMember, pm.GetPeerType, pm.IsMyDevice, pm.IsImportantPeer, pm.IsMemberPeer, pm.IsPendingPeer,
+		nil,
+		nil,
+		myInfo, dbMe)
 	if err != nil {
 		return nil, err
 	}
 	pm.BaseProtocolManager = b
 
+	// master-log
+	masterLogs, err := pm.GetMasterOplogList(nil, 1, pttdb.ListOrderNext, types.StatusAlive)
+	if len(masterLogs) == 1 {
+		pm.SetMasterLog0Hash(masterLogs[0].Hash)
+	}
+
+	// load-my-nodes
 	err = pm.LoadMyNodes()
 	if err != nil {
 		log.Error("NewProtocolManager: unable to LoadMyNodes", "e", err)
@@ -153,7 +169,7 @@ func (pm *ProtocolManager) Start() error {
 	log.Debug("Start: start", "me", myInfo.GetID())
 	err := pm.BaseProtocolManager.Start()
 	if err != nil {
-		log.Debug("Start: unable to start BaseProtocolManager", "e", err)
+		log.Error("Start: unable to start BaseProtocolManager", "e", err)
 		return err
 	}
 
@@ -166,7 +182,7 @@ func (pm *ProtocolManager) Start() error {
 	switch myInfo.Status {
 	case types.StatusInit:
 	case types.StatusInternalPending:
-	case types.StatusInternalSync:
+	case types.StatusSync:
 		go pm.StartRaft(nil, true)
 	case types.StatusPending:
 		weight := pm.nodeTypeToWeight(myNodeType)
@@ -180,7 +196,7 @@ func (pm *ProtocolManager) Start() error {
 	pm.joinMeSub = pm.EventMux().Subscribe(&JoinMeEvent{})
 	go pm.JoinMeLoop()
 
-	go pm.CreateJoinKeyInfoLoop()
+	go pm.CreateJoinKeyLoop()
 	go pm.SyncJoinMeLoop()
 
 	// oplog-merkle-tree
@@ -197,6 +213,9 @@ func (pm *ProtocolManager) Start() error {
 
 func (pm *ProtocolManager) Stop() error {
 	pm.BaseProtocolManager.PreStop()
+	if !pm.IsStart() {
+		return nil
+	}
 
 	pm.StopRaft()
 
@@ -230,8 +249,4 @@ func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinTyp
 	}
 
 	return pkgservice.JoinTypeInvalid, pkgservice.ErrInvalidData
-}
-
-func (pm *ProtocolManager) IsMaster(id *types.PttID) bool {
-	return true
 }

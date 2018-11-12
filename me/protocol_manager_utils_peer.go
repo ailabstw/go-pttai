@@ -28,10 +28,6 @@ func (pm *ProtocolManager) GetPeerType(peer *pkgservice.PttPeer) pkgservice.Peer
 	switch {
 	case pm.IsMyDevice(peer):
 		return pkgservice.PeerTypeMe
-	case pm.IsImportantPeer(peer):
-		return pkgservice.PeerTypeImportant
-	case pm.IsMemberPeer(peer):
-		return pkgservice.PeerTypeMember
 	case pm.IsPendingPeer(peer):
 		return pkgservice.PeerTypePending
 	}
@@ -39,7 +35,6 @@ func (pm *ProtocolManager) GetPeerType(peer *pkgservice.PttPeer) pkgservice.Peer
 }
 
 func (pm *ProtocolManager) IsMyDevice(peer *pkgservice.PttPeer) bool {
-	log.Debug("IsMyDevice: start")
 	//pm.LockMyNodes.RLock()
 	//defer pm.LockMyNodes.RUnlock()
 
@@ -51,24 +46,29 @@ func (pm *ProtocolManager) IsMyDevice(peer *pkgservice.PttPeer) bool {
 
 	myNode, ok := pm.MyNodes[raftID]
 	if !ok {
-		log.Debug("IsMyDevice: not my device")
-
 		return false
 	}
 
-	myID := pm.Entity().GetID()
+	log.Debug("IsMyDevice: to check status", "myNode.Status", myNode.Status)
 
-	if !reflect.DeepEqual(peer.UserID, myID) {
+	if myNode.Status < types.StatusSync {
 		return false
 	}
 
-	log.Debug("IsMyDevice: done", "myNode", myNode.Status)
+	myIDs := pm.Entity().GetOwnerIDs()
 
-	if myNode.Status != types.StatusAlive {
-		return false
+	log.Debug("IsMyDevice: to check ownerIDs", "myIDs", myIDs)
+
+	for _, myID := range myIDs {
+
+		log.Debug("IsMyDevice: to check ownerID", "myID", myID, "userID", peer.UserID)
+
+		if reflect.DeepEqual(peer.UserID, myID) {
+			return true
+		}
 	}
 
-	return true
+	return false
 }
 
 func (pm *ProtocolManager) IsImportantPeer(peer *pkgservice.PttPeer) bool {
@@ -80,7 +80,6 @@ func (pm *ProtocolManager) IsMemberPeer(peer *pkgservice.PttPeer) bool {
 }
 
 func (pm *ProtocolManager) IsPendingPeer(peer *pkgservice.PttPeer) bool {
-	log.Debug("IsPendingPeer: start")
 	peerID := peer.GetID()
 	raftID, err := peerID.ToRaftID()
 	if err != nil {
@@ -98,28 +97,15 @@ func (pm *ProtocolManager) IsPendingPeer(peer *pkgservice.PttPeer) bool {
 		return false
 	}
 
-	log.Debug("IsPendingPeer: done", "peer", peer, "myNode", myNode.Status)
-
-	return myNode.Status < types.StatusAlive
-}
-
-func (pm *ProtocolManager) IsFitPeer(peer *pkgservice.PttPeer) pkgservice.PeerType {
-	if pm.IsMyDevice(peer) {
-		return pkgservice.PeerTypeMe
-	}
-	if pm.IsPendingPeer(peer) {
-		return pkgservice.PeerTypePending
-	}
-
-	return pkgservice.PeerTypeRandom
+	return myNode.Status < types.StatusSync
 }
 
 func (pm *ProtocolManager) RegisterPeer(peer *pkgservice.PttPeer, peerType pkgservice.PeerType) error {
+
+	log.Debug("RegisterPeer: start", "peer", peer, "userID", peer.UserID, "peerType", peerType)
 	pm.BaseProtocolManager.RegisterPeer(peer, peerType)
 
 	pm.postRegisterPeer(peer)
-
-	log.Debug("RegisterPeer: done", "peer", peer)
 
 	return nil
 }
@@ -127,11 +113,7 @@ func (pm *ProtocolManager) RegisterPeer(peer *pkgservice.PttPeer, peerType pkgse
 func (pm *ProtocolManager) RegisterPendingPeer(peer *pkgservice.PttPeer) error {
 	pm.BaseProtocolManager.RegisterPendingPeer(peer)
 
-	log.Debug("RegisterPendingPeer: to postRegisterPeer", "peer", peer)
-
 	pm.postRegisterPeer(peer)
-
-	log.Debug("RegisterPendingPeer: done", "peer", peer)
 
 	return nil
 }

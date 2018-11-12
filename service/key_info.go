@@ -28,14 +28,6 @@ import (
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
-type SyncKeyInfo struct {
-	*BaseSyncInfo `json:"b"`
-}
-
-func EmptySyncKeyInfo() *SyncKeyInfo {
-	return &SyncKeyInfo{BaseSyncInfo: &BaseSyncInfo{}}
-}
-
 // KeyInfo
 type KeyInfo struct {
 	*BaseObject `json:"b"`
@@ -50,9 +42,9 @@ type KeyInfo struct {
 
 	Extra *KeyExtraInfo `json:"e,omitempty"`
 
-	SyncInfo *SyncKeyInfo `json:"s,omitempty"`
+	SyncInfo *BaseSyncInfo `json:"s,omitempty"`
 
-	CreateLogID *types.PttID `json:"cl,omitempty"`
+	CreateLogID *types.PttID `json:"c,omitempty"`
 
 	Count int `json:"-"`
 }
@@ -67,16 +59,16 @@ func NewJoinKeyInfo(entityID *types.PttID) (*KeyInfo, error) {
 		return nil, err
 	}
 
-	return newKeyInfo(extendedKey, nil, entityID, nil, nil, nil)
+	return newKeyInfo(extendedKey, nil, entityID, nil, nil, nil, nil, nil)
 }
 
-func NewOpKeyInfo(entityID *types.PttID, doerID *types.PttID, masterKey *ecdsa.PrivateKey, db *pttdb.LDBBatch, dbLock *types.LockMap) (*KeyInfo, error) {
+func NewOpKeyInfo(entityID *types.PttID, doerID *types.PttID, masterKey *ecdsa.PrivateKey, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error) {
 	key, extra, err := deriveOpKey(masterKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return newKeyInfo(key, extra, entityID, doerID, db, dbLock)
+	return newKeyInfo(key, extra, entityID, doerID, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
 }
 
 func NewSignKeyInfo(doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo, error) {
@@ -84,14 +76,10 @@ func NewSignKeyInfo(doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo,
 	if err != nil {
 		return nil, err
 	}
-	return newKeyInfo(key, extra, nil, doerID, nil, nil)
+	return newKeyInfo(key, extra, nil, doerID, nil, nil, nil, nil)
 }
 
-func NewEmptyKeyInfo() *KeyInfo {
-	return &KeyInfo{BaseObject: &BaseObject{}}
-}
-
-func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *types.PttID, doerID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap) (*KeyInfo, error) {
+func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *types.PttID, doerID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error) {
 
 	key, err := extendedKey.ToPrivkey()
 	if err != nil {
@@ -113,7 +101,7 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 	id := keyInfoHashToID(&hash)
 
 	return &KeyInfo{
-		BaseObject: NewObject(id, ts, doerID, doerID, entityID, nil, types.StatusInvalid, db, dbLock),
+		BaseObject: NewObject(id, ts, doerID, entityID, nil, types.StatusInvalid, db, dbLock, fullDBPrefix, fullDBIdxPrefix),
 
 		Hash:        &hash,
 		Key:         key,
@@ -182,8 +170,8 @@ func deriveKeyBIP32(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraI
 	return extendedKey, extra, nil
 }
 
-func (k *KeyInfo) Init(db *pttdb.LDBBatch, dbLock *types.LockMap) error {
-	k.SetDB(db, dbLock, DBOpKeyPrefix)
+func (k *KeyInfo) Init(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte) error {
+	k.SetDB(db, dbLock, entityID, fullDBPrefix, fullDBIdxPrefix)
 	key, err := crypto.ToECDSA(k.KeyBytes)
 	if err != nil {
 		return err
@@ -234,7 +222,7 @@ func (k *KeyInfo) Save(isLocked bool) error {
 		&pttdb.KeyVal{K: key, V: marshaled},
 	}
 
-	log.Debug("Save: to PutAll", "idxKey", idxKey, "idx", idx, "key", key, "marshaled", marshaled)
+	log.Debug("KeyInfo: to Save", "idxKey", idxKey)
 
 	_, err = k.db.TryPutAll(idxKey, idx, kvs, true, false)
 	if err != nil {
@@ -244,33 +232,13 @@ func (k *KeyInfo) Save(isLocked bool) error {
 	return nil
 }
 
-func (k *KeyInfo) GetByID(isLocked bool) error {
-	var err error
+func (k *KeyInfo) NewEmptyObj() Object {
+	return &KeyInfo{BaseObject: &BaseObject{EntityID: k.EntityID, db: k.db, dbLock: k.dbLock, fullDBPrefix: k.fullDBPrefix}}
 
-	if !isLocked {
-		err = k.RLock()
-		if err != nil {
-			return err
-		}
-		defer k.RUnlock()
-	}
-
-	idxKey, err := k.IdxKey()
-	if err != nil {
-		return err
-	}
-
-	val, err := k.db.GetByIdxKey(idxKey, 0)
-	if err != nil {
-		return err
-	}
-
-	return k.Unmarshal(val)
 }
 
 func (k *KeyInfo) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {
-	newK := &KeyInfo{BaseObject: &BaseObject{ID: id, EntityID: k.EntityID, db: k.db, dbLock: k.dbLock}}
-
+	newK := k.NewEmptyObj()
 	err := newK.GetByID(isLocked)
 	if err != nil {
 		return nil, err
@@ -286,42 +254,15 @@ func (k *KeyInfo) GetUpdateTS() types.Timestamp {
 	return k.UpdateTS
 }
 
-func (k *KeyInfo) Delete(isLocked bool) error {
+func (k *KeyInfo) GetByID(isLocked bool) error {
 	var err error
 
-	log.Debug("Delete: start")
-
-	if !isLocked {
-		err = k.Lock()
-		if err != nil {
-			return err
-		}
-		defer k.Unlock()
-	}
-
-	idxKey, err := k.IdxKey()
+	val, err := k.GetValueByID(isLocked)
 	if err != nil {
 		return err
 	}
 
-	err = k.db.DeleteAll(idxKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (k *KeyInfo) IdxPrefix() []byte {
-	return append(DBOpKeyIdxPrefix, k.EntityID[:]...)
-}
-
-func (k *KeyInfo) IdxKey() ([]byte, error) {
-	return common.Concat([][]byte{DBOpKeyIdxPrefix, k.EntityID[:], k.ID[:]})
-}
-
-func (k *KeyInfo) DBPrefix() []byte {
-	return append(DBOpKeyPrefix, k.EntityID[:]...)
+	return k.Unmarshal(val)
 }
 
 func (k *KeyInfo) MarshalKey() ([]byte, error) {
@@ -329,55 +270,7 @@ func (k *KeyInfo) MarshalKey() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return common.Concat([][]byte{DBOpKeyPrefix, k.EntityID[:], marshalTimestamp, k.ID[:]})
-}
-
-func (k *KeyInfo) KeyToIdxKey(key []byte) ([]byte, error) {
-
-	lenKey := len(key)
-	if lenKey != pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizeTimestamp+types.SizePttID {
-		return nil, ErrInvalidKey
-	}
-
-	idxKey := make([]byte, pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizePttID)
-
-	// prefix
-	idxOffset := 0
-	nextIdxOffset := pttdb.SizeDBKeyPrefix
-	copy(idxKey[:nextIdxOffset], DBOpKeyIdxPrefix)
-
-	// entity-id
-	idxOffset = nextIdxOffset
-	nextIdxOffset += types.SizePttID
-
-	keyOffset := pttdb.SizeDBKeyPrefix
-	nextKeyOffset := keyOffset + types.SizePttID
-	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
-
-	// id
-	idxOffset = nextIdxOffset
-	nextIdxOffset += types.SizePttID
-
-	keyOffset = lenKey - types.SizePttID
-	nextKeyOffset = lenKey
-	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
-
-	return idxKey, nil
-}
-
-func (k *KeyInfo) DeleteKey(key []byte) error {
-	idxKey, err := k.KeyToIdxKey(key)
-	if err != nil {
-		return err
-	}
-
-	err = k.db.DeleteAll(idxKey)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return common.Concat([][]byte{k.fullDBPrefix, marshalTimestamp, k.ID[:]})
 }
 
 func (k *KeyInfo) Marshal() ([]byte, error) {
@@ -398,6 +291,39 @@ func (k *KeyInfo) Unmarshal(data []byte) error {
 
 		k.PubKeyBytes = crypto.FromECDSAPub(&k.Key.PublicKey)
 	}
+
+	return nil
+}
+
+/**********
+ * Block Info
+ **********/
+
+/*
+GetBlockInfo implements Object method
+*/
+func (k *KeyInfo) GetBlockInfo() BlockInfo {
+	return nil
+}
+
+/**********
+ * Sync Info
+ **********/
+
+func (k *KeyInfo) GetSyncInfo() SyncInfo {
+	if k.SyncInfo == nil {
+		return nil
+	}
+	return k.SyncInfo
+}
+
+func (k *KeyInfo) SetSyncInfo(theSyncInfo SyncInfo) error {
+	syncInfo, ok := theSyncInfo.(*BaseSyncInfo)
+	if !ok {
+		return ErrInvalidSyncInfo
+	}
+
+	k.SyncInfo = syncInfo
 
 	return nil
 }

@@ -25,14 +25,17 @@ import (
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type InitMeInfoSync struct {
-	KeyBytes     []byte            `json:"K"`
-	PostfixBytes []byte            `json:"P"`
-	UserName     *account.UserName `json:"U"`
-	UserImg      *account.UserImg  `json:"I"`
+	KeyBytes     []byte                        `json:"K"`
+	PostfixBytes []byte                        `json:"P"`
+	Oplog0       *pkgservice.BaseOplog         `json:"O"`
+	ProfileData  *pkgservice.ApproveJoinEntity `json:"p"`
+}
+
+func NewEmptyApproveJoinProfile() *pkgservice.ApproveJoinEntity {
+	return &pkgservice.ApproveJoinEntity{Entity: account.NewEmptyProfile()}
 }
 
 func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
@@ -51,37 +54,33 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 		return nil
 	}
 
+	// oplog0
+	oplog0 := pm.GetOplog0()
+
 	// private-key
 	keyBytes := crypto.FromECDSA(myInfo.GetMyKey())
 
-	// user-name
-	userName := &account.UserName{}
-	err = userName.Get(myID, true)
-	if err == leveldb.ErrNotFound {
-		err = nil
-		userName = nil
-	}
-	if err != nil {
-		return err
-	}
+	// profile
+	myEntity := pm.Entity().(*MyInfo)
+	profile := myEntity.Profile
+	profilePM := profile.PM()
 
-	// user-img
-	userImg := &account.UserImg{}
-	err = userImg.Get(myID, true)
-	if err == leveldb.ErrNotFound {
-		err = nil
-		userImg = nil
-	}
+	joinEntity := &pkgservice.JoinEntity{ID: myID}
+	_, theProfileData, err := profilePM.ApproveJoin(joinEntity, nil, peer)
 	if err != nil {
 		return err
+	}
+	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return pkgservice.ErrInvalidData
 	}
 
 	// send-data-to-peer
 	data := &InitMeInfoSync{
 		KeyBytes:     keyBytes,
 		PostfixBytes: myID[common.AddressLength:],
-		UserName:     userName,
-		UserImg:      userImg,
+		Oplog0:       oplog0,
+		ProfileData:  profileData,
 	}
 
 	err = pm.SendDataToPeer(InitMeInfoSyncMsg, data, peer)
@@ -105,7 +104,8 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	}
 	defer myInfo.Unlock()
 
-	data := &InitMeInfoSync{}
+	profileData := NewEmptyApproveJoinProfile()
+	data := &InitMeInfoSync{ProfileData: profileData}
 	err = json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
@@ -114,6 +114,7 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	// migrate origin-me
 	origMe := pm.Ptt().GetMyEntity().(*MyInfo)
 	err = origMe.PM().(*ProtocolManager).MigrateMe(myInfo)
+	log.Debug("HandleInitMeInfoSync: after MigrateMe", "e", err)
 	if err != nil {
 		return err
 	}
@@ -124,32 +125,29 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 		return err
 	}
 
-	// userName
-	userName := data.UserName
-	if userName != nil {
-		err = userName.Save(true)
-		if err != nil {
-			return err
-		}
-	}
+	// oplog0
+	oplog0 := data.Oplog0
+	log.Debug("HandleInitMeInfoSync: oplog0", "oplog0", oplog0)
+	pm.SetMeDB(oplog0)
+	oplog0.Save(false)
 
-	// userImg
-	userImg := data.UserImg
-	if userImg != nil {
-		err = userImg.Save(true)
-		if err != nil {
-			return err
-		}
+	// profile
+	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
+	_, err = profileSPM.CreateJoinEntity(data.ProfileData, peer, oplog0.ID, false)
+	if err != nil {
+		return err
 	}
 
 	// renew-me
 	cfg := pm.Entity().Service().(*Backend).Config
 	newKey, err := crypto.ToECDSA(data.KeyBytes)
 	err = renewMe(cfg, newKey, data.PostfixBytes)
+	log.Debug("HandleInitMeInfoSync: after renewMe", "e", err)
 	if err != nil {
 		return err
 	}
-	myInfo.Status = types.StatusInternalSync
+	myInfo.LogID = oplog0.ID
+	myInfo.Status = types.StatusSync
 	myInfo.UpdateTS = ts
 	err = myInfo.Save(true)
 	if err != nil {

@@ -57,6 +57,26 @@ func NewPttID() (*PttID, error) {
 }
 
 /*
+NewPttID generates new PttID.
+*/
+func NewPttIDWithPostifx(postfix []byte) (*PttID, error) {
+	p := &PttID{}
+
+	lenPostfix := len(postfix)
+	lenRand := SizePttID - lenPostfix
+	nRead, err := RandRead(p[:lenRand])
+	if err != nil {
+		return nil, err
+	}
+	if nRead != lenRand {
+		return nil, err
+	}
+	copy(p[lenRand:], postfix)
+
+	return p, nil
+}
+
+/*
 NewPttIDFromKey generates new PttID with the 1st part as the key-address and the 2nd part as random.
 */
 func NewPttIDFromKey(key *ecdsa.PrivateKey) (*PttID, error) {
@@ -118,6 +138,7 @@ func NewPttIDFromAddrPostfix(addr *common.Address, postfix []byte) (*PttID, erro
 NewPttIDWithRefID generates new PttID with the 1st part as the key-address and the 2nd part as the addr-part of refID.
 */
 func NewPttIDWithRefID(key *ecdsa.PrivateKey, refID *PttID) (*PttID, error) {
+
 	return NewPttIDFromKeyPostfix(key, refID[:common.AddressLength])
 }
 
@@ -129,6 +150,10 @@ func NewPttIDWithPubkeyAndRefID(key *ecdsa.PublicKey, refID *PttID) (*PttID, err
 }
 
 func UnmarshalTextPttID(b []byte) (*PttID, error) {
+	if len(b) == 0 {
+		return nil, nil
+	}
+
 	p := &PttID{}
 
 	err := p.UnmarshalText(b)

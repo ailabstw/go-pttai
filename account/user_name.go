@@ -88,7 +88,7 @@ func (u *UserName) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbAccount.TryPut(key, marshaled, u.UpdateTS)
+	_, err = dbAccountCore.TryPut(key, marshaled, u.UpdateTS)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (u *UserName) Get(id *types.PttID, isLocked bool) error {
 		return err
 	}
 
-	theBytes, err := dbAccount.Get(key)
+	theBytes, err := dbAccountCore.Get(key)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (u *UserName) Delete(id *types.PttID, isLocked bool) error {
 		return err
 	}
 
-	err = dbAccount.Delete(key)
+	err = dbAccountCore.Delete(key)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (u *UserName) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder
 		return nil, err
 	}
 	userNames := make([]*UserName, 0)
-	iter, err := dbAccount.NewIteratorWithPrefix(key, nil, listOrder)
+	iter, err := dbAccountCore.NewIteratorWithPrefix(key, nil, listOrder)
 	if err != nil {
 		return nil, err
 	}

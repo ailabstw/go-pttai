@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -29,39 +30,32 @@ type Object interface {
 	Save(isLocked bool) error
 	Delete(isLocked bool) error
 
+	NewEmptyObj() Object
+	GetBaseObject() *BaseObject
+
 	GetByID(isLocked bool) error
+	GetKey(id *types.PttID, isLocked bool) ([]byte, error)
 	GetNewObjByID(id *types.PttID, isLocked bool) (Object, error)
+	Unmarshal(theBytes []byte) error
 
 	SetUpdateTS(ts types.Timestamp)
 	GetUpdateTS() types.Timestamp
 
+	RemoveMeta()
+
 	// data
 	GetBlockInfo() BlockInfo
-	RemoveBlock(blockInfo BlockInfo, info ProcessInfo, isRemoveDB bool) error
-	RemoveMeta()
+	SetBlockInfo(blockInfo BlockInfo) error
 
 	// sync-info
 	GetSyncInfo() SyncInfo
 	SetSyncInfo(syncInfo SyncInfo) error
-	RemoveSyncInfo(oplog *BaseOplog, opData OpData, syncInfo SyncInfo, info ProcessInfo) error
-
-	// create
-
-	UpdateCreateInfo(oplog *BaseOplog, opData OpData, info ProcessInfo) error
-	UpdateCreateObject(obj Object) error
-
-	NewObjWithOplog(oplog *BaseOplog, opData OpData) error
-
-	// delete
-
-	UpdateDeleteInfo(oplog *BaseOplog, info ProcessInfo) error
-	SetPendingDeleteSyncInfo(oplog *BaseOplog) error
 
 	/**********
 	 * implemented in BaseObject
 	 **********/
 
-	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, dbPrefix []byte)
+	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte)
 	Lock() error
 	Unlock() error
 	RLock() error
@@ -105,16 +99,16 @@ type BaseObject struct {
 
 	Status types.Status `json:"S"`
 
-	db       *pttdb.LDBBatch
-	dbLock   *types.LockMap
-	dbPrefix []byte
+	db              *pttdb.LDBBatch
+	dbLock          *types.LockMap
+	fullDBPrefix    []byte
+	fullDBIdxPrefix []byte
 }
 
 func NewObject(
 	id *types.PttID,
 	createTS types.Timestamp,
 	creatorID *types.PttID,
-	updaterID *types.PttID,
 	entityID *types.PttID,
 
 	logID *types.PttID,
@@ -123,32 +117,37 @@ func NewObject(
 
 	db *pttdb.LDBBatch,
 	dbLock *types.LockMap,
+
+	fullDBPrefix []byte,
+
+	fullDBIdxPrefix []byte,
 ) *BaseObject {
+
 	return &BaseObject{
 		V:         types.CurrentVersion,
 		ID:        id,
 		CreateTS:  createTS,
 		CreatorID: creatorID,
-		UpdaterID: updaterID,
+		UpdaterID: creatorID,
 		EntityID:  entityID,
 
 		LogID: logID,
 
 		Status: status,
 
-		db:     db,
-		dbLock: dbLock,
+		db:              db,
+		dbLock:          dbLock,
+		fullDBPrefix:    fullDBPrefix,
+		fullDBIdxPrefix: fullDBIdxPrefix,
 	}
 }
 
-func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, dbPrefix []byte) {
+func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte) {
 	o.db = db
 	o.dbLock = dbLock
-	o.dbPrefix = dbPrefix
-
-	if o.EntityID != nil {
-		o.dbPrefix = append(o.dbPrefix, o.EntityID[:]...)
-	}
+	o.EntityID = entityID
+	o.fullDBPrefix = fullDBPrefix
+	o.fullDBIdxPrefix = fullDBIdxPrefix
 }
 
 func (o *BaseObject) Lock() error {
@@ -225,4 +224,145 @@ func (o *BaseObject) SetEntityID(id *types.PttID) {
 
 func (o *BaseObject) GetEntityID() *types.PttID {
 	return o.EntityID
+}
+
+func (o *BaseObject) IdxPrefix() []byte {
+	return o.fullDBIdxPrefix
+}
+
+func (o *BaseObject) IdxKey() ([]byte, error) {
+	return append(o.fullDBIdxPrefix, o.ID[:]...), nil
+}
+
+func (o *BaseObject) Delete(isLocked bool) error {
+	var err error
+
+	log.Debug("Delete: start")
+
+	if !isLocked {
+		err = o.Lock()
+		if err != nil {
+			return err
+		}
+		defer o.Unlock()
+	}
+
+	idxKey, err := o.IdxKey()
+	if err != nil {
+		return err
+	}
+
+	err = o.db.DeleteAll(idxKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *BaseObject) GetValueByID(isLocked bool) ([]byte, error) {
+	var err error
+
+	if !isLocked {
+		err = o.RLock()
+		if err != nil {
+			return nil, err
+		}
+		defer o.RUnlock()
+	}
+
+	idxKey, err := o.IdxKey()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("GetValueByID: to GetByIdxKey", "idxKey", idxKey)
+	val, err := o.db.GetByIdxKey(idxKey, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return val, nil
+}
+
+func (o *BaseObject) GetKey(id *types.PttID, isLocked bool) ([]byte, error) {
+	if !isLocked {
+		err := o.dbLock.RLock(id)
+		if err != nil {
+			return nil, err
+		}
+		defer o.dbLock.RUnlock(id)
+	}
+
+	o.ID = id
+	idxKey, err := o.IdxKey()
+	if err != nil {
+		return nil, err
+	}
+
+	return o.db.GetKeyByIdxKey(idxKey, 0)
+}
+
+func (o *BaseObject) KeyToIdxKey(key []byte) ([]byte, error) {
+
+	lenKey := len(key)
+	if lenKey != pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizeTimestamp+types.SizePttID {
+		return nil, ErrInvalidKey
+	}
+
+	idxKey := make([]byte, pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizePttID)
+
+	// prefix
+	idxOffset := 0
+	nextIdxOffset := pttdb.SizeDBKeyPrefix
+	copy(idxKey[:nextIdxOffset], DBOpKeyIdxPrefix)
+
+	// entity-id
+	idxOffset = nextIdxOffset
+	nextIdxOffset += types.SizePttID
+
+	keyOffset := pttdb.SizeDBKeyPrefix
+	nextKeyOffset := keyOffset + types.SizePttID
+	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
+
+	// id
+	idxOffset = nextIdxOffset
+	nextIdxOffset += types.SizePttID
+
+	keyOffset = lenKey - types.SizePttID
+	nextKeyOffset = lenKey
+	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
+
+	return idxKey, nil
+}
+
+func (k *BaseObject) DeleteKey(key []byte) error {
+	idxKey, err := k.KeyToIdxKey(key)
+	if err != nil {
+		return err
+	}
+
+	err = k.db.DeleteAll(idxKey)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *BaseObject) GetBaseObject() *BaseObject {
+	return o
+}
+
+func (o *BaseObject) GetBlockInfo() BlockInfo {
+	return nil
+}
+
+func (o *BaseObject) SetBlockInfo(blockInfo BlockInfo) error {
+	return nil
+}
+
+func (o *BaseObject) RemoveMeta() {
+	return
 }

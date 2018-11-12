@@ -100,6 +100,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	testListCore(t0, bodyString, dataOpKeyInfo0_8_1, t, isDebug)
 
 	opKeyInfoMap0_8_1 := dataOpKeyInfo0_8_1.Result
+	assert.Equal(2, len(opKeyInfoMap0_8_1))
 	entityID, ok := opKeyInfoMap0_8_1[*opKeyInfo0_8.Hash]
 
 	assert.Equal(true, ok)
@@ -178,7 +179,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 
 	opKeyInfoMap0_10_3 := dataOpKeyInfo0_10_3.Result
 
-	assert.Equal(0, len(opKeyInfoMap0_10_3))
+	assert.Equal(1, len(opKeyInfoMap0_10_3))
 
 	// 10.4. getOpKeyInfoFromDB
 	bodyString = `{"id": "testID", "method": "me_getOpKeyInfosFromDB", "params": []}`

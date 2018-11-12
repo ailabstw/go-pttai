@@ -17,33 +17,29 @@
 package service
 
 import (
-	"reflect"
-
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
+type CreateData interface{}
+
 func (pm *BaseProtocolManager) CreateObject(
-	data interface{},
+	data CreateData,
 	createOp OpType,
 
-	newObj func(data interface{}) (Object, OpData, error),
+	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, oplog *BaseOplog, opData OpData) error,
 	broadcastLog func(oplog *BaseOplog) error,
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
 
-	myID := pm.Ptt().GetMyEntity().GetID()
 	entity := pm.Entity()
 
 	//validate
 	if entity.GetStatus() != types.StatusAlive {
 		return nil, types.ErrInvalidStatus
-	}
-
-	if entity.GetEntityType() == EntityTypePersonal && !reflect.DeepEqual(entity.GetCreatorID(), myID) {
-		return nil, types.ErrInvalidID
 	}
 
 	// new-obj
@@ -61,6 +57,7 @@ func (pm *BaseProtocolManager) CreateObject(
 	}
 	oplog := theOplog.GetBaseOplog()
 
+	// in-create
 	if increate != nil {
 		err = increate(obj, oplog, opData)
 		if err != nil {
@@ -69,13 +66,15 @@ func (pm *BaseProtocolManager) CreateObject(
 		}
 	}
 
+	// sign oplog
 	err = pm.SignOplog(oplog)
 	if err != nil {
 		log.Warn("CreateObject: unable to sign", "e", err)
 		return nil, err
 	}
 
-	err = pm.saveNewObjectWithOplog(obj, oplog, true, postprocessCreateObject)
+	// save object
+	err = pm.saveNewObjectWithOplog(obj, oplog, false, false, postcreateObject)
 	if err != nil {
 		log.Warn("CreateObject: unable to saveNewObjectWithOplog", "e", err)
 		return nil, err
@@ -91,4 +90,56 @@ func (pm *BaseProtocolManager) CreateObject(
 	broadcastLog(oplog)
 
 	return obj, nil
+}
+
+/**********
+ * save New Object with Oplog
+ **********/
+
+func (pm *BaseProtocolManager) saveNewObjectWithOplog(
+	origObj Object,
+	oplog *BaseOplog,
+
+	isLocked bool,
+	isForce bool,
+
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
+) error {
+
+	origStatus := origObj.GetStatus()
+	status := oplog.ToStatus()
+
+	log.Debug("saveNewObjectWithOplog: start", "origStatus", origStatus, "status", status, "isForce", isForce)
+
+	if !isForce && origStatus >= status && !(origStatus == types.StatusFailed && status == types.StatusAlive) {
+		return nil
+	}
+
+	origObj.SetLogID(oplog.ID)
+	origObj.SetStatus(status)
+	origObj.SetUpdateTS(oplog.UpdateTS)
+	err := origObj.Save(isLocked)
+	log.Debug("saveNewObjectWithOplog: after Save", "e", err, "obj", origObj.GetID())
+	if err == pttdb.ErrInvalidUpdateTS {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	// postcreateObject
+	if postcreateObject == nil {
+		return nil
+	}
+
+	if !isForce && origStatus >= types.StatusAlive && origStatus != types.StatusFailed {
+		// orig-status is already alive
+		return nil
+	}
+
+	if status != types.StatusAlive {
+		return nil
+	}
+
+	return postcreateObject(origObj, oplog)
 }

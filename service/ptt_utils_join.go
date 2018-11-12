@@ -22,6 +22,7 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func joinKeyToKeyInfo(key *ecdsa.PrivateKey) *KeyInfo {
@@ -38,6 +39,8 @@ func (p *BasePtt) AddJoinKey(hash *common.Address, entityID *types.PttID, isLock
 		defer p.UnlockJoins()
 	}
 
+	log.Debug("AddJoinKey: start", "hash", hash, "entityID", entityID)
+
 	p.joins[*hash] = entityID
 
 	return nil
@@ -48,6 +51,8 @@ func (p *BasePtt) RemoveJoinKey(hash *common.Address, entityID *types.PttID, isL
 		p.LockJoins()
 		defer p.UnlockJoins()
 	}
+
+	log.Debug("RemoveJoinKey: start", "hash", hash, "entityID", entityID)
 
 	delete(p.joins, *hash)
 

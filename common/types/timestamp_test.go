@@ -26,7 +26,7 @@ func TestTimestamp_IsEqMilli(t *testing.T) {
 
 	// define test-structure
 	type fields struct {
-		Ts     uint64
+		Ts     int64
 		NanoTs uint32
 	}
 	type args struct {
@@ -43,7 +43,7 @@ func TestTimestamp_IsEqMilli(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(1000000),
 			},
 			args: args{t2: Timestamp{Ts: 1, NanoTs: 1000001}},
@@ -51,7 +51,7 @@ func TestTimestamp_IsEqMilli(t *testing.T) {
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(1999999),
 			},
 			args: args{t2: Timestamp{Ts: 1, NanoTs: 1000001}},
@@ -59,7 +59,7 @@ func TestTimestamp_IsEqMilli(t *testing.T) {
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(2000000),
 			},
 			args: args{t2: Timestamp{Ts: 1, NanoTs: 1000001}},
@@ -88,7 +88,7 @@ func TestTimestamp_Marshal(t *testing.T) {
 
 	// define test-structure
 	type fields struct {
-		Ts     uint64
+		Ts     int64
 		NanoTs uint32
 	}
 
@@ -294,7 +294,7 @@ func TestTimestamp_ToMilli(t *testing.T) {
 
 	// define test-structure
 	type fields struct {
-		Ts     uint64
+		Ts     int64
 		NanoTs uint32
 	}
 
@@ -307,35 +307,35 @@ func TestTimestamp_ToMilli(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(1000000),
 			},
 			want: Timestamp{Ts: 1, NanoTs: 1000000},
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(1000001),
 			},
 			want: Timestamp{Ts: 1, NanoTs: 1000000},
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(1999999),
 			},
 			want: Timestamp{Ts: 1, NanoTs: 1000000},
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(2000000),
 			},
 			want: Timestamp{Ts: 1, NanoTs: 2000000},
 		},
 		{
 			fields: fields{
-				Ts:     uint64(1),
+				Ts:     int64(1),
 				NanoTs: uint32(999999999),
 			},
 			want: Timestamp{Ts: 1, NanoTs: 999000000},

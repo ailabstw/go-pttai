@@ -297,13 +297,13 @@ func (b *Backend) GetMeRequests() ([]*pkgservice.BackendJoinRequest, error) {
 func (b *Backend) CountPeers() (int, error) {
 	pm := b.SPM().(*ServiceProtocolManager).MyInfo.PM().(*ProtocolManager)
 
-	return pm.CountPeers()
+	return pm.BECountPeers()
 }
 
 func (b Backend) GetPeers() ([]*pkgservice.BackendPeer, error) {
 	pm := b.SPM().(*ServiceProtocolManager).MyInfo.PM().(*ProtocolManager)
 
-	peerList, err := pm.GetPeers()
+	peerList, err := pm.BEGetPeers()
 	if err != nil {
 		return nil, err
 	}
@@ -395,20 +395,20 @@ func (b *Backend) GetMeList() ([]*BackendMyInfo, error) {
 func (b *Backend) BEGetJoinKeyInfos() ([]*pkgservice.KeyInfo, error) {
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 
-	return myInfo.PM().JoinKeyInfos(), nil
+	return myInfo.PM().JoinKeyList(), nil
 }
 
 func (b *Backend) BEGetOpKeyInfos() ([]*pkgservice.KeyInfo, error) {
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 
-	return myInfo.PM().OpKeyInfoList(), nil
+	return myInfo.PM().OpKeyList(), nil
 }
 
 func (b *Backend) GetOpKeyInfosFromDB() ([]*pkgservice.KeyInfo, error) {
 
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 
-	return myInfo.PM().GetOpKeyInfosFromDB()
+	return myInfo.PM().GetOpKeyListFromDB()
 }
 
 /**********
@@ -571,7 +571,7 @@ func (b *Backend) RevokeOpKey(keyIDBytes []byte, myKey []byte) (bool, error) {
 		return false, err
 	}
 
-	return pm.RevokeOpKeyInfo(keyID)
+	return pm.RevokeOpKey(keyID)
 }
 
 func (b *Backend) RequestRaftLead() (bool, error) {

@@ -891,14 +891,14 @@ func TestLeaderOnlyCommitsLogFromCurrentTerm(t *testing.T) {
 		r := newTestRaft(1, []uint64{1, 2}, 10, 1, storage)
 		r.loadState(pb.HardState{Term: 2})
 
-		log.Debug("TestLeaderOnlyCommitsLogFromCurrentTerm: to becomeCandidate", "r", r, "commited", r.raftLog.committed)
+		log.Debug("TestLeaderOnlyCommitsLogFromCurrentTerm: to becomeCandidate", "r", r, "committed", r.raftLog.committed)
 		for i, p := range r.prs {
 			log.Debug("TestLeaderOnlyCommitsLogFromCurrentTerm: to becomeCandidate", "r", r.id, "i", i, "p", p)
 		}
 
 		// become leader at term 3
 		r.becomeCandidate()
-		log.Debug("TestLeaderOnlyCommitsLogFromCurrentTerm: after becomeCandidate", "r", r, "commited", r.raftLog.committed)
+		log.Debug("TestLeaderOnlyCommitsLogFromCurrentTerm: after becomeCandidate", "r", r, "committed", r.raftLog.committed)
 
 		r.becomeLeader()
 

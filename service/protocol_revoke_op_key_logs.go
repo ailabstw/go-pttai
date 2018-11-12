@@ -21,10 +21,13 @@ import (
 )
 
 func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
-	toBroadcastLogs, err := pm.HandleDeleteObjectLog(oplog, info, opKey, nil, pm.SetOpKeyDB, pm.postdeleteOpKey)
+	toBroadcastLogs, err := pm.HandleDeleteObjectLog(
+		oplog, info,
+		opKey, nil,
+		pm.SetOpKeyDB, nil, pm.postdeleteOpKey, pm.updateDeleteOpKeyInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -34,23 +37,35 @@ func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *Proc
 
 func (pm *BaseProtocolManager) handlePendingRevokeOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
-	return pm.HandlePendingDeleteObjectLog(oplog, info, opKey, nil, pm.SetOpKeyDB)
+	return pm.HandlePendingDeleteObjectLog(
+		oplog, info, opKey, nil, pm.SetOpKeyDB, nil, pm.setPendingDeleteOpKeySyncInfo, pm.updateDeleteOpKeyInfo)
 }
 
 func (pm *BaseProtocolManager) setNewestRevokeOpKeyLog(oplog *BaseOplog) (types.Bool, error) {
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	return pm.SetNewestDeleteObjectLog(oplog, opKey)
 }
 
 func (pm *BaseProtocolManager) handleFailedRevokeOpKeyLog(oplog *BaseOplog) error {
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	return pm.HandleFailedDeleteObjectLog(oplog, opKey)
+}
 
+func (pm *BaseProtocolManager) updateDeleteOpKeyInfo(theOpKey Object, oplog *BaseOplog, theInfo ProcessInfo) error {
+
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	info.DeleteOpKeyInfo[*oplog.ObjID] = oplog
+
+	return nil
 }

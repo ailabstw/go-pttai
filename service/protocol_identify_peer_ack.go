@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type IdentifyPeerAck struct {
@@ -37,6 +38,7 @@ IdentifyPeerAck acks IdentifyPeer
 	2. if we do not know the peer, do identify peer process.
 */
 func (pm *BaseProtocolManager) IdentifyPeerAck(data *IdentifyPeer, peer *PttPeer) error {
+
 	ptt := pm.Ptt()
 
 	ackData, err := ptt.IdentifyPeerAck(data.Challenge, peer)
@@ -67,6 +69,8 @@ func (pm *BaseProtocolManager) HandleIdentifyPeerAck(dataBytes []byte, peer *Ptt
 	if err != nil {
 		return err
 	}
+
+	log.Debug("HandleIdentifyPeerAck: to ptt.HandleIdentifyPeerAck")
 
 	ptt := pm.Ptt()
 
@@ -146,21 +150,27 @@ HandleIdentifyPeerAck
 func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error {
 
 	if !reflect.DeepEqual(peer.IDChallenge[:], data.AckChallenge[:types.SizeSalt]) {
+		log.Warn("HandleIdentifyPeerAck: unable to match challenge")
 		return ErrInvalidData
 	}
 
 	err := VerifyData(data.AckChallenge, data.Sig, data.PubBytes, data.MyID, data.Extra)
 	if err != nil {
+		log.Warn("HandleIdentifyPeerAck: unable to verify data", "peer", peer)
 		return err
 	}
 
 	if peer.UserID != nil {
+		log.Debug("HandleIdentifyPeerAck: already known user-id", "peer", peer)
+
 		return nil
 	}
 
 	peer.UserID = data.MyID
 
 	peer.FinishID(entityID)
+
+	log.Debug("HandleIdentifyPeerAck: to FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
 
 	return p.FinishIdentifyPeer(peer, false, false)
 }

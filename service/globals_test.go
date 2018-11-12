@@ -44,7 +44,7 @@ type TType struct {
 }
 
 var (
-	tDefaultTimestamp = types.Timestamp{Ts: 1, NanoTs: 2}
+	tDefaultTimestamp = types.Timestamp{Ts: 123456789, NanoTs: 2}
 
 	tDefaultPtt = &BasePtt{
 		myNodeID: tDefaultNodeID,
@@ -359,7 +359,7 @@ func setupTest(t *testing.T) {
 
 	tKeyMe, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
 	tUserIDMe, _ = types.NewPttIDFromKey(tKeyMe)
-	tTsMe = types.Timestamp{Ts: 1, NanoTs: 5}
+	tTsMe = types.Timestamp{Ts: 123456789, NanoTs: 5}
 	tKeyInfoMe = &KeyInfo{
 		Key:         tKeyMe,
 		KeyBytes:    crypto.FromECDSA(tKeyMe),
@@ -382,7 +382,7 @@ func setupTest(t *testing.T) {
 	tDefaultDoerID2, _ = types.NewPttIDFromKey(tDefaultSignKey2)
 	ts, _ := types.GetTimestamp()
 	tDefaultSignKeyInfo2 = &KeyInfo{
-		BaseObject:  NewObject(tDefaultSignID2, ts, tDefaultDoerID2, tDefaultDoerID2, nil, nil, types.StatusAlive, nil, nil),
+		BaseObject:  NewObject(tDefaultSignID2, ts, tDefaultDoerID2, nil, nil, types.StatusAlive, nil, nil, nil, nil),
 		Key:         tDefaultSignKey2,
 		KeyBytes:    tDefaultSignKeyBytes2,
 		PubKeyBytes: crypto.FromECDSAPub(&tDefaultSignKey2.PublicKey),

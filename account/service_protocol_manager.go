@@ -33,5 +33,28 @@ func NewServiceProtocolManager(ptt pkgservice.Ptt, service pkgservice.Service) (
 		BaseServiceProtocolManager: b,
 	}
 
+	// load profiles
+	profiles, err := spm.GetProfileList(nil, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, eachProfile := range profiles {
+		err = eachProfile.Init(ptt, service, spm)
+		if err != nil {
+			return nil, err
+		}
+
+		err = spm.RegisterEntity(eachProfile.ID, eachProfile)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
 	return spm, nil
+}
+
+func (spm *ServiceProtocolManager) NewEmptyEntity() pkgservice.Entity {
+	return NewEmptyProfile()
 }

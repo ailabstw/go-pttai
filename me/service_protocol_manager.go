@@ -25,6 +25,7 @@ import (
 type ServiceProtocolManager struct {
 	*pkgservice.BaseServiceProtocolManager
 
+	MyID   *types.PttID
 	MyInfo *MyInfo
 
 	myPtt pkgservice.MyPtt
@@ -32,7 +33,7 @@ type ServiceProtocolManager struct {
 
 func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service pkgservice.Service, contentBackend *content.Backend) (*ServiceProtocolManager, error) {
 
-	spm := &ServiceProtocolManager{myPtt: ptt}
+	spm := &ServiceProtocolManager{myPtt: ptt, MyID: myID}
 	b, err := pkgservice.NewBaseServiceProtocolManager(ptt, service)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service 
 	}
 
 	for _, eachMyInfo := range myInfos {
-		err = eachMyInfo.Init(ptt, service, spm, myID)
+		err = eachMyInfo.Init(ptt, service, spm)
 		if err != nil {
 			return nil, err
 		}
@@ -63,4 +64,8 @@ func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service 
 	spm.MyInfo = myInfo
 
 	return spm, nil
+}
+
+func (spm *ServiceProtocolManager) NewEmptyEntity() pkgservice.Entity {
+	return NewEmptyMyInfo()
 }

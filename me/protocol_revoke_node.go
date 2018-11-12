@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
@@ -50,8 +51,10 @@ func (pm *ProtocolManager) RevokeNode(nodeID *discover.NodeID) error {
 
 func (pm *ProtocolManager) HandleRevokeOtherNode(oplog *MasterOplog, node *MyNode) error {
 	peer := node.Peer
+
+	log.Debug("HandleRevokeOtherNode", "peer", peer)
 	if peer != nil {
-		pm.UnregisterPeer(peer, true, false)
+		pm.UnregisterPeer(peer, true, false, false)
 	}
 
 	return nil
@@ -69,15 +72,18 @@ func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity
 	pm.revokeMyNodeCleanMyNodes(isLockedNode)
 
 	// peer
-	pm.cleanPeers()
+	pm.CleanPeers()
 
-	// me-oplog
-	pm.CleanMeOplog()
+	// join-key
+	pm.CleanJoinKey()
 
 	// op-key
 	pm.CleanOpKey()
 
 	pm.CleanOpKeyOplog()
+
+	// me-oplog
+	pm.CleanMeOplog()
 
 	// revoke-key
 	myID := pm.Entity().GetID()
@@ -87,6 +93,11 @@ func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity
 
 	if reflect.DeepEqual(myID, pttMyID) {
 		pm.Entity().Service().(*Backend).Config.RevokeKey()
+
+		pm.Entity().Service().(*Backend).Config.SetMyKey("", "", "", true)
+
+		// restart
+		pm.myPtt.NotifyNodeRestart().PassChan(struct{}{})
 	}
 
 	return nil
@@ -124,13 +135,6 @@ func (pm *ProtocolManager) revokeMyNodeCleanMyNodes(isLocked bool) {
 		node.Delete(true)
 	}
 
-}
-
-func (pm *ProtocolManager) cleanPeers() {
-	peerList := pm.Peers().PeerList(false)
-	for _, peer := range peerList {
-		pm.UnregisterPeer(peer, true, false)
-	}
 }
 
 func (pm *ProtocolManager) cleanRaft() {

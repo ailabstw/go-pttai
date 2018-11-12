@@ -43,12 +43,20 @@ func (pm *BaseProtocolManager) SyncCreateObjectAck(objs []Object, syncAckMsg OpT
 	return nil
 }
 
+/*
+HandleSyncCreateObjectAck
+
+We don't need to have updaateCreateObject as member-function of obj because we copy only the public members.
+*/
 func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	obj Object,
 	peer *PttPeer,
-	setLogDB func(oplog *BaseOplog),
+
 	origObj Object,
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+
+	setLogDB func(oplog *BaseOplog),
+	updateCreateObject func(toObj Object, fromObj Object) error,
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 ) error {
 
@@ -86,9 +94,12 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	if origObj.GetUpdateLogID() == nil && reflect.DeepEqual(origObj.GetLogID(), oplog.ID) {
 		if origObj.GetStatus() == types.StatusInternalSync {
-			origObj.UpdateCreateObject(obj)
+			err = updateCreateObject(origObj, obj)
+			if err != nil {
+				return err
+			}
 		}
-		err = pm.saveNewObjectWithOplog(origObj, oplog, true, postprocessCreateObject)
+		err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
 		if err != nil {
 			return err
 		}
@@ -112,7 +123,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		return nil
 	}
 
-	err = pm.saveNewObjectWithOplog(origObj, oplog, true, postprocessCreateObject)
+	err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
 	if err != nil {
 		return err
 	}

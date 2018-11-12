@@ -63,10 +63,15 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
  **********/
 
 func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
+
+	log.Debug("processPendingMeLog: start")
+
 	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
+
+	log.Debug("processPendingMeLog: to oplog", "op", oplog.Op)
 
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:

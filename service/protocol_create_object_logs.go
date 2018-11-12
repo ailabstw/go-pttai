@@ -20,7 +20,6 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -29,14 +28,19 @@ import (
  **********/
 
 func (pm *BaseProtocolManager) HandleCreateObjectLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
+	obj Object,
 	opData OpData,
 	info ProcessInfo,
+
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
+
 ) ([]*BaseOplog, error) {
 
-	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, postprocessCreateObject)
+	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
 	return nil, err
 }
 
@@ -45,23 +49,32 @@ func (pm *BaseProtocolManager) HandleCreateObjectLog(
  **********/
 
 func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
+	obj Object,
 	opData OpData,
 	info ProcessInfo,
+
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
-	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, postprocessCreateObject)
+	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
 	return nil, err
 }
 
 func (pm *BaseProtocolManager) syncCreateObjectLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
+	obj Object,
 	opData OpData,
 	info ProcessInfo,
+
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
+
+	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) error {
 
 	objID := oplog.ObjID
@@ -82,33 +95,38 @@ func (pm *BaseProtocolManager) syncCreateObjectLog(
 	// get obj
 	err = obj.GetByID(true)
 	if err == leveldb.ErrNotFound {
-		return pm.syncCreateObjectNewLog(oplog, obj, opData, info, existsInInfo)
+		return pm.syncCreateObjectNewLog(oplog, opData, info, existsInInfo, newObjWithOplog, updateCreateInfo)
 	}
 	if err != nil {
 		return err
 	}
 
 	// orig-obj exists
+	origObj := obj
 
 	// newest-orig-log-id
-	newestLogID := obj.GetUpdateLogID()
+	newestLogID := origObj.GetUpdateLogID()
 	if newestLogID == nil {
-		newestLogID = obj.GetLogID()
+		newestLogID = origObj.GetLogID()
 	}
 
 	// same log
 	if reflect.DeepEqual(newestLogID, oplog.ID) {
-		return pm.syncCreateObjectSameLog(oplog, obj, opData, info, postprocessCreateObject)
+		return pm.syncCreateObjectSameLog(oplog, origObj, opData, info, postcreateObject, updateCreateInfo)
 	}
 
-	return pm.syncCreateObjectDiffLog(oplog, obj, info)
+	return pm.syncCreateObjectDiffLog(oplog, origObj, info)
 }
 
 func (pm *BaseProtocolManager) syncCreateObjectNewLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
 	opData OpData,
 	info ProcessInfo,
+
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
+	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
+
+	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) error {
 
 	isExists, err := existsInInfo(oplog, info)
@@ -119,11 +137,7 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 		return nil
 	}
 
-	err = obj.NewObjWithOplog(oplog, opData)
-	if err != nil {
-		return err
-	}
-
+	obj := newObjWithOplog(oplog, opData)
 	err = obj.Save(true)
 	if err != nil {
 		return err
@@ -133,21 +147,25 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 		return nil
 	}
 
-	return obj.UpdateCreateInfo(oplog, opData, info)
+	return updateCreateInfo(obj, oplog, opData, info)
 }
 
 func (pm *BaseProtocolManager) syncCreateObjectSameLog(
-	oplog *BaseOplog, origObj Object,
+	oplog *BaseOplog,
+	origObj Object,
 	opData OpData,
 	info ProcessInfo,
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
+
+	postcreateObject func(obj Object, oplog *BaseOplog) error,
+
+	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) error {
 
 	var err error
 
 	if origObj.GetStatus() == types.StatusInternalSync {
 		if !oplog.IsNewer {
-			err = origObj.UpdateCreateInfo(oplog, opData, info)
+			err = updateCreateInfo(origObj, oplog, opData, info)
 			if err != nil {
 				return err
 			}
@@ -157,11 +175,12 @@ func (pm *BaseProtocolManager) syncCreateObjectSameLog(
 	}
 
 	// it's supposed to be already synced. should not be here.
-	return pm.saveNewObjectWithOplog(origObj, oplog, true, postprocessCreateObject)
+	return pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
 }
 
 func (pm *BaseProtocolManager) syncCreateObjectDiffLog(
-	oplog *BaseOplog, origObj Object,
+	oplog *BaseOplog,
+	origObj Object,
 	info ProcessInfo,
 ) error {
 
@@ -174,7 +193,8 @@ func (pm *BaseProtocolManager) syncCreateObjectDiffLog(
  **********/
 
 func (pm *BaseProtocolManager) SetNewestCreateObjectLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
+	obj Object,
 ) (types.Bool, error) {
 
 	objID := oplog.ObjID
@@ -199,7 +219,9 @@ func (pm *BaseProtocolManager) SetNewestCreateObjectLog(
  **********/
 
 func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
-	oplog *BaseOplog, obj Object,
+	oplog *BaseOplog,
+	obj Object,
+
 	postprocessFailedCreateObject func(obj Object, oplog *BaseOplog) error,
 ) error {
 
@@ -245,43 +267,4 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 	}
 
 	return postprocessFailedCreateObject(obj, oplog)
-}
-
-/**********
- * save New Object with Oplog
- **********/
-
-func (pm *BaseProtocolManager) saveNewObjectWithOplog(
-	origObj Object,
-	oplog *BaseOplog, isLocked bool,
-	postprocessCreateObject func(obj Object, oplog *BaseOplog) error,
-) error {
-
-	origStatus := origObj.GetStatus()
-	status := oplog.ToStatus()
-
-	if origStatus >= status && !(origStatus == types.StatusFailed && status == types.StatusAlive) {
-		return nil
-	}
-
-	origObj.SetStatus(status)
-	origObj.SetUpdateTS(oplog.UpdateTS)
-	err := origObj.Save(isLocked)
-	if err == pttdb.ErrInvalidUpdateTS {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if origStatus >= types.StatusAlive && origStatus != types.StatusFailed {
-		// orig-status is already alive
-		return nil
-	}
-
-	if status != types.StatusAlive {
-		return nil
-	}
-
-	return postprocessCreateObject(origObj, oplog)
 }

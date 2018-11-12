@@ -30,22 +30,22 @@ const ()
 var (
 	tKeyA      *ecdsa.PrivateKey = nil
 	tUserIDA   *types.PttID      = nil
-	tTsA       types.Timestamp   = types.Timestamp{}
+	tTsA       types.Timestamp   = types.ZeroTimestamp
 	tUserNameA *UserName         = nil
 
 	tKeyB      *ecdsa.PrivateKey = nil
 	tUserIDB   *types.PttID      = nil
-	tTsB       types.Timestamp   = types.Timestamp{}
+	tTsB       types.Timestamp   = types.ZeroTimestamp
 	tUserNameB *UserName         = nil
 
 	tKeyC      *ecdsa.PrivateKey = nil
 	tUserIDC   *types.PttID      = nil
-	tTsC       types.Timestamp   = types.Timestamp{}
+	tTsC       types.Timestamp   = types.ZeroTimestamp
 	tUserNameC *UserName         = nil
 
 	tKeyD      *ecdsa.PrivateKey = nil
 	tUserIDD   *types.PttID      = nil
-	tTsD       types.Timestamp   = types.Timestamp{}
+	tTsD       types.Timestamp   = types.ZeroTimestamp
 	tUserNameD *UserName         = nil
 
 	origRandRead func(b []byte) (int, error) = nil

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 )
 
@@ -30,7 +29,7 @@ func (pm *BaseProtocolManager) CreateOpKeyLoop() error {
 	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err)
 
 	toRenewSeconds := pm.GetToRenewOpKeySeconds()
-	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds)
+	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds, "service", pm.Entity().Service().Name())
 	ticker := time.NewTimer(time.Duration(toRenewSeconds) * time.Second)
 
 loop:
@@ -80,7 +79,7 @@ func (pm *BaseProtocolManager) TryCreateOpKeyInfo() error {
 		return nil
 	}
 
-	return pm.CreateOpKeyInfo()
+	return pm.CreateOpKey()
 }
 
 func (pm *BaseProtocolManager) ToRenewOpKeyTS() (types.Timestamp, error) {
@@ -94,34 +93,36 @@ func (pm *BaseProtocolManager) ToRenewOpKeyTS() (types.Timestamp, error) {
 	return toRenewTS, nil
 }
 
-func (pm *BaseProtocolManager) CreateOpKeyInfo() error {
+/***
+ * CreateObject
+ ***/
+
+func (pm *BaseProtocolManager) CreateOpKey() error {
 	ptt := pm.Ptt()
 	myID := ptt.GetMyEntity().GetID()
 
-	log.Debug("CreateOpKeyInfo: start")
-
 	// 1. validate
-	if !pm.IsMaster(myID) {
+	if !pm.IsMaster(myID, false) {
 		log.Warn("CreateOpKeyInfo: not master")
 		return nil
 	}
 
-	_, err := pm.CreateObject(nil, OpKeyOpTypeCreateOpKey, pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
+	// 2. create object
+	_, err := pm.CreateObject(
+		nil, OpKeyOpTypeCreateOpKey,
+		pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
 	if err != nil {
 		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
 		return err
 	}
-
-	log.Debug("CreateOpKeyInfo: done")
-
 	return nil
 }
 
-func (pm *BaseProtocolManager) NewOpKey(data interface{}) (Object, OpData, error) {
+func (pm *BaseProtocolManager) NewOpKey(data CreateData) (Object, OpData, error) {
 	entity := pm.Entity()
 	myEntity := pm.Ptt().GetMyEntity()
 
-	key_info, err := myEntity.NewOpKeyInfo(entity.GetID(), pm.DBOpKeyInfo(), pm.DBObjLock())
+	key_info, err := myEntity.NewOpKeyInfo(entity.GetID(), pm.DBOpKey(), pm.DBObjLock(), pm.dbOpKeyPrefix, pm.dbOpKeyIdxPrefix)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -135,72 +136,7 @@ func (pm *BaseProtocolManager) postcreateOpKey(theOpKey Object, oplog *BaseOplog
 		return ErrInvalidData
 	}
 
-	pm.RegisterOpKeyInfo(opKey, false)
+	pm.RegisterOpKey(opKey, false)
 
-	return nil
-}
-
-func (pm *BaseProtocolManager) postfailedCreateOpKey(theOpKey Object, oplog *BaseOplog) error {
-	opKey, ok := theOpKey.(*KeyInfo)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	return pm.RemoveOpKeyInfoFromHash(opKey.Hash, false, true, true)
-}
-
-func (k *KeyInfo) UpdateCreateInfo(oplog *BaseOplog, theOpData OpData, theInfo ProcessInfo) error {
-	info, ok := theInfo.(*ProcessOpKeyInfo)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	info.CreateOpKeyInfo[*oplog.ObjID] = oplog
-
-	return nil
-}
-
-func (pm *BaseProtocolManager) CreateOpKeyExistsInInfo(oplog *BaseOplog, theInfo ProcessInfo) (bool, error) {
-	info, ok := theInfo.(*ProcessOpKeyInfo)
-	if !ok {
-		return false, ErrInvalidData
-	}
-
-	objID := oplog.ObjID
-	_, ok = info.DeleteOpKeyInfo[*objID]
-	if ok {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (k *KeyInfo) UpdateCreateObject(theObj Object) error {
-	obj, ok := theObj.(*KeyInfo)
-	if !ok {
-		return ErrInvalidObject
-	}
-
-	key, err := crypto.ToECDSA(obj.KeyBytes)
-	if err != nil {
-		return err
-	}
-
-	origDB, origDBLock := k.db, k.dbLock
-	k.BaseObject = obj.BaseObject
-	k.db = origDB
-	k.dbLock = origDBLock
-
-	k.Hash = obj.Hash
-	k.Key = key
-	k.KeyBytes = obj.KeyBytes
-	k.PubKeyBytes = crypto.FromECDSAPub(&key.PublicKey)
-	k.Extra = obj.Extra
-
-	return nil
-}
-
-func (k *KeyInfo) NewObjWithOplog(oplog *BaseOplog, theOpData OpData) error {
-	NewObjectWithOplog(k, oplog)
 	return nil
 }

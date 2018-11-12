@@ -18,27 +18,91 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 func (pm *ProtocolManager) MigrateMe(newMyInfo *MyInfo) error {
 	opData := &MeOpMigrateMe{ID: newMyInfo.ID}
 
-	return pm.DeleteEntity(MeOpTypeMigrateMe, opData, types.StatusPendingDeleted, types.StatusMigrated, pm.NewMeOplog, pm.broadcastMeOplogCore, pm.postdeleteMigrateMe)
+	return pm.DeleteEntity(
+		MeOpTypeMigrateMe, opData,
+		types.StatusInternalDeleted, types.StatusPendingMigrate, types.StatusMigrated,
+		pm.NewMeOplog, pm.setPendingDeleteMeSyncInfo, pm.broadcastMeOplogCore, pm.postdeleteMigrateMe)
 }
 
 /*
 postdeleteMigrateMe deals with ops after deletingMigrateMe. Assuming entity already locked (in DeleteEntity and DeleteEntityLogs).
 */
-func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) (err error) {
-	myInfo := pm.Entity().(*MyInfo)
-
+func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) error {
 	opData, ok := theOpData.(*MeOpMigrateMe)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
 
-	myInfo.AddOwnerID(opData.ID)
+	log.Debug("postdeleteMigrateMe: start")
+
+	myInfo := pm.Entity().(*MyInfo)
+	myID := myInfo.ID
+
+	newMyID := opData.ID
+
+	var err error
+	var entityPM pkgservice.ProtocolManager
+	entities := pm.myPtt.GetEntities()
+	for _, entity := range entities {
+		if entity == myInfo {
+			continue
+		}
+
+		log.Debug("postdeleteMigrateMe: (in-for-loop)", "entity", entity.GetID(), "service", entity.Service().Name())
+
+		if !entity.IsOwner(myID) {
+			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs()[0])
+			continue
+		}
+
+		entityPM = entity.PM()
+		_, _, err = entityPM.AddMember(newMyID, true)
+		log.Debug("postdeleteMigrateMe: after add member", "entity", entity.GetID(), "e", err)
+		if err != nil {
+			continue
+		}
+
+		if entityPM.IsMaster(myID, false) {
+			err = entityPM.TransferMaster(newMyID)
+			log.Debug("postdeleteMigrateMe: after transfer master", "entity", entity.GetID(), "e", err)
+			if err != nil {
+				continue
+			}
+		}
+
+		err = entityPM.TransferMember(myID, newMyID)
+		log.Debug("postdeleteMigrateMe: after transfer member", "entity", entity.GetID(), "e", err)
+		if err != nil {
+			continue
+		}
+
+	}
+
+	log.Debug("postdeleteMigrateMe: after for-loop")
+
+	myInfo.AddOwnerID(newMyID)
 
 	return myInfo.Save(true)
+}
+
+func (pm *ProtocolManager) setPendingDeleteMeSyncInfo(theMyInfo pkgservice.Entity, status types.Status, oplog *pkgservice.BaseOplog) error {
+
+	myInfo, ok := theMyInfo.(*MyInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	syncInfo := &pkgservice.BaseSyncInfo{}
+	syncInfo.InitWithDeleteOplog(status, oplog)
+
+	myInfo.SetSyncInfo(syncInfo)
+
+	return nil
 }

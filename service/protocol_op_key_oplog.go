@@ -16,10 +16,6 @@
 
 package service
 
-import (
-	"github.com/ailabstw/go-pttai/common/types"
-)
-
 func (pm *BaseProtocolManager) GetPendingOpKeyOplogs() ([]*OpKeyOplog, []*OpKeyOplog, error) {
 	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetOpKeyDB)
 	if err != nil {
@@ -64,14 +60,6 @@ func (pm *BaseProtocolManager) broadcastOpKeyOplogsCore(oplogs []*BaseOplog) err
 
 func (pm *BaseProtocolManager) SetOpKeyOplogIsSync(oplog *OpKeyOplog, isBroadcast bool) (bool, error) {
 	return pm.SetOplogIsSync(oplog.BaseOplog, isBroadcast, pm.broadcastOpKeyOplogCore)
-}
-
-func (pm *BaseProtocolManager) RemoveNonSyncOpKeyOplog(logID *types.PttID, isRetainValid bool, isLocked bool) (*OpKeyOplog, error) {
-	oplog, err := pm.RemoveNonSyncOplog(pm.SetOpKeyDB, logID, isRetainValid, isLocked)
-	if err != nil {
-		return nil, err
-	}
-	return OplogToOpKeyOplog(oplog), nil
 }
 
 /**********

@@ -40,9 +40,9 @@ var (
 	cancel    context.CancelFunc = nil
 	tBootnode *exec.Cmd          = nil
 
-	ctxs    []context.Context    = nil
-	cancels []context.CancelFunc = nil
-	nodes   []*exec.Cmd          = nil
+	Ctxs    []context.Context    = nil
+	Cancels []context.CancelFunc = nil
+	Nodes   []*exec.Cmd          = nil
 	stderrs []*os.File           = nil
 
 	NNodes         = 5
@@ -115,9 +115,9 @@ func setupTest(t *testing.T) {
 	origHandler = log.Root().GetHandler()
 	log.Root().SetHandler(log.Must.FileHandler("./test.out/log.tmp.txt", log.TerminalFormat(true)))
 
-	ctxs = make([]context.Context, NNodes)
-	cancels = make([]context.CancelFunc, NNodes)
-	nodes = make([]*exec.Cmd, NNodes)
+	Ctxs = make([]context.Context, NNodes)
+	Cancels = make([]context.CancelFunc, NNodes)
+	Nodes = make([]*exec.Cmd, NNodes)
 	stderrs = make([]*os.File, NNodes)
 
 	for i := 0; i < NNodes; i++ {
@@ -125,12 +125,12 @@ func setupTest(t *testing.T) {
 		rpcport := fmt.Sprintf("%d", 9450+i)
 		port := fmt.Sprintf("%d", 9500+i)
 
-		ctxs[i], cancels[i] = context.WithTimeout(context.Background(), TimeoutSeconds)
-		nodes[i] = exec.CommandContext(ctxs[i], "../build/bin/gptt", "--verbosity", "4", "--datadir", dir, "--rpcaddr", "127.0.0.1", "--rpcport", rpcport, "--port", port, "--bootnodes", "pnode://847e1b261cd827f83a62c6fa6d335179054cecb5651d47b4b152cef67e4b45d7f872e07a2e222771124e0354e58b6b3b1fc8908bb63ec30744abd9784ced31e8@127.0.0.1:9489", "--ipcdisable")
+		Ctxs[i], Cancels[i] = context.WithTimeout(context.Background(), TimeoutSeconds)
+		Nodes[i] = exec.CommandContext(Ctxs[i], "../build/bin/gptt", "--verbosity", "4", "--datadir", dir, "--rpcaddr", "127.0.0.1", "--rpcport", rpcport, "--port", port, "--bootnodes", "pnode://847e1b261cd827f83a62c6fa6d335179054cecb5651d47b4b152cef67e4b45d7f872e07a2e222771124e0354e58b6b3b1fc8908bb63ec30744abd9784ced31e8@127.0.0.1:9489", "--ipcdisable")
 		filename := fmt.Sprintf("./test.out/log.err.%d.txt", i)
 		stderrs[i], _ = os.Create(filename)
-		nodes[i].Stderr = stderrs[i]
-		err := nodes[i].Start()
+		Nodes[i].Stderr = stderrs[i]
+		err := Nodes[i].Start()
 		if err != nil {
 			t.Errorf("unable to start node: i: %v e: %v", i, err)
 		}
@@ -152,18 +152,20 @@ func setupTest(t *testing.T) {
 }
 
 func teardownTest(t *testing.T) {
+	log.Debug("teardownTest: start")
+
 	log.Root().SetHandler(origHandler)
 
 	for i := 0; i < NNodes; i++ {
-		cancels[i]()
+		Cancels[i]()
 
 		stderrs[i].Close()
 	}
 	cancel()
 
-	log.Debug("wait 3 seconds for node starting")
 	t.Logf("wait 3 seconds for node shutdown")
 	time.Sleep(3 * time.Second)
+
 }
 
 func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) []byte {

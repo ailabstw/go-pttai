@@ -32,6 +32,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 
 	setLogDB func(oplog *BaseOplog),
 	postdelete func(opData OpData) error,
+	updateDeleteInfo func(oplog *BaseOplog, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
 	log.Debug("HandleDeleteEntityLog: start", "e", pm.Entity().GetID(), "status", status)
@@ -51,9 +52,10 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	defer entity.Unlock()
 
 	// 3. already deleted
+	statusClass := types.StatusToStatusClass(status)
 	origStatus := entity.GetStatus()
 	origStatusClass := types.StatusToStatusClass(origStatus)
-	if origStatusClass == types.StatusClassDeleted {
+	if origStatusClass == statusClass {
 		if oplog.UpdateTS.IsLess(entity.GetUpdateTS()) {
 			err = EntitySetStatusWithOplog(entity, status, oplog)
 			if err != nil {
@@ -62,18 +64,16 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 		}
 		return nil, ErrNewerOplog
 	}
+	if origStatusClass >= types.StatusClassDeleted {
+		return nil, ErrNewerOplog
+	}
 
 	// 4. sync-info
 	origSyncInfo := entity.GetSyncInfo()
 	if origSyncInfo != nil {
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = entity.RemoveSyncInfo(oplog, opData, origSyncInfo, info)
-			if err != nil {
-				return nil, err
-			}
-
-			_, err := pm.RemoveNonSyncOplog(setLogDB, syncLogID, true, false)
+			err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, true, nil, setLogDB)
 			if err != nil {
 				return nil, err
 			}
@@ -96,6 +96,9 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	// 6. set oplog is-sync
 	oplog.IsSync = true
 
+	// 8. updateDeleteInfo
+	updateDeleteInfo(oplog, info)
+
 	log.Debug("HandleDeleteEntityLog: done", "e", pm.Entity().GetID())
 
 	return nil, nil
@@ -106,13 +109,18 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
  **********/
 
 func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
-	oplog *BaseOplog, info ProcessInfo,
+	oplog *BaseOplog,
+	info ProcessInfo,
 
-	status types.Status,
+	internalPendingStatus types.Status,
+	pendingStatus types.Status,
 	op OpType,
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
+
+	updateDeleteInfo func(oplog *BaseOplog, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
 	entity := pm.Entity()
@@ -128,41 +136,36 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 
 	// 3. already deleted
 	origStatus := entity.GetStatus()
-	origStatusClass := types.StatusToStatusClass(origStatus)
-	if origStatusClass == types.StatusClassDeleted {
+	if origStatus >= types.StatusDeleted {
 		return nil, ErrNewerOplog
 	}
 
 	// 4. sync info
+	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), internalPendingStatus, pendingStatus, types.StatusDeleted)
+
 	origSyncInfo := entity.GetSyncInfo()
+
 	if origSyncInfo != nil {
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = entity.RemoveSyncInfo(oplog, opData, origSyncInfo, info)
-			if err != nil {
-				return nil, err
+			if !isReplaceOrigSyncInfo(origSyncInfo, oplogStatus, oplog.UpdateTS, oplog.ID) {
+				return nil, ErrNewerOplog
 			}
 
-			_, err := pm.RemoveNonSyncOplog(setLogDB, syncLogID, false, false)
-			if err != nil {
-				return nil, err
-			}
+			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, false, nil, setLogDB)
 		}
-
 		entity.SetSyncInfo(nil)
 	}
 
 	// 5. save obj
-	entity.SetPendingDeleteSyncInfo(status, oplog)
+	setPendingDeleteSyncInfo(entity, oplogStatus, oplog)
 	err = entity.Save(true)
 	if err != nil {
 		return nil, err
 	}
 
 	// 7. update delete info
-	entity.UpdateDeleteInfo(oplog, info)
-
-	log.Debug("HandlePendingDeleteEntityLog: end", "e", pm.Entity().GetID())
+	updateDeleteInfo(oplog, info)
 
 	return nil, nil
 }

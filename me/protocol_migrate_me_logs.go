@@ -25,7 +25,9 @@ func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info 
 
 	opData := &MeOpMigrateMe{}
 
-	toBroadcastLogs, err := pm.HandleDeleteEntityLog(oplog, info, opData, types.StatusMigrated, pm.SetMeDB, pm.postdeleteMigrateMe)
+	toBroadcastLogs, err := pm.HandleDeleteEntityLog(
+		oplog, info, opData, types.StatusMigrated,
+		pm.SetMeDB, pm.postdeleteMigrateMe, pm.updateDeleteMeInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,11 @@ func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info 
 func (pm *ProtocolManager) handlePendingMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
 
 	opData := &MeOpMigrateMe{}
-	return pm.HandlePendingDeleteEntityLog(oplog, info, types.StatusPendingMigrate, MeOpTypeMigrateMe, opData, pm.SetMeDB)
+	return pm.HandlePendingDeleteEntityLog(
+		oplog, info,
+		types.StatusInternalMigrate, types.StatusPendingMigrate,
+		MeOpTypeMigrateMe, opData,
+		pm.SetMeDB, pm.setPendingDeleteMeSyncInfo, pm.updateDeleteMeInfo)
 }
 
 func (pm *ProtocolManager) setNewestMigrateMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -48,4 +54,18 @@ func (pm *ProtocolManager) handleFailedMigrateMeLog(oplog *pkgservice.BaseOplog)
 
 	return pm.HandleFailedDeleteEntityLog(oplog)
 
+}
+
+func (pm *ProtocolManager) updateDeleteMeInfo(oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) error {
+
+	entityID := pm.Entity().GetID()
+
+	info, ok := theInfo.(*ProcessMeInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	info.DeleteMeInfo[*entityID] = oplog
+
+	return nil
 }

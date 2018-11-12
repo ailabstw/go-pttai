@@ -19,6 +19,7 @@ package service
 import (
 	"sync"
 
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
@@ -35,6 +36,7 @@ When there is a new entity: trying to register all the peers.
 When a peer disappear: trying to unregister all the peers.
 */
 type ServiceProtocolManager interface {
+	Prestart() error
 	Start() error
 	Stop() error
 
@@ -49,6 +51,8 @@ type ServiceProtocolManager interface {
 	Service() Service
 
 	GetDBLock() *types.LockMap
+
+	NewEmptyEntity() Entity
 }
 
 type BaseServiceProtocolManager struct {
@@ -60,11 +64,20 @@ type BaseServiceProtocolManager struct {
 	ptt     Ptt
 	service Service
 
-	dbLock *types.LockMap
+	dbLock    *types.LockMap
+	dbLogLock *types.LockMap
+
+	lockJoinRequest sync.RWMutex
+	joinRequests    map[common.Address]*JoinRequest
 }
 
 func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtocolManager, error) {
 	dbLock, err := types.NewLockMap(SleepTimeLock)
+	if err != nil {
+		return nil, err
+	}
+
+	dbLogLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +90,8 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 
 		service: service,
 
-		dbLock: dbLock,
+		dbLock:    dbLock,
+		dbLogLock: dbLogLock,
 	}
 
 	return spm, nil
@@ -85,6 +99,14 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 
 func (spm *BaseServiceProtocolManager) GetDBLock() *types.LockMap {
 	return spm.dbLock
+}
+
+func (spm *BaseServiceProtocolManager) GetDBLogLock() *types.LockMap {
+	return spm.dbLogLock
+}
+
+func (spm *BaseServiceProtocolManager) Prestart() error {
+	return spm.PrestartEntities()
 }
 
 func (spm *BaseServiceProtocolManager) Start() error {
@@ -101,4 +123,8 @@ func (spm *BaseServiceProtocolManager) Ptt() Ptt {
 
 func (spm *BaseServiceProtocolManager) Service() Service {
 	return spm.service
+}
+
+func (spm *BaseServiceProtocolManager) NewEmptyEntity() Entity {
+	return nil
 }

@@ -22,26 +22,28 @@ import (
 
 func (pm *BaseProtocolManager) handleCreateOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	opData := &OpKeyOpCreateOpKey{}
 
-	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.postcreateOpKey)
+	return pm.HandleCreateObjectLog(
+		oplog, opKey, opData, info,
+		pm.existsInInfoCreateOpKey, pm.newOpKeyWithOplog, pm.postcreateOpKey, pm.updateCreateOpKeyInfo)
 }
 
 func (pm *BaseProtocolManager) handlePendingCreateOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	opData := &OpKeyOpCreateOpKey{}
 
-	return pm.HandleCreateObjectLog(oplog, opKey, opData, info, pm.CreateOpKeyExistsInInfo, pm.postcreateOpKey)
+	return pm.HandlePendingCreateObjectLog(oplog, opKey, opData, info, pm.existsInInfoCreateOpKey, pm.newOpKeyWithOplog, pm.postcreateOpKey, pm.updateCreateOpKeyInfo)
 }
 
 func (pm *BaseProtocolManager) setNewestCreateOpKeyLog(oplog *BaseOplog) (types.Bool, error) {
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
 	return pm.SetNewestCreateObjectLog(oplog, opKey)
@@ -49,10 +51,63 @@ func (pm *BaseProtocolManager) setNewestCreateOpKeyLog(oplog *BaseOplog) (types.
 
 func (pm *BaseProtocolManager) handleFailedCreateOpKeyLog(oplog *BaseOplog) error {
 
-	opKey := NewEmptyKeyInfo()
+	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)
 
-	pm.HandleFailedCreateObjectLog(oplog, opKey, pm.postfailedCreateOpKey)
+	return pm.HandleFailedCreateObjectLog(oplog, opKey, pm.postfailedCreateOpKey)
+}
+
+/**********
+ * Customize
+ **********/
+
+/***
+ * handleCreateObject
+ ***/
+
+func (pm *BaseProtocolManager) existsInInfoCreateOpKey(oplog *BaseOplog, theInfo ProcessInfo) (bool, error) {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return false, ErrInvalidData
+	}
+
+	objID := oplog.ObjID
+	_, ok = info.DeleteOpKeyInfo[*objID]
+	if ok {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (pm *BaseProtocolManager) newOpKeyWithOplog(oplog *BaseOplog, theOpData OpData) Object {
+	opKey := NewEmptyOpKey()
+	pm.SetOpKeyObjDB(opKey)
+	NewObjectWithOplog(opKey, oplog)
+
+	return opKey
+}
+
+func (pm *BaseProtocolManager) updateCreateOpKeyInfo(obj Object, oplog *BaseOplog, theOpData OpData, theInfo ProcessInfo) error {
+	info, ok := theInfo.(*ProcessOpKeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	info.CreateOpKeyInfo[*oplog.ObjID] = oplog
 
 	return nil
+}
+
+/***
+ * handleFailedCreateObject
+ ***/
+
+func (pm *BaseProtocolManager) postfailedCreateOpKey(theOpKey Object, oplog *BaseOplog) error {
+	opKey, ok := theOpKey.(*KeyInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	return pm.RemoveOpKeyFromHash(opKey.Hash, false, true, true)
 }

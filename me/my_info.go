@@ -35,10 +35,13 @@ type MyInfo struct {
 
 	UpdateTS types.Timestamp `json:"UT"`
 
+	MyProfileID *types.PttID     `json:"PID"`
+	Profile     *account.Profile `json:"-"`
+
 	signKeyInfo     *pkgservice.KeyInfo
 	nodeSignKeyInfo *pkgservice.KeyInfo
 
-	nodeSignID *types.PttID
+	NodeSignID *types.PttID
 
 	myKey   *ecdsa.PrivateKey
 	nodeKey *ecdsa.PrivateKey
@@ -46,12 +49,12 @@ type MyInfo struct {
 	validateKey *types.PttID
 }
 
+func NewEmptyMyInfo() *MyInfo {
+	return &MyInfo{BaseEntity: &pkgservice.BaseEntity{}}
+}
+
 func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*MyInfo, error) {
 	ts, err := types.GetTimestamp()
-	if err != nil {
-		return nil, err
-	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +67,8 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		myKey:      myKey,
 	}
 
-	// nodeSignID
-	myNodeID := ptt.MyNodeID()
-
 	// new my node
+	myNodeID := ptt.MyNodeID()
 	myNode, err := NewMyNode(ts, id, myNodeID, 1)
 	if err != nil {
 		return nil, err
@@ -81,7 +82,7 @@ func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, s
 		return nil, err
 	}
 
-	err = m.Init(ptt, service, spm, id)
+	err = m.Init(ptt, service, spm)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,15 @@ func (m *MyInfo) SetUpdateTS(ts types.Timestamp) {
 	m.UpdateTS = ts
 }
 
-func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, MyID *types.PttID) error {
+func (m *MyInfo) Init(thePtt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager) error {
+
+	log.Debug("me.Init: start")
+	ptt, ok := thePtt.(pkgservice.MyPtt)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	MyID := spm.(*ServiceProtocolManager).MyID
 	m.SetDB(dbMe, spm.GetDBLock())
 
 	err := m.InitPM(ptt, service)
@@ -111,7 +120,7 @@ func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgs
 	nodeSignID, err := setNodeSignID(nodeID, myID)
 
 	m.nodeKey = nodeKey
-	m.nodeSignID = nodeSignID
+	m.NodeSignID = nodeSignID
 
 	m.validateKey, err = types.NewPttID()
 	if err != nil {
@@ -122,6 +131,9 @@ func (m *MyInfo) Init(ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgs
 	if m.myKey == nil {
 		m.myKey, err = m.loadMyKey()
 		if err != nil {
+			if !reflect.DeepEqual(myID, MyID) {
+				return nil
+			}
 			return err
 		}
 	}
@@ -302,29 +314,4 @@ func (m *MyInfo) GetMasterKey() *ecdsa.PrivateKey {
 
 func (m *MyInfo) GetValidateKey() *types.PttID {
 	return m.validateKey
-}
-
-func (m *MyInfo) SetPendingDeleteSyncInfo(status types.Status, oplog *pkgservice.BaseOplog) {
-	syncInfo := &pkgservice.BaseSyncInfo{
-		LogID:     oplog.ID,
-		UpdateTS:  oplog.UpdateTS,
-		UpdaterID: oplog.CreatorID,
-		Status:    status,
-	}
-	m.IntegrateSyncInfo(syncInfo)
-}
-
-func (m *MyInfo) RemoveSyncInfo(oplog *pkgservice.BaseOplog, opData pkgservice.OpData, syncInfo pkgservice.SyncInfo, info pkgservice.ProcessInfo) error {
-	return types.ErrNotImplemented
-}
-
-func (m *MyInfo) UpdateDeleteInfo(oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) {
-	info, ok := theInfo.(*ProcessMeInfo)
-	if !ok {
-		return
-	}
-
-	info.DeleteMeInfo[*m.ID] = oplog
-
-	return
 }

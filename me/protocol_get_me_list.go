@@ -66,7 +66,7 @@ func getMeIter(startingID *types.PttID) (iterator.Iterator, error) {
 	}
 
 	// key
-	myInfo := &MyInfo{}
+	myInfo := NewEmptyMyInfo()
 	myInfo.SetID(startingID)
 
 	key, err := myInfo.MarshalKey()

@@ -36,33 +36,68 @@ const (
 
 	StatusFailed
 
-	StatusPendingTransfer
-
-	StatusTransferred
-
-	StatusPendingMigrate
-
-	StatusMigrated
-
-	StatusPendingRevoke
-
-	StatusRevoked
-
 	StatusInternalDeleted
+
+	StatusInternalRevoke
+
+	StatusInternalTransfer
+
+	StatusInternalMigrate
 
 	StatusPendingDeleted
 
+	StatusPendingRevoke
+
+	StatusPendingTransfer
+
+	StatusPendingMigrate
+
 	StatusDeleted
+
+	StatusRevoked
+
+	StatusTransferred
+
+	StatusMigrated
 )
 
-func StatusToDeleteStatus(status Status) Status {
+var (
+	statusStr = map[Status]string{
+		StatusInvalid:          "invalid",
+		StatusInit:             "init",
+		StatusInternalSync:     "internal-sync",
+		StatusInternalPending:  "internal-pending",
+		StatusPending:          "pending",
+		StatusSync:             "sync",
+		StatusAlive:            "alive",
+		StatusFailed:           "failed",
+		StatusInternalDeleted:  "internal-delete",
+		StatusInternalRevoke:   "internal-revoke",
+		StatusInternalTransfer: "internal-transfer",
+		StatusInternalMigrate:  "internal-migrate",
+		StatusPendingDeleted:   "pending-delete",
+		StatusPendingRevoke:    "pending-revoke",
+		StatusPendingTransfer:  "pending-transfer",
+		StatusPendingMigrate:   "pending-migrate",
+		StatusDeleted:          "deleted",
+		StatusRevoked:          "revoked",
+		StatusTransferred:      "transferred",
+		StatusMigrated:         "migrated",
+	}
+)
+
+func (s Status) String() string {
+	return statusStr[s]
+}
+
+func StatusToDeleteStatus(status Status, internalPendingStatus Status, pendingStatus Status, aliveStatus Status) Status {
 	switch status {
 	case StatusInternalPending:
-		return StatusInternalDeleted
+		return internalPendingStatus
 	case StatusPending:
-		return StatusPendingDeleted
+		return pendingStatus
 	case StatusAlive:
-		return StatusDeleted
+		return aliveStatus
 	}
 
 	return status
@@ -72,19 +107,46 @@ type StatusClass int
 
 const (
 	StatusClassInvalid StatusClass = iota
+	StatusClassInternalPendingAlive
 	StatusClassPendingAlive
 	StatusClassAlive
 	StatusClassFailed
+	StatusClassInternalDelete
 	StatusClassPendingDelete
 	StatusClassDeleted
+	StatusClassInternalMigrate
+	StatusClassPendingMigrate
+	StatusClassMigrated
 )
+
+var (
+	statusClassStr = map[StatusClass]string{
+		StatusClassInvalid: "class-invalid",
+
+		StatusClassInternalPendingAlive: "class-internal-pending",
+
+		StatusClassPendingAlive:    "class-pending",
+		StatusClassAlive:           "class-alive",
+		StatusClassFailed:          "class-failed",
+		StatusClassInternalDelete:  "class-internal-delete",
+		StatusClassPendingDelete:   "class-pending-delete",
+		StatusClassDeleted:         "class-deleted",
+		StatusClassInternalMigrate: "class-internal-migrate",
+		StatusClassPendingMigrate:  "class-pending-migrate",
+		StatusClassMigrated:        "class-migrated",
+	}
+)
+
+func (s StatusClass) String() string {
+	return statusClassStr[s]
+}
 
 var statusToStatusClass = map[Status]StatusClass{
 	StatusInvalid: StatusClassInvalid,
 
-	StatusInit:            StatusClassPendingAlive,
-	StatusInternalSync:    StatusClassPendingAlive,
-	StatusInternalPending: StatusClassPendingAlive,
+	StatusInit:            StatusClassInternalPendingAlive,
+	StatusInternalSync:    StatusClassInternalPendingAlive,
+	StatusInternalPending: StatusClassInternalPendingAlive,
 	StatusPending:         StatusClassPendingAlive,
 	StatusSync:            StatusClassPendingAlive,
 
@@ -92,15 +154,20 @@ var statusToStatusClass = map[Status]StatusClass{
 
 	StatusFailed: StatusClassFailed,
 
-	StatusPendingTransfer: StatusClassPendingDelete,
-	StatusTransferred:     StatusClassDeleted,
-	StatusPendingMigrate:  StatusClassPendingDelete,
-	StatusMigrated:        StatusClassDeleted,
+	StatusInternalDeleted:  StatusClassInternalDelete,
+	StatusInternalRevoke:   StatusClassInternalDelete,
+	StatusInternalTransfer: StatusClassInternalMigrate, // transfer and migrate is treated the same as delete in pending mode.
+	StatusInternalMigrate:  StatusClassInternalMigrate,
+
+	StatusPendingDeleted:  StatusClassPendingDelete,
 	StatusPendingRevoke:   StatusClassPendingDelete,
-	StatusRevoked:         StatusClassDeleted,
-	StatusInternalDeleted: StatusClassPendingDelete,
-	StatusPendingDeleted:  StatusClassDeleted,
-	StatusDeleted:         StatusClassDeleted,
+	StatusPendingTransfer: StatusClassPendingMigrate,
+	StatusPendingMigrate:  StatusClassPendingMigrate,
+
+	StatusDeleted:     StatusClassDeleted,
+	StatusRevoked:     StatusClassDeleted,
+	StatusTransferred: StatusClassMigrated,
+	StatusMigrated:    StatusClassMigrated,
 }
 
 func StatusToStatusClass(status Status) StatusClass {

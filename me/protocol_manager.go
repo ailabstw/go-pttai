@@ -19,6 +19,7 @@ package me
 import (
 	"sync"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/event"
@@ -137,8 +138,10 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds,
 		pm.InternalSignMyOplog, pm.IsValidMyOplog, pm.ValidateIntegrateSignMyOplog, pm.SetMeDB,
 		pm.IsMaster, pm.IsMember, pm.GetPeerType, pm.IsMyDevice, pm.IsImportantPeer, pm.IsMemberPeer, pm.IsPendingPeer,
-		nil,
-		nil,
+		nil, // postsyncMemberOplog
+		nil, // leave
+		nil, // theDelete
+		nil, // postdelete
 		myInfo, dbMe)
 	if err != nil {
 		return nil, err
@@ -171,6 +174,21 @@ func (pm *ProtocolManager) Start() error {
 	if err != nil {
 		log.Error("Start: unable to start BaseProtocolManager", "e", err)
 		return err
+	}
+
+	// load my profile
+	allEntities := ptt.GetEntities()
+	if myInfo.MyProfileID != nil {
+		myProfile, ok := allEntities[*myInfo.MyProfileID]
+		if !ok {
+			log.Error("Start: my Profile not exists")
+			return ErrInvalidMe
+		}
+		myInfo.Profile, ok = myProfile.(*account.Profile)
+		if !ok {
+			log.Error("Start: unable to load my profile")
+			return ErrInvalidMe
+		}
 	}
 
 	pm.LoadPeers()

@@ -17,25 +17,22 @@
 package account
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
-	}
+func (pm *ProtocolManager) GetUserNodeList(startID *types.PttID, limit int, listOrder pttdb.ListOrder, isLocked bool) ([]*UserNode, error) {
+	obj := NewEmptyUserNode()
+	pm.SetUserNodeDB(obj)
 
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
+	objs, err := pkgservice.GetObjList(obj, startID, limit, listOrder, isLocked)
+	log.Debug("GetUserNodeList: after get", "entity", pm.Entity().GetID(), "objs", objs, "e", err)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	typedObjs := ObjsToUserNodes(objs)
 
-	return nil
-}
-
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
+	return typedObjs, nil
 }

@@ -29,6 +29,9 @@ const (
 	UserOpTypeAddUserNode
 	UserOpTypeRemoveUserNode
 
+	UserOpTypeDeleteUser
+	UserOpTypeLeaveUser
+
 	NUserOpType
 )
 
@@ -49,4 +52,10 @@ type UserOpAddUserNode struct {
 
 type UserOpRemoveUserNode struct {
 	NodeID *discover.NodeID `json:"n"`
+}
+
+type UserOpDeleteUser struct {
+}
+
+type UserOpLeaveUser struct {
 }

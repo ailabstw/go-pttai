@@ -51,8 +51,7 @@ func (pm *ProtocolManager) ProposeRaftAddNode(nodeID *discover.NodeID, weight ui
 		return err
 	}
 
-	ctx := make([]byte, discover.SizeNodeID)
-	copy(ctx[:], nodeID[:])
+	ctx := pm.proposeRaftCtx(nodeID)
 
 	cc := pb.ConfChange{
 		Type:    pb.ConfChangeAddNode,
@@ -66,14 +65,22 @@ func (pm *ProtocolManager) ProposeRaftAddNode(nodeID *discover.NodeID, weight ui
 	return nil
 }
 
+func (pm *ProtocolManager) proposeRaftCtx(nodeID *discover.NodeID) []byte {
+	ctx := make([]byte, discover.SizeNodeID+types.SizePttID)
+	copy(ctx[:], nodeID[:])
+	myNodeSignID := pm.Entity().(*MyInfo).NodeSignID
+	copy(ctx[discover.SizeNodeID:], myNodeSignID[:])
+
+	return ctx
+}
+
 func (pm *ProtocolManager) ProposeRaftRemoveNode(nodeID *discover.NodeID) error {
 	raftID, err := nodeID.ToRaftID()
 	if err != nil {
 		return err
 	}
 
-	ctx := make([]byte, discover.SizeNodeID)
-	copy(ctx[:], nodeID[:])
+	ctx := pm.proposeRaftCtx(nodeID)
 
 	cc := pb.ConfChange{
 		Type:    pb.ConfChangeRemoveNode,
@@ -106,8 +113,7 @@ func (pm *ProtocolManager) ForceProposeRaftRemoveNode(nodeID *discover.NodeID) e
 		return ErrInvalidNode
 	}
 
-	ctx := make([]byte, discover.SizeNodeID)
-	copy(ctx[:], nodeID[:])
+	ctx := pm.proposeRaftCtx(nodeID)
 
 	cc := pb.ConfChange{
 		Type:    pb.ConfChangeRemoveNode,
@@ -186,7 +192,10 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 	myInfo := pm.Entity().(*MyInfo)
 
 	nodeID := &discover.NodeID{}
-	copy(nodeID[:], cc.Context)
+	copy(nodeID[:], cc.Context[:discover.SizeNodeID])
+
+	fromID := &types.PttID{}
+	copy(fromID[:], cc.Context[discover.SizeNodeID:])
 
 	raftID, err := nodeID.ToRaftID()
 	log.Debug("publishEntriesAddNode: after ToRaftID", "nodeID", nodeID, "e", err)
@@ -205,7 +214,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 	}
 
 	// master-oplog and my-node
-	oplog, err := pm.publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts, raftID, nodeID, weight, ent)
+	oplog, err := pm.publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts, raftID, nodeID, weight, ent, fromID)
 	if err != nil {
 		return err
 	}
@@ -245,7 +254,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 	return nil
 }
 
-func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts types.Timestamp, raftID uint64, nodeID *discover.NodeID, weight uint32, ent *pb.Entry) (*MasterOplog, error) {
+func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts types.Timestamp, raftID uint64, nodeID *discover.NodeID, weight uint32, ent *pb.Entry, fromID *types.PttID) (*MasterOplog, error) {
 
 	myInfo := pm.Entity().(*MyInfo)
 
@@ -269,6 +278,7 @@ func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts
 
 	opData := &MasterOpAddMaster{
 		ID:      nodeID,
+		From:    fromID,
 		Masters: masters,
 		Weight:  totalWeight,
 	}
@@ -318,10 +328,11 @@ func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts
 
 func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfChange) error {
 
-	myInfo := pm.Entity().(*MyInfo)
-
 	nodeID := &discover.NodeID{}
-	copy(nodeID[:], cc.Context)
+	copy(nodeID[:], cc.Context[:discover.SizeNodeID])
+
+	fromID := &types.PttID{}
+	copy(fromID[:], cc.Context[discover.SizeNodeID:])
 
 	raftID, err := nodeID.ToRaftID()
 	if err != nil {
@@ -331,39 +342,21 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 		return ErrInvalidEntry
 	}
 
-	pm.lockMyNodes.Lock()
-	defer pm.lockMyNodes.Unlock()
-
-	ts, err := types.GetTimestamp()
+	masters, totalWeight, myNode, err := pm.publishEntriesRemoveNodeDealWithMyNodes(raftID, nodeID)
 	if err != nil {
 		return err
-	}
-
-	myNode, ok := pm.MyNodes[raftID]
-	if !ok {
-		return ErrInvalidNode
-	}
-
-	nodeSignID, err := setNodeSignID(nodeID, myInfo.ID)
-	if err != nil {
-		return ErrInvalidNode
-	}
-
-	delete(pm.MyNodes, raftID)
-	delete(pm.MyNodeByNodeSignIDs, *nodeSignID)
-
-	// reset masters and totalWeight
-	masters := make(map[discover.NodeID]uint32)
-	var totalWeight uint32
-	for _, eachNode := range pm.MyNodes {
-		totalWeight += eachNode.Weight
-		masters[*eachNode.NodeID] = eachNode.Weight
 	}
 	pm.totalWeight = totalWeight
 
 	opData := &MasterOpRevokeMaster{
 		ID:      nodeID,
+		From:    fromID,
 		Masters: masters,
+	}
+
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return err
 	}
 
 	oplog, err := pm.CreateMasterOplog(ent.Index, ts, MasterOpTypeRevokeMaster, opData)
@@ -389,5 +382,35 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 		return pm.HandleRevokeMyNode(oplog, false, true)
 	}
 
-	return pm.HandleRevokeOtherNode(oplog, myNode)
+	return pm.HandleRevokeOtherNode(oplog, myNode, fromID)
+}
+
+func (pm *ProtocolManager) publishEntriesRemoveNodeDealWithMyNodes(raftID uint64, nodeID *discover.NodeID) (map[discover.NodeID]uint32, uint32, *MyNode, error) {
+
+	pm.lockMyNodes.Lock()
+	defer pm.lockMyNodes.Unlock()
+
+	myNode, ok := pm.MyNodes[raftID]
+	if !ok {
+		return nil, 0, nil, ErrInvalidNode
+	}
+
+	myInfo := pm.Entity().(*MyInfo)
+	nodeSignID, err := setNodeSignID(nodeID, myInfo.ID)
+	if err != nil {
+		return nil, 0, nil, ErrInvalidNode
+	}
+
+	delete(pm.MyNodes, raftID)
+	delete(pm.MyNodeByNodeSignIDs, *nodeSignID)
+
+	// reset masters and totalWeight
+	masters := make(map[discover.NodeID]uint32)
+	var totalWeight uint32
+	for _, eachNode := range pm.MyNodes {
+		totalWeight += eachNode.Weight
+		masters[*eachNode.NodeID] = eachNode.Weight
+	}
+
+	return masters, totalWeight, myNode, nil
 }

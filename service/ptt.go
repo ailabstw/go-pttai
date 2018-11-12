@@ -281,12 +281,29 @@ func (p *BasePtt) Start(server *p2p.Server) error {
 	var err error
 	successMap := make(map[string]Service)
 	errMap := make(map[string]error)
-	for name, service := range p.services {
-		log.Info("Start: to start service", "name", name)
-		err = service.Start()
+
+	myService := p.myService
+	if myService != nil {
+		err = myService.Start()
 		if err != nil {
-			errMap[name] = err
-			break
+			errMap["me"] = err
+		} else {
+			successMap["me"] = myService
+		}
+	}
+
+	if err == nil {
+		for name, service := range p.services {
+			if service == myService {
+				continue
+			}
+			log.Info("Start: to start service", "name", name)
+			err = service.Start()
+			if err != nil {
+				errMap[name] = err
+				break
+			}
+			successMap[name] = service
 		}
 	}
 

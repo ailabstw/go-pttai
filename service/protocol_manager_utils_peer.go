@@ -60,7 +60,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (e
 		return nil
 	}
 
-	log.Debug("RegisterPeer: to newPeerCh", "peer", peer, "peerType", peerType)
+	log.Debug("RegisterPeer: to NewPeerCh", "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
 
 	select {
 	case pm.NewPeerCh() <- peer:
@@ -69,7 +69,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (e
 		err = p2p.DiscQuitting
 	}
 
-	log.Debug("RegisterPeer: after newPeerCh", "e", err, "peer", peer, "peerType", peerType)
+	log.Debug("RegisterPeer: after NewPeerCh", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	return err
 }

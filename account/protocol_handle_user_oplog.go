@@ -41,7 +41,7 @@ func NewProcessUserInfo() *ProcessUserInfo {
  **********/
 
 func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessUserInfo)
+	info, ok := processInfo.(*ProcessUserInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
@@ -50,6 +50,8 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
 	case UserOpTypeSetUserName:
 	case UserOpTypeSetUserImg:
 	case UserOpTypeAddUserNode:
+		log.Debug("processUserLog: to handleAddUserNodeLog", "oplog", oplog)
+		origLogs, err = pm.handleAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 	}
 	return
@@ -60,7 +62,7 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
  **********/
 
 func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessUserInfo)
+	info, ok := processInfo.(*ProcessUserInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
@@ -69,6 +71,7 @@ func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, pr
 	case UserOpTypeSetUserName:
 	case UserOpTypeSetUserImg:
 	case UserOpTypeAddUserNode:
+		origLogs, err = pm.handlePendingAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 	}
 	return
@@ -79,10 +82,18 @@ func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, pr
  **********/
 
 func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessInfo, toBroadcastLogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isPending bool) (err error) {
-	_, ok := processInfo.(*ProcessUserInfo)
+	info, ok := processInfo.(*ProcessUserInfo)
 	if !ok {
 		err = pkgservice.ErrInvalidData
 	}
+
+	userNodeInfo := info.UserNodeInfo
+
+	addUserNodeList := pkgservice.ProcessInfoToLogs(userNodeInfo, UserOpTypeAddUserNode)
+
+	log.Debug("postprocessUserOplogs: to SyncAddUserNode", "addUserNodeList", addUserNodeList, "peer", peer)
+
+	pm.SyncAddUserNode(addUserNodeList, peer)
 
 	pm.broadcastUserOplogsCore(toBroadcastLogs)
 
@@ -100,6 +111,7 @@ func (pm *ProtocolManager) SetNewestUserOplog(oplog *pkgservice.BaseOplog) (err 
 	case UserOpTypeSetUserName:
 	case UserOpTypeSetUserImg:
 	case UserOpTypeAddUserNode:
+		isNewer, err = pm.setNewestAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
 	}
 
@@ -117,6 +129,7 @@ func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (e
 	case UserOpTypeSetUserName:
 	case UserOpTypeSetUserImg:
 	case UserOpTypeAddUserNode:
+		err = pm.handleFailedAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
 	}
 

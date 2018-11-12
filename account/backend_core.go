@@ -353,6 +353,10 @@ func (b *Backend) GetMasterListFromDB(idBytes []byte, startIDBytes []byte, limit
 	return profile.PM().(*ProtocolManager).GetMasterList(startID, limit, listOrder, false)
 }
 
+/**********
+ * Member List
+ **********/
+
 func (b *Backend) GetMemberList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.Member, error) {
 	id, err := types.UnmarshalTextPttID(idBytes)
 	if err != nil {
@@ -374,6 +378,50 @@ func (b *Backend) GetMemberList(idBytes []byte, startIDBytes []byte, limit int, 
 
 	return profile.PM().(*ProtocolManager).GetMemberList(startID, limit, listOrder, false)
 }
+
+/**********
+ * User Node
+ **********/
+
+func (b *Backend) GetUserNodeList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserNode, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var startID *types.PttID
+	if len(startIDBytes) != 0 {
+		startID, err = types.UnmarshalTextPttID(startIDBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+	if profile == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return profile.PM().(*ProtocolManager).GetUserNodeList(startID, limit, listOrder, false)
+}
+
+func (b *Backend) GetUserNodeInfo(idBytes []byte) (*UserNodeInfo, error) {
+	id, err := types.UnmarshalTextPttID(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	profile := b.SPM().Entity(id).(*Profile)
+	if profile == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return profile.PM().(*ProtocolManager).GetUserNodeInfo(), nil
+}
+
+/**********
+ * User Name
+ **********/
 
 func (b *Backend) GetRawUserName(idBytes []byte) (*UserName, error) {
 	id, err := types.UnmarshalTextPttID(idBytes)

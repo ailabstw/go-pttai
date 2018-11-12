@@ -66,8 +66,8 @@ func (pm *BaseProtocolManager) updateCreateOpKey(theToObj Object, theFromObj Obj
 		return err
 	}
 
-	toObj.BaseObject = fromObj.BaseObject
-	pm.SetOpKeyObjDB(toObj)
+	//toObj.BaseObject = fromObj.BaseObject
+	//pm.SetOpKeyObjDB(toObj)
 
 	toObj.Hash = fromObj.Hash
 	toObj.Key = key

@@ -25,7 +25,7 @@ import (
 )
 
 type Master struct {
-	*BaseObject
+	*BaseObject `json:"b"`
 
 	UpdateTS types.Timestamp `json:"UT"`
 

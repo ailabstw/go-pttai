@@ -56,7 +56,12 @@ func (pm *BaseProtocolManager) NewMemberOplogWithTS(keyID *types.PttID, ts types
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entityID := pm.Entity().GetID()
 
-	return NewMemberOplog(keyID, ts, myID, op, opData, pm.DB(), entityID, pm.dbMemberLock)
+	oplog, err := NewMemberOplog(keyID, ts, myID, op, opData, pm.DB(), entityID, pm.dbMemberLock)
+	if err != nil {
+		return nil, err
+	}
+	pm.SetMemberDB(oplog.BaseOplog)
+	return oplog, err
 }
 
 func (pm *BaseProtocolManager) SetMemberDB(oplog *BaseOplog) {

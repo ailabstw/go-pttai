@@ -26,7 +26,7 @@ import (
 )
 
 type Member struct {
-	*BaseObject
+	*BaseObject `json:"b"`
 
 	UpdateTS types.Timestamp `json:"UT"`
 

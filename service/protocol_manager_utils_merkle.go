@@ -44,10 +44,11 @@ loop:
 
 func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 	status := pm.Entity().GetStatus()
-	statusClass := types.StatusToStatusClass(status)
-	if statusClass != types.StatusClassAlive {
+	if status != types.StatusAlive {
 		return nil
 	}
+
+	log.Debug("pmGenerateOplogMerkleTree: start", "entity", pm.Entity().GetID())
 
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -74,6 +75,8 @@ func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 			break
 		}
 	}
+
+	log.Debug("pmGenerateOplogMerkleTree: done", "entity", pm.Entity().GetID())
 
 	return nil
 }

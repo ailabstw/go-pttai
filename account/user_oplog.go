@@ -18,6 +18,7 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -43,22 +44,36 @@ func NewUserOplog(objID *types.PttID, ts types.Timestamp, doerID *types.PttID, o
 
 func (pm *ProtocolManager) NewUserOplog(objID *types.PttID, op pkgservice.OpType, opData pkgservice.OpData) (pkgservice.Oplog, error) {
 
-	myID := pm.Ptt().GetMyEntity().GetID()
-	entityID := pm.Entity().GetID()
-
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewUserOplog(objID, ts, myID, op, opData, entityID, pm.dbUserLock)
+	log.Debug("NewUserOplog: to NewUserOplogWithTS", "objID", objID)
+
+	return pm.NewUserOplogWithTS(objID, ts, op, opData)
 }
 
-func (spm *ServiceProtocolManager) NewUserOplogWithTS(objID *types.PttID, ts types.Timestamp, op pkgservice.OpType, opData pkgservice.OpData) (pkgservice.Oplog, error) {
+func (pm *ProtocolManager) NewUserOplogWithTS(objID *types.PttID, ts types.Timestamp, op pkgservice.OpType, opData pkgservice.OpData) (pkgservice.Oplog, error) {
+
+	log.Debug("NewUserOplogWithTS: start", "objID", objID)
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	entityID := pm.Entity().GetID()
+
+	oplog, err := NewUserOplog(objID, ts, myID, op, opData, entityID, pm.dbUserLock)
+	if err != nil {
+		return nil, err
+	}
+	pm.SetUserDB(oplog.BaseOplog)
+	return oplog, nil
+}
+
+func (spm *ServiceProtocolManager) NewUserOplogWithTS(entityID *types.PttID, ts types.Timestamp, op pkgservice.OpType, opData pkgservice.OpData) (pkgservice.Oplog, error) {
 
 	myID := spm.Ptt().GetMyEntity().GetID()
 
-	return NewUserOplog(objID, ts, myID, op, opData, nil, spm.GetDBLogLock())
+	return NewUserOplog(entityID, ts, myID, op, opData, entityID, spm.GetDBLogLock())
 }
 
 func (pm *ProtocolManager) SetUserDB(oplog *pkgservice.BaseOplog) {

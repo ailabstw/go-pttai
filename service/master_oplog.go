@@ -56,7 +56,12 @@ func (pm *BaseProtocolManager) NewMasterOplogWithTS(keyID *types.PttID, ts types
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entityID := pm.Entity().GetID()
 
-	return NewMasterOplog(keyID, ts, myID, op, opData, pm.DB(), entityID, pm.dbMasterLock)
+	oplog, err := NewMasterOplog(keyID, ts, myID, op, opData, pm.DB(), entityID, pm.dbMasterLock)
+	if err != nil {
+		return nil, err
+	}
+	pm.SetMasterDB(oplog.BaseOplog)
+	return oplog, err
 }
 
 func (pm *BaseProtocolManager) SetMasterDB(oplog *BaseOplog) {

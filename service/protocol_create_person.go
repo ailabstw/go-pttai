@@ -66,6 +66,7 @@ func (pm *BaseProtocolManager) CreatePerson(
 	if err != nil {
 		return nil, nil, err
 	}
+	oplog.IsSync = true
 	log.Debug("CreatePeron: after sign", "op", oplog.Op, "objID", oplog.ObjID, "masterSigns", oplog.MasterSigns, "masterLogID", oplog.MasterLogID)
 
 	// save object

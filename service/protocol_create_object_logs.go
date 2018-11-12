@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -130,6 +131,7 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 ) error {
 
 	isExists, err := existsInInfo(oplog, info)
+	log.Debug("syncCreateObjectNewLog: after existsInInfo", "isExists", isExists, "e", err, "isNewer", oplog.IsNewer)
 	if err != nil {
 		return err
 	}
@@ -139,6 +141,7 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 
 	obj := newObjWithOplog(oplog, opData)
 	err = obj.Save(true)
+	log.Debug("syncCreateObjectNewLog: after Save", "e", err)
 	if err != nil {
 		return err
 	}
@@ -146,6 +149,8 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 	if oplog.IsNewer {
 		return nil
 	}
+
+	log.Debug("syncCreateObjectNewLog: to updateCreateInfo")
 
 	return updateCreateInfo(obj, oplog, opData, info)
 }
@@ -175,7 +180,14 @@ func (pm *BaseProtocolManager) syncCreateObjectSameLog(
 	}
 
 	// it's supposed to be already synced. should not be here.
-	return pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
+	err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
+	if err != nil {
+		return err
+	}
+
+	oplog.IsSync = true
+
+	return nil
 }
 
 func (pm *BaseProtocolManager) syncCreateObjectDiffLog(
@@ -203,15 +215,15 @@ func (pm *BaseProtocolManager) SetNewestCreateObjectLog(
 	err := obj.GetByID(false)
 	if err != nil {
 		// possibly already deleted
-		return false, nil
+		return true, nil
 	}
 
 	updateLogID := obj.GetUpdateLogID()
 	if updateLogID != nil {
-		return false, nil
+		return true, nil
 	}
 
-	return types.Bool(reflect.DeepEqual(oplog.ID, obj.GetLogID())), nil
+	return !types.Bool(reflect.DeepEqual(oplog.ID, obj.GetLogID())), nil
 }
 
 /**********

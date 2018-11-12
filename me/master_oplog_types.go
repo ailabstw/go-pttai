@@ -17,6 +17,7 @@
 package me
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -29,11 +30,13 @@ const (
 
 type MasterOpAddMaster struct {
 	ID      *discover.NodeID
-	Weight  uint32                     `json:"W"`
+	From    *types.PttID               `json:"f"`
 	Masters map[discover.NodeID]uint32 `json:"M"`
+	Weight  uint32                     `json:"W"`
 }
 
 type MasterOpRevokeMaster struct {
 	ID      *discover.NodeID
+	From    *types.PttID               `json:"f"`
 	Masters map[discover.NodeID]uint32 `json:"M"`
 }

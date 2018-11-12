@@ -101,6 +101,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	}
 
 	// oplog save
+	oplog.IsSync = true
 	err = oplog.Save(false)
 	if err != nil {
 		return nil, err

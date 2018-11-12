@@ -19,6 +19,7 @@ package me
 import (
 	"reflect"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
@@ -49,18 +50,28 @@ func (pm *ProtocolManager) RevokeNode(nodeID *discover.NodeID) error {
 	return pm.ProposeRaftRemoveNode(nodeID)
 }
 
-func (pm *ProtocolManager) HandleRevokeOtherNode(oplog *MasterOplog, node *MyNode) error {
+func (pm *ProtocolManager) HandleRevokeOtherNode(oplog *MasterOplog, node *MyNode, fromID *types.PttID) error {
 	peer := node.Peer
 
-	log.Debug("HandleRevokeOtherNode", "peer", peer)
 	if peer != nil {
 		pm.UnregisterPeer(peer, true, false, false)
+	}
+
+	myInfo := pm.Entity().(*MyInfo)
+	myNodeSignID := myInfo.NodeSignID
+
+	log.Debug("HandleRevokeOtherNode", "peer", peer, "fromID", fromID, "myNodeSignID", myNodeSignID, "myID", myInfo.ID)
+
+	if reflect.DeepEqual(myNodeSignID, fromID) {
+		myInfo.Profile.PM().(*account.ProtocolManager).RemoveUserNode(node.NodeID)
 	}
 
 	return nil
 }
 
 func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity bool, isLockedNode bool) error {
+
+	log.Debug("HandleRevokeMyNode: start")
 
 	// set entity (because the revoke is from master-oplog)
 	pm.revokeMyNodeSetEntity(oplog, isLockedEntity)
@@ -86,18 +97,42 @@ func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity
 	pm.CleanMeOplog()
 
 	// revoke-key
-	myID := pm.Entity().GetID()
-	pttMyID := pm.Ptt().GetMyEntity().GetID()
+	myInfo := pm.Entity()
+	myID := myInfo.GetID()
 
 	pm.Entity().Service().(*Backend).Config.RevokeMyKey(myID)
 
+	// entities
+
+	myService := myInfo.Service()
+	pttMyID := pm.Ptt().GetMyEntity().GetID()
 	if reflect.DeepEqual(myID, pttMyID) {
+
+		log.Debug("HandleRevokeMyNode: revoke pttMyID")
+
+		entities := pm.myPtt.GetEntities()
+		for _, entity := range entities {
+			if entity == myInfo {
+				continue
+			}
+			if entity.Service() == myService {
+				continue
+			}
+			if entity.GetStatus() > types.StatusAlive {
+				continue
+			}
+			entity.SetStatus(types.StatusRevoked)
+			entity.SetUpdateTS(oplog.UpdateTS)
+			entity.SetLogID(oplog.ID)
+			entity.PM().PostdeleteEntity(nil, true)
+		}
+
 		pm.Entity().Service().(*Backend).Config.RevokeKey()
 
 		pm.Entity().Service().(*Backend).Config.SetMyKey("", "", "", true)
 
-		// restart
-		pm.myPtt.NotifyNodeRestart().PassChan(struct{}{})
+		// stop
+		pm.myPtt.NotifyNodeStop().PassChan(struct{}{})
 	}
 
 	return nil

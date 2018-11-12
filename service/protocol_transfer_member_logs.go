@@ -79,7 +79,7 @@ func (pm *BaseProtocolManager) posttransferMember(fromID *types.PttID, toID *typ
 
 	if !isMigrate {
 		log.Debug("posttransferMember: not Migrate: to delete Entity", "entity", pm.Entity().GetID())
-		pm.PostdeleteEntity()
+		pm.PostdeleteEntity(nil, true)
 		return nil
 	}
 

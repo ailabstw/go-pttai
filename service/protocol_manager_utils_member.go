@@ -68,7 +68,7 @@ func (pm *BaseProtocolManager) UnregisterMember(member *Member, isLock bool, isP
 
 	if reflect.DeepEqual(myID, member.ID) {
 		if isPostdeleteEntity {
-			pm.PostdeleteEntity()
+			pm.PostdeleteEntity(nil, false)
 		}
 		return nil
 	}

@@ -17,6 +17,7 @@
 package me
 
 import (
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -34,7 +35,7 @@ func (pm *ProtocolManager) MigrateMe(newMyInfo *MyInfo) error {
 /*
 postdeleteMigrateMe deals with ops after deletingMigrateMe. Assuming entity already locked (in DeleteEntity and DeleteEntityLogs).
 */
-func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) error {
+func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isForce bool) error {
 	opData, ok := theOpData.(*MeOpMigrateMe)
 	if !ok {
 		return pkgservice.ErrInvalidData
@@ -49,6 +50,8 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) erro
 
 	var err error
 	var entityPM pkgservice.ProtocolManager
+
+	// add member
 	entities := pm.myPtt.GetEntities()
 	for _, entity := range entities {
 		if entity == myInfo {
@@ -68,6 +71,23 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) erro
 		if err != nil {
 			continue
 		}
+	}
+
+	// delete user-profile
+	myInfo.Profile.PM().(*account.ProtocolManager).Delete()
+
+	// transfer
+	for _, entity := range entities {
+		if entity == myInfo {
+			continue
+		}
+
+		if !entity.IsOwner(myID) {
+			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs()[0])
+			continue
+		}
+
+		entityPM = entity.PM()
 
 		if entityPM.IsMaster(myID, false) {
 			err = entityPM.TransferMaster(newMyID)
@@ -82,7 +102,6 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData) erro
 		if err != nil {
 			continue
 		}
-
 	}
 
 	log.Debug("postdeleteMigrateMe: after for-loop")

@@ -17,8 +17,12 @@
 package account
 
 import (
+	"sync"
+
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -28,6 +32,13 @@ type ProtocolManager struct {
 	// db
 	dbUserLock      *types.LockMap
 	userOplogMerkle *pkgservice.Merkle
+
+	dbUserNodePrefix     []byte
+	dbUserNodeIdxPrefix  []byte
+	dbUserNodeIdx2Prefix []byte
+
+	lockUserNodeInfo sync.RWMutex
+	userNodeInfo     *UserNodeInfo
 }
 
 func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager, error) {
@@ -49,13 +60,29 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds,
 		nil, nil, nil, pm.SetUserDB,
 		nil, nil, nil, nil, nil, nil, nil,
-		pm.SyncUserOplog,
-		nil,
+		pm.SyncUserOplog,     // postsyncMemberOplog
+		pm.LeaveProfile,      // leave
+		pm.DeleteProfile,     // theDelete
+		pm.postdeleteProfile, // postdelete
 		profile, dbAccount)
 	if err != nil {
 		return nil, err
 	}
 	pm.BaseProtocolManager = b
+
+	// user-node
+	entityID := profile.ID
+	pm.dbUserNodePrefix = append(DBUserNodePrefix, entityID[:]...)
+	pm.dbUserNodeIdxPrefix = append(DBUserNodeIdxPrefix, entityID[:]...)
+	pm.dbUserNodeIdx2Prefix = common.CloneBytes(pm.dbUserNodeIdxPrefix)
+	pm.dbUserNodeIdx2Prefix[pttdb.SizeDBKeyPrefix-1] = '2'
+
+	userNodeInfo := &UserNodeInfo{}
+	err = userNodeInfo.Get(entityID)
+	if err != nil {
+		userNodeInfo = &UserNodeInfo{ID: entityID}
+	}
+	pm.userNodeInfo = userNodeInfo
 
 	return pm, nil
 }
@@ -85,11 +112,15 @@ func (pm *ProtocolManager) Stop() error {
 }
 
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
+	log.Debug("Sync: start", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
 	if peer == nil {
 		return nil
 	}
 
 	err := pm.SyncOplog(peer, pm.MasterMerkle(), pkgservice.SyncMasterOplogMsg)
+
+	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "e", err)
+
 	if err != nil {
 		return err
 	}
@@ -97,17 +128,6 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
-	}
-
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (pm *ProtocolManager) GetUserNodeInfo() *UserNodeInfo {
+	return pm.userNodeInfo
 }

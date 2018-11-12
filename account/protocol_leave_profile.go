@@ -16,26 +16,9 @@
 
 package account
 
-import (
-	"github.com/ailabstw/go-pttai/log"
-	pkgservice "github.com/ailabstw/go-pttai/service"
-)
+func (pm *ProtocolManager) LeaveProfile() error {
+	myID := pm.Ptt().GetMyEntity().GetID()
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
-	}
-
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
+	_, err := pm.DeleteMember(myID)
+	return err
 }

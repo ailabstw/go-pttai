@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncOplogAck struct {
@@ -27,14 +28,15 @@ type SyncOplogAck struct {
 	Nodes []*MerkleNode `json:"N"`
 }
 
-func (pm *BaseProtocolManager) SyncOplogAck(lastSyncTime types.Timestamp, merkle *Merkle, op OpType, peer *PttPeer) error {
+func (pm *BaseProtocolManager) SyncOplogAck(toSyncTime types.Timestamp, merkle *Merkle, op OpType, peer *PttPeer) error {
 	now, err := types.GetTimestamp()
 	if err != nil {
 		return err
 	}
 
-	offsetHourTS, _ := lastSyncTime.ToHRTimestamp()
+	offsetHourTS, _ := toSyncTime.ToHRTimestamp()
 	nodes, err := merkle.GetMerkleTreeListByLevel(MerkleTreeLevelNow, offsetHourTS, now)
+	log.Debug("SyncOplogAck: after GetMerkleTreeListByLevel", "offsetHourTS", offsetHourTS, "nodes", nodes, "e", err, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}
@@ -43,6 +45,8 @@ func (pm *BaseProtocolManager) SyncOplogAck(lastSyncTime types.Timestamp, merkle
 		TS:    offsetHourTS,
 		Nodes: nodes,
 	}
+
+	log.Debug("SyncOplogAck: to SendDataToPeer", "nodes", nodes, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	err = pm.SendDataToPeer(op, syncOplogAck, peer)
 	if err != nil {
@@ -93,6 +97,8 @@ func (pm *BaseProtocolManager) HandleSyncOplogAck(
 	if err != nil {
 		return err
 	}
+
+	log.Debug("HandleSyncOplogAck: to SyncOplogNewOplogs", "myNodes", myNodes, "myNewKeys", len(myNewKeys), "theirNewKeys", len(theirNewKeys), "newLogsMsg", newLogsMsg, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	return pm.SyncOplogNewOplogs(data, myNewKeys, theirNewKeys, peer, setDB, setNewestOplog, postsync, newLogsMsg)
 }

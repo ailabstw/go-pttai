@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 )
@@ -38,16 +39,21 @@ looping:
 				break looping
 			}
 
+			log.Debug("PMSync: received NewPeerCh", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
+			log.Debug("PMSync: NewPeerCh: after Sync", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			if err != nil {
-				log.Error("unable to Sync after newPeer", "e", err)
+				log.Error("unable to Sync after newPeer", "e", err, "peer", peer)
 			}
 		case <-forceSyncTicker.C:
 			forceSyncTicker.Stop()
 			forceSyncTicker = time.NewTicker(pm.ForceSyncCycle())
 
 			peer, err = pmSyncPeer(pm)
+
+			log.Debug("PMSync: forceSync: after syncPeer", "peer", peer, "e", err, "entity", pm.Entity().GetID())
+
 			if err != nil {
 				break looping
 			}
@@ -57,6 +63,7 @@ looping:
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
+			log.Debug("PMSync: forceSync: after Sync", "peer", peer, "e", err, "entity", pm.Entity().GetID())
 			if err != nil {
 				log.Error("unable to Sync after forceSync", "e", err)
 			}
@@ -81,6 +88,13 @@ func pmSyncPeer(pm ProtocolManager) (*PttPeer, error) {
 }
 
 func (pm *BaseProtocolManager) ForceSyncCycle() time.Duration {
+	if pm.Ptt().GetMyEntity().GetStatus() < types.StatusAlive {
+		return time.Duration(5) * time.Second
+	}
+
+	if pm.Entity().GetStatus() < types.StatusAlive {
+		return time.Duration(5) * time.Second
+	}
 	randNum := rand.Intn(pm.maxSyncRandomSeconds-pm.minSyncRandomSeconds) + pm.minSyncRandomSeconds
 
 	return time.Duration(randNum) * time.Second

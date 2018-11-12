@@ -20,88 +20,8 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
-
-func (pm *ProtocolManager) LoadMyNodes() error {
-	myInfo := pm.Entity().(*MyInfo)
-	myNodes := make(map[uint64]*MyNode)
-	myNodeByNodeSignIDs := make(map[types.PttID]*MyNode)
-	myID := myInfo.ID
-	ptt := pm.myPtt
-
-	log.Info("LoadMyNodes: start", "myID", myInfo.ID)
-	isMyNodeID := false
-
-	myNode := &MyNode{ID: myInfo.ID}
-	key, err := myNode.DBPrefix()
-	if err != nil {
-		return err
-	}
-
-	iter, err := dbMyNodes.NewIteratorWithPrefix(nil, key, pttdb.ListOrderNext)
-	if err != nil {
-		return err
-	}
-	defer iter.Release()
-
-	toRemoveIDs := make([][]byte, 0)
-	myNodeID := ptt.MyNodeID()
-	for iter.Next() {
-		k := iter.Key()
-		v := iter.Value()
-
-		eachMyNode := &MyNode{}
-		err := eachMyNode.Unmarshal(v)
-		if err != nil {
-			log.Error("my nodes is unable to unmarshal, removing", "k", k, "v", v)
-			toRemoveIDs = append(toRemoveIDs, common.CloneBytes(k))
-			continue
-		}
-
-		if !reflect.DeepEqual(eachMyNode.ID, myID) {
-			log.Error("my nodes is not the same ID as me, removing", "myNode", eachMyNode.ID, "me", myInfo.ID)
-			toRemoveIDs = append(toRemoveIDs, common.CloneBytes(k))
-			continue
-		}
-
-		if reflect.DeepEqual(eachMyNode.NodeID, myNodeID) {
-			isMyNodeID = true
-		}
-
-		nodeSignID, err := setNodeSignID(eachMyNode.NodeID, myID)
-		if err != nil {
-			continue
-		}
-
-		log.Debug("LoadMyNodes: (in-for-loop)", "eachMyNode", eachMyNode)
-		myNodes[eachMyNode.RaftID] = eachMyNode
-		myNodeByNodeSignIDs[*nodeSignID] = eachMyNode
-		pm.totalWeight += eachMyNode.Weight
-
-	}
-
-	log.Info("LoadMyNodes: after loop", "isMyNodeID", isMyNodeID)
-	if !isMyNodeID {
-		return ErrInvalidMe
-	}
-
-	pm.MyNodes = myNodes
-	pm.MyNodeByNodeSignIDs = myNodeByNodeSignIDs
-
-	myNode = &MyNode{}
-	for _, eachID := range toRemoveIDs {
-		err := myNode.DeleteRawKey(eachID)
-		if err != nil {
-			continue
-		}
-	}
-
-	return nil
-}
 
 func (pm *ProtocolManager) LoadPeers() error {
 	ptt := pm.myPtt

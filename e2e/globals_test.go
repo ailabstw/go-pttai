@@ -187,6 +187,17 @@ func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testi
 	return rbody.Body
 }
 
+func testError(url string) error {
+	bodyString := `{"id": "testID", "method": "ptt_getVersion", "params": []}`
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(bodyString)))
+	req.Header.Set("X-Custom-Header", "myvalue")
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	_, err := client.Do(req)
+
+	return err
+}
+
 func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T, isDebug bool) ([]byte, *MyError) {
 	rbody := &RBody{}
 

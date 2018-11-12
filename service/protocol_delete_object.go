@@ -89,13 +89,17 @@ func (pm *BaseProtocolManager) DeleteObject(
 		oplog.SetPreLogID(origLogID)
 	}
 
+	log.Debug("DeleteObject: to SignOplog", "oplog", oplog, "origLogID", origLogID, "origStatus", origStatus)
 	err = pm.SignOplog(oplog)
+	log.Debug("DeleteObject: after SignOplog", "e", err)
 	if err != nil {
 		return err
 	}
 
 	// 5. core
 	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted)
+
+	log.Debug("DeleteObject: to core", "oplogStatus", oplogStatus, "statusDelete", types.StatusDeleted)
 
 	if oplogStatus >= types.StatusDeleted {
 		err = pm.handleDeleteObjectLogCore(oplog, nil, origObj, opData, setLogDB, nil, postdelete, nil)
@@ -112,7 +116,11 @@ func (pm *BaseProtocolManager) DeleteObject(
 		return err
 	}
 
+	log.Debug("DeleteObject: to broadcastLog", "oplog", oplog)
+
 	broadcastLog(oplog)
+
+	log.Debug("DeleteObject: after broadcastLog")
 
 	return nil
 }

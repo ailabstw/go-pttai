@@ -81,6 +81,9 @@ func (pm *BaseProtocolManager) CreateObject(
 	}
 
 	// oplog-save
+	if oplog.ToStatus() == types.StatusAlive {
+		oplog.IsSync = true
+	}
 	err = oplog.Save(false)
 	if err != nil {
 		log.Warn("CreateObject: unable to save oplog", "e", err)
@@ -112,6 +115,7 @@ func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 	log.Debug("saveNewObjectWithOplog: start", "origStatus", origStatus, "status", status, "isForce", isForce)
 
 	if !isForce && origStatus >= status && !(origStatus == types.StatusFailed && status == types.StatusAlive) {
+		oplog.IsSync = true
 		return nil
 	}
 
@@ -126,6 +130,9 @@ func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 	if err != nil {
 		return err
 	}
+
+	// set oplog is sync
+	oplog.IsSync = true
 
 	// postcreateObject
 	if postcreateObject == nil {

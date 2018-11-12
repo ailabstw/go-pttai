@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncOplogNewOplogs struct {
@@ -39,7 +40,16 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 	newLogsMsg OpType,
 ) error {
 
+	if len(theirNewKeys) == 0 && len(myNewKeys) == 0 {
+		if postsync != nil {
+			return postsync(peer)
+		}
+
+		return nil
+	}
+
 	theirNewLogs, err := getOplogsFromKeys(setDB, theirNewKeys)
+	log.Debug("SyncOplogNewOplogs: after get theirNewLogs", "theirNewLogs", len(theirNewLogs), "myNewKeys", len(myNewKeys), "e", err)
 	if err != nil {
 		return err
 	}
@@ -63,6 +73,8 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 		Oplogs:    theirNewLogs,
 		MyNewKeys: myNewKeys,
 	}
+
+	log.Debug("SyncOplogNewOplogs: to SendDataToPeer", "oplogs", theirNewLogs, "myNewKeys", len(myNewKeys), "newLogsMsg", newLogsMsg, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	err = pm.SendDataToPeer(newLogsMsg, data, peer)
 	if err != nil {

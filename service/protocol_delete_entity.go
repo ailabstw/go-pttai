@@ -33,7 +33,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
 
 	broadcastLog func(oplog *BaseOplog) error,
-	postdelete func(opData OpData) error,
+	postdelete func(opData OpData, isForce bool) error,
 ) error {
 
 	myEntity := pm.Ptt().GetMyEntity()
@@ -44,9 +44,11 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	if entity.GetStatus() > types.StatusFailed {
 		return types.ErrInvalidStatus
 	}
-	if myEntity.GetStatus() != types.StatusAlive {
-		return types.ErrInvalidStatus
-	}
+	/*
+		if myEntity.GetStatus() != types.StatusAlive {
+			return types.ErrInvalidStatus
+		}
+	*/
 
 	// 1. lock object
 	err := entity.Lock()
@@ -116,26 +118,8 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	}
 
 	if postdelete != nil {
-		postdelete(opData)
+		postdelete(opData, false)
 	}
 
 	return nil
-}
-
-func (pm *BaseProtocolManager) PostdeleteEntity() {
-	pm.postdeleteEntity()
-}
-
-func (pm *BaseProtocolManager) DefaultPostdeleteEntity() {
-	// peer
-	pm.CleanPeers()
-
-	// join-key
-	pm.CleanJoinKey()
-
-	// op-key
-	pm.CleanOpKey()
-
-	pm.CleanOpKeyOplog()
-
 }

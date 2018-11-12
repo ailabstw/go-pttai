@@ -216,6 +216,8 @@ func (pm *BaseProtocolManager) defaultInternalSign(oplog *BaseOplog) (bool, erro
 		return false, nil
 	}
 
+	log.Debug("defaultInternalSign: start", "oplog", oplog)
+
 	ptt := pm.Ptt()
 	myEntity := ptt.GetMyEntity()
 	myID := myEntity.GetID()
@@ -226,6 +228,9 @@ func (pm *BaseProtocolManager) defaultInternalSign(oplog *BaseOplog) (bool, erro
 	}
 
 	// already signs master
+
+	log.Debug("defaultInternalSign: to IDInOplogSigns (master-signs)")
+
 	if IDInOplogSigns(myID, oplog.MasterSigns) {
 		return false, nil
 	}
@@ -233,33 +238,40 @@ func (pm *BaseProtocolManager) defaultInternalSign(oplog *BaseOplog) (bool, erro
 	// already signs internal
 	nodeSignID := myEntity.GetNodeSignID()
 
+	log.Debug("defaultInternalSign: to IDInOplogSigns (internal-signs)")
+
 	if IDInOplogSigns(nodeSignID, oplog.InternalSigns) {
 		return false, nil
 	}
 
 	// internal-sign
+	log.Debug("defaultInternalSign: to InternalSign")
 	err := myEntity.InternalSign(oplog)
 	if err != nil {
 		return false, err
 	}
 
+	log.Debug("defaultInternalSign: to IsValidInternalOplog")
 	_, _, isValid := myEntity.IsValidInternalOplog(oplog.InternalSigns)
 	if !isValid {
 		return true, nil
 	}
 
 	// master-sign
+	log.Debug("defaultInternalSign: to MasterSign")
 	err = myEntity.MasterSign(oplog)
 	if err != nil {
 		return false, err
 	}
 
+	log.Debug("defaultInternalSign: to isValidOplog")
 	masterLogID, weight, isValid := pm.isValidOplog(oplog.MasterSigns)
 	if !isValid {
 		return true, nil
 	}
 
 	// master-log-id
+	log.Debug("defaultInternalSign: to SetMasterLogID")
 	err = oplog.SetMasterLogID(masterLogID, weight)
 	if err != nil {
 		return false, err
@@ -472,58 +484,7 @@ func (pm *BaseProtocolManager) CleanOplog(oplog *BaseOplog, merkle *Merkle) {
 		return
 	}
 
-	iter, err = merkle.GetMerkleIter(MerkleTreeLevelNow, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
-	if err != nil {
-		return
-	}
-	defer iter.Release()
+	merkle.Clean()
 
-	for iter.Next() {
-		key = iter.Key()
-		db.Delete(key)
-	}
-
-	iter, err = merkle.GetMerkleIter(MerkleTreeLevelHR, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
-	if err != nil {
-		return
-	}
-	defer iter.Release()
-
-	for iter.Next() {
-		key = iter.Key()
-		db.Delete(key)
-	}
-
-	iter, err = merkle.GetMerkleIter(MerkleTreeLevelDay, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
-	if err != nil {
-		return
-	}
-	defer iter.Release()
-
-	for iter.Next() {
-		key = iter.Key()
-		db.Delete(key)
-	}
-
-	iter, err = merkle.GetMerkleIter(MerkleTreeLevelMonth, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
-	if err != nil {
-		return
-	}
-	defer iter.Release()
-
-	for iter.Next() {
-		key = iter.Key()
-		db.Delete(key)
-	}
-
-	iter, err = merkle.GetMerkleIter(MerkleTreeLevelYear, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
-	if err != nil {
-		return
-	}
-	defer iter.Release()
-
-	for iter.Next() {
-		key = iter.Key()
-		db.Delete(key)
-	}
+	return
 }

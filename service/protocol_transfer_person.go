@@ -60,10 +60,6 @@ func (pm *BaseProtocolManager) TransferPerson(
 	log.Debug("TransferPerson: start", "myID", myID, "fromID", fromID, "toID", toID, "entity", entity.GetID())
 
 	// validate
-	if entity.GetStatus() != types.StatusAlive {
-		return types.ErrInvalidStatus
-	}
-
 	if !pm.IsMaster(myID, false) && !reflect.DeepEqual(myID, fromID) {
 		return types.ErrInvalidID
 	}

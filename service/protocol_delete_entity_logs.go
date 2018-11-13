@@ -31,7 +31,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	status types.Status,
 
 	setLogDB func(oplog *BaseOplog),
-	postdelete func(opData OpData) error,
+	postdelete func(opData OpData, isForce bool) error,
 	updateDeleteInfo func(oplog *BaseOplog, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
@@ -90,7 +90,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 
 	// 7.1
 	if postdelete != nil {
-		postdelete(opData)
+		postdelete(opData, false)
 	}
 
 	// 6. set oplog is-sync

@@ -28,13 +28,11 @@ type Object interface {
 	 **********/
 
 	Save(isLocked bool) error
-	Delete(isLocked bool) error
 
 	NewEmptyObj() Object
 	GetBaseObject() *BaseObject
 
 	GetByID(isLocked bool) error
-	GetKey(id *types.PttID, isLocked bool) ([]byte, error)
 	GetNewObjByID(id *types.PttID, isLocked bool) (Object, error)
 	Unmarshal(theBytes []byte) error
 
@@ -84,6 +82,9 @@ type Object interface {
 
 	SetEntityID(id *types.PttID)
 	GetEntityID() *types.PttID
+
+	Delete(isLocked bool) error
+	GetKey(id *types.PttID, isLocked bool) ([]byte, error)
 }
 
 type BaseObject struct {
@@ -148,6 +149,14 @@ func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *
 	o.EntityID = entityID
 	o.fullDBPrefix = fullDBPrefix
 	o.fullDBIdxPrefix = fullDBIdxPrefix
+}
+
+func (o *BaseObject) CloneDB(o2 *BaseObject) {
+	o.db = o2.db
+	o.dbLock = o2.dbLock
+	o.EntityID = o2.EntityID
+	o.fullDBPrefix = o2.fullDBPrefix
+	o.fullDBIdxPrefix = o2.fullDBIdxPrefix
 }
 
 func (o *BaseObject) Lock() error {
@@ -365,4 +374,20 @@ func (o *BaseObject) SetBlockInfo(blockInfo BlockInfo) error {
 
 func (o *BaseObject) RemoveMeta() {
 	return
+}
+
+func (o *BaseObject) DB() *pttdb.LDBBatch {
+	return o.db
+}
+
+func (o *BaseObject) DBLock() *types.LockMap {
+	return o.dbLock
+}
+
+func (o *BaseObject) FullDBPrefix() []byte {
+	return o.fullDBPrefix
+}
+
+func (o *BaseObject) FullDBIdxPrefix() []byte {
+	return o.fullDBIdxPrefix
 }

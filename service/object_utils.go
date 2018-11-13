@@ -61,6 +61,16 @@ func SetDeleteObjectWithOplog(
 
 }
 
+func AliveObjects(theObjs []Object) []Object {
+	objs := make([]Object, 0, len(theObjs))
+	for _, obj := range theObjs {
+		if obj.GetStatus() == types.StatusAlive {
+			objs = append(objs, obj)
+		}
+	}
+	return objs
+}
+
 func GetObjList(obj Object, startID *types.PttID, limit int, listOrder pttdb.ListOrder, isLocked bool) ([]Object, error) {
 
 	baseObj := obj.GetBaseObject()
@@ -99,6 +109,24 @@ func GetObjList(obj Object, startID *types.PttID, limit int, listOrder pttdb.Lis
 
 	return objs, nil
 
+}
+
+func (obj *BaseObject) GetObjIdxIterWithObj(startID *types.PttID, listOrder pttdb.ListOrder, isLocked bool) (iterator.Iterator, error) {
+
+	prefix := obj.fullDBIdxPrefix
+
+	if startID == nil {
+		return obj.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
+	}
+
+	o := &BaseObject{ID: startID}
+	o.SetDB(obj.db, obj.dbLock, obj.EntityID, obj.fullDBPrefix, obj.fullDBIdxPrefix)
+	startKey, err := o.IdxKey()
+	if err != nil {
+		return nil, err
+	}
+
+	return obj.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
 func (obj *BaseObject) GetObjIterWithObj(startID *types.PttID, listOrder pttdb.ListOrder, isLocked bool) (iterator.Iterator, error) {

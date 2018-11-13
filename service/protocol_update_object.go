@@ -20,6 +20,7 @@ import (
 	"bytes"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func ProtocolUpdateObject() error {
@@ -31,6 +32,8 @@ func isReplaceOrigSyncInfo(syncInfo SyncInfo, status types.Status, ts types.Time
 	if syncInfo == nil {
 		return true
 	}
+
+	log.Debug("isReplaceOrigSyncInfo: start", "syncInfo", syncInfo)
 
 	statusClass := types.StatusToStatusClass(status)
 	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())

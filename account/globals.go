@@ -34,7 +34,7 @@ var (
 // protocol
 const (
 	_ pkgservice.OpType = iota + pkgservice.NMsg
-	// me-oplog
+	// user-oplog
 	AddUserOplogMsg //30
 	AddUserOplogsMsg
 
@@ -48,6 +48,9 @@ const (
 
 	SyncPendingUserOplogMsg
 	SyncPendingUserOplogAckMsg
+
+	SyncAddUserNodeMsg
+	SyncAddUserNodeAckMsg
 )
 
 // user-profile
@@ -74,8 +77,9 @@ var (
 	DBUserNamePrefix = []byte(".urnm")
 	DBUserImgPrefix  = []byte(".urim")
 
-	DBUserNodePrefix    = []byte(".undb")
-	DBUserNodeIdxPrefix = []byte(".unix")
+	DBUserNodePrefix     = []byte(".undb")
+	DBUserNodeIdxPrefix  = []byte(".unix")
+	DBUserNodeInfoPrefix = []byte(".uidb")
 )
 
 // op-key

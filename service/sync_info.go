@@ -86,5 +86,8 @@ func (s *BaseSyncInfo) SetBlock(blockInfo BlockInfo) error {
 }
 
 func (s *BaseSyncInfo) GetBlock() BlockInfo {
+	if s.BlockInfo == nil {
+		return nil
+	}
 	return s.BlockInfo
 }

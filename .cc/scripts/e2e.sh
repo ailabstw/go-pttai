@@ -12,7 +12,7 @@ echo "regex: ${regex}"
 make
 make bootnode
 
-gotest -v -timeout 120s -run "${regex}" "./e2e"
+gotest -v -timeout 180s -run "${regex}" "./e2e"
 
 echo "post-check: bootnode:"
 ps ax|grep bootnode

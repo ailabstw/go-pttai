@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 /**********
@@ -141,10 +142,14 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 		return err
 	}
 
+	log.Debug("handleDeleteObjectLogCore: to postdelete")
+
 	// 4.1
 	if postdelete != nil {
 		postdelete(objID, oplog, opData, origObj, blockInfo)
 	}
+
+	log.Debug("handleDeleteObjectLogCore: after postdelete")
 
 	// 5. set oplog is-sync (do not set sync if orig-status is alive)
 	if origStatus == types.StatusAlive {

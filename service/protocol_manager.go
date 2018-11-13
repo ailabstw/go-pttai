@@ -38,6 +38,10 @@ type ProtocolManager interface {
 
 	Sync(peer *PttPeer) error
 
+	Leave() error
+	Delete() error
+	PostdeleteEntity(opData OpData, isForce bool) error
+
 	// join
 	ApproveJoin(
 		joinEntity *JoinEntity,
@@ -340,7 +344,9 @@ type BaseProtocolManager struct {
 	// entity
 	entity Entity
 
-	postdeleteEntity func()
+	leave      func() error
+	theDelete  func() error
+	postdelete func(opData OpData, isForce bool) error
 
 	// ptt
 	ptt Ptt
@@ -377,7 +383,9 @@ func NewBaseProtocolManager(
 
 	postsyncMemberOplog func(peer *PttPeer) error,
 
-	postdeleteEntity func(),
+	leave func() error,
+	theDelete func() error,
+	postdelete func(opData OpData, isForce bool) error,
 
 	e Entity,
 	db *pttdb.LDBBatch,
@@ -492,7 +500,9 @@ func NewBaseProtocolManager(
 		// entity
 		entity: e,
 
-		postdeleteEntity: postdeleteEntity,
+		leave:      leave,
+		theDelete:  theDelete,
+		postdelete: postdelete,
 
 		// ptt
 		ptt: ptt,
@@ -531,8 +541,14 @@ func NewBaseProtocolManager(
 	if pm.isPendingPeer == nil {
 		pm.isPendingPeer = pm.defaultIsPendingPeer
 	}
-	if pm.postdeleteEntity == nil {
-		pm.postdeleteEntity = pm.DefaultPostdeleteEntity
+	if pm.leave == nil {
+		pm.leave = pm.defaultLeave
+	}
+	if pm.theDelete == nil {
+		pm.theDelete = pm.defaultDelete
+	}
+	if pm.postdelete == nil {
+		pm.postdelete = pm.DefaultPostdeleteEntity
 	}
 
 	return pm, nil
@@ -627,7 +643,7 @@ func (pm *BaseProtocolManager) Start() error {
 	pm.isStart = true
 
 	myID := pm.Ptt().GetMyEntity().GetID()
-
+	// check owner
 	entity := pm.Entity()
 	if !entity.IsOwner(myID) {
 		log.Debug("Start: I am not the owner", "myID", myID, "entityID", entity.GetID())

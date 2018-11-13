@@ -14,28 +14,44 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package account
+package service
 
-import (
-	"github.com/ailabstw/go-pttai/log"
-	pkgservice "github.com/ailabstw/go-pttai/service"
-)
+func (pm *BaseProtocolManager) Delete() error {
+	return pm.theDelete()
+}
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
-	}
-
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
-	if err != nil {
-		return err
-	}
-
+func (pm *BaseProtocolManager) defaultDelete() error {
 	return nil
 }
 
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
+func (pm *BaseProtocolManager) Leave() error {
+	return pm.leave()
+}
+
+func (pm *BaseProtocolManager) defaultLeave() error {
+	return nil
+}
+
+/*
+PostdeleteEntity deals with postdeleting entity.
+
+Especially used in UnregisterMember and posttransferMember (with nil opData) and RevokeNode
+*/
+func (pm *BaseProtocolManager) PostdeleteEntity(opData OpData, isForce bool) error {
+	return pm.postdelete(opData, isForce)
+}
+
+func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bool) error {
+	// peer
+	pm.CleanPeers()
+
+	// join-key
+	pm.CleanJoinKey()
+
+	// op-key
+	pm.CleanOpKey()
+
+	pm.CleanOpKeyOplog()
+
+	return nil
 }

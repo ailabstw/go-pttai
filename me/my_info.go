@@ -41,7 +41,7 @@ type MyInfo struct {
 	signKeyInfo     *pkgservice.KeyInfo
 	nodeSignKeyInfo *pkgservice.KeyInfo
 
-	NodeSignID *types.PttID
+	NodeSignID *types.PttID `json:"-"`
 
 	myKey   *ecdsa.PrivateKey
 	nodeKey *ecdsa.PrivateKey

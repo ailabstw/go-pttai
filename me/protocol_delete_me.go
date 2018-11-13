@@ -17,7 +17,9 @@
 package me
 
 import (
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -31,8 +33,41 @@ func (pm *ProtocolManager) DeleteMe() error {
 		pm.NewMeOplog, pm.setPendingDeleteMeSyncInfo, pm.broadcastMeOplogCore, pm.postdeleteDeleteMe)
 }
 
-func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData) (err error) {
-	return
+func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData, isForce bool) error {
+
+	myInfo := pm.Entity().(*MyInfo)
+	myID := myInfo.ID
+	myService := pm.Entity().Service()
+
+	log.Debug("postdeleteMe: start", "myProfileID", myInfo.MyProfileID, "myProfile", myInfo.Profile, "isForce", isForce)
+
+	// delete profile
+	myProfile := myInfo.Profile
+	if myProfile != nil {
+		myProfile.PM().(*account.ProtocolManager).Delete()
+	}
+
+	entities := pm.myPtt.GetEntities()
+	for _, entity := range entities {
+		if entity == myInfo {
+			continue
+		}
+		if entity.Service() == myService {
+			continue
+		}
+		if entity == myProfile {
+			continue
+		}
+		if entity.GetStatus() > types.StatusAlive {
+			continue
+		}
+		if !entity.IsOwner(myID) {
+			continue
+		}
+		entity.PM().Leave()
+	}
+
+	return nil
 }
 
 func (pm *ProtocolManager) postdeleteMeCore(logID *types.PttID) (err error) {

@@ -17,25 +17,42 @@
 package account
 
 import (
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
-	}
+type SyncUserNodeAck struct {
+	Objs []*UserNode `json:"o"`
+}
 
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
-	if err != nil {
-		return err
+func (pm *ProtocolManager) HandleSyncAddUserNodeAck(objs []*UserNode, peer *pkgservice.PttPeer) error {
+
+	origObj := NewEmptyUserNode()
+	pm.SetUserNodeDB(origObj)
+	for _, obj := range objs {
+		pm.SetUserNodeDB(obj)
+
+		pm.HandleSyncCreateObjectAck(
+			obj, peer, origObj,
+			pm.SetUserDB, pm.updateCreateUserNode, pm.postcreateUserNode, pm.broadcastUserOplogCore)
 	}
 
 	return nil
 }
 
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
+func (pm *ProtocolManager) updateCreateUserNode(theToObj pkgservice.Object, theFromObj pkgservice.Object) error {
+	toObj, ok := theToObj.(*UserNode)
+	if !ok {
+		return pkgservice.ErrInvalidObject
+	}
+
+	fromObj, ok := theFromObj.(*UserNode)
+	if !ok {
+		return pkgservice.ErrInvalidObject
+	}
+
+	toObj.UserID = fromObj.UserID
+	toObj.NodeID = fromObj.NodeID
+
+	return nil
+
 }

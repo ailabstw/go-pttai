@@ -21,9 +21,11 @@ import (
 	"crypto/ecdsa"
 	"os"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 func (spm *ServiceProtocolManager) CreateMe(myID *types.PttID, myKey *ecdsa.PrivateKey, contentBackend *content.Backend) error {
@@ -129,6 +131,14 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	// op-key
 	if len(pm.OpKeys()) == 0 {
 		pm.CreateOpKey()
+		if err != nil {
+			return err
+		}
+	}
+
+	// user-profile add node
+	if myNodeType >= pkgservice.NodeTypeDesktop {
+		err = myInfo.Profile.PM().(*account.ProtocolManager).AddUserNode(myNodeID)
 		if err != nil {
 			return err
 		}

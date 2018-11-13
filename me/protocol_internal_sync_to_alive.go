@@ -17,8 +17,10 @@
 package me
 
 import (
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32) error {
@@ -56,6 +58,14 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	expectedWeight := pm.nodeTypeToWeight(myNodeType)
 	if weight != expectedWeight {
 		pm.ProposeRaftAddNode(myNodeID, expectedWeight)
+	}
+
+	// user-profile add node
+	if myNodeType >= pkgservice.NodeTypeDesktop {
+		err = myInfo.Profile.PM().(*account.ProtocolManager).AddUserNode(myNodeID)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Debug("InternalSyncToAlive: done")

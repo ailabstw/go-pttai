@@ -18,9 +18,11 @@ package e2e
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/me"
@@ -33,6 +35,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
+	var err error
 	var bodyString string
 	var marshaled []byte
 	var dummyBool bool
@@ -43,6 +46,13 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 
 	t0 := baloo.New("http://127.0.0.1:9450")
 	t1 := baloo.New("http://127.0.0.1:9451")
+
+	// 0 test-error
+	err = testError("http://127.0.0.1:9450")
+	assert.Equal(nil, err)
+
+	err = testError("http://127.0.0.1:9451")
+	assert.Equal(nil, err)
 
 	// 1. get
 	bodyString = `{"id": "testID", "method": "me_get", "params": []}`
@@ -73,6 +83,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(1, len(me1_3.OwnerIDs))
 	assert.Equal(me1_3.ID, me1_3.OwnerIDs[0])
 	assert.Equal(true, me1_3.IsOwner(me1_3.ID))
+	profileID1_3 := me1_3.MyProfileID
 
 	// 4. show-my-key
 	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
@@ -207,6 +218,13 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 
 	time.Sleep(10 * time.Second)
 
+	// 11.0 test-error
+	err = testError("http://127.0.0.1:9450")
+	assert.Equal(nil, err)
+
+	err = testError("http://127.0.0.1:9451")
+	assert.NotEqual(nil, err)
+
 	// 11. get my nodes
 	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
 	dataGetMyNodes0_11 := &struct {
@@ -219,13 +237,6 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode0_11_0.Status)
 	assert.Equal(me0_1.NodeID, myNode0_11_0.NodeID)
 
-	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
-	dataGetMyNodes1_11 := &struct {
-		Result []*me.MyNode `json:"result"`
-	}{}
-	testListCore(t1, bodyString, dataGetMyNodes1_11, t, isDebug)
-	assert.Equal(1, len(dataGetMyNodes1_11.Result))
-
 	// 12. getPeers
 	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
 
@@ -235,12 +246,6 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	testListCore(t0, bodyString, dataPeers0_12, t, isDebug)
 	assert.Equal(0, len(dataPeers0_12.Result))
 
-	dataPeers1_12 := &struct {
-		Result []*pkgservice.BackendPeer `json:"result"`
-	}{}
-	testListCore(t1, bodyString, dataPeers1_12, t, isDebug)
-	assert.Equal(0, len(dataPeers1_12.Result))
-
 	// 13. getPeers
 	bodyString = `{"id": "testID", "method": "ptt_getPeers", "params": []}`
 
@@ -248,15 +253,29 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_13, t, isDebug)
-	assert.Equal(1, len(dataPeers0_13.Result))
-	dataPeer0_13_0 := dataPeers0_13.Result[0]
-	assert.Equal(pkgservice.PeerTypeRandom, dataPeer0_13_0.PeerType)
+	assert.Equal(0, len(dataPeers0_13.Result))
 
-	dataPeers1_13 := &struct {
-		Result []*pkgservice.BackendPeer `json:"result"`
+	// 14. getUserNode
+	t.Logf("10.6 GetUserNodeList")
+	marshaled, _ = profileID1_3.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserNodeList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserNodeList0_14 := &struct {
+		Result []*account.UserNode `json:"result"`
 	}{}
-	testListCore(t1, bodyString, dataPeers1_13, t, isDebug)
-	assert.Equal(1, len(dataPeers1_13.Result))
-	dataPeer1_13_0 := dataPeers1_13.Result[0]
-	assert.Equal(pkgservice.PeerTypeRandom, dataPeer1_13_0.PeerType)
+	testListCore(t0, bodyString, dataGetUserNodeList0_14, t, isDebug)
+	assert.Equal(2, len(dataGetUserNodeList0_14.Result))
+	userNode0_14_0 := dataGetUserNodeList0_14.Result[0]
+	userNode0_14_1 := dataGetUserNodeList0_14.Result[1]
+
+	var myUserNode0_14 *account.UserNode
+	var theirUserNode0_14 *account.UserNode
+	if reflect.DeepEqual(userNode0_14_0.NodeID, me0_1.NodeID) {
+		myUserNode0_14 = userNode0_14_0
+		theirUserNode0_14 = userNode0_14_1
+	} else {
+		myUserNode0_14 = userNode0_14_1
+		theirUserNode0_14 = userNode0_14_0
+	}
+	assert.Equal(types.StatusAlive, myUserNode0_14.Status)
+	assert.Equal(types.StatusDeleted, theirUserNode0_14.Status)
 }

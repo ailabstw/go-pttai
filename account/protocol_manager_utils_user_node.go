@@ -16,26 +16,28 @@
 
 package account
 
-import (
-	"github.com/ailabstw/go-pttai/log"
-	pkgservice "github.com/ailabstw/go-pttai/service"
-)
+import "github.com/ailabstw/go-pttai/pttdb"
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
+func (pm *ProtocolManager) CleanUserNode() error {
+	if pm.userNodeInfo != nil {
+		pm.userNodeInfo.Delete()
+		pm.userNodeInfo = nil
 	}
 
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
+	userNode := NewEmptyUserNode()
+	pm.SetUserNodeDB(userNode)
+
+	iter, err := userNode.BaseObject.GetObjIdxIterWithObj(nil, pttdb.ListOrderNext, false)
 	if err != nil {
 		return err
 	}
+	defer iter.Release()
+
+	var key []byte
+	for iter.Next() {
+		key = iter.Key()
+		userNode.DB().DeleteAll(key)
+	}
 
 	return nil
-}
-
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
 }

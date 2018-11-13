@@ -213,6 +213,16 @@ func (m *Merkle) SaveGenerateTime(ts types.Timestamp) error {
 	return nil
 }
 
+func (m *Merkle) ToGenerateTime() types.Timestamp {
+	ts := m.LastGenerateTS
+	if ts.Ts < OffsetMerkleSyncTime*3 {
+		return types.ZeroTimestamp
+	}
+
+	ts.Ts -= OffsetMerkleSyncTime * 2
+	return ts
+}
+
 func (m *Merkle) GetGenerateTime() (types.Timestamp, error) {
 	key, err := m.MarshalGenerateTimeKey()
 	if err != nil {
@@ -253,6 +263,20 @@ func (m *Merkle) SaveSyncTime(ts types.Timestamp) error {
 	m.LastSyncTS = ts
 
 	return nil
+}
+
+func (m *Merkle) ToSyncTime() (types.Timestamp, error) {
+	ts, err := m.GetSyncTime()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	if ts.Ts < OffsetMerkleSyncTime*3 {
+		return types.ZeroTimestamp, nil
+	}
+
+	ts.Ts -= OffsetMerkleSyncTime
+	return ts, nil
 }
 
 func (m *Merkle) GetSyncTime() (types.Timestamp, error) {
@@ -494,4 +518,91 @@ func validateMerkleTreeTrimNodes(nodes []*MerkleNode, ts types.Timestamp) []*Mer
 	})
 
 	return nodes[:idx]
+}
+
+func (m *Merkle) Clean() {
+	var key []byte
+
+	log.Debug("Clean: clean now", "prefixID", m.PrefixID)
+	iter, err := m.GetMerkleIter(MerkleTreeLevelNow, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	db := m.db.DB()
+
+	for iter.Next() {
+		key = iter.Key()
+		log.Debug("Clean: (now)", "key", key)
+		db.Delete(key)
+	}
+
+	log.Debug("Clean: clean hr", "prefixID", m.PrefixID)
+	iter, err = m.GetMerkleIter(MerkleTreeLevelHR, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		log.Debug("Clean: (hr)", "key", key)
+		db.Delete(key)
+	}
+
+	log.Debug("Clean: clean day", "prefixID", m.PrefixID)
+
+	iter, err = m.GetMerkleIter(MerkleTreeLevelDay, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		log.Debug("Clean: (day)", "key", key)
+		db.Delete(key)
+	}
+
+	log.Debug("Clean: clean month", "prefixID", m.PrefixID)
+	iter, err = m.GetMerkleIter(MerkleTreeLevelMonth, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		log.Debug("Clean: (month)", "key", key)
+		db.Delete(key)
+	}
+
+	log.Debug("Clean: clean year", "prefixID", m.PrefixID)
+	iter, err = m.GetMerkleIter(MerkleTreeLevelYear, types.ZeroTimestamp, types.MaxTimestamp, pttdb.ListOrderNext)
+	if err != nil {
+		return
+	}
+	defer iter.Release()
+
+	for iter.Next() {
+		key = iter.Key()
+		log.Debug("Clean: (year)", "key", key)
+		db.Delete(key)
+	}
+
+	log.Debug("Clean: clean generate-time key", "prefixID", m.PrefixID)
+	key, err = m.MarshalGenerateTimeKey()
+	err = db.Delete(key)
+	log.Debug("Clean: (generate-time)", "key", key, "db", m.db, "e", err)
+
+	log.Debug("Clean: clean sync-time key", "prefixID", m.PrefixID)
+	key, err = m.MarshalSyncTimeKey()
+	log.Debug("Clean: (sync-time)", "key", key)
+	db.Delete(key)
+
+	log.Debug("Clean: clean failed-sync-time key", "prefixID", m.PrefixID)
+	key, err = m.MarshalFailSyncTimeKey()
+	log.Debug("Clean: (fail-sync-time)", "key", key)
+	db.Delete(key)
 }

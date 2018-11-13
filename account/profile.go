@@ -27,10 +27,9 @@ import (
 
 type Profile struct {
 	*pkgservice.BaseEntity `json:"e"`
+	UpdateTS               types.Timestamp `json:"UT"`
 
 	MyID *types.PttID `json:"m"`
-
-	UpdateTS types.Timestamp `json:"UT"`
 }
 
 func NewEmptyProfile() *Profile {
@@ -48,8 +47,9 @@ func NewProfile(myID *types.PttID, ts types.Timestamp, ptt pkgservice.Ptt, servi
 
 	p := &Profile{
 		BaseEntity: e,
-		MyID:       myID,
 		UpdateTS:   ts,
+
+		MyID: myID,
 	}
 
 	log.Debug("NewProfile", "id", id)

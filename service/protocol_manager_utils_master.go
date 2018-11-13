@@ -249,3 +249,7 @@ func (pm *BaseProtocolManager) registerMasters(masters []*Master, isLocked bool)
 		pm.RegisterMaster(master, true, true)
 	}
 }
+
+func (pm *BaseProtocolManager) GetMasters() map[types.PttID]*Master {
+	return pm.masters
+}

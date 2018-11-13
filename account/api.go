@@ -90,6 +90,18 @@ func (api *PrivateAPI) GetUserOplogMerkleNodeList(profileID string, level uint8,
 }
 
 /**********
+ * UserNode
+ **********/
+
+func (api *PrivateAPI) GetUserNodeList(idStr string, startID string, limit int, listOrder pttdb.ListOrder) ([]*UserNode, error) {
+	return api.b.GetUserNodeList([]byte(idStr), []byte(startID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetUserNodeInfo(idStr string) (*UserNodeInfo, error) {
+	return api.b.GetUserNodeInfo([]byte(idStr))
+}
+
+/**********
  * Raw Data
  **********/
 

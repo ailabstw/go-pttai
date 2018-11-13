@@ -17,25 +17,33 @@
 package account
 
 import (
-	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
-	if peer == nil {
-		return nil
+func (pm *ProtocolManager) SyncAddUserNode(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
+
+	userID := pm.Entity().GetID()
+
+	opData := &UserOpAddUserNode{}
+
+	var err error
+	var userNode *UserNode
+	userNodes := make([]*UserNode, 0, len(oplogs))
+	for _, oplog := range oplogs {
+		err = oplog.GetData(opData)
+		if err != nil {
+			continue
+		}
+
+		userNode = NewEmptyUserNode()
+		pkgservice.NewObjectWithOplog(userNode, oplog)
+		userNode.UpdateTS = oplog.UpdateTS
+		userNode.Status = types.StatusAlive
+		userNode.UserID = userID
+		userNode.NodeID = opData.NodeID
+		userNodes = append(userNodes, userNode)
 	}
 
-	log.Debug("SyncUserOplog: start")
-	err := pm.SyncOplog(peer, pm.userOplogMerkle, SyncUserOplogMsg)
-	log.Debug("SyncUserOplog: after SyncOplog", "e", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
-	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
+	return pm.HandleSyncAddUserNodeAck(userNodes, peer)
 }

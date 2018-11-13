@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncCreateObjectAck struct {
@@ -61,7 +62,9 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 ) error {
 
 	// oplog
-	oplog := &BaseOplog{ID: obj.GetID()}
+	objID := obj.GetID()
+
+	oplog := &BaseOplog{ID: objID}
 	setLogDB(oplog)
 
 	err := oplog.Lock()
@@ -76,6 +79,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		return nil
 	}
 
+	log.Debug("HandleSyncCreateObjectAck: to check IsSync", "oplog", oplog)
 	if oplog.IsSync { // already synced
 		return nil
 	}
@@ -87,11 +91,13 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	}
 	defer obj.Unlock()
 
+	origObj.SetID(objID)
 	err = origObj.GetByID(true)
 	if err != nil {
 		return err
 	}
 
+	log.Debug("HandleSyncCreateObjectAck: to check oplog", "objLogID", origObj.GetLogID(), "oplogID", oplog.ID, "status", origObj.GetStatus())
 	if origObj.GetUpdateLogID() == nil && reflect.DeepEqual(origObj.GetLogID(), oplog.ID) {
 		if origObj.GetStatus() == types.StatusInternalSync {
 			err = updateCreateObject(origObj, obj)
@@ -113,6 +119,8 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	if err != nil {
 		return err
 	}
+
+	log.Debug("HandleSyncCreateObjectAck: after SetOplogIsSync", "origStatus", origStatus, "oplogStatus", oplog.ToStatus())
 
 	// obj becomes alive after set-oplog
 	if origStatus >= types.StatusAlive && origStatus != types.StatusFailed {

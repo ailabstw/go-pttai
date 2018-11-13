@@ -163,7 +163,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_3_4, t, isDebug)
-	assert.Equal(1, len(dataGetUserOplogList0_3_4.Result))
+	assert.Equal(2, len(dataGetUserOplogList0_3_4.Result))
 	userOplog0_3_4 := dataGetUserOplogList0_3_4.Result[0]
 	masterSigns0_3_4 := userOplog0_3_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_3_4))
@@ -175,7 +175,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetUserOplogList1_3_4, t, isDebug)
-	assert.Equal(1, len(dataGetUserOplogList1_3_4.Result))
+	assert.Equal(2, len(dataGetUserOplogList1_3_4.Result))
 	userOplog1_3_4 := dataGetUserOplogList1_3_4.Result[0]
 	masterSigns1_3_4 := userOplog1_3_4.MasterSigns
 	assert.Equal(1, len(masterSigns1_3_4))
@@ -385,7 +385,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 
 	profile0_10_1 := &account.Profile{}
 	testCore(t0, bodyString, profile0_10_1, t, isDebug)
-	assert.Equal(types.StatusAlive, profile0_10_1.Status)
+	assert.Equal(types.StatusDeleted, profile0_10_1.Status)
 	assert.Equal(me0_3.ID, profile0_10_1.MyID)
 	assert.Equal(me0_3.MyProfileID, profile0_10_1.ID)
 	assert.Equal(false, profile0_10_1.IsOwner(me0_1.ID))
@@ -427,33 +427,50 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	assert.Equal(1, len(masterSigns0_10_2))
 	assert.Equal(me1_3.ID, masterSigns1_10_2[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, masterOplog1_10_2.MasterLogID)
+	assert.Equal(types.StatusAlive, masterOplog1_10_2.ToStatus())
+	assert.Equal(types.Bool(true), masterOplog1_10_2.IsSync)
 
-	// 10.10. getMemberOplogList
-	t.Logf("10.10 getMemberOplogList")
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMasterOplogList0_10_2_1 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMasterOplogList0_10_2_1, t, isDebug)
+	assert.Equal(1, len(dataGetMasterOplogList0_10_2_1.Result))
+	masterOplog0_10_2_1 := dataGetMasterOplogList0_10_2_1.Result[0]
+	masterSigns0_10_2_1 := masterOplog0_10_2_1.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_2_1))
+	assert.Equal(me1_3.ID, masterSigns0_10_2_1[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, masterOplog0_10_2_1.MasterLogID)
+	assert.Equal(types.StatusAlive, masterOplog0_10_2_1.ToStatus())
+	assert.Equal(types.Bool(true), masterOplog0_10_2.IsSync)
+
+	// 10.3. getMemberOplogList
+	t.Logf("10.3 getMemberOplogList")
 
 	marshaled, _ = profile0_10_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMemberOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
-	dataGetMembergOplogList0_10_10 := &struct {
+	dataGetMembergOplogList0_10_3 := &struct {
 		Result []*pkgservice.MemberOplog `json:"result"`
 	}{}
-	testListCore(t0, bodyString, dataGetMembergOplogList0_10_10, t, isDebug)
-	assert.Equal(3, len(dataGetMembergOplogList0_10_10.Result))
-	memberOplog0_10_10 := dataGetMembergOplogList0_10_10.Result[0]
-	masterSigns0_10_10 := memberOplog0_10_10.MasterSigns
-	assert.Equal(1, len(masterSigns0_10_10))
-	assert.Equal(me0_3.ID, masterSigns0_10_10[0].ID)
+	testListCore(t0, bodyString, dataGetMembergOplogList0_10_3, t, isDebug)
+	assert.Equal(3, len(dataGetMembergOplogList0_10_3.Result))
+	memberOplog0_10_3 := dataGetMembergOplogList0_10_3.Result[0]
+	masterSigns0_10_3 := memberOplog0_10_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_3))
+	assert.Equal(me0_3.ID, masterSigns0_10_3[0].ID)
 
 	marshaled, _ = profile1_10_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMemberOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
-	dataGetMemberOplogList1_10_10 := &struct {
+	dataGetMemberOplogList1_10_3 := &struct {
 		Result []*pkgservice.MemberOplog `json:"result"`
 	}{}
-	testListCore(t1, bodyString, dataGetMemberOplogList1_10_10, t, isDebug)
-	assert.Equal(1, len(dataGetMemberOplogList1_10_10.Result))
-	memberOplog1_10_10 := dataGetMemberOplogList1_10_10.Result[0]
-	masterSigns1_10_10 := memberOplog1_10_10.MasterSigns
-	assert.Equal(1, len(masterSigns1_10_10))
-	assert.Equal(me1_3.ID, masterSigns1_10_10[0].ID)
+	testListCore(t1, bodyString, dataGetMemberOplogList1_10_3, t, isDebug)
+	assert.Equal(1, len(dataGetMemberOplogList1_10_3.Result))
+	memberOplog1_10_3 := dataGetMemberOplogList1_10_3.Result[0]
+	masterSigns1_10_3 := memberOplog1_10_3.MasterSigns
+	assert.Equal(1, len(masterSigns1_10_3))
+	assert.Equal(me1_3.ID, masterSigns1_10_3[0].ID)
 
 	// 10.4. getUserOplogList
 	marshaled, _ = profile0_10_1.ID.MarshalText()
@@ -462,7 +479,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_10_4, t, isDebug)
-	assert.Equal(1, len(dataGetUserOplogList0_10_4.Result))
+	assert.Equal(3, len(dataGetUserOplogList0_10_4.Result))
 	userOplog0_10_4 := dataGetUserOplogList0_10_4.Result[0]
 	masterSigns0_10_4 := userOplog0_10_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4))
@@ -474,10 +491,63 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetUserOplogList1_10_4, t, isDebug)
-	assert.Equal(1, len(dataGetUserOplogList1_10_4.Result))
+	assert.Equal(3, len(dataGetUserOplogList1_10_4.Result))
 	userOplog1_10_4 := dataGetUserOplogList1_10_4.Result[0]
 	masterSigns1_10_4 := userOplog1_10_4.MasterSigns
 	assert.Equal(1, len(masterSigns1_10_4))
 	assert.Equal(me1_3.ID, masterSigns1_10_4[0].ID)
+
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList0_10_4_1 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserOplogList0_10_4_1, t, isDebug)
+	assert.Equal(3, len(dataGetUserOplogList0_10_4_1.Result))
+	userOplog0_10_4_1 := dataGetUserOplogList0_10_4_1.Result[0]
+	masterSigns0_10_4_1 := userOplog0_10_4_1.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_4_1))
+	assert.Equal(me1_3.ID, masterSigns0_10_4_1[0].ID)
+
+	// 10.5. getMasterMerkleList
+	t.Logf("10.5 getMasterMerkleList")
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogMerkleNodeList", "params": ["%v", 1, "", 0, 2]}`, string(marshaled))
+	dataGetMasterOplogMerkleNodeList0_10_5 := &struct {
+		Result []*pkgservice.MerkleNode `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMasterOplogMerkleNodeList0_10_5, t, isDebug)
+	assert.Equal(1, len(dataGetMasterOplogMerkleNodeList0_10_5.Result))
+
+	dataGetMasterOplogMerkleNodeList1_10_5 := &struct {
+		Result []*pkgservice.MerkleNode `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMasterOplogMerkleNodeList1_10_5, t, isDebug)
+	assert.Equal(1, len(dataGetMasterOplogMerkleNodeList1_10_5.Result))
+
+	// 10.6. getUserNode
+	t.Logf("10.6 GetUserNodeList")
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserNodeList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserNodeList0_10_6 := &struct {
+		Result []*account.UserNode `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserNodeList0_10_6, t, isDebug)
+	assert.Equal(2, len(dataGetUserNodeList0_10_6.Result))
+	userNode0_10_6_0 := dataGetUserNodeList0_10_6.Result[0]
+	userNode0_10_6_1 := dataGetUserNodeList0_10_6.Result[1]
+	assert.Equal(types.StatusAlive, userNode0_10_6_0.Status)
+	assert.Equal(types.StatusAlive, userNode0_10_6_1.Status)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserNodeList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserNodeList1_10_6 := &struct {
+		Result []*account.UserNode `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetUserNodeList1_10_6, t, isDebug)
+	assert.Equal(2, len(dataGetUserNodeList1_10_6.Result))
+	userNode1_10_6_0 := dataGetUserNodeList1_10_6.Result[0]
+	userNode1_10_6_1 := dataGetUserNodeList1_10_6.Result[1]
+	assert.Equal(types.StatusAlive, userNode1_10_6_0.Status)
+	assert.Equal(types.StatusAlive, userNode1_10_6_1.Status)
 
 }

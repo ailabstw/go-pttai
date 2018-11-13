@@ -86,15 +86,10 @@ func (pm *BaseProtocolManager) postprocessOpKeyOplogs(processInfo ProcessInfo, t
 
 	createOpKeyInfos, deleteOpKeyInfos := info.CreateOpKeyInfo, info.DeleteOpKeyInfo
 
-	createOpKeyIDList := make([]*SyncID, 0, len(createOpKeyInfos))
-	for _, eachLog := range createOpKeyInfos {
-		createOpKeyIDList = append(createOpKeyIDList, &SyncID{ID: eachLog.ObjID, LogID: eachLog.ID})
-	}
+	createOpKeyIDList := ProcessInfoToSyncIDList(createOpKeyInfos, OpKeyOpTypeCreateOpKey)
 
 	if isPending {
-		for _, eachLog := range deleteOpKeyInfos {
-			toBroadcastLogs = pm.PostprocessPendingDeleteOplog(eachLog, toBroadcastLogs)
-		}
+		toBroadcastLogs = ProcessInfoToBroadcastLogs(deleteOpKeyInfos, toBroadcastLogs)
 	}
 
 	pm.SyncCreateOpKey(createOpKeyIDList, peer)

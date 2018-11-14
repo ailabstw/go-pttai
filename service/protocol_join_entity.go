@@ -86,6 +86,7 @@ func (p *BasePtt) HandleJoinEntity(dataBytes []byte, hash *common.Address, entit
 	}
 
 	if !reflect.DeepEqual(joinEntity.Master0Hash, entity.PM().MasterLog0Hash()) {
+		log.Error("HandleJoinEntity: masterLog0Hash invalid")
 		return ErrInvalidData
 	}
 
@@ -102,6 +103,7 @@ func (p *BasePtt) HandleJoinEntity(dataBytes []byte, hash *common.Address, entit
 	}
 
 	err = p.ToConfirmJoin(confirmKey, entity, joinEntity, keyInfo, peer, joinType)
+	log.Debug("HandleJoinEntity: after ToConfirmJoin", "e", err)
 	if err != nil {
 		return err
 	}

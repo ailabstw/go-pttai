@@ -138,11 +138,11 @@ func handleOplog(
 	defer oplog.Unlock()
 
 	// select
-	err = oplog.SelectExisting(true)
+	isToBroadcast, err := oplog.SelectExisting(true)
 	if err != nil {
 		return false, nil, err
 	}
-	if oplog.IsSync {
+	if oplog.IsSync && !isToBroadcast {
 		return false, nil, nil
 	}
 

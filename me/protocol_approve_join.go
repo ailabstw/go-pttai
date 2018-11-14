@@ -18,6 +18,7 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -25,24 +26,16 @@ func (pm *ProtocolManager) ApproveJoin(joinEntity *pkgservice.JoinEntity, keyInf
 
 	hash := keyInfo.Hash
 
+	if pm.IsJoinFriendKeyHash(hash) {
+		log.Debug("ApproveJoin: to approve join friend")
+		return pm.ApproveJoinFriend(joinEntity, keyInfo, peer)
+	}
+
 	if pm.IsJoinMeKeyHash(hash) {
 		return pm.ApproveJoinMe(joinEntity, keyInfo, peer)
 	}
 
 	return nil, nil, pkgservice.ErrInvalidData
-}
-
-func (pm *ProtocolManager) IsJoinMeKeyHash(hash *common.Address) bool {
-	return pm.BaseProtocolManager.IsJoinKeyHash(hash)
-}
-
-func (pm *ProtocolManager) IsJoinMeRequests(hash *common.Address) bool {
-	pm.lockJoinMeRequest.RLock()
-	defer pm.lockJoinMeRequest.RUnlock()
-
-	_, ok := pm.joinMeRequests[*hash]
-
-	return ok
 }
 
 func (m *MyInfo) HandleApproveJoin(dataBytes []byte, hash *common.Address, joinRequest *pkgservice.JoinRequest, peer *pkgservice.PttPeer) error {
@@ -53,6 +46,8 @@ func (pm *ProtocolManager) HandleApproveJoin(dataBytes []byte, hash *common.Addr
 
 	var err error
 	switch {
+	case pm.IsJoinFriendRequests(hash):
+		err = pm.HandleApproveJoinFriend(dataBytes, joinRequest, peer)
 	case pm.IsJoinMeRequests(hash):
 		err = pm.HandleApproveJoinMe(dataBytes, joinRequest, peer)
 	}

@@ -98,6 +98,9 @@ type ProtocolManager interface {
 	SetNewestMasterLogID(id *types.PttID) error
 	GetNewestMasterLogID() *types.PttID
 
+	GetMasterListFromCache(isLocked bool) ([]*Master, error)
+	GetMasterList(startID *types.PttID, limit int, listOrder pttdb.ListOrder, isLocked bool) ([]*Master, error)
+
 	// master-oplog
 	BroadcastMasterOplog(log *MasterOplog) error
 
@@ -115,7 +118,15 @@ type ProtocolManager interface {
 
 	HandleMasterOplogs(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
 
+	GetMasterOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MasterOplog, error)
+
+	GetMasterOplogMerkleNodeList(level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error)
+
 	// member
+
+	GetMemberList(startID *types.PttID, limit int, listOrder pttdb.ListOrder, isLocked bool) ([]*Member, error)
+
+	// member-oplog
 	BroadcastMemberOplog(log *MemberOplog) error
 
 	HandleAddMemberOplog(dataBytes []byte, peer *PttPeer) error
@@ -132,6 +143,9 @@ type ProtocolManager interface {
 
 	HandleMemberOplogs(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
 	SetMemberSyncTime(ts types.Timestamp) error
+
+	GetMemberOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MemberOplog, error)
+	GetMemberOplogMerkleNodeList(level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error)
 
 	// log0
 	SetLog0DB(oplog *BaseOplog)
@@ -152,6 +166,7 @@ type ProtocolManager interface {
 
 	RegisterOpKey(keyInfo *KeyInfo, isLocked bool) error
 
+	RevokeOpKey(keyID *types.PttID) (bool, error)
 	RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error
 
 	OpKeys() map[common.Address]*KeyInfo
@@ -194,6 +209,8 @@ type ProtocolManager interface {
 	HandleSyncCreateOpKey(dataBytes []byte, peer *PttPeer) error
 	HandleSyncCreateOpKeyAck(dataBytes []byte, peer *PttPeer) error
 
+	GetOpKeyOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*OpKeyOplog, error)
+
 	// peers
 	Peers() *PttPeerSet
 
@@ -217,6 +234,9 @@ type ProtocolManager interface {
 	SendDataToPeer(op OpType, data interface{}, peer *PttPeer) error
 	SendDataToPeers(op OpType, data interface{}, peerList []*PttPeer) error
 
+	CountPeers() (int, error)
+	GetPeers() ([]*PttPeer, error)
+
 	// sync
 	ForceSyncCycle() time.Duration
 
@@ -233,7 +253,7 @@ type ProtocolManager interface {
 		oplog *BaseOplog,
 		origStatus types.Status,
 		isForce bool,
-		postcreateEntity func(entity Entity, oplog *BaseOplog) error,
+		postcreateEntity func(entity Entity) error,
 	) error
 
 	// ptt
@@ -271,6 +291,7 @@ type BaseProtocolManager struct {
 
 	lockMaster sync.RWMutex
 	masters    map[types.PttID]*Master
+	maxMasters int
 
 	// master-oplog
 	dbMasterLock *types.LockMap
@@ -366,6 +387,8 @@ func NewBaseProtocolManager(
 	maxSyncRandomSeconds int,
 	minSyncRandomSeconds int,
 
+	maxMasters int,
+
 	internalSign func(oplog *BaseOplog) (bool, error),
 	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool),
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error,
@@ -445,6 +468,7 @@ func NewBaseProtocolManager(
 		dbMasterPrefix:    dbMasterPrefix,
 		dbMasterIdxPrefix: dbMasterIdxPrefix,
 		masters:           make(map[types.PttID]*Master),
+		maxMasters:        maxMasters,
 
 		// master-oplog
 		dbMasterLock: dbMasterLock,

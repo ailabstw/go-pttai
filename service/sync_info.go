@@ -30,8 +30,8 @@ type SyncInfo interface {
 	GetStatus() types.Status
 	SetStatus(status types.Status)
 
-	SetBlock(block BlockInfo) error
-	GetBlock() BlockInfo
+	SetBlock(block *BlockInfo) error
+	GetBlock() *BlockInfo
 }
 
 type BaseSyncInfo struct {
@@ -39,7 +39,7 @@ type BaseSyncInfo struct {
 	UpdateTS  types.Timestamp `json:"UT"`
 	UpdaterID *types.PttID    `json:"UID"`
 	Status    types.Status    `json:"S"`
-	BlockInfo BlockInfo       `json:"b,omitempty"`
+	BlockInfo *BlockInfo      `json:"b,omitempty"`
 }
 
 func (s *BaseSyncInfo) SetLogID(id *types.PttID) {
@@ -80,14 +80,11 @@ func (s *BaseSyncInfo) InitWithDeleteOplog(status types.Status, oplog *BaseOplog
 	s.Status = status
 }
 
-func (s *BaseSyncInfo) SetBlock(blockInfo BlockInfo) error {
+func (s *BaseSyncInfo) SetBlock(blockInfo *BlockInfo) error {
 	s.BlockInfo = blockInfo
 	return nil
 }
 
-func (s *BaseSyncInfo) GetBlock() BlockInfo {
-	if s.BlockInfo == nil {
-		return nil
-	}
+func (s *BaseSyncInfo) GetBlock() *BlockInfo {
 	return s.BlockInfo
 }

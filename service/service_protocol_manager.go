@@ -50,9 +50,19 @@ type ServiceProtocolManager interface {
 	Ptt() Ptt
 	Service() Service
 
+	DBObjLock() *types.LockMap
 	GetDBLock() *types.LockMap
 
 	NewEmptyEntity() Entity
+
+	CreateJoinEntity(
+		approveJoin *ApproveJoinEntity,
+		peer *PttPeer,
+
+		meLogID *types.PttID,
+		isStart bool,
+		isNew bool,
+	) (Entity, error)
 }
 
 type BaseServiceProtocolManager struct {
@@ -65,6 +75,7 @@ type BaseServiceProtocolManager struct {
 	service Service
 
 	dbLock    *types.LockMap
+	dbObjLock *types.LockMap
 	dbLogLock *types.LockMap
 
 	lockJoinRequest sync.RWMutex
@@ -73,6 +84,11 @@ type BaseServiceProtocolManager struct {
 
 func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtocolManager, error) {
 	dbLock, err := types.NewLockMap(SleepTimeLock)
+	if err != nil {
+		return nil, err
+	}
+
+	dbObjLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +107,7 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 		service: service,
 
 		dbLock:    dbLock,
+		dbObjLock: dbObjLock,
 		dbLogLock: dbLogLock,
 	}
 
@@ -99,6 +116,10 @@ func NewBaseServiceProtocolManager(ptt Ptt, service Service) (*BaseServiceProtoc
 
 func (spm *BaseServiceProtocolManager) GetDBLock() *types.LockMap {
 	return spm.dbLock
+}
+
+func (spm *BaseServiceProtocolManager) DBObjLock() *types.LockMap {
+	return spm.dbObjLock
 }
 
 func (spm *BaseServiceProtocolManager) GetDBLogLock() *types.LockMap {

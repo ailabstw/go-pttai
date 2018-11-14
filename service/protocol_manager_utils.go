@@ -93,10 +93,13 @@ func (pm *BaseProtocolManager) SendDataToPeers(op OpType, data interface{}, peer
 
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
+		log.Error("SendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
 		return err
 	}
 
 	opKeyInfo, err := pm.GetOldestOpKey(false)
+	log.Debug("SendDataToPeers: after get opKey", "opKey", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "e", err)
+
 	if err != nil {
 		return err
 	}
@@ -140,10 +143,12 @@ func (pm *BaseProtocolManager) SendDataToPeerWithCode(code CodeType, op OpType, 
 
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
+		log.Error("SendDataToPeerWithCode: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
 		return err
 	}
 
 	opKeyInfo, err := pm.GetOldestOpKey(false)
+	log.Debug("SendDataToPeerWithCode: after get opKey", "opKey", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "e", err)
 	if err != nil {
 		return err
 	}

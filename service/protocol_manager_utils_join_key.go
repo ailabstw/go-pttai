@@ -64,13 +64,13 @@ func (b *BaseProtocolManager) CreateJoinKeyLoop() error {
 	ticker := time.NewTicker(RenewJoinKeySeconds)
 	defer ticker.Stop()
 
-	b.createJoinKeyInfo()
+	b.createJoinKey()
 
 loop:
 	for {
 		select {
 		case <-ticker.C:
-			b.createJoinKeyInfo()
+			b.createJoinKey()
 		case <-b.QuitSync():
 			break loop
 		}
@@ -79,7 +79,7 @@ loop:
 	return nil
 }
 
-func (b *BaseProtocolManager) createJoinKeyInfo() error {
+func (b *BaseProtocolManager) createJoinKey() error {
 	status := b.Entity().GetStatus()
 	statusClass := types.StatusToStatusClass(status)
 	if statusClass >= types.StatusClassDeleted {
@@ -146,7 +146,7 @@ func (pm *BaseProtocolManager) CleanJoinKey() {
 
 	entityID := pm.Entity().GetID()
 
-	for _, keyInfo := range pm.opKeyInfos {
+	for _, keyInfo := range pm.joinKeyInfos {
 		pm.ptt.RemoveJoinKey(keyInfo.Hash, entityID, false)
 	}
 }

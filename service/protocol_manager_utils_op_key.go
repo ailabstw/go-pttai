@@ -189,7 +189,9 @@ func (pm *BaseProtocolManager) GetOldestOpKey(isLocked bool) (*KeyInfo, error) {
 		return pm.oldestOpKeyInfo, nil
 	}
 
-	return pm.getOldestOpKeyFullScan(true)
+	key, err := pm.getOldestOpKeyFullScan(true)
+	log.Debug("GetOldestOpKey: after getOldestOpKeyFullScan", "key", key.Hash, "entity", pm.Entity().GetID(), "e", err)
+	return key, err
 }
 
 func (pm *BaseProtocolManager) getNewestOpKeyFullScan(isLocked bool) (*KeyInfo, error) {

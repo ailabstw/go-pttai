@@ -229,37 +229,6 @@ func (pm *BaseProtocolManager) HandleFailedUpdatePersonLog(
 	return pm.HandleFailedPersonLog(oplog, origPerson)
 }
 
-/*
-SaveDeleteObjectWithOplog saves Delete Object with Oplog.
-
-We can't integrate with postdelete because there are situations that we want to save without postdelete. (already deleted but we have older ts).
-*/
-func (pm *BaseProtocolManager) saveUpdateObjectWithOplog(
-	obj Object,
-	oplog *BaseOplog,
-	isLocked bool,
-
-) error {
-
-	var err error
-	if !isLocked {
-		err = obj.Lock()
-		if err != nil {
-			return err
-		}
-		defer obj.Unlock()
-	}
-
-	SetUpdateObjectWithOplog(obj, oplog)
-
-	err = obj.Save(true)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func SetPendingPersonSyncInfo(person Object, pendingStatus types.Status, oplog *BaseOplog) error {
 
 	syncInfo := NewEmptySyncPersonInfo()

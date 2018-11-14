@@ -56,7 +56,7 @@ loop:
 func (pm *BaseProtocolManager) GetToRenewOpKeySeconds() int {
 	entity := pm.Entity()
 
-	if entity.GetStatus() < types.StatusAlive {
+	if entity.GetStatus() < types.StatusToBeSynced {
 		return 5
 	}
 

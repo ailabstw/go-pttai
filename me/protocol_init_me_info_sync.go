@@ -18,6 +18,7 @@ package me
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
@@ -32,10 +33,6 @@ type InitMeInfoSync struct {
 	PostfixBytes []byte                        `json:"P"`
 	Oplog0       *pkgservice.BaseOplog         `json:"O"`
 	ProfileData  *pkgservice.ApproveJoinEntity `json:"p"`
-}
-
-func NewEmptyApproveJoinProfile() *pkgservice.ApproveJoinEntity {
-	return &pkgservice.ApproveJoinEntity{Entity: account.NewEmptyProfile()}
 }
 
 func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
@@ -96,6 +93,12 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservice.PttPeer) error {
 	myInfo := pm.Entity().(*MyInfo)
 
+	// validate
+	if !reflect.DeepEqual(myInfo.ID, peer.UserID) {
+		return types.ErrInvalidID
+	}
+
+	// lock
 	log.Debug("HandleInitMeInfoSync: start")
 
 	err := myInfo.Lock()
@@ -104,12 +107,13 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	}
 	defer myInfo.Unlock()
 
-	profileData := NewEmptyApproveJoinProfile()
-	data := &InitMeInfoSync{ProfileData: profileData}
+	theProfileData := account.NewEmptyApproveJoinProfile()
+	data := &InitMeInfoSync{ProfileData: theProfileData}
 	err = json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
 	}
+	profileData := data.ProfileData
 
 	// migrate origin-me
 	origMe := pm.Ptt().GetMyEntity().(*MyInfo)
@@ -133,7 +137,7 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
-	_, err = profileSPM.CreateJoinEntity(data.ProfileData, peer, oplog0.ID, false)
+	_, err = profileSPM.CreateJoinEntity(profileData, peer, oplog0.ID, false, true)
 	if err != nil {
 		return err
 	}

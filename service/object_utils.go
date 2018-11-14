@@ -25,7 +25,7 @@ import (
 
 func NewObjectWithOplog(obj Object, oplog *BaseOplog) {
 	obj.SetVersion(types.CurrentVersion)
-	obj.SetID(oplog.ID)
+	obj.SetID(oplog.ObjID)
 	obj.SetCreateTS(oplog.UpdateTS)
 	obj.SetUpdateTS(types.ZeroTimestamp)
 	obj.SetStatus(types.StatusInternalSync)
@@ -33,6 +33,17 @@ func NewObjectWithOplog(obj Object, oplog *BaseOplog) {
 	obj.SetUpdaterID(oplog.CreatorID)
 	obj.SetLogID(oplog.ID)
 	obj.SetEntityID(oplog.dbPrefixID)
+}
+
+func SetNewObjectWithOplog(
+	obj Object,
+	oplog *BaseOplog,
+) {
+	obj.SetCreateTS(oplog.UpdateTS)
+	obj.SetLogID(oplog.ID)
+	obj.SetStatus(oplog.ToStatus())
+	obj.SetUpdateTS(oplog.UpdateTS)
+	obj.SetUpdaterID(oplog.CreatorID)
 }
 
 func SetUpdateObjectWithOplog(
@@ -46,6 +57,20 @@ func SetUpdateObjectWithOplog(
 	obj.SetUpdaterID(oplog.CreatorID)
 }
 
+func SetFailedObjectWithOplog(
+	obj Object,
+	oplog *BaseOplog,
+
+	ts types.Timestamp,
+) {
+
+	obj.SetStatus(types.StatusFailed)
+
+	obj.SetLogID(nil)
+	obj.SetUpdateTS(ts)
+	obj.SetSyncInfo(nil)
+}
+
 func SetDeleteObjectWithOplog(
 	obj Object,
 	status types.Status,
@@ -56,6 +81,7 @@ func SetDeleteObjectWithOplog(
 	obj.SetLogID(oplog.ID)
 	obj.SetUpdateTS(oplog.UpdateTS)
 	obj.SetUpdaterID(oplog.CreatorID)
+	obj.SetSyncInfo(nil)
 
 	obj.RemoveMeta()
 

@@ -31,7 +31,7 @@ func (pm *ProtocolManager) CreateMyProfile(accountBackend *account.Backend) erro
 
 	m := pm.Entity().(*MyInfo)
 
-	m.MyProfileID = profile.ID
+	m.ProfileID = profile.ID
 	m.Profile = profile
 
 	return nil

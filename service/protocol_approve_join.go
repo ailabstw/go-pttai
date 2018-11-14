@@ -51,6 +51,7 @@ func (p *BasePtt) ApproveJoin(confirmKey []byte) error {
 
 	pm := entity.PM()
 	opKeyInfo, approvedData, err := pm.ApproveJoin(joinEntity, keyInfo, peer)
+	log.Debug("ApproveJoin: after pm.ApproveJoin", "e", err)
 	if err != nil {
 		return err
 	}

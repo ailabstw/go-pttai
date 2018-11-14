@@ -61,13 +61,16 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 		return nil, err
 	}
 
-	// 3. save object
+	// 3. new person
+	NewObjectWithOplog(person, oplog)
+
+	// 4. save object
 	err = pm.saveNewObjectWithOplog(person, oplog, true, true, postcreatePerson)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. set oplog is-sync
+	// 5. set oplog is-sync
 	oplog.IsSync = true
 
 	return nil, nil

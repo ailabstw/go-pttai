@@ -69,15 +69,29 @@ func (api *PrivateAPI) JoinMe(meURL string, myKey string, dummy bool) (*pkgservi
 	return api.b.JoinMe([]byte(meURL), []byte(myKey))
 }
 
-func (api *PrivateAPI) GetJoinKeyInfos() ([]*pkgservice.KeyInfo, error) {
-	return api.b.BEGetJoinKeyInfos()
+func (api *PrivateAPI) GetJoinKeyInfos(entityID string) ([]*pkgservice.KeyInfo, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetJoinKeys([]byte(entityID))
 }
 
 /*
 GetMeRequests get the me-requests from me to the others.
 */
-func (api *PrivateAPI) GetMeRequests() ([]*pkgservice.BackendJoinRequest, error) {
-	return api.b.GetMeRequests()
+func (api *PrivateAPI) GetMeRequests(entityID string) ([]*pkgservice.BackendJoinRequest, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetMeRequests([]byte(entityID))
 }
 
 /**********
@@ -91,52 +105,107 @@ func (api *PrivateAPI) JoinFriend(friendURL string) (*pkgservice.BackendJoinRequ
 /*
 GetFriendRequests get the friend-requests from me to the others.
 */
-func (api *PrivateAPI) GetFriendRequests() ([]*pkgservice.BackendJoinRequest, error) {
-	return api.b.GetFriendRequests()
+func (api *PrivateAPI) GetFriendRequests(entityID string) ([]*pkgservice.BackendJoinRequest, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetFriendRequests([]byte(entityID))
 }
 
 /**********
  * Op
  **********/
-
-func (api *PrivateAPI) GetOpKeyInfos() ([]*pkgservice.KeyInfo, error) {
-	return api.b.BEGetOpKeyInfos()
+func (api *PrivateAPI) GetOpKeyInfos(entityID string) ([]*pkgservice.KeyInfo, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetOpKeys([]byte(entityID))
 }
 
-func (api *PrivateAPI) RevokeOpKey(keyID string, myKey string) (bool, error) {
-	return api.b.RevokeOpKey([]byte(keyID), []byte(myKey))
+func (api *PrivateAPI) RevokeOpKey(entityID string, keyID string, myKey string) (bool, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return false, err
+		}
+	}
+	return api.b.RevokeOpKey([]byte(entityID), []byte(keyID), []byte(myKey))
 }
 
-func (api *PrivateAPI) GetOpKeyInfosFromDB() ([]*pkgservice.KeyInfo, error) {
-	return api.b.GetOpKeyInfosFromDB()
-}
-
-/**********
- * Get
- **********/
-
-func (api *PrivateAPI) GetMyBoard() (*content.BackendGetBoard, error) {
-	return api.b.GetMyBoard()
-}
-
-func (api *PrivateAPI) GetRawMe() (*MyInfo, error) {
-	return api.b.GetRawMe()
-}
-
-func (api *PrivateAPI) GetRawMeByID(id string) (*MyInfo, error) {
-	return api.b.GetRawMeByID([]byte(id))
+func (api *PrivateAPI) GetOpKeyInfosFromDB(entityID string) ([]*pkgservice.KeyInfo, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetOpKeysFromDB([]byte(entityID))
 }
 
 /**********
  * Peer
  **********/
 
-func (api *PrivateAPI) CountPeers() (int, error) {
-	return api.b.CountPeers()
+func (api *PrivateAPI) CountPeers(entityID string) (int, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return 0, err
+		}
+	}
+	return api.b.CountPeers([]byte(entityID))
 }
 
-func (api *PrivateAPI) GetPeers() ([]*pkgservice.BackendPeer, error) {
-	return api.b.GetPeers()
+func (api *PrivateAPI) GetPeers(entityID string) ([]*pkgservice.BackendPeer, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetPeers([]byte(entityID))
+}
+
+/**********
+ * My Info
+ **********/
+
+func (api *PrivateAPI) GetMyBoard() (*content.BackendGetBoard, error) {
+	return api.GetBoard("")
+}
+
+func (api *PrivateAPI) GetBoard(entityID string) (*content.BackendGetBoard, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetBoard([]byte(entityID))
+}
+
+func (api *PrivateAPI) GetRawMe(entityID string) (*MyInfo, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetRawMe([]byte(entityID))
 }
 
 /**********
@@ -156,11 +225,29 @@ func (api *PrivateAPI) ForceRemoveNode(nodeID string) (bool, error) {
 }
 
 func (api *PrivateAPI) GetMyNodes() ([]*MyNode, error) {
-	return api.b.GetMyNodes()
+	return api.GetRawMyNodes("")
 }
 
-func (api *PrivateAPI) GetTotalWeight() (uint32, error) {
-	return api.b.GetTotalWeight()
+func (api *PrivateAPI) GetRawMyNodes(entityID string) ([]*MyNode, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetMyNodes([]byte(entityID))
+}
+
+func (api *PrivateAPI) GetTotalWeight(entityID string) (uint32, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return 0, err
+		}
+	}
+	return api.b.GetTotalWeight([]byte(entityID))
 }
 
 func (api *PrivateAPI) RequestRaftLead() (bool, error) {
@@ -172,43 +259,116 @@ func (api *PrivateAPI) RequestRaftLead() (bool, error) {
  **********/
 
 func (api *PrivateAPI) GetMeOplogList(logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
-	return api.b.BEGetMeOplogList([]byte(logID), limit, listOrder)
+	return api.GetRawMeOplogList("", logID, limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingMeOplogMasterList(logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
-	return api.b.BEGetPendingMeOplogMasterList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetRawMeOplogList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.b.GetMeOplogList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingMeOplogInternalList(logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
-	return api.b.BEGetPendingMeOplogInternalList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetPendingMeOplogMasterList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetPendingMeOplogMasterList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetMeOplogMerkleNodeList(level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
-	return api.b.BEGetMeOplogMerkleNodeList(pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+func (api *PrivateAPI) GetPendingMeOplogInternalList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.b.GetPendingMeOplogInternalList([]byte(entityID), []byte(logID), limit, listOrder)
+}
+
+func (api *PrivateAPI) GetMeOplogMerkleNodeList(entityID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.b.GetMeOplogMerkleNodeList([]byte(entityID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
 }
 
 /**********
  * MasterOplog
  **********/
 
-func (api *PrivateAPI) GetMasterOplogList(logID string, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error) {
-	return api.b.BEGetMasterOplogList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetMyMasterOplogList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetMyMasterOplogList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
 /**********
  * OpKeyOplog
  **********/
 
-func (api *PrivateAPI) GetOpKeyOplogList(logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
-	return api.b.BEGetOpKeyOplogList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetOpKeyOplogList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.b.GetOpKeyOplogList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingOpKeyOplogMasterList(logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
-	return api.b.BEGetPendingOpKeyOplogMasterList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetPendingOpKeyOplogMasterList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetPendingOpKeyOplogMasterList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingOpKeyOplogInternalList(logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
-	return api.b.BEGetPendingOpKeyOplogInternalList([]byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetPendingOpKeyOplogInternalList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.OpKeyOplog, error) {
+
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return api.b.GetPendingOpKeyOplogInternalList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
 /**********
@@ -256,6 +416,14 @@ func (api *PrivateAPI) RefreshMyNodeSignKey() (*pkgservice.KeyInfo, error) {
 }
 
 /**********
+ * Misc
+ **********/
+
+func (api *PublicAPI) GetMeList() ([]*BackendMyInfo, error) {
+	return api.b.GetMeList()
+}
+
+/**********
  * public
  **********/
 
@@ -273,8 +441,4 @@ func (api *PublicAPI) Get() (*BackendMyInfo, error) {
 
 func (api *PublicAPI) ShowURL() (*pkgservice.BackendJoinURL, error) {
 	return api.b.ShowURL()
-}
-
-func (api *PublicAPI) GetMeList() ([]*BackendMyInfo, error) {
-	return api.b.GetMeList()
 }

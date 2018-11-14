@@ -35,8 +35,8 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
-	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo BlockInfo) error,
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo *BlockInfo) error,
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
@@ -91,8 +91,8 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
-	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo BlockInfo) error,
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo *BlockInfo) error,
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 ) error {
 
@@ -177,7 +177,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,
 
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
@@ -223,7 +223,7 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,
 
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
@@ -360,6 +360,9 @@ func (pm *BaseProtocolManager) saveDeleteObjectWithOplog(
 	if err != nil {
 		return err
 	}
+
+	// set oplog is sync
+	oplog.IsSync = true
 
 	return nil
 }

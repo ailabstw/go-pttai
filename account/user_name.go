@@ -17,62 +17,104 @@
 package account
 
 import (
-	"bytes"
 	"encoding/json"
-	"unicode/utf8"
 
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type SyncNameInfo struct {
-	LogID    *types.PttID    `json:"pl,omitempty"`
-	Name     []byte          `json:"N,omitempty"`
-	BoardID  *types.PttID    `json:"bID"`
-	UpdateTS types.Timestamp `json:"UT"`
-	Status   types.Status    `json:"S"`
+	*pkgservice.BaseSyncInfo `json:"b"`
+
+	Name []byte `json:"N,omitempty"`
 }
 
 type UserName struct {
-	V        types.Version
-	ID       *types.PttID
-	CreateTS types.Timestamp `json:"CT"`
+	*pkgservice.BaseObject `json:"b"`
+
 	UpdateTS types.Timestamp `json:"UT"`
-	Status   types.Status    `json:"S"`
 
-	Name         []byte        `json:"N"`
-	SyncNameInfo *SyncNameInfo `json:"sn,omitempty"`
+	SyncInfo *SyncNameInfo `json:"s,omitempty"`
 
-	BoardID *types.PttID `json:"bID"`
-	LogID   *types.PttID `json:"l"`
-
-	dbLock *types.LockMap
+	Name []byte `json:"N"`
 }
 
-func NewUserName(id *types.PttID, ts types.Timestamp) (*UserName, error) {
+func NewUserName(
+	createTS types.Timestamp,
+	creatorID *types.PttID,
+	entityID *types.PttID,
+
+	logID *types.PttID,
+
+	status types.Status,
+
+	db *pttdb.LDBBatch,
+	dbLock *types.LockMap,
+	fullDBPrefix []byte,
+	fullDBIdxPrefix []byte,
+
+	name []byte,
+
+) (*UserName, error) {
+
+	id := creatorID
+
+	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+
 	return &UserName{
-		V:        types.CurrentVersion,
-		ID:       id,
-		CreateTS: ts,
-		UpdateTS: ts,
+		BaseObject: o,
+		UpdateTS:   createTS,
+
+		Name: name,
 	}, nil
 }
 
-func (u *UserName) Marshal() ([]byte, error) {
-	return json.Marshal(u)
+func NewEmptyUserName() *UserName {
+	return &UserName{BaseObject: &pkgservice.BaseObject{}}
 }
 
-func (u *UserName) MarshalKey() ([]byte, error) {
-	return append(DBUserNamePrefix, u.ID[:]...), nil
+func UserNamesToObjs(typedObjs []*UserName) []pkgservice.Object {
+	objs := make([]pkgservice.Object, len(typedObjs))
+	for i, obj := range typedObjs {
+		objs[i] = obj
+	}
+	return objs
 }
 
-func (u *UserName) Unmarshal(theBytes []byte) error {
-	return json.Unmarshal(theBytes, u)
+func ObjsToUserNames(objs []pkgservice.Object) []*UserName {
+	typedObjs := make([]*UserName, len(objs))
+	for i, obj := range objs {
+		typedObjs[i] = obj.(*UserName)
+	}
+	return typedObjs
+}
+
+func AliveUserNames(typedObjs []*UserName) []*UserName {
+	objs := make([]*UserName, 0, len(typedObjs))
+	for _, obj := range typedObjs {
+		if obj.Status == types.StatusAlive {
+			objs = append(objs, obj)
+		}
+	}
+	return objs
+}
+
+func (pm *ProtocolManager) SetUserNameDB(u *UserName) {
+	spm := pm.Entity().Service().SPM()
+	u.SetDB(dbAccount, spm.DBObjLock(), pm.Entity().GetID(), pm.dbUserNamePrefix, pm.dbUserNameIdxPrefix)
+}
+
+func (spm *ServiceProtocolManager) SetUserNameDB(u *UserName) {
+	u.SetDB(dbAccount, spm.DBObjLock(), nil, DBUserNamePrefix, nil)
 }
 
 func (u *UserName) Save(isLocked bool) error {
+	var err error
+
 	if !isLocked {
-		err := u.Lock()
+		err = u.Lock()
 		if err != nil {
 			return err
 		}
@@ -88,7 +130,18 @@ func (u *UserName) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbAccountCore.TryPut(key, marshaled, u.UpdateTS)
+	idxKey, err := u.IdxKey()
+	if err != nil {
+		return err
+	}
+
+	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: u.UpdateTS}
+
+	kvs := []*pttdb.KeyVal{
+		&pttdb.KeyVal{K: key, V: marshaled},
+	}
+
+	_, err = u.DB().ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -96,173 +149,89 @@ func (u *UserName) Save(isLocked bool) error {
 	return nil
 }
 
-func (u *UserName) Get(id *types.PttID, isLocked bool) error {
+func (u *UserName) NewEmptyObj() pkgservice.Object {
+	newU := NewEmptyUserName()
+	newU.CloneDB(u.BaseObject)
+	return newU
+}
+
+func (u *UserName) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
+	newU := u.NewEmptyObj()
+	err := newU.GetByID(isLocked)
+	if err != nil {
+		return nil, err
+	}
+	return newU, nil
+}
+
+func (u *UserName) SetUpdateTS(ts types.Timestamp) {
+	u.UpdateTS = ts
+}
+
+func (u *UserName) GetUpdateTS() types.Timestamp {
+	return u.UpdateTS
+}
+
+func (u *UserName) Get(isLocked bool) error {
+	var err error
+
 	if !isLocked {
-		err := u.RLock()
+		err = u.RLock()
 		if err != nil {
 			return err
 		}
 		defer u.RUnlock()
 	}
 
-	u.ID = id
 	key, err := u.MarshalKey()
 	if err != nil {
 		return err
 	}
 
-	theBytes, err := dbAccountCore.Get(key)
+	val, err := u.DB().DBGet(key)
 	if err != nil {
 		return err
 	}
 
-	if theBytes == nil {
-		return types.ErrInvalidID
-	}
+	return u.Unmarshal(val)
+}
 
-	err = u.Unmarshal(theBytes)
+func (u *UserName) GetByID(isLocked bool) error {
+	var err error
+
+	val, err := u.GetValueByID(isLocked)
 	if err != nil {
 		return err
 	}
+
+	return u.Unmarshal(val)
+}
+
+func (u *UserName) MarshalKey() ([]byte, error) {
+	return common.Concat([][]byte{DBUserNamePrefix, u.ID[:]})
+}
+
+func (u *UserName) Marshal() ([]byte, error) {
+	return json.Marshal(u)
+}
+
+func (u *UserName) Unmarshal(theBytes []byte) error {
+	return json.Unmarshal(theBytes, u)
+}
+
+func (u *UserName) GetSyncInfo() pkgservice.SyncInfo {
+	if u.SyncInfo == nil {
+		return nil
+	}
+	return u.SyncInfo
+}
+
+func (u *UserName) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
+	syncInfo, ok := theSyncInfo.(*SyncNameInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+	u.SyncInfo = syncInfo
 
 	return nil
-}
-
-func (u *UserName) SetName(name []byte) error {
-	if !isValidName(name) {
-		return ErrInvalidName
-	}
-
-	u.Name = name
-
-	return nil
-}
-
-func (u *UserName) Update(name []byte, isLocked bool) error {
-	err := u.SetName(name)
-	if err != nil {
-		return err
-	}
-
-	u.UpdateTS, err = types.GetTimestamp()
-	if err != nil {
-		return err
-	}
-
-	err = u.Save(isLocked)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (u *UserName) Delete(id *types.PttID, isLocked bool) error {
-	if !isLocked {
-		err := u.Lock()
-		if err != nil {
-			return err
-		}
-		defer u.Unlock()
-	}
-
-	u.ID = id
-	key, err := u.MarshalKey()
-	if err != nil {
-		return err
-	}
-
-	err = dbAccountCore.Delete(key)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (u *UserName) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder) ([]*UserName, error) {
-	u.ID = id
-	key, err := u.MarshalKey()
-	if err != nil {
-		return nil, err
-	}
-	userNames := make([]*UserName, 0)
-	iter, err := dbAccountCore.NewIteratorWithPrefix(key, nil, listOrder)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Release()
-
-	for i := 0; i < limit && iter.Next(); i++ {
-		val := iter.Value()
-
-		userName := &UserName{}
-		err := userName.Unmarshal(val)
-		if err != nil {
-			continue
-		}
-		userNames = append(userNames, userName)
-	}
-
-	return userNames, nil
-}
-
-func isValidName(name []byte) bool {
-	if utf8.RuneCount(name) > MaxNameLength {
-		return false
-	}
-
-	return true
-
-}
-
-func (u *UserName) IntegrateSyncNameInfo(info *SyncNameInfo) (*types.PttID, error) {
-	var origLogID *types.PttID
-
-	switch {
-	case u.SyncNameInfo == nil:
-		u.SyncNameInfo = info
-		return nil, nil
-	case info.Status != types.StatusInternalSync && u.SyncNameInfo.Status > info.Status:
-		return nil, nil
-	case u.SyncNameInfo.Status < info.Status:
-		origLogID = u.SyncNameInfo.LogID
-		u.SyncNameInfo = info
-		return origLogID, nil
-	case info.UpdateTS.IsLess(u.SyncNameInfo.UpdateTS):
-		return nil, nil
-	case u.SyncNameInfo.UpdateTS.IsLess(info.UpdateTS):
-		origLogID = u.SyncNameInfo.LogID
-		u.SyncNameInfo = info
-		return origLogID, nil
-	}
-
-	cmp := bytes.Compare(u.SyncNameInfo.LogID[:], info.LogID[:])
-	if cmp < 0 {
-		return nil, nil
-	}
-
-	origLogID = u.SyncNameInfo.LogID
-	u.SyncNameInfo = info
-	return origLogID, nil
-}
-
-func (u *UserName) SetDBLock(dbLock *types.LockMap) {
-	u.dbLock = dbLock
-}
-
-func (u *UserName) Lock() error {
-	return u.dbLock.Lock(u.ID)
-}
-
-func (u *UserName) Unlock() error {
-	return u.dbLock.Unlock(u.ID)
-}
-
-func (u *UserName) RLock() error {
-	return u.dbLock.RLock(u.ID)
-}
-
-func (u *UserName) RUnlock() error {
-	return u.dbLock.RUnlock(u.ID)
 }

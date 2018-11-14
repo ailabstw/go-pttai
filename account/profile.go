@@ -22,7 +22,6 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type Profile struct {
@@ -44,6 +43,7 @@ func NewProfile(myID *types.PttID, ts types.Timestamp, ptt pkgservice.Ptt, servi
 	}
 
 	e := pkgservice.NewBaseEntity(id, ts, myID, types.StatusPending, dbAccount, dbLock)
+	e.EntityType = pkgservice.EntityTypePersonal
 
 	p := &Profile{
 		BaseEntity: e,
@@ -71,6 +71,7 @@ func (p *Profile) SetUpdateTS(ts types.Timestamp) {
 }
 
 func (p *Profile) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager) error {
+
 	p.SetDB(dbAccount, spm.GetDBLock())
 
 	err := p.InitPM(ptt, service)
@@ -88,20 +89,7 @@ func (p *Profile) InitPM(ptt pkgservice.Ptt, service pkgservice.Service) error {
 		return err
 	}
 
-	userName := &UserName{}
-	err = userName.Get(p.ID, true)
-	if err == leveldb.ErrNotFound {
-		err = nil
-	}
-	if err != nil {
-		return err
-	}
-	name := userName.Name
-	if name == nil {
-		name = []byte{}
-	}
-
-	p.BaseEntity.Init(pm, string(name), ptt, service)
+	p.BaseEntity.Init(pm, ptt, service)
 
 	return nil
 }
@@ -146,7 +134,7 @@ func (p *Profile) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbAccountCore.TryPut(key, marshaled, p.UpdateTS)
+	err = dbAccountCore.Put(key, marshaled)
 	if err != nil {
 		return err
 	}

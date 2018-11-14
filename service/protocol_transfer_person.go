@@ -185,14 +185,18 @@ func (pm *BaseProtocolManager) posttransferUpdatePerson(
 		return types.ErrAlreadyDeleted
 	}
 
-	err := pm.saveNewObjectWithOplog(origPerson, oplog, true, true, postcreatePerson)
+	err := pm.saveUpdateObjectWithOplog(origPerson, oplog, true)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("posttransferUpdatePerson: done", "entity", pm.Entity().GetID(), "person", origPerson)
+	log.Debug("posttransferUpdatePerson: to postcreatePerson", "entity", pm.Entity().GetID(), "person", origPerson)
 
-	return nil
+	if postcreatePerson == nil {
+		return nil
+	}
+
+	return postcreatePerson(origPerson, oplog)
 }
 
 func (pm *BaseProtocolManager) posttransferCreatePerson(

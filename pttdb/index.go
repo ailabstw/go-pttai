@@ -61,3 +61,17 @@ func (i *Index) Marshal() ([]byte, error) {
 func (i *Index) Unmarshal(data []byte) error {
 	return json.Unmarshal(data, i)
 }
+
+type IndexWithStatus struct {
+	Keys     [][]byte        `json:"K"`
+	UpdateTS types.Timestamp `json:"UT"`
+	Status   types.Status    `json:"S"`
+}
+
+func (i *IndexWithStatus) Marshal() ([]byte, error) {
+	return json.Marshal(i)
+}
+
+func (i *IndexWithStatus) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, i)
+}

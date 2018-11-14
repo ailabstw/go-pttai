@@ -53,7 +53,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(types.StatusAlive, me0_1.Status)
 
 	// 2. get total weight
-	bodyString = `{"id": "testID", "method": "me_getTotalWeight", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getTotalWeight", "params": [""]}`
 
 	var totalWeigtht0_2 uint32
 	testCore(t0, bodyString, &totalWeigtht0_2, t, isDebug)
@@ -61,7 +61,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(uint32(me.WeightDesktop), totalWeigtht0_2)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 
@@ -72,7 +72,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(1, len(me0_3.OwnerIDs))
 	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
 	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
-	assert.Equal(me0_3.MyProfileID[common.AddressLength:], me0_3.ID[:common.AddressLength])
+	assert.Equal(me0_3.ProfileID[common.AddressLength:], me0_3.ID[:common.AddressLength])
 
 	// 4. show-my-key
 	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
@@ -96,7 +96,7 @@ func TestAccountBasic(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// 6. getJoinKeyInfo
-	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": [""]}`
 
 	dataJoinKeyInfos0_6 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`
@@ -116,7 +116,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(uint32(me.WeightDesktop), raftStatus0_7.ConfState.Weights[0])
 
 	// 8. getOpKeyInfo
-	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": [""]}`
 
 	dataOpKeyInfos0_8 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`
@@ -140,7 +140,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(me0_3.ID, entityID)
 
 	// 9. MasterOplog
-	bodyString = `{"id": "testID", "method": "me_getMasterOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getMyMasterOplogList", "params": ["", "", 0, 2]}`
 
 	dataMasterOplogs0_9 := &struct {
 		Result []*me.MasterOplog `json:"result"`
@@ -156,7 +156,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(masterOplog0_9.ID, masterOplog0_9.MasterLogID)
 
 	// 9.1. OpKeyOplog
-	bodyString = `{"id": "testID", "method": "me_getOpKeyOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyOplogList", "params": ["", "", 0, 2]}`
 
 	dataOpKeyOplogs0_9_1 := &struct {
 		Result []*pkgservice.OpKeyOplog `json:"result"`
@@ -172,14 +172,14 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(masterOplog0_9.ID, opKeyOplog0_9_1.MasterLogID)
 
 	// 10. profile
-	marshaledID, _ = me0_3.MyProfileID.MarshalText()
+	marshaledID, _ = me0_3.ProfileID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaledID))
 
 	profile0_10 := &account.Profile{}
 
 	testCore(t0, bodyString, profile0_10, t, isDebug)
 	assert.Equal(profile0_10.ID[common.AddressLength:], me0_3.ID[:common.AddressLength])
-	assert.Equal(profile0_10.ID, me0_3.MyProfileID)
+	assert.Equal(profile0_10.ID, me0_3.ProfileID)
 	assert.Equal(profile0_10.MyID, me0_3.ID)
 	assert.Equal(types.StatusAlive, profile0_10.Status)
 

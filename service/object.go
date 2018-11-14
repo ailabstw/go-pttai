@@ -42,8 +42,8 @@ type Object interface {
 	RemoveMeta()
 
 	// data
-	GetBlockInfo() BlockInfo
-	SetBlockInfo(blockInfo BlockInfo) error
+	GetBlockInfo() *BlockInfo
+	SetBlockInfo(blockInfo *BlockInfo) error
 
 	// sync-info
 	GetSyncInfo() SyncInfo
@@ -99,6 +99,8 @@ type BaseObject struct {
 	UpdateLogID *types.PttID `json:"u,omitempty"`
 
 	Status types.Status `json:"S"`
+
+	BlockInfo *BlockInfo `json:"b,omitempty"`
 
 	db              *pttdb.LDBBatch
 	dbLock          *types.LockMap
@@ -364,11 +366,12 @@ func (o *BaseObject) GetBaseObject() *BaseObject {
 	return o
 }
 
-func (o *BaseObject) GetBlockInfo() BlockInfo {
-	return nil
+func (o *BaseObject) GetBlockInfo() *BlockInfo {
+	return o.BlockInfo
 }
 
-func (o *BaseObject) SetBlockInfo(blockInfo BlockInfo) error {
+func (o *BaseObject) SetBlockInfo(blockInfo *BlockInfo) error {
+	o.BlockInfo = blockInfo
 	return nil
 }
 

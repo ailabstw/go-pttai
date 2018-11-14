@@ -56,6 +56,7 @@ func (p *BasePtt) JoinAckChallenge(keyInfo *KeyInfo, join *Join, peer *PttPeer, 
 		return err
 	}
 
+	log.Debug("JoinAckChallenge: to SendData", "peer", peer)
 	pttData.Node = peer.GetID()[:]
 	err = peer.SendData(pttData)
 

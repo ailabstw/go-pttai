@@ -34,6 +34,7 @@ func (spm *ServiceProtocolManager) CreateMe(myID *types.PttID, myKey *ecdsa.Priv
 	// new my info
 	myInfo, err := NewMyInfo(myID, myKey, ptt, spm.Service(), spm, spm.GetDBLock())
 	if err != nil {
+		log.Error("CreateMe: unable to NewMyInfo", "e", err, "myID", myID)
 		return err
 	}
 

@@ -179,7 +179,11 @@ func (pm *BaseProtocolManager) syncCreateObjectSameLog(
 		return nil
 	}
 
-	// it's supposed to be already synced. should not be here.
+	// although we got the content synced:
+	// 1. the oplog-status may change.
+	// 2. we may get older date if the oplog-status is not changed.
+	// => we update the origObj, and check if we need to do postcreate.
+
 	err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
 	if err != nil {
 		return err
@@ -234,7 +238,7 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 	oplog *BaseOplog,
 	obj Object,
 
-	postprocessFailedCreateObject func(obj Object, oplog *BaseOplog) error,
+	prefailed func(obj Object, oplog *BaseOplog) error,
 ) error {
 
 	objID := oplog.ObjID
@@ -264,19 +268,22 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 	}
 
 	// handle fail
+	err = prefailed(obj, oplog)
+	if err != nil {
+		return err
+	}
+
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return err
 	}
 
-	obj.SetUpdateTS(ts)
-	obj.SetLogID(nil)
-	obj.SetStatus(types.StatusFailed)
+	SetFailedObjectWithOplog(obj, oplog, ts)
 
 	err = obj.Save(true)
 	if err != nil {
 		return err
 	}
 
-	return postprocessFailedCreateObject(obj, oplog)
+	return nil
 }

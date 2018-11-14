@@ -33,12 +33,17 @@ type ProtocolManager struct {
 	dbUserLock      *types.LockMap
 	userOplogMerkle *pkgservice.Merkle
 
+	// user-node
 	dbUserNodePrefix     []byte
 	dbUserNodeIdxPrefix  []byte
 	dbUserNodeIdx2Prefix []byte
 
 	lockUserNodeInfo sync.RWMutex
 	userNodeInfo     *UserNodeInfo
+
+	// user-name
+	dbUserNamePrefix    []byte
+	dbUserNameIdxPrefix []byte
 }
 
 func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager, error) {
@@ -57,7 +62,7 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 		userOplogMerkle: userOplogMerkle,
 	}
 	b, err := pkgservice.NewBaseProtocolManager(
-		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds,
+		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, MaxMasters,
 		nil, nil, nil, pm.SetUserDB,
 		nil, nil, nil, nil, nil, nil, nil,
 		pm.SyncUserOplog,     // postsyncMemberOplog
@@ -83,6 +88,10 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 		userNodeInfo = &UserNodeInfo{ID: entityID}
 	}
 	pm.userNodeInfo = userNodeInfo
+
+	// user-name
+	pm.dbUserNamePrefix = DBUserNamePrefix
+	pm.dbUserNodeIdxPrefix = append(DBUserNameIdxPrefix, entityID[:]...)
 
 	return pm, nil
 }

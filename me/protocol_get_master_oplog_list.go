@@ -22,7 +22,7 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) GetMasterOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MasterOplog, error) {
+func (pm *ProtocolManager) GetMyMasterOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MasterOplog, error) {
 	oplog := &pkgservice.BaseOplog{}
 	pm.SetMasterDB(oplog)
 

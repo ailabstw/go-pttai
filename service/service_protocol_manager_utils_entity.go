@@ -22,6 +22,10 @@ import (
 )
 
 func (spm *BaseServiceProtocolManager) Entity(id *types.PttID) Entity {
+	if id == nil {
+		return nil
+	}
+
 	spm.lock.RLock()
 	defer spm.lock.RUnlock()
 

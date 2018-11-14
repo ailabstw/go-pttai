@@ -38,7 +38,7 @@ func (pm *BaseProtocolManager) CreateObject(
 	entity := pm.Entity()
 
 	//validate
-	if entity.GetStatus() != types.StatusAlive {
+	if entity.GetStatus() != types.StatusAlive && entity.GetStatus() != types.StatusToBeSynced {
 		return nil, types.ErrInvalidStatus
 	}
 
@@ -81,7 +81,7 @@ func (pm *BaseProtocolManager) CreateObject(
 	}
 
 	// oplog-save
-	if oplog.ToStatus() == types.StatusAlive {
+	if oplog.ToStatus() == types.StatusAlive || oplog.ToStatus() == types.StatusToBeSynced {
 		oplog.IsSync = true
 	}
 	err = oplog.Save(false)
@@ -95,10 +95,9 @@ func (pm *BaseProtocolManager) CreateObject(
 	return obj, nil
 }
 
-/**********
- * save New Object with Oplog
- **********/
-
+/*
+SaveNewObjectWithOplog saves New Object with Oplog.
+*/
 func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 	origObj Object,
 	oplog *BaseOplog,
@@ -114,14 +113,18 @@ func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 
 	log.Debug("saveNewObjectWithOplog: start", "origStatus", origStatus, "status", status, "isForce", isForce)
 
-	if !isForce && origStatus >= status && !(origStatus == types.StatusFailed && status == types.StatusAlive) {
+	isBetterStatus := status > origStatus || (status == origStatus && oplog.UpdateTS.IsLess(origObj.GetUpdateTS()))
+	if origStatus == types.StatusFailed && status == types.StatusAlive {
+		isBetterStatus = true
+	}
+
+	if !isForce && !isBetterStatus {
 		oplog.IsSync = true
 		return nil
 	}
 
-	origObj.SetLogID(oplog.ID)
-	origObj.SetStatus(status)
-	origObj.SetUpdateTS(oplog.UpdateTS)
+	SetNewObjectWithOplog(origObj, oplog)
+
 	err := origObj.Save(isLocked)
 	log.Debug("saveNewObjectWithOplog: after Save", "e", err, "obj", origObj.GetID())
 	if err == pttdb.ErrInvalidUpdateTS {

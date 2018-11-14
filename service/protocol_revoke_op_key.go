@@ -65,7 +65,7 @@ func (pm *BaseProtocolManager) postdeleteOpKey(
 	opData OpData,
 
 	origObj Object,
-	blockInfo BlockInfo,
+	blockInfo *BlockInfo,
 ) error {
 
 	opKey, ok := origObj.(*KeyInfo)

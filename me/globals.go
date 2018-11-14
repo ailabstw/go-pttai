@@ -102,10 +102,22 @@ var (
 	DBKeyRaftLead          = []byte(".rfld")
 )
 
+// max-masters
+
+const (
+	MaxMasters = 0
+)
+
 // sync
 const (
 	MaxSyncRandomSeconds = 8
 	MinSyncRandomSeconds = 5
+)
+
+// op-key
+var (
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
 )
 
 // join
@@ -113,12 +125,6 @@ const (
 	SyncJoinSeconds = 10 * time.Second
 
 	RenewJoinFriendKeySeconds = pkgservice.RenewJoinKeySeconds
-)
-
-// op-key
-var (
-	RenewOpKeySeconds  int64 = 86400
-	ExpireOpKeySeconds int64 = 259200
 )
 
 // sign-key

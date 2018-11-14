@@ -32,10 +32,10 @@ func (pm *BaseProtocolManager) DeleteObject(
 
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
-	indelete func(origObj Object, opData OpData, oplog *BaseOplog) (BlockInfo, error),
+	indelete func(origObj Object, opData OpData, oplog *BaseOplog) (*BlockInfo, error),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
-	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo BlockInfo) error,
+	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo *BlockInfo) error,
 ) error {
 
 	myEntity := pm.Ptt().GetMyEntity()

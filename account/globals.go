@@ -74,24 +74,31 @@ var (
 
 	DBProfilePrefix = []byte(".pfdb")
 
-	DBUserNamePrefix = []byte(".urnm")
-	DBUserImgPrefix  = []byte(".urim")
+	DBUserNamePrefix    = []byte(".umdb")
+	DBUserNameIdxPrefix = []byte(".umix")
+	DBUserImgPrefix     = []byte(".uidb")
+	DBUserImgIdxPrefix  = []byte(".uiix")
 
 	DBUserNodePrefix     = []byte(".undb")
 	DBUserNodeIdxPrefix  = []byte(".unix")
 	DBUserNodeInfoPrefix = []byte(".uidb")
 )
 
-// op-key
-var (
-	RenewOpKeySeconds  int64 = 86400
-	ExpireOpKeySeconds int64 = 259200
+// max-masters
+const (
+	MaxMasters = 1
 )
 
 // sync
 const (
 	MaxSyncRandomSeconds = 30
 	MinSyncRandomSeconds = 15
+)
+
+// op-key
+var (
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
 )
 
 // oplog

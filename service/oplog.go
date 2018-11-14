@@ -192,7 +192,7 @@ func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
 		return nil
 	}
 
-	_, err = o.db.TryPutAll(idxKey, idx, kvs, true, false)
+	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (o *BaseOplog) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = o.db.TryPutAll(idxKey, idx, kvs, true, false)
+	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -704,6 +704,7 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 	expireTS := ts
 	expireTS.Ts -= ExpireOplogSeconds
 	if o.CreateTS.IsLess(expireTS) {
+		log.Error("InternalSign: createTS is less than expireTS", "CreateTS", o.CreateTS, "expireTS", expireTS)
 		return ErrInvalidOplog
 	}
 
@@ -778,6 +779,10 @@ func (o *BaseOplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
 }
 
 func (o *BaseOplog) Verify() error {
+	if o.UpdateTS.IsLess(o.CreateTS) {
+		return ErrInvalidOplog
+	}
+
 	hash, err := o.SignsHash()
 	if err != nil {
 		return err
@@ -919,11 +924,16 @@ func (o *BaseOplog) SetPreLogID(id *types.PttID) {
 	o.PreLogID = id
 }
 
-func (o *BaseOplog) SelectExisting(isLocked bool) error {
+/*
+SelectExisting determines whether we select the new oplog or the original oplog when the oplog is valid. Not integrating the signs.
+
+Return: isToBroadcast, err
+*/
+func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
-			return err
+			return false, err
 		}
 		defer o.dbLock.Unlock(o.ID)
 	}
@@ -941,10 +951,10 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 
 	err := orig.Get(o.ID, true)
 	if err == leveldb.ErrNotFound {
-		return nil
+		return true, nil
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// is-sync
@@ -958,25 +968,27 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 	// same
 	cmp := bytes.Compare(o.Hash, orig.Hash)
 	if cmp == 0 {
-		return nil
+		return false, nil
 	}
 
 	// require o is valid
 	if o.MasterLogID == nil {
-		return ErrInvalidOplog
+		return false, ErrInvalidOplog
 	}
 
 	// orig is not valid
 	if orig.MasterLogID == nil {
 		o.ForceSave(true)
-		return nil
+		return true, nil
 	}
 
 	// both are valid
 	// 1. cmp update-ts
 	// 2. cmp hash
+	isToBroadcast := false
 	switch {
 	case o.UpdateTS.IsLess(orig.UpdateTS):
+		isToBroadcast = true
 		err = o.ForceSave(true)
 	case orig.UpdateTS.IsLess(o.UpdateTS):
 		o.UpdateTS = orig.UpdateTS
@@ -986,6 +998,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 		o.InternalSigns = orig.InternalSigns
 		err = nil
 	case cmp < 0:
+		isToBroadcast = true
 		err = o.ForceSave(true)
 	default:
 		o.UpdateTS = orig.UpdateTS
@@ -996,7 +1009,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) error {
 		err = nil
 	}
 
-	return err
+	return types.Bool(isToBroadcast), err
 }
 
 // IntegrateExisting integrates with existing oplog.
@@ -1043,7 +1056,7 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 
 	// o valid
 	if o.MasterLogID != nil {
-		err = o.SelectExisting(true)
+		_, err = o.SelectExisting(true)
 		return false, err
 	}
 

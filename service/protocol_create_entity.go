@@ -31,7 +31,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	increate func(entity Entity, oplog *BaseOplog, opData OpData) error,
 
-	postcreateEntity func(entity Entity, oplog *BaseOplog) error,
+	postcreateEntity func(entity Entity) error,
 ) (Entity, error) {
 
 	myID := spm.Ptt().GetMyEntity().GetID()
@@ -66,6 +66,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	// oplog
 	theOplog, err := newOplogWithTS(entityID, ts, createOp, opData)
+	log.Debug("CreateEntity: after newOplogWithTS", "e", err)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +83,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	// sign oplog
 	err = pm.SignOplog(oplog)
+	log.Debug("CreateEntity: after SignOplog", "e", err)
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +92,14 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	origStatus := entity.GetStatus()
 
 	err = pm.SaveNewEntityWithOplog(oplog, true, true)
+	log.Debug("CreateEntity: after SaveNewEntityWithOplog", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
 	// add to entities
 	err = spm.RegisterEntity(entityID, entity)
+	log.Debug("CreateEntity: after RegisterEntity", "e", err)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +120,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	// entity start
 	err = entity.PrestartAndStart()
+	log.Debug("CreateEntity: after entity Prestart and start", "e", err)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +162,7 @@ func (pm *BaseProtocolManager) MaybePostcreateEntity(
 	oplog *BaseOplog,
 	origStatus types.Status,
 	isForce bool,
-	postcreateEntity func(entity Entity, oplog *BaseOplog) error,
+	postcreateEntity func(entity Entity) error,
 ) error {
 	if postcreateEntity == nil {
 		return nil
@@ -176,5 +181,5 @@ func (pm *BaseProtocolManager) MaybePostcreateEntity(
 		return nil
 	}
 
-	return postcreateEntity(entity, oplog)
+	return postcreateEntity(entity)
 }

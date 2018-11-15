@@ -39,7 +39,7 @@ func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData, isFor
 	myID := myInfo.ID
 	myService := pm.Entity().Service()
 
-	log.Debug("postdeleteMe: start", "myProfileID", myInfo.MyProfileID, "myProfile", myInfo.Profile, "isForce", isForce)
+	log.Debug("postdeleteMe: start", "myProfileID", myInfo.ProfileID, "myProfile", myInfo.Profile, "isForce", isForce)
 
 	// delete profile
 	myProfile := myInfo.Profile

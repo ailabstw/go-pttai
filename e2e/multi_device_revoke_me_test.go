@@ -55,7 +55,7 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(types.StatusAlive, me1_1.Status)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_3, t, isDebug)
@@ -146,7 +146,7 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode1_8_1.Status)
 
 	// 8.1. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
@@ -164,7 +164,7 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
 	// 8.2. getPeers
-	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": [""]}`
 
 	dataPeers0_8_2 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -178,9 +178,9 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	testListCore(t1, bodyString, dataPeers1_8_2, t, isDebug)
 	assert.Equal(1, len(dataPeers1_8_2.Result))
 
-	// 9. getRawMeByID
+	// 9. getRawMe
 	marshaled, _ = me0_3.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
 	me0_9 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_9, t, isDebug)
@@ -228,7 +228,7 @@ func TestMultiDeviceRevokeMe(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// 10.4. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_10_4 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_10_4, t, isDebug)

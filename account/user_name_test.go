@@ -21,51 +21,9 @@ import (
 	"testing"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
 )
-
-func TestNewUserName(t *testing.T) {
-	// setup test
-	setupTest(t)
-	defer teardownTest(t)
-
-	// define test-structure
-	type args struct {
-		id *types.PttID
-		ts types.Timestamp
-	}
-
-	// prepare test-cases
-	tests := []struct {
-		name    string
-		args    args
-		want    *UserName
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-		{
-			args: args{id: tUserIDA, ts: tTsA},
-			want: tUserNameA,
-		},
-	}
-
-	// run test
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUserName(tt.args.id, tt.args.ts)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewUserName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewUserName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-
-	// teardown test
-}
 
 func TestUserName_Marshal(t *testing.T) {
 	// setup test
@@ -84,7 +42,7 @@ func TestUserName_Marshal(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			u:    tUserNameA,
-			want: []byte("{\"V\":2,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null,\"bID\":null,\"l\":null}"),
+			want: tUserNameMarshal,
 		},
 	}
 
@@ -108,6 +66,8 @@ func TestUserName_Marshal(t *testing.T) {
 
 func TestUserName_Unmarshal(t *testing.T) {
 	// setup test
+	setupTest(t)
+	defer teardownTest(t)
 
 	// define test-structure
 	type args struct {
@@ -125,7 +85,7 @@ func TestUserName_Unmarshal(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			u:    &UserName{},
-			args: args{[]byte("{\"V\":2,\"ID\":\"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46\",\"CT\":{\"T\":1,\"NT\":5},\"UT\":{\"T\":1,\"NT\":5},\"S\":0,\"N\":null}")},
+			args: args{tUserNameMarshal},
 			want: tUserNameA,
 		},
 	}
@@ -138,7 +98,10 @@ func TestUserName_Unmarshal(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Unmarshal() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !reflect.DeepEqual(u, tt.want) {
+
+			u.SetDB(u.DB(), u.DBLock(), tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+
+			if !reflect.DeepEqual(u.BaseObject.ID, tt.want.BaseObject.ID) {
 				t.Errorf("UserName.Unmarshal() u = %v, tt.want %v", u, tt.want)
 			}
 		})
@@ -195,7 +158,7 @@ func TestUserName_Get(t *testing.T) {
 
 	// define test-structure
 	type args struct {
-		id *types.PttID
+		isLocked bool
 	}
 
 	// prepare test-cases
@@ -208,24 +171,24 @@ func TestUserName_Get(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			u:    &UserName{},
-			args: args{id: tUserIDA},
+			u:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserIDA}},
+			args: args{isLocked: true},
 			want: tUserNameA,
 		},
 		{
-			u:    &UserName{},
-			args: args{id: tUserIDB},
+			u:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserIDB}},
+			args: args{isLocked: true},
 			want: tUserNameB,
 		},
 		{
-			u:    &UserName{},
-			args: args{id: tUserIDC},
+			u:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserIDC}},
+			args: args{isLocked: true},
 			want: tUserNameC,
 		},
 		{
-			u:       &UserName{},
-			args:    args{id: tUserIDD},
-			want:    &UserName{ID: tUserIDD},
+			u:       &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserIDD}},
+			args:    args{isLocked: true},
+			want:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserIDD}},
 			wantErr: true,
 		},
 	}
@@ -234,10 +197,12 @@ func TestUserName_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
-			if err := u.Get(tt.args.id, true); (err != nil) != tt.wantErr {
+			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			if err := u.Get(true); (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Get() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
+			tt.want.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
 			if !reflect.DeepEqual(u, tt.want) {
 				t.Errorf("UserName.Get() u = %v, want %v", u, tt.want)
 			}
@@ -245,68 +210,6 @@ func TestUserName_Get(t *testing.T) {
 	}
 
 	// teardown test
-}
-
-func TestUserName_Update(t *testing.T) {
-	// setup test
-	setupTest(t)
-	defer teardownTest(t)
-
-	tUserNameA.Save(true)
-
-	origUserNameA := &UserName{}
-	newUserNameA := &UserName{}
-
-	origUserNameA.Get(tUserNameA.ID, true)
-	newUserNameA.Get(tUserNameA.ID, true)
-
-	newUserNameA.Name = []byte("test2")
-
-	// define test-structure
-	type args struct {
-		name []byte
-	}
-
-	// prepare test-cases
-	tests := []struct {
-		name    string
-		u       *UserName
-		args    args
-		want    *UserName
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-		{
-			u:    tUserNameA,
-			args: args{[]byte("test2")},
-			want: newUserNameA,
-		},
-	}
-
-	// run test
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			u := tt.u
-
-			if err := u.Update(tt.args.name, true); (err != nil) != tt.wantErr {
-				t.Errorf("UserName.Update() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			// update-ts is updated
-			tt.want.UpdateTS = u.UpdateTS
-
-			if !reflect.DeepEqual(u, tt.want) {
-				t.Errorf("UserName.Update() u = %v, want %v", u, tt.want)
-			}
-
-			loadUserName := &UserName{}
-			loadUserName.Get(u.ID, true)
-			if !reflect.DeepEqual(loadUserName, tt.want) {
-				t.Errorf("UserName.Update() loadUserName = %v, want %v", loadUserName, tt.want)
-			}
-		})
-	}
-	tUserNameA = origUserNameA
 }
 
 func TestUserName_Delete(t *testing.T) {
@@ -330,11 +233,11 @@ func TestUserName_Delete(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			u:    &UserName{},
+			u:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserNameA.ID}},
 			args: args{tUserNameA.ID},
 		},
 		{
-			u:    &UserName{},
+			u:    &UserName{BaseObject: &pkgservice.BaseObject{ID: tUserNameA.ID}},
 			args: args{tUserNameA.ID},
 		},
 	}
@@ -343,137 +246,16 @@ func TestUserName_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
-
-			if err := u.Delete(tt.args.id, true); (err != nil) != tt.wantErr {
+			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			if err := u.Delete(true); (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			newU := &UserName{}
-			err := newU.Get(tt.args.id, true)
+			newU := &UserName{BaseObject: &pkgservice.BaseObject{ID: tt.args.id}}
+			newU.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			err := newU.Get(true)
 			if err != leveldb.ErrNotFound {
 				t.Errorf("UserName.Delete() unable to delete: id: %v newU: %v e: %v", tt.args.id, newU, err)
-			}
-		})
-	}
-
-	// teardown test
-}
-
-func Test_isValidName(t *testing.T) {
-	// setup test
-
-	// define test-structure
-	type args struct {
-		name []byte
-	}
-
-	// prepare test-cases
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-		{
-			args: args{[]byte("01234567891123456789223456789323456789423456789")},
-			want: false,
-		},
-		{
-			args: args{[]byte("01234567891123456789")},
-			want: true,
-		},
-		{
-			args: args{[]byte("零一二三四五六七八九十壹貳參肆伍陸柒捌玖")},
-			want: true,
-		},
-	}
-
-	// run test
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isValidName(tt.args.name); got != tt.want {
-				t.Errorf("isValidName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-
-	// teardown test
-}
-
-func TestUserName_GetList(t *testing.T) {
-	// setup test
-	setupTest(t)
-	defer teardownTest(t)
-
-	tUserNameA.Save(true)
-	tUserNameB.Save(true)
-	tUserNameC.Save(true)
-
-	// define test-structure
-	type fields struct {
-		V        types.Version
-		ID       *types.PttID
-		CreateTS types.Timestamp
-		UpdateTS types.Timestamp
-		Name     []byte
-	}
-	type args struct {
-		id    *types.PttID
-		limit int
-	}
-
-	// prepare test-cases
-	tests := []struct {
-		name    string
-		u       *UserName
-		args    args
-		want    []*UserName
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-		{
-			u:    &UserName{},
-			args: args{id: &types.EmptyID, limit: 4},
-			want: []*UserName{tUserNameA, tUserNameB, tUserNameC},
-		},
-		{
-			u:    &UserName{},
-			args: args{id: &types.EmptyID, limit: 2},
-			want: []*UserName{tUserNameA, tUserNameB},
-		},
-		{
-			u:    &UserName{},
-			args: args{id: &types.EmptyID, limit: 3},
-			want: []*UserName{tUserNameA, tUserNameB, tUserNameC},
-		},
-		{
-			u:    &UserName{},
-			args: args{id: tUserIDA, limit: 3},
-			want: []*UserName{tUserNameA, tUserNameB, tUserNameC},
-		},
-		{
-			u:    &UserName{},
-			args: args{id: tUserIDB, limit: 3},
-			want: []*UserName{tUserNameB, tUserNameC},
-		},
-		{
-			u:    &UserName{},
-			args: args{id: tUserIDC, limit: 3},
-			want: []*UserName{tUserNameC},
-		},
-	}
-
-	// run test
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			u := tt.u
-			got, err := u.GetList(tt.args.id, tt.args.limit, pttdb.ListOrderNext)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserName.GetList() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UserName.GetList() = %v, want %v", got, tt.want)
 			}
 		})
 	}

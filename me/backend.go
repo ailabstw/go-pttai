@@ -69,6 +69,7 @@ func NewBackend(ctx *pkgservice.ServiceContext, cfg *Config, ptt pkgservice.MyPt
 
 	err = spm.CreateMe(cfg.ID, cfg.PrivateKey, contentBackend)
 	if err != nil {
+		log.Debug("me.NewBackend: unable to CreateMe", "e", err)
 		return nil, err
 	}
 

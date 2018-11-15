@@ -16,6 +16,21 @@
 
 package service
 
-type BlockInfo interface {
-	Remove() error
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
+)
+
+type BlockInfo struct {
+	ID       *types.PttID
+	NBlock   int
+	NLine    int
+	MediaIDs []*types.PttID
+
+	db     *pttdb.LDBBatch
+	dbLock *types.LockMap
+}
+
+func (b *BlockInfo) Remove() error {
+	return nil
 }

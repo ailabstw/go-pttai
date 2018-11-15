@@ -79,11 +79,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		return nil
 	}
 
-	log.Debug("HandleSyncCreateObjectAck: to check IsSync", "oplog", oplog)
-	if oplog.IsSync { // already synced
-		return nil
-	}
-
 	// orig-obj
 	err = obj.Lock()
 	if err != nil {
@@ -95,6 +90,12 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	err = origObj.GetByID(true)
 	if err != nil {
 		return err
+	}
+
+	// validate
+	log.Debug("HandleSyncCreateObjectAck: to check IsSync", "oplog", oplog)
+	if oplog.IsSync { // already synced
+		return nil
 	}
 
 	log.Debug("HandleSyncCreateObjectAck: to check oplog", "objLogID", origObj.GetLogID(), "oplogID", oplog.ID, "status", origObj.GetStatus())

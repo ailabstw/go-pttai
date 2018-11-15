@@ -112,7 +112,7 @@ func (m *Member) Save(isLocked bool) error {
 		&pttdb.KeyVal{K: key, V: marshaled},
 	}
 
-	_, err = m.db.TryPutAll(idxKey, idx, kvs, true, false)
+	_, err = m.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -185,14 +185,14 @@ func (m *Member) Unmarshal(data []byte) error {
 /*
 GetBlockInfo implements Object method
 */
-func (m *Member) GetBlockInfo() BlockInfo {
+func (m *Member) GetBlockInfo() *BlockInfo {
 	return nil
 }
 
 /*
 RemoveBlock implements Object method
 */
-func (m *Member) RemoveBlock(blockInfo BlockInfo, info ProcessInfo, isRemoveDB bool) error {
+func (m *Member) RemoveBlock(blockInfo *BlockInfo, info ProcessInfo, isRemoveDB bool) error {
 	return nil
 }
 

@@ -23,10 +23,6 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-func ProtocolUpdateObject() error {
-	return nil
-}
-
 func isReplaceOrigSyncInfo(syncInfo SyncInfo, status types.Status, ts types.Timestamp, newLogID *types.PttID) bool {
 
 	if syncInfo == nil {
@@ -64,4 +60,38 @@ func isReplaceOrigSyncInfo(syncInfo SyncInfo, status types.Status, ts types.Time
 
 	origLogID := syncInfo.GetLogID()
 	return bytes.Compare(origLogID[:], newLogID[:]) > 0
+}
+
+/*
+SaveUpdateObjectWithOplog saves Update Object with Oplog.
+
+We can't integrate with postupdate because there are situations that we want to save without postupdate. (already updated but we have older ts).
+*/
+func (pm *BaseProtocolManager) saveUpdateObjectWithOplog(
+	obj Object,
+	oplog *BaseOplog,
+	isLocked bool,
+
+) error {
+
+	var err error
+	if !isLocked {
+		err = obj.Lock()
+		if err != nil {
+			return err
+		}
+		defer obj.Unlock()
+	}
+
+	SetUpdateObjectWithOplog(obj, oplog)
+
+	err = obj.Save(true)
+	if err != nil {
+		return err
+	}
+
+	// set oplog is sync
+	oplog.IsSync = true
+
+	return nil
 }

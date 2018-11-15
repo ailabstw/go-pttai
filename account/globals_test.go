@@ -28,10 +28,14 @@ import (
 const ()
 
 var (
-	tKeyA      *ecdsa.PrivateKey = nil
-	tUserIDA   *types.PttID      = nil
-	tTsA       types.Timestamp   = types.ZeroTimestamp
-	tUserNameA *UserName         = nil
+	tEntityID *types.PttID   = nil
+	tLockMap  *types.LockMap = nil
+
+	tKeyA            *ecdsa.PrivateKey = nil
+	tUserIDA         *types.PttID      = nil
+	tTsA             types.Timestamp   = types.ZeroTimestamp
+	tUserNameA       *UserName         = nil
+	tUserNameMarshal []byte            = nil
 
 	tKeyB      *ecdsa.PrivateKey = nil
 	tUserIDB   *types.PttID      = nil
@@ -61,27 +65,32 @@ func setupTest(t *testing.T) {
 		return lenB, nil
 	}
 
+	InitAccount("./test.out")
+
+	tEntityID, _ = types.NewPttID()
+	tLockMap, _ = types.NewLockMap(1)
+
 	tKeyA, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
 	tUserIDA, _ = types.NewPttIDFromKey(tKeyA)
 	tTsA = types.Timestamp{Ts: 1, NanoTs: 5}
-	tUserNameA, _ = NewUserName(tUserIDA, tTsA)
+	tUserNameMarshal = []byte(`{"b":{"V":2,"ID":"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46","CT":{"T":1,"NT":5},"CID":"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46","UID":"f8FnBNeGR37bqtFqZ4zZjXGYdKpoyDbWLRrv8qRSevKjQzeWpdeX46","e":"1fAhYWqs6ctsWHNZtpYJNB9BxxQPq4Pa5LkbLC3wpAHLipXE7tXVY","S":7},"UT":{"T":1,"NT":5},"N":null}`)
+
+	tUserNameA, _ = NewUserName(tTsA, tUserIDA, tEntityID, nil, types.StatusAlive, dbAccount, tLockMap, DBUserNamePrefix, DBUserNameIdxPrefix, nil)
 
 	tKeyB, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	tUserIDB, _ = types.NewPttIDFromKey(tKeyB)
 	tTsB = types.Timestamp{Ts: 2, NanoTs: 6}
-	tUserNameB, _ = NewUserName(tUserIDB, tTsB)
+	tUserNameB, _ = NewUserName(tTsB, tUserIDB, tEntityID, nil, types.StatusAlive, dbAccount, tLockMap, DBUserNamePrefix, DBUserNameIdxPrefix, nil)
 
 	tKeyC, _ = crypto.HexToECDSA("869d6ecf5211f1cc60418a13b9d870b22959d0c16f02bec714c960dd2298a32d")
 	tUserIDC, _ = types.NewPttIDFromKey(tKeyC)
 	tTsC = types.Timestamp{Ts: 3, NanoTs: 7}
-	tUserNameC, _ = NewUserName(tUserIDC, tTsC)
+	tUserNameC, _ = NewUserName(tTsC, tUserIDC, tEntityID, nil, types.StatusAlive, dbAccount, tLockMap, DBUserNamePrefix, DBUserNameIdxPrefix, nil)
 
 	tKeyD, _ = crypto.HexToECDSA("e238eb8e04fee6511ab04c6dd3c89ce097b11f25d584863ac2b6d5b35b1847e4")
 	tUserIDD, _ = types.NewPttIDFromKey(tKeyD)
 	tTsD = types.Timestamp{Ts: 4, NanoTs: 8}
-	tUserNameD, _ = NewUserName(tUserIDD, tTsD)
-
-	InitAccount("./test.out")
+	tUserNameD, _ = NewUserName(tTsD, tUserIDD, tEntityID, nil, types.StatusAlive, dbAccount, tLockMap, DBUserNamePrefix, DBUserNameIdxPrefix, nil)
 
 }
 

@@ -31,6 +31,7 @@ func (spm *ServiceProtocolManager) GetProfileList(startingID *types.PttID, limit
 
 	profileList := make([]*Profile, 0)
 	i := 0
+
 	for iter.Next() {
 		if limit > 0 && i >= limit {
 			break

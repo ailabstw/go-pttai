@@ -176,11 +176,7 @@ func (pm *BaseProtocolManager) IsPendingPeer(peer *PttPeer) bool {
 }
 
 func (pm *BaseProtocolManager) defaultIsPendingPeer(peer *PttPeer) bool {
-	if peer.UserID == nil {
-		return false
-	}
-
-	return pm.IsPendingMember(peer.UserID, false)
+	return pm.Peers().IsPendingPeer(peer, false)
 }
 
 func (pm *BaseProtocolManager) IsSuspiciousID(id *types.PttID, nodeID *discover.NodeID) bool {
@@ -191,7 +187,7 @@ func (pm *BaseProtocolManager) IsGoodID(id *types.PttID, nodeID *discover.NodeID
 	return true
 }
 
-func (pm *BaseProtocolManager) BECountPeers() (int, error) {
+func (pm *BaseProtocolManager) CountPeers() (int, error) {
 	pm.peers.RLock()
 	defer pm.peers.RUnlock()
 
@@ -200,7 +196,7 @@ func (pm *BaseProtocolManager) BECountPeers() (int, error) {
 	return len(peerList) + len(pendingPeerList), nil
 }
 
-func (pm *BaseProtocolManager) BEGetPeers() ([]*PttPeer, error) {
+func (pm *BaseProtocolManager) GetPeers() ([]*PttPeer, error) {
 	pm.peers.RLock()
 	defer pm.peers.RUnlock()
 

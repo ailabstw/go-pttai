@@ -32,7 +32,7 @@ func (pm *BaseProtocolManager) AddMaster(id *types.PttID, isForce bool) (*Master
 		return nil, nil, types.ErrInvalidID
 	}
 
-	if len(pm.masters) == 1 {
+	if len(pm.masters) >= pm.maxMasters {
 		return nil, nil, ErrTooManyMasters
 	}
 

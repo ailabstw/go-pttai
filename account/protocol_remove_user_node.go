@@ -80,7 +80,7 @@ func (pm *ProtocolManager) postdeleteUserNode(
 	opData pkgservice.OpData,
 
 	origObj pkgservice.Object,
-	blockInfo pkgservice.BlockInfo,
+	blockInfo *pkgservice.BlockInfo,
 ) error {
 
 	var err error

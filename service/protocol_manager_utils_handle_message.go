@@ -42,49 +42,49 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 
 	// me oplog
 	case SyncMasterOplogMsg:
-		err = pm.HandleSyncMasterOplog(dataBytes, peer)
+		return pm.HandleSyncMasterOplog(dataBytes, peer)
 	case SyncMasterOplogAckMsg:
-		err = pm.HandleSyncMasterOplogAck(dataBytes, peer)
+		return pm.HandleSyncMasterOplogAck(dataBytes, peer)
 	case SyncMasterOplogNewOplogsMsg:
-		err = pm.HandleSyncNewMasterOplog(dataBytes, peer)
+		return pm.HandleSyncNewMasterOplog(dataBytes, peer)
 	case SyncMasterOplogNewOplogsAckMsg:
-		err = pm.HandleSyncNewMasterOplogAck(dataBytes, peer)
+		return pm.HandleSyncNewMasterOplogAck(dataBytes, peer)
 	case SyncPendingMasterOplogMsg:
-		err = pm.HandleSyncPendingMasterOplog(dataBytes, peer)
+		return pm.HandleSyncPendingMasterOplog(dataBytes, peer)
 	case SyncPendingMasterOplogAckMsg:
-		err = pm.HandleSyncPendingMasterOplogAck(dataBytes, peer)
+		return pm.HandleSyncPendingMasterOplogAck(dataBytes, peer)
 
 	case AddMasterOplogMsg:
-		err = pm.HandleAddMasterOplog(dataBytes, peer)
+		return pm.HandleAddMasterOplog(dataBytes, peer)
 	case AddMasterOplogsMsg:
-		err = pm.HandleAddMasterOplogs(dataBytes, peer)
+		return pm.HandleAddMasterOplogs(dataBytes, peer)
 	case AddPendingMasterOplogMsg:
-		err = pm.HandleAddPendingMasterOplog(dataBytes, peer)
+		return pm.HandleAddPendingMasterOplog(dataBytes, peer)
 	case AddPendingMasterOplogsMsg:
-		err = pm.HandleAddPendingMasterOplogs(dataBytes, peer)
+		return pm.HandleAddPendingMasterOplogs(dataBytes, peer)
 
 	// me oplog
 	case SyncMemberOplogMsg:
-		err = pm.HandleSyncMemberOplog(dataBytes, peer)
+		return pm.HandleSyncMemberOplog(dataBytes, peer)
 	case SyncMemberOplogAckMsg:
-		err = pm.HandleSyncMemberOplogAck(dataBytes, peer)
+		return pm.HandleSyncMemberOplogAck(dataBytes, peer)
 	case SyncMemberOplogNewOplogsMsg:
-		err = pm.HandleSyncNewMemberOplog(dataBytes, peer)
+		return pm.HandleSyncNewMemberOplog(dataBytes, peer)
 	case SyncMemberOplogNewOplogsAckMsg:
-		err = pm.HandleSyncNewMemberOplogAck(dataBytes, peer)
+		return pm.HandleSyncNewMemberOplogAck(dataBytes, peer)
 	case SyncPendingMemberOplogMsg:
-		err = pm.HandleSyncPendingMemberOplog(dataBytes, peer)
+		return pm.HandleSyncPendingMemberOplog(dataBytes, peer)
 	case SyncPendingMemberOplogAckMsg:
-		err = pm.HandleSyncPendingMemberOplogAck(dataBytes, peer)
+		return pm.HandleSyncPendingMemberOplogAck(dataBytes, peer)
 
 	case AddMemberOplogMsg:
-		err = pm.HandleAddMemberOplog(dataBytes, peer)
+		return pm.HandleAddMemberOplog(dataBytes, peer)
 	case AddMemberOplogsMsg:
-		err = pm.HandleAddMemberOplogs(dataBytes, peer)
+		return pm.HandleAddMemberOplogs(dataBytes, peer)
 	case AddPendingMemberOplogMsg:
-		err = pm.HandleAddPendingMemberOplog(dataBytes, peer)
+		return pm.HandleAddPendingMemberOplog(dataBytes, peer)
 	case AddPendingMemberOplogsMsg:
-		err = pm.HandleAddPendingMemberOplogs(dataBytes, peer)
+		return pm.HandleAddPendingMemberOplogs(dataBytes, peer)
 
 	// op-key-oplog
 	case SyncOpKeyOplogMsg:

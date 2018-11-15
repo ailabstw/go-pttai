@@ -17,8 +17,53 @@
 package service
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/ailabstw/go-pttai/rpc"
 )
+
+type Backend interface {
+	// master-oplog
+
+	GetMasterOplogList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error)
+	GetPendingMasterOplogMasterList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error)
+	GetPendingMasterOplogInternalList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error)
+	GetMasterOplogMerkleNodeList(idBytes []byte, level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendMerkleNode, error)
+
+	// master
+	GetMasterListFromCache(idBytes []byte) ([]*Master, error)
+	GetMasterList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*Master, error)
+
+	// member-oplog
+
+	GetMemberOplogList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MemberOplog, error)
+	GetPendingMemberOplogMasterList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MemberOplog, error)
+	GetPendingMemberOplogInternalList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*MemberOplog, error)
+	GetMemberOplogMerkleNodeList(idBytes []byte, level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendMerkleNode, error)
+
+	// member
+
+	GetMemberList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*Master, error)
+
+	// op-key-oplog
+
+	GetOpKeyOplogList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*OpKeyOplog, error)
+	GetPendingOpKeyOplogMasterList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*OpKeyOplog, error)
+	GetPendingOpKeyOplogInternalList(idBytes []byte, logID []byte, limit int, listOrder pttdb.ListOrder) ([]*OpKeyOplog, error)
+
+	// op-key
+
+	ShowValidateKey() (*types.PttID, error)
+	ValidateValidateKey(keyBytes []byte) (bool, error)
+
+	GetOpKeyInfos([]*KeyInfo, error)
+	RevokeOpKey(keyIDBytes []byte, myKeyBytes []byte) (bool, error)
+	GetOpKeyInfosFromDB() ([]*KeyInfo, error)
+
+	// peers
+	CountPeers() (int, error)
+	GetPeers() ([]*BackendPeer, error)
+}
 
 type Service interface {
 	// APIs retrieves the list of RPC descriptors the service provides

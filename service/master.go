@@ -117,7 +117,7 @@ func (m *Master) Save(isLocked bool) error {
 		&pttdb.KeyVal{K: key, V: marshaled},
 	}
 
-	_, err = m.db.TryPutAll(idxKey, idx, kvs, true, false)
+	_, err = m.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}

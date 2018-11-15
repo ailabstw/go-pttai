@@ -93,10 +93,9 @@ func (m *MyNode) Save() ([]byte, error) {
 		return nil, err
 	}
 
-	log.Debug("Save: to TryPut", "key", key, "marshaled", marshaled)
-	v, err := dbMyNodes.TryPut(key, marshaled, m.UpdateTS)
+	err = dbMyNodes.Put(key, marshaled)
 	if err != nil {
-		return v, err
+		return nil, err
 	}
 
 	return nil, nil

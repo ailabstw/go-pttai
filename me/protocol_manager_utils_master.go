@@ -18,21 +18,8 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
 func (pm *ProtocolManager) IsMaster(id *types.PttID, isLocked bool) bool {
 	return pm.Entity().IsOwner(id)
-}
-
-func (pm *ProtocolManager) GetMasterList() []*discover.NodeID {
-	pm.lockMyNodes.RLock()
-	defer pm.lockMyNodes.RUnlock()
-
-	theList := make([]*discover.NodeID, 0, len(pm.MyNodes))
-	for _, node := range pm.MyNodes {
-		theList = append(theList, node.NodeID)
-	}
-
-	return theList
 }

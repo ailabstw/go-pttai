@@ -14,11 +14,24 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package account
+package friend
 
-import (
-)
+import "github.com/ailabstw/go-pttai/common/types"
 
-func GetUserOplogMerkleNodeList() error {
-    return nil
+func (pm *ProtocolManager) SaveLastSeen(ts types.Timestamp) (types.Timestamp, error) {
+	var err error
+	if ts.IsEqual(types.ZeroTimestamp) {
+		ts, err = types.GetTimestamp()
+		if err != nil {
+			return types.ZeroTimestamp, err
+		}
+	}
+
+	f := pm.Entity().(*Friend)
+	err = f.SaveLastSeen(ts)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return ts, nil
 }

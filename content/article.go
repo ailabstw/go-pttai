@@ -21,35 +21,14 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncArticleInfo struct {
-	LogID          *types.PttID    `json:"pl"`
-	ContentBlockID *types.PttID    `json:"bID,omitempty"`
-	NBlock         int             `json:"NB"`
-	NLine          int             `json:"NL"`
-	MediaIDs       []*types.PttID  `json:"ms,omitempty"`
-	UpdateTS       types.Timestamp `json:"UT"`
-	UpdaterID      *types.PttID    `json:"UID"`
-	Status         types.Status    `json:"S"`
-}
-
 type Article struct {
-	V           types.Version
-	ID          *types.PttID
-	CreateTS    types.Timestamp `json:"CT"`
-	UpdateTS    types.Timestamp `json:"UT"`
-	CreatorID   *types.PttID    `json:"CID"`
-	UpdaterID   *types.PttID    `json:"UID"`
-	UpdateLogID *types.PttID    `json:"ul,omitempty"`
+	*pkgservice.BaseObject `json:"b"`
 
-	Status types.Status `json:"S"`
+	UpdateTS types.Timestamp `json:"UT"`
 
-	BoardID *types.PttID `json:"BID"`
+	SyncInfo *pkgservice.BaseSyncInfo `json:"s,omitempty"`
 
 	Title []byte `json:"T,omitempty"`
-
-	ContentBlockID *types.PttID `json:"bID"`
-	NBlock         int          `json:"NB"`
-	NLine          int          `json:"NL"`
 
 	NPush *pkgservice.Count `json:"-"` // from other db-records
 	NBoo  *pkgservice.Count `json:"-"` // from other db-records
@@ -57,12 +36,4 @@ type Article struct {
 	CommentCreateTS types.Timestamp `json:"-"` // from other db-records
 	LastSeen        types.Timestamp `json:"-"` // from other db-records
 
-	MediaIDs []*types.PttID `json:"ms"`
-
-	LogID           *types.PttID     `json:"l"`
-	SyncArticleInfo *SyncArticleInfo `json:"s,omitempty"`
-
-	dbLock *types.LockMap
-
-	//	IsSync          types.Bool       `json:"y"`
 }

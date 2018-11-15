@@ -16,8 +16,29 @@
 
 package pttdb
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
+
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 type DBable struct {
 	UpdateTS types.Timestamp `json:"UT"`
+}
+
+func (d *DBable) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, d)
+}
+
+type DBStatus struct {
+	Status types.Status `json:"S"`
+}
+
+type DBWithStatus struct {
+	BaseObj  *DBStatus       `json:"b"`
+	UpdateTS types.Timestamp `json:"UT"`
+}
+
+func (d *DBWithStatus) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, d)
 }

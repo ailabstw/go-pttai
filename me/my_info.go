@@ -24,10 +24,8 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type MyInfo struct {
@@ -35,8 +33,8 @@ type MyInfo struct {
 
 	UpdateTS types.Timestamp `json:"UT"`
 
-	MyProfileID *types.PttID     `json:"PID"`
-	Profile     *account.Profile `json:"-"`
+	ProfileID *types.PttID     `json:"PID"`
+	Profile   *account.Profile `json:"-"`
 
 	signKeyInfo     *pkgservice.KeyInfo
 	nodeSignKeyInfo *pkgservice.KeyInfo
@@ -149,11 +147,10 @@ func (m *MyInfo) Init(thePtt pkgservice.Ptt, service pkgservice.Service, spm pkg
 		return err
 	}
 
+	// set my entity
 	if !reflect.DeepEqual(myID, MyID) {
 		return nil
 	}
-
-	// set my entity
 
 	ptt.SetMyEntity(m)
 
@@ -173,20 +170,7 @@ func (m *MyInfo) InitPM(ptt pkgservice.MyPtt, service pkgservice.Service) error 
 		return err
 	}
 
-	userName := &account.UserName{}
-	err = userName.Get(m.ID, true)
-	if err == leveldb.ErrNotFound {
-		err = nil
-	}
-	if err != nil {
-		return err
-	}
-	name := userName.Name
-	if name == nil {
-		name = []byte{}
-	}
-
-	m.BaseEntity.Init(pm, string(name), ptt, service)
+	m.BaseEntity.Init(pm, ptt, service)
 
 	return nil
 }
@@ -231,7 +215,7 @@ func (m *MyInfo) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbMeCore.TryPut(key, marshaled, m.UpdateTS)
+	err = dbMeCore.Put(key, marshaled)
 	if err != nil {
 		return err
 	}
@@ -265,6 +249,7 @@ func (m *MyInfo) MustSave(isLocked bool) error {
 }
 
 // Remember to do InitPM when necessary.
+/*
 func (m *MyInfo) Get(id *types.PttID, ptt pkgservice.Ptt, service pkgservice.Service, contentBackend *content.Backend) error {
 	m.ID = id
 
@@ -291,6 +276,7 @@ func (m *MyInfo) Get(id *types.PttID, ptt pkgservice.Ptt, service pkgservice.Ser
 
 	return nil
 }
+*/
 
 func (m *MyInfo) GetJoinRequest(hash *common.Address) (*pkgservice.JoinRequest, error) {
 	return m.PM().(*ProtocolManager).GetJoinRequest(hash)
@@ -314,4 +300,8 @@ func (m *MyInfo) GetMasterKey() *ecdsa.PrivateKey {
 
 func (m *MyInfo) GetValidateKey() *types.PttID {
 	return m.validateKey
+}
+
+func (m *MyInfo) GetProfile() pkgservice.Entity {
+	return m.Profile
 }

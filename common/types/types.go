@@ -32,6 +32,8 @@ const (
 
 	StatusSync
 
+	StatusToBeSynced
+
 	StatusAlive
 
 	StatusFailed
@@ -69,6 +71,7 @@ var (
 		StatusInternalPending:  "internal-pending",
 		StatusPending:          "pending",
 		StatusSync:             "sync",
+		StatusToBeSynced:       "be-synced",
 		StatusAlive:            "alive",
 		StatusFailed:           "failed",
 		StatusInternalDeleted:  "internal-delete",
@@ -149,6 +152,8 @@ var statusToStatusClass = map[Status]StatusClass{
 	StatusInternalPending: StatusClassInternalPendingAlive,
 	StatusPending:         StatusClassPendingAlive,
 	StatusSync:            StatusClassPendingAlive,
+
+	StatusToBeSynced: StatusClassAlive,
 
 	StatusAlive: StatusClassAlive,
 

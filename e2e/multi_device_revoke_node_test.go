@@ -66,7 +66,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(types.StatusAlive, me1_1.Status)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_3, t, isDebug)
@@ -83,7 +83,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(1, len(me1_3.OwnerIDs))
 	assert.Equal(me1_3.ID, me1_3.OwnerIDs[0])
 	assert.Equal(true, me1_3.IsOwner(me1_3.ID))
-	profileID1_3 := me1_3.MyProfileID
+	profileID1_3 := me1_3.ProfileID
 
 	// 4. show-my-key
 	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
@@ -158,7 +158,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode1_8_1.Status)
 
 	// 8.1. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
@@ -175,9 +175,9 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(me1_3.ID, me1_8_1.OwnerIDs[0])
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
-	// 9. getRawMeByID
+	// 9. getRawMe
 	marshaled, _ = me0_3.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
 	me0_9 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_9, t, isDebug)
@@ -187,7 +187,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(true, me0_9.IsOwner(me0_3.ID))
 
 	// 9.1. getPeers
-	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": [""]}`
 
 	dataPeers0_9_1 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -238,7 +238,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(me0_1.NodeID, myNode0_11_0.NodeID)
 
 	// 12. getPeers
-	bodyString = `{"id": "testID", "method": "me_getPeers", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getPeers", "params": [""]}`
 
 	dataPeers0_12 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`

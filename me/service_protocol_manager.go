@@ -19,6 +19,7 @@ package me
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -50,6 +51,7 @@ func NewServiceProtocolManager(myID *types.PttID, ptt pkgservice.MyPtt, service 
 	for _, eachMyInfo := range myInfos {
 		err = eachMyInfo.Init(ptt, service, spm)
 		if err != nil {
+			log.Error("Unable to Init", "myInfo", eachMyInfo.GetID(), "e", err)
 			return nil, err
 		}
 

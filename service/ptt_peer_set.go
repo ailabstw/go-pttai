@@ -386,3 +386,14 @@ func (ps *PttPeerSet) Close(isLocked bool) {
 	ps.pendingPeerList = make([]*PttPeer, 0)
 	ps.peerList = make([]*PttPeer, 0)
 }
+
+func (ps *PttPeerSet) IsPendingPeer(peer *PttPeer, isLocked bool) bool {
+	if !isLocked {
+		ps.RLock()
+		defer ps.RUnlock()
+	}
+
+	_, ok := ps.pendingPeers[peer.ID()]
+
+	return ok
+}

@@ -135,7 +135,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 	}
 
 	b, err := pkgservice.NewBaseProtocolManager(
-		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds,
+		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, MaxMasters,
 		pm.InternalSignMyOplog, pm.IsValidMyOplog, pm.ValidateIntegrateSignMyOplog, pm.SetMeDB,
 		pm.IsMaster, pm.IsMember, pm.GetPeerType, pm.IsMyDevice, pm.IsImportantPeer, pm.IsMemberPeer, pm.IsPendingPeer,
 		nil, // postsyncMemberOplog
@@ -178,8 +178,8 @@ func (pm *ProtocolManager) Start() error {
 
 	// load my profile
 	allEntities := ptt.GetEntities()
-	if myInfo.MyProfileID != nil {
-		myProfile, ok := allEntities[*myInfo.MyProfileID]
+	if myInfo.ProfileID != nil {
+		myProfile, ok := allEntities[*myInfo.ProfileID]
 		if !ok {
 			log.Error("Start: my Profile not exists")
 			return ErrInvalidMe
@@ -217,8 +217,14 @@ func (pm *ProtocolManager) Start() error {
 	go pm.CreateJoinKeyLoop()
 	go pm.SyncJoinMeLoop()
 
-	// oplog-merkle-tree
+	// join-friend
+	pm.joinFriendSub = pm.EventMux().Subscribe(&JoinFriendEvent{})
+	go pm.JoinFriendLoop()
 
+	go pm.CreateJoinFriendKeyLoop()
+	go pm.SyncJoinFriendLoop()
+
+	// oplog-merkle-tree
 	go pkgservice.PMOplogMerkleTreeLoop(pm, pm.meOplogMerkle)
 
 	// init me info
@@ -235,10 +241,10 @@ func (pm *ProtocolManager) Stop() error {
 		return nil
 	}
 
-	pm.StopRaft()
-
-	//pm.joinFriendSub.Unsubscribe()
+	pm.joinFriendSub.Unsubscribe()
 	pm.joinMeSub.Unsubscribe()
+
+	pm.StopRaft()
 
 	err := pm.BaseProtocolManager.Stop()
 	if err != nil {
@@ -259,12 +265,4 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 	}
 
 	return nil
-}
-
-func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinType, error) {
-	if pm.IsJoinMeKeyHash(hash) {
-		return pkgservice.JoinTypeMe, nil
-	}
-
-	return pkgservice.JoinTypeInvalid, pkgservice.ErrInvalidData
 }

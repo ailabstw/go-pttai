@@ -52,7 +52,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	assert.Equal(types.StatusAlive, me0_1.Status)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 
@@ -77,7 +77,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	}
 
 	// 8. getOpKeyInfo
-	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": [""]}`
 
 	dataOpKeyInfos0_8 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`
@@ -107,7 +107,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	assert.Equal(me0_3.ID, entityID)
 
 	// 8.2. getOpKeyInfoFromDB
-	bodyString = `{"id": "testID", "method": "me_getOpKeyInfosFromDB", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyInfosFromDB", "params": [""]}`
 
 	dataOpKeyInfos0_8_2 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`
@@ -121,7 +121,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	assert.Equal(opKeyInfo0_8.ID, opKeyInfo0_8_2.ID)
 
 	// 9.1. OpKeyOplog
-	bodyString = `{"id": "testID", "method": "me_getOpKeyOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyOplogList", "params": ["", "", 0, 2]}`
 
 	dataOpKeyOplogs0_9_1 := &struct {
 		Result []*pkgservice.OpKeyOplog `json:"result"`
@@ -139,16 +139,16 @@ func TestMeRevokeOpKey(t *testing.T) {
 
 	// 10 revoke-key
 	marshaled, _ = opKeyInfo0_8.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revokeOpKey", "params": ["%v", ""]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revokeOpKey", "params": ["", "%v", ""]}`, string(marshaled))
 
 	isOk := false
 	_, err := testCore(t0, bodyString, &isOk, t, isDebug)
 	assert.Equal(false, isOk)
-	assert.Equal("invalid me", err.Msg)
+	assert.Equal("invalid key", err.Msg)
 
 	// 10.1 revoke-key
 	marshaled, _ = opKeyInfo0_8.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revokeOpKey", "params": ["%v", "%v"]}`, string(marshaled), string(myKey0_4))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_revokeOpKey", "params": ["", "%v", "%v"]}`, string(marshaled), string(myKey0_4))
 
 	isOk = false
 	_, err = testCore(t0, bodyString, &isOk, t, isDebug)
@@ -157,7 +157,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	assert.Equal("", err.Msg)
 
 	// 10.2. getOpKeyInfo
-	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyInfos", "params": [""]}`
 
 	dataOpKeyInfos0_10_2 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`
@@ -182,7 +182,7 @@ func TestMeRevokeOpKey(t *testing.T) {
 	assert.Equal(1, len(opKeyInfoMap0_10_3))
 
 	// 10.4. getOpKeyInfoFromDB
-	bodyString = `{"id": "testID", "method": "me_getOpKeyInfosFromDB", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getOpKeyInfosFromDB", "params": [""]}`
 
 	dataOpKeyInfos0_10_4 := &struct {
 		Result []*pkgservice.KeyInfo `json:"result"`

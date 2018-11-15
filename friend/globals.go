@@ -21,6 +21,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 // config
@@ -44,6 +45,54 @@ var (
 	DBFriendOplogPrefix       = []byte(".frlg")
 	DBFriendIdxOplogPrefix    = []byte(".frig")
 	DBFriendMerkleOplogPrefix = []byte(".frmk")
+)
+
+// protocol
+const (
+	_ pkgservice.OpType = iota + pkgservice.NMsg
+	// friend-oplog
+	AddFriendOplogMsg //30
+	AddFriendOplogsMsg
+
+	AddPendingFriendOplogMsg
+	AddPendingFriendOplogsMsg
+
+	SyncFriendOplogMsg
+	SyncFriendOplogAckMsg
+	SyncFriendOplogNewOplogsMsg
+	SyncFriendOplogNewOplogsAckMsg
+
+	SyncPendingFriendOplogMsg
+	SyncPendingFriendOplogAckMsg
+
+	SyncAddFriendNodeMsg
+	SyncAddFriendNodeAckMsg
+
+	// init friend info
+	InitFriendInfoMsg
+	InitFriendInfoAckMsg
+)
+
+// max-masters
+const (
+	MaxMasters = 2
+)
+
+// sync
+const (
+	MaxSyncRandomSeconds = 30
+	MinSyncRandomSeconds = 15
+)
+
+// op-key
+var (
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
+)
+
+// message
+const (
+	NFirstLineInBlock = 20
 )
 
 func InitFriend(dataDir string) error {

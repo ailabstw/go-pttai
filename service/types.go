@@ -27,7 +27,7 @@ type ServiceConstructor func(ctx *ServiceContext) (PttService, error)
 type MerkleTreeLevel uint8
 
 const (
-	_ MerkleTreeLevel = iota
+	MerkleTreeLevelInvalid MerkleTreeLevel = iota
 	MerkleTreeLevelNow
 	MerkleTreeLevelHR
 	MerkleTreeLevelDay
@@ -51,6 +51,23 @@ const (
 	NPeerType
 )
 
+var (
+	peerStr = map[PeerType]string{
+		PeerTypeErr:       "err",
+		PeerTypeRemoved:   "removed",
+		PeerTypeRandom:    "random",
+		PeerTypePending:   "pending",
+		PeerTypeMember:    "member",
+		PeerTypeImportant: "important",
+		PeerTypeHub:       "hub",
+		PeerTypeMe:        "me",
+	}
+)
+
+func (p PeerType) String() string {
+	return peerStr[p]
+}
+
 // NodeType
 type NodeType int
 
@@ -60,6 +77,19 @@ const (
 	NodeTypeDesktop
 	NodeTypeServer
 )
+
+var (
+	nodeStr = map[NodeType]string{
+		NodeTypeUnknown: "unknown",
+		NodeTypeMobile:  "mobile",
+		NodeTypeDesktop: "desktop",
+		NodeTypeServer:  "server",
+	}
+)
+
+func (n NodeType) String() string {
+	return nodeStr[n]
+}
 
 // EntityType
 type EntityType int

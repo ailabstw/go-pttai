@@ -55,7 +55,7 @@ func TestMultiDeviceRequestRaftLead(t *testing.T) {
 	assert.Equal(types.StatusAlive, me1_1.Status)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_3, t, isDebug)
@@ -146,7 +146,7 @@ func TestMultiDeviceRequestRaftLead(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode1_8_1.Status)
 
 	// 8.1. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
@@ -165,7 +165,7 @@ func TestMultiDeviceRequestRaftLead(t *testing.T) {
 
 	// 9. getRawMeByID
 	marshaled, _ = me0_3.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
 	me0_9 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_9, t, isDebug)

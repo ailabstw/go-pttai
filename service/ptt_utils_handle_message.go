@@ -74,8 +74,6 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 		return err
 	}
 
-	log.Debug("HandleMessage: to check code", "evCode", evCode, "code", code, "evHash", evHash, "dataHash", data.Hash)
-
 	if evCode != code || (code < CodeTypeIdentifyPeerFail && !reflect.DeepEqual(evHash[:], data.Hash[:])) {
 		log.Error("HandleMessage: hash not match", "evHash", evHash, "dataHash", data.Hash)
 		return ErrInvalidData
@@ -149,6 +147,7 @@ func (p *BasePtt) HandleCodeJoin(hash *common.Address, encData []byte, peer *Ptt
 func (p *BasePtt) HandleCodeJoinAck(hash *common.Address, encData []byte, peer *PttPeer) error {
 
 	joinRequest, err := p.myEntity.GetJoinRequest(hash)
+	log.Debug("HandleCodeJoinAck: after GetJoinRequest", "e", err)
 	if err != nil {
 		return err
 	}
@@ -177,6 +176,7 @@ func (p *BasePtt) HandleCodeJoinAck(hash *common.Address, encData []byte, peer *
 func (p *BasePtt) HandleCodeOp(hash *common.Address, encData []byte, peer *PttPeer) error {
 
 	entity, err := p.getEntityFromHash(hash, &p.lockOps, p.ops)
+	log.Debug("HandleCodeOp: after getEntityFromHash", "e", err, "hash", hash)
 	if err != nil {
 		log.Error("HandleCodeOp: invalid entity", "hash", hash, "e", err)
 		return err

@@ -141,9 +141,8 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 	return e
 }
 
-func (e *BaseEntity) Init(pm ProtocolManager, name string, ptt Ptt, service Service) {
+func (e *BaseEntity) Init(pm ProtocolManager, ptt Ptt, service Service) {
 	e.pm = pm
-	e.name = name
 	e.ptt = ptt
 	e.service = service
 }

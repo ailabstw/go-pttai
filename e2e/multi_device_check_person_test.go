@@ -65,7 +65,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	nodeAddr1_1 := crypto.PubkeyToAddress(*pubKey1_1)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_3, t, isDebug)
@@ -74,7 +74,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	assert.Equal(1, len(me0_3.OwnerIDs))
 	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
 	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
-	profileID0_3 := me0_3.MyProfileID
+	profileID0_3 := me0_3.ProfileID
 
 	me1_3 := &me.MyInfo{}
 	testCore(t1, bodyString, me1_3, t, isDebug)
@@ -83,7 +83,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	assert.Equal(1, len(me1_3.OwnerIDs))
 	assert.Equal(me1_3.ID, me1_3.OwnerIDs[0])
 	assert.Equal(true, me1_3.IsOwner(me1_3.ID))
-	profileID1_3 := me1_3.MyProfileID
+	profileID1_3 := me1_3.ProfileID
 
 	// 3.1 getRawProfile
 	marshaled, _ = profileID0_3.MarshalText()
@@ -93,7 +93,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	testCore(t0, bodyString, profile0_3_1, t, isDebug)
 	assert.Equal(types.StatusAlive, profile0_3_1.Status)
 	assert.Equal(me0_3.ID, profile0_3_1.MyID)
-	assert.Equal(me0_3.MyProfileID, profile0_3_1.ID)
+	assert.Equal(me0_3.ProfileID, profile0_3_1.ID)
 
 	marshaled, _ = profileID1_3.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
@@ -102,7 +102,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	testCore(t1, bodyString, profile1_3_1, t, isDebug)
 	assert.Equal(types.StatusAlive, profile1_3_1.Status)
 	assert.Equal(me1_3.ID, profile1_3_1.MyID)
-	assert.Equal(me1_3.MyProfileID, profile1_3_1.ID)
+	assert.Equal(me1_3.ProfileID, profile1_3_1.ID)
 
 	// 3.2. getMasterOplogList
 	marshaled, _ = profile0_3_1.ID.MarshalText()
@@ -214,7 +214,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	assert.Equal(1, len(dataGetMyNodes1_6.Result))
 
 	// 6.1 getJoinKeys
-	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": [""]}`
 	dataGetJoinKeys0_6_1 := &struct {
 		Result []*me.MyNode `json:"result"`
 	}{}
@@ -264,7 +264,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 
 	// 8.1. getRawMe
 	log.Debug("8.1. getRawMe: start")
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
@@ -282,7 +282,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
 	// 9. MasterOplog
-	bodyString = `{"id": "testID", "method": "me_getMasterOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getMyMasterOplogList", "params": ["", "", 0, 2]}`
 
 	dataMasterOplogs0_9 := &struct {
 		Result []*me.MasterOplog `json:"result"`
@@ -328,7 +328,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 
 	// 9.1. getRawMeByID
 	marshaled, _ = me0_3.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
 	me0_9_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_9_1, t, isDebug)
@@ -387,7 +387,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	testCore(t0, bodyString, profile0_10_1, t, isDebug)
 	assert.Equal(types.StatusDeleted, profile0_10_1.Status)
 	assert.Equal(me0_3.ID, profile0_10_1.MyID)
-	assert.Equal(me0_3.MyProfileID, profile0_10_1.ID)
+	assert.Equal(me0_3.ProfileID, profile0_10_1.ID)
 	assert.Equal(false, profile0_10_1.IsOwner(me0_1.ID))
 	assert.Equal(true, profile0_10_1.IsOwner(me1_1.ID))
 
@@ -398,7 +398,7 @@ func TestMultiDeviceCheckPerson(t *testing.T) {
 	testCore(t1, bodyString, profile1_10_1, t, isDebug)
 	assert.Equal(types.StatusAlive, profile1_10_1.Status)
 	assert.Equal(me1_3.ID, profile1_10_1.MyID)
-	assert.Equal(me1_3.MyProfileID, profile1_10_1.ID)
+	assert.Equal(me1_3.ProfileID, profile1_10_1.ID)
 
 	// 10.2. getMasterOplogList
 	t.Logf("10.2 getMasterOplogList")

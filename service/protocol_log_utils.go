@@ -16,7 +16,9 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 func (pm *BaseProtocolManager) removeBlockAndInfoBySyncInfo(
 	syncInfo SyncInfo,
@@ -24,7 +26,7 @@ func (pm *BaseProtocolManager) removeBlockAndInfoBySyncInfo(
 	oplog *BaseOplog,
 	isRetainValid bool,
 
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setLogDB func(oplog *BaseOplog),
 ) error {
 
@@ -41,12 +43,12 @@ func (pm *BaseProtocolManager) removeBlockAndInfoBySyncInfo(
 }
 
 func (pm *BaseProtocolManager) removeBlockAndInfoByBlock(
-	blockInfo BlockInfo,
+	blockInfo *BlockInfo,
 	info ProcessInfo,
 	oplog *BaseOplog,
 	isRemoveDB bool,
 
-	removeInfoByBlockInfo func(blockInfo BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 ) error {
 
 	if blockInfo == nil {
@@ -90,7 +92,7 @@ func (pm *BaseProtocolManager) removeNonSyncOplog(setDB func(oplog *BaseOplog), 
 
 	if isRetainValid && status == types.StatusAlive {
 		oplog.IsSync = true
-		err = oplog.SaveWithIsSync(true)
+		err = oplog.Save(true)
 		return oplog, nil
 	}
 

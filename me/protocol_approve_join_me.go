@@ -84,8 +84,6 @@ func (pm *ProtocolManager) ApproveJoinMe(joinEntity *pkgservice.JoinEntity, keyI
 		MyInfo: myInfo,
 	}
 
-	log.Debug("ApproveJoinMe: done")
-
 	return myOpKeyInfo, data, nil
 }
 

@@ -25,12 +25,33 @@ import (
 
 func (pm *ProtocolManager) GetJoinRequest(hash *common.Address) (*pkgservice.JoinRequest, error) {
 
-	joinRequest, err := pm.getJoinRequestCore(hash, &pm.lockJoinMeRequest, pm.joinMeRequests)
+	// friend
+	joinRequest, err := pm.getJoinRequestCore(hash, &pm.lockJoinFriendRequest, pm.joinFriendRequests)
+	if err == nil {
+		return joinRequest, nil
+	}
+
+	// me
+	joinRequest, err = pm.getJoinRequestCore(hash, &pm.lockJoinMeRequest, pm.joinMeRequests)
 	if err == nil {
 		return joinRequest, nil
 	}
 
 	return nil, pkgservice.ErrInvalidMsg
+
+	// content
+}
+
+func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinType, error) {
+	if pm.IsJoinMeKeyHash(hash) {
+		return pkgservice.JoinTypeMe, nil
+	}
+
+	if pm.IsJoinFriendKeyHash(hash) {
+		return pkgservice.JoinTypeFriend, nil
+	}
+
+	return pkgservice.JoinTypeInvalid, pkgservice.ErrInvalidData
 }
 
 func (pm *ProtocolManager) getJoinRequestCore(hash *common.Address, lock *sync.RWMutex, requests map[common.Address]*pkgservice.JoinRequest) (*pkgservice.JoinRequest, error) {

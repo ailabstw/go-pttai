@@ -17,10 +17,8 @@
 package service
 
 import (
-	"encoding/json"
 	"reflect"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
@@ -109,6 +107,9 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	// register-peer
 	if peer.UserID == nil {
 		peer.UserID = joinEntity.ID
+	}
+
+	if peer.PeerType < PeerTypeMember {
 		pm.Ptt().SetupPeer(peer, PeerTypeMember, false)
 	} else {
 		pm.RegisterPeer(peer, PeerTypeMember)
@@ -128,54 +129,4 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	}
 
 	return opKey, approveJoin, nil
-}
-
-func (spm *BaseServiceProtocolManager) HandleApproveJoin(dataBytes []byte, joinRequest *JoinRequest, peer *PttPeer) error {
-
-	sspm := spm.Service().SPM()
-	entity := sspm.NewEmptyEntity()
-	theApproveJoin := &ApproveJoin{Data: &ApproveJoinEntity{}}
-	err := json.Unmarshal(dataBytes, theApproveJoin)
-	if err != nil {
-		log.Error("HandleApproveJoinEntity: unable to unmarshal", "e", err)
-		return err
-	}
-
-	approveJoin := theApproveJoin.Data.(*ApproveJoinEntity)
-
-	// create-join-board
-	entity, err = spm.CreateJoinEntity(approveJoin, peer, nil, true)
-	log.Debug("HandleApproveJoinEntity: after CreateJoinEntity", "e", err)
-	if err != nil {
-		return err
-	}
-
-	// register peer
-	pm := entity.PM()
-	if peer.UserID == nil {
-		peer.UserID = approveJoin.MyID
-		pm.Ptt().SetupPeer(peer, PeerTypeMember, false)
-	} else {
-		pm.RegisterPeer(peer, PeerTypeMember)
-	}
-
-	// remove joinRequests
-	spm.lockJoinRequest.Lock()
-	defer spm.lockJoinRequest.Unlock()
-	delete(spm.joinRequests, *joinRequest.Hash)
-
-	return nil
-}
-
-func (spm *BaseServiceProtocolManager) IsJoinEntityRequests(hash *common.Address) bool {
-	return false
-
-	/*
-		spm.lockJoinRequest.RLock()
-		defer spm.lockJoinRequest.RUnlock()
-
-		_, ok := spm.joinRequests[*hash]
-
-		return ok
-	*/
 }

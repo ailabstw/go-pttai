@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
@@ -28,12 +29,16 @@ func TestPttShutdown(t *testing.T) {
 
 	var bodyString string
 
-	//assert := assert.New(t)
+	assert := assert.New(t)
 
 	setupTest(t)
 	defer teardownTest(t)
 
 	t0 := baloo.New("http://127.0.0.1:9450")
+
+	// 0. test-error
+	err0_0 := testError("http://127.0.0.1:9450")
+	assert.Equal(nil, err0_0)
 
 	// 1. ptt-shutdown
 	bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
@@ -42,4 +47,8 @@ func TestPttShutdown(t *testing.T) {
 	testBodyEqualCore(t0, bodyString, resultString, t)
 
 	time.Sleep(5 * time.Second)
+
+	// 2. test-error
+	err0_2 := testError("http://127.0.0.1:9450")
+	assert.NotEqual(nil, err0_2)
 }

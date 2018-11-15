@@ -224,7 +224,7 @@ func (k *KeyInfo) Save(isLocked bool) error {
 
 	log.Debug("KeyInfo: to Save", "idxKey", idxKey)
 
-	_, err = k.db.TryPutAll(idxKey, idx, kvs, true, false)
+	_, err = k.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (k *KeyInfo) Unmarshal(data []byte) error {
 /*
 GetBlockInfo implements Object method
 */
-func (k *KeyInfo) GetBlockInfo() BlockInfo {
+func (k *KeyInfo) GetBlockInfo() *BlockInfo {
 	return nil
 }
 

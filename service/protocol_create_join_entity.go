@@ -27,6 +27,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 
 	meLogID *types.PttID,
 	isStart bool,
+	isNew bool,
 ) (Entity, error) {
 
 	entity, oplog0, masterLogs, memberLogs, opKey, opKeyLog := approveJoin.Entity, approveJoin.Oplog0, approveJoin.MasterLogs, approveJoin.MemberLogs, approveJoin.OpKey, approveJoin.OpKeyLog
@@ -42,9 +43,11 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 
-	err = entity.Init(ptt, service, sspm)
-	if err != nil {
-		return nil, err
+	if isNew {
+		err = entity.Init(ptt, service, sspm)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// master-logs
@@ -79,6 +82,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 	err = pm.RegisterOpKey(opKey, false)
+	log.Debug("CreateJoinEntity: after register op key", "e", err, "entity", pm.Entity().GetID(), "opKey", opKey.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +104,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	}
 
 	err = ptt.GetMyEntity().CreateJoinEntityOplog(entity)
+	log.Debug("CreateJoinEntity: after CreateJoinEntityOplog", "e", err)
 	if err != nil {
 		return nil, err
 	}

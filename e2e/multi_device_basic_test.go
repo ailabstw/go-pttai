@@ -64,7 +64,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	nodeAddr1_1 := crypto.PubkeyToAddress(*pubKey1_1)
 
 	// 3. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_3 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_3, t, isDebug)
@@ -115,7 +115,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(1, len(dataGetMyNodes1_6.Result))
 
 	// 6.1 getJoinKeys
-	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getJoinKeyInfos", "params": [""]}`
 	dataGetJoinKeys0_6_1 := &struct {
 		Result []*me.MyNode `json:"result"`
 	}{}
@@ -163,7 +163,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode1_8_1.Status)
 
 	// 8.1. getRawMe
-	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": []}`
+	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
 
 	me0_8_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_8_1, t, isDebug)
@@ -181,7 +181,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
 	// 9. MasterOplog
-	bodyString = `{"id": "testID", "method": "me_getMasterOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getMyMasterOplogList", "params": ["", "", 0, 2]}`
 
 	dataMasterOplogs0_9 := &struct {
 		Result []*me.MasterOplog `json:"result"`
@@ -225,9 +225,9 @@ func TestMultiDeviceBasic(t *testing.T) {
 	}
 	assert.Equal(dataMasterOplogs0_9, dataMasterOplogs1_9)
 
-	// 9.1. getRawMeByID
+	// 9.1. getRawMe
 	marshaled, _ = me0_3.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMeByID", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
 	me0_9_1 := &me.MyInfo{}
 	testCore(t0, bodyString, me0_9_1, t, isDebug)

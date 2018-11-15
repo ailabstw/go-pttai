@@ -32,6 +32,8 @@ type MyEntity interface {
 
 	NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error)
 
+	GetProfile() Entity
+
 	GetNodeSignID() *types.PttID
 
 	Sign(oplog *BaseOplog) error
@@ -40,7 +42,10 @@ type MyEntity interface {
 
 	IsValidInternalOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 
+	CreateEntityOplog(entity Entity) error
 	CreateJoinEntityOplog(entity Entity) error
+
+	GetValidateKey() *types.PttID
 }
 
 type PttMyEntity interface {

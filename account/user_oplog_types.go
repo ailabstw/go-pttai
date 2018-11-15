@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	_ pkgservice.OpType = iota
+	UserOpTypeInvalid pkgservice.OpType = iota
 	UserOpTypeCreateProfile
 	UserOpTypeSetUserName
 	UserOpTypeSetUserImg

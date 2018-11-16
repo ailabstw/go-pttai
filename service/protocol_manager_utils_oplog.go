@@ -29,13 +29,29 @@ func (pm *BaseProtocolManager) IsValidOplog(signInfos []*SignInfo) (*types.PttID
 }
 
 func (pm *BaseProtocolManager) defaultIsValidOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool) {
-	if len(signInfos) == 0 {
+
+	pm.lockMaster.RLock()
+	defer pm.lockMaster.RUnlock()
+
+	lenMaster := len(pm.masters)
+	count := 0
+	for _, signInfo := range signInfos {
+		_, ok := pm.masters[*signInfo.ID]
+		if ok {
+			count++
+		}
+	}
+
+	// criteria
+	if count < lenMaster {
 		return nil, 0, false
 	}
 
 	masterOplogID := pm.GetNewestMasterLogID()
 
-	return masterOplogID, 1, true
+	log.Debug("defaultIsValidOplog: to return", "masterLogID", masterOplogID, "count", count)
+
+	return masterOplogID, uint32(count), true
 }
 
 /**********
@@ -399,6 +415,8 @@ func (pm *BaseProtocolManager) SetOplogIsSync(
 	if err != nil {
 		return false, err
 	}
+
+	log.Debug("SetOplogIsSync: to check broadcastLog", "isNewSign", isNewSign, "isBroadcast", isBroadcast, "oplog", oplog.ID)
 
 	if isNewSign && isBroadcast {
 		broadcastLog(oplog)

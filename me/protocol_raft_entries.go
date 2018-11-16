@@ -215,6 +215,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 
 	// master-oplog and my-node
 	oplog, err := pm.publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts, raftID, nodeID, weight, ent, fromID)
+	log.Debug("publishEntriesAddNode: after SetMyNode", "e", err)
 	if err != nil {
 		return err
 	}
@@ -226,11 +227,13 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 		switch myInfo.Status {
 		case types.StatusPending:
 			err = pm.CreateFullMe(oplog)
+			log.Debug("publishEntriesAddNode: after CreateFullMe", "e", err)
 			if err != nil {
 				return err
 			}
 		case types.StatusSync:
 			err = pm.InternalSyncToAlive(oplog, weight)
+			log.Debug("publishEntriesAddNode: after InternalSyncToAlive", "e", err)
 			if err != nil {
 				return err
 			}

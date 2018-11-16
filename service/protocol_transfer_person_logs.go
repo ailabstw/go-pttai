@@ -108,8 +108,7 @@ func (pm *BaseProtocolManager) handleTransferPersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
-		log.Debug("handleTransferPersonLogCore: after removeBlockAndInfoBySyncInfo", "e", err)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
 		if err != nil {
 			return err
 		}
@@ -204,7 +203,7 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
 		}
 		origObj.SetSyncInfo(nil)
 	}
@@ -221,26 +220,4 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 	oplog.IsSync = true
 
 	return nil
-}
-
-/**********
- * Set Newest CreateObjectLog
- **********/
-
-func (pm *BaseProtocolManager) SetNewestTransferPersonLog(
-	oplog *BaseOplog,
-	obj Object,
-) (types.Bool, error) {
-	return pm.SetNewestPersonLog(oplog, obj)
-}
-
-/**********
- * Handle Failed CreateObjectLog
- **********/
-
-func (pm *BaseProtocolManager) HandleFailedTransferPersonLog(
-	oplog *BaseOplog,
-	person Object,
-) error {
-	return pm.HandleFailedPersonLog(oplog, person)
 }

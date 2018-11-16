@@ -155,7 +155,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	newPM := newMyInfo.PM()
 
 	newMyOpKeyInfo := approveJoinMe.OpKeyInfo
-	newMyOpKeyInfo.Init(newPM.DBOpKey(), newPM.DBObjLock(), newMyInfo.ID, newPM.DBOpKeyPrefix(), newPM.DBOpKeyIdxPrefix())
+	newMyOpKeyInfo.Init(newPM)
 	err = newMyOpKeyInfo.Save(false)
 	if err != nil {
 		return err

@@ -248,3 +248,10 @@ func (p *PttID) Clone() *PttID {
 	copy(p2[:], p[:])
 	return p2
 }
+
+/*
+func (p *PttID) String() string {
+	str, _ := p.MarshalText()
+	return string(str)
+}
+*/

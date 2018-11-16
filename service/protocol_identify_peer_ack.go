@@ -26,6 +26,7 @@ import (
 
 type IdentifyPeerAck struct {
 	AckChallenge []byte        `json:"A,omitempty"`
+	Hash         []byte        `json:"H,omitempty"`
 	Sig          []byte        `json:"S,omitempty"`
 	PubBytes     []byte        `json:"P,omitempty"`
 	Extra        *KeyExtraInfo `json:"E,omitempty"`
@@ -125,7 +126,7 @@ func (p *BasePtt) IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*Identi
 		return nil, ErrInvalidKey
 	}
 
-	bytesWithSalt, _, sig, pubBytes, err := SignData(challenge[:], signKey)
+	bytesWithSalt, hash, sig, pubBytes, err := SignData(challenge[:], signKey)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +135,7 @@ func (p *BasePtt) IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*Identi
 
 	ackData := &IdentifyPeerAck{
 		AckChallenge: bytesWithSalt,
+		Hash:         hash,
 		Sig:          sig,
 		PubBytes:     pubBytes,
 		MyID:         myID,
@@ -154,7 +156,7 @@ func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPee
 		return ErrInvalidData
 	}
 
-	err := VerifyData(data.AckChallenge, data.Sig, data.PubBytes, data.MyID, data.Extra)
+	err := VerifyData(data.AckChallenge, data.Hash, data.Sig, data.PubBytes, data.MyID, data.Extra)
 	if err != nil {
 		log.Warn("HandleIdentifyPeerAck: unable to verify data", "peer", peer)
 		return err

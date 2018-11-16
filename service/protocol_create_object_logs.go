@@ -41,7 +41,7 @@ func (pm *BaseProtocolManager) HandleCreateObjectLog(
 
 ) ([]*BaseOplog, error) {
 
-	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
+	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
 	return nil, err
 }
 
@@ -61,11 +61,16 @@ func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) ([]*BaseOplog, error) {
 
-	err := pm.syncCreateObjectLog(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
+	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
 	return nil, err
 }
 
-func (pm *BaseProtocolManager) syncCreateObjectLog(
+/*
+handleCreateObjectLogCore deals with create-object logs
+
+We need existsInInfo because the object may be already deleted by parent objects (comment vs article)
+*/
+func (pm *BaseProtocolManager) handleCreateObjectLogCore(
 	oplog *BaseOplog,
 	obj Object,
 	opData OpData,
@@ -73,7 +78,7 @@ func (pm *BaseProtocolManager) syncCreateObjectLog(
 
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
 	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
-	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) error {
@@ -96,7 +101,8 @@ func (pm *BaseProtocolManager) syncCreateObjectLog(
 	// get obj
 	err = obj.GetByID(true)
 	if err == leveldb.ErrNotFound {
-		return pm.syncCreateObjectNewLog(oplog, opData, info, existsInInfo, newObjWithOplog, updateCreateInfo)
+		log.Debug("handleCreateObjectLogCore: to handleCreateObjectNewLog", "oplog", oplog.ID, "obj", objID)
+		return pm.handleCreateObjectNewLog(oplog, opData, info, existsInInfo, newObjWithOplog, updateCreateInfo)
 	}
 	if err != nil {
 		return err
@@ -113,13 +119,17 @@ func (pm *BaseProtocolManager) syncCreateObjectLog(
 
 	// same log
 	if reflect.DeepEqual(newestLogID, oplog.ID) {
-		return pm.syncCreateObjectSameLog(oplog, origObj, opData, info, postcreateObject, updateCreateInfo)
+		log.Debug("handleCreateObjectLogCore: to handleCreateObjectSameLog", "oplog", oplog.ID, "obj", objID)
+
+		return pm.handleCreateObjectSameLog(oplog, origObj, opData, info, postcreate, updateCreateInfo)
 	}
 
-	return pm.syncCreateObjectDiffLog(oplog, origObj, info)
+	log.Debug("handleCreateObjectLogCore: to handleCreateObjectDiffLog", "oplog", oplog.ID, "obj", objID)
+
+	return pm.handleCreateObjectDiffLog(oplog, origObj, info)
 }
 
-func (pm *BaseProtocolManager) syncCreateObjectNewLog(
+func (pm *BaseProtocolManager) handleCreateObjectNewLog(
 	oplog *BaseOplog,
 	opData OpData,
 	info ProcessInfo,
@@ -131,7 +141,7 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 ) error {
 
 	isExists, err := existsInInfo(oplog, info)
-	log.Debug("syncCreateObjectNewLog: after existsInInfo", "isExists", isExists, "e", err, "isNewer", oplog.IsNewer)
+	log.Debug("handleCreateObjectNewLog: after existsInInfo", "oplog", oplog.ID, "isExists", isExists, "e", err)
 	if err != nil {
 		return err
 	}
@@ -141,7 +151,7 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 
 	obj := newObjWithOplog(oplog, opData)
 	err = obj.Save(true)
-	log.Debug("syncCreateObjectNewLog: after Save", "e", err)
+	log.Debug("handleCreateObjectNewLog: after newObjWithOplog", "oplog", oplog.ID, "obj", obj.GetID(), "obj.Status", obj.GetStatus(), "oplog.IsNewer", oplog.IsNewer)
 	if err != nil {
 		return err
 	}
@@ -150,25 +160,26 @@ func (pm *BaseProtocolManager) syncCreateObjectNewLog(
 		return nil
 	}
 
-	log.Debug("syncCreateObjectNewLog: to updateCreateInfo")
-
 	return updateCreateInfo(obj, oplog, opData, info)
 }
 
-func (pm *BaseProtocolManager) syncCreateObjectSameLog(
+func (pm *BaseProtocolManager) handleCreateObjectSameLog(
 	oplog *BaseOplog,
 	origObj Object,
 	opData OpData,
 	info ProcessInfo,
 
-	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) error {
 
 	var err error
 
-	if origObj.GetStatus() == types.StatusInternalSync {
+	origStatus := origObj.GetStatus()
+
+	if origStatus == types.StatusInternalSync {
+		// still in sync, requesting again.
 		if !oplog.IsNewer {
 			err = updateCreateInfo(origObj, oplog, opData, info)
 			if err != nil {
@@ -182,108 +193,30 @@ func (pm *BaseProtocolManager) syncCreateObjectSameLog(
 	// although we got the content synced:
 	// 1. the oplog-status may change.
 	// 2. we may get older date if the oplog-status is not changed.
-	// => we update the origObj, and check if we need to do postcreate.
+	// => check status and do saveNewObjectWithOplog.
+	oplogStatus := oplog.ToStatus()
 
-	err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
-	if err != nil {
-		return err
+	origTS := origObj.GetUpdateTS()
+	if oplogStatus < origStatus || oplogStatus == origStatus && origTS.IsLessEqual(oplog.UpdateTS) {
+		return ErrNewerOplog
 	}
 
-	oplog.IsSync = true
+	log.Debug("handleCreateObjectSameLog: to saveNewObjectWithOplog", "oplogStatus", oplogStatus, "origStatus", origStatus)
 
-	return nil
+	if oplogStatus == origStatus {
+		// the status is already the same, we just update the object without postcreate.
+		return pm.saveNewObjectWithOplog(origObj, oplog, true, true, postcreate)
+	}
+
+	// We got higher oplogStatus. Do saveNewObjectWithOplog with postcreate
+	return pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreate)
 }
 
-func (pm *BaseProtocolManager) syncCreateObjectDiffLog(
+func (pm *BaseProtocolManager) handleCreateObjectDiffLog(
 	oplog *BaseOplog,
 	origObj Object,
 	info ProcessInfo,
 ) error {
 
-	oplog.IsSync = true
-	return nil
-}
-
-/**********
- * Set Newest CreateObjectLog
- **********/
-
-func (pm *BaseProtocolManager) SetNewestCreateObjectLog(
-	oplog *BaseOplog,
-	obj Object,
-) (types.Bool, error) {
-
-	objID := oplog.ObjID
-	obj.SetID(objID)
-
-	err := obj.GetByID(false)
-	if err != nil {
-		// possibly already deleted
-		return true, nil
-	}
-
-	updateLogID := obj.GetUpdateLogID()
-	if updateLogID != nil {
-		return true, nil
-	}
-
-	return !types.Bool(reflect.DeepEqual(oplog.ID, obj.GetLogID())), nil
-}
-
-/**********
- * Handle Failed CreateObjectLog
- **********/
-
-func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
-	oplog *BaseOplog,
-	obj Object,
-
-	prefailed func(obj Object, oplog *BaseOplog) error,
-) error {
-
-	objID := oplog.ObjID
-	obj.SetID(objID)
-
-	// lock-obj
-	err := obj.Lock()
-	if err != nil {
-		return err
-	}
-	defer obj.Unlock()
-
-	err = obj.GetByID(true)
-	if err != nil {
-		// already deleted
-		return nil
-	}
-
-	// check validity
-	objLogID := obj.GetLogID()
-	if obj.GetUpdateLogID() != nil || !reflect.DeepEqual(objLogID, oplog.ID) {
-		return nil
-	}
-
-	if oplog.UpdateTS.IsLess(obj.GetUpdateTS()) {
-		return nil
-	}
-
-	// handle fail
-	err = prefailed(obj, oplog)
-	if err != nil {
-		return err
-	}
-
-	ts, err := types.GetTimestamp()
-	if err != nil {
-		return err
-	}
-
-	SetFailedObjectWithOplog(obj, oplog, ts)
-
-	err = obj.Save(true)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ErrNewerOplog
 }

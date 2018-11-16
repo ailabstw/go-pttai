@@ -29,9 +29,21 @@ func (pm *BaseProtocolManager) RevokeOpKey(keyID *types.PttID) (bool, error) {
 	opData := &OpKeyOpRevokeOpKey{}
 
 	err := pm.DeleteObject(
-		keyID, OpKeyOpTypeRevokeOpKey,
-		opKey, opData,
-		pm.SetOpKeyDB, pm.NewOpKeyOplog, nil, pm.setPendingDeleteOpKeySyncInfo, pm.broadcastOpKeyOplogCore, pm.postdeleteOpKey)
+		keyID,
+		OpKeyOpTypeRevokeOpKey,
+
+		opKey,
+		opData,
+
+		pm.SetOpKeyDB,
+
+		pm.NewOpKeyOplog,
+		nil,
+		pm.setPendingDeleteOpKeySyncInfo,
+		pm.broadcastOpKeyOplogCore,
+		pm.postdeleteOpKey,
+	)
+
 	log.Debug("RevokeOpKeyInfo: after DeleteObject", "e", err)
 	if err != nil {
 		return false, err
@@ -48,7 +60,7 @@ func (pm *BaseProtocolManager) setPendingDeleteOpKeySyncInfo(theOpKey Object, st
 	}
 
 	syncInfo := &BaseSyncInfo{}
-	syncInfo.InitWithDeleteOplog(status, oplog)
+	syncInfo.InitWithOplog(status, oplog)
 
 	opKey.SyncInfo = syncInfo
 

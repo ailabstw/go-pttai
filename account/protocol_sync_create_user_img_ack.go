@@ -14,31 +14,35 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package account
 
 import (
-	"reflect"
+	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-/**********
- * Set Newest AddPersonLog
- **********/
+type SyncUserImgAck struct {
+	Objs []*UserImg `json:"o"`
+}
 
-func (pm *BaseProtocolManager) SetNewestPersonLog(
-	oplog *BaseOplog,
-	obj Object,
-) (types.Bool, error) {
+func (pm *ProtocolManager) HandleSyncCreateUserImgAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
-	objID := oplog.ObjID
-	obj.SetID(objID)
-
-	err := obj.GetByID(false)
+	data := &SyncUserImgAck{}
+	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
-		// possibly already deleted
-		return false, nil
+		return err
 	}
 
-	return types.Bool(reflect.DeepEqual(oplog.ID, obj.GetLogID())), nil
+	origObj := NewEmptyUserImg()
+	pm.SetUserImgDB(origObj)
+	for _, obj := range data.Objs {
+		pm.SetUserImgDB(obj)
+
+		pm.HandleSyncCreateObjectAck(
+			obj, peer, origObj,
+			pm.SetUserDB, nil, nil, pm.broadcastUserOplogCore)
+	}
+
+	return nil
 }

@@ -38,6 +38,7 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	myInfo.Status = types.StatusAlive
 
 	err = myInfo.Save(true)
+	log.Debug("InternalSyncToAlive: after Save", "e", err)
 	if err != nil {
 		return err
 	}
@@ -63,6 +64,7 @@ func (pm *ProtocolManager) InternalSyncToAlive(oplog *MasterOplog, weight uint32
 	// user-profile add node
 	if myNodeType >= pkgservice.NodeTypeDesktop {
 		err = myInfo.Profile.PM().(*account.ProtocolManager).AddUserNode(myNodeID)
+		log.Debug("InternalSyncToAlive: after profile add node", "e", err)
 		if err != nil {
 			return err
 		}

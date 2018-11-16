@@ -17,3 +17,8 @@
 package types
 
 type Version uint8
+
+const (
+	InvalidVersion Version = 0
+	CurrentVersion Version = 2
+)

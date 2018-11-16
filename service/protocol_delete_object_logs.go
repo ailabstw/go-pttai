@@ -35,6 +35,7 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+
 	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo *BlockInfo) error,
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
@@ -91,6 +92,7 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+
 	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	postdelete func(id *types.PttID, oplog *BaseOplog, opData OpData, origObj Object, blockInfo *BlockInfo) error,
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
@@ -112,7 +114,7 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, true, removeInfoByBlockInfo, setLogDB)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, true, removeInfoByBlockInfo, setLogDB)
 		if err != nil {
 			return err
 		}
@@ -121,7 +123,7 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 
 	// 2. block info
 	blockInfo := origObj.GetBlockInfo()
-	err = pm.removeBlockAndInfoByBlock(blockInfo, info, oplog, true, removeInfoByBlockInfo)
+	err = pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, info, oplog, true, removeInfoByBlockInfo)
 	if err != nil {
 		return err
 	}
@@ -132,6 +134,7 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	if origStatus < types.StatusAlive {
 		if !reflect.DeepEqual(myID, oplog.CreatorID) {
 			origObj.Delete(true)
+			updateDeleteInfo(origObj, oplog, info)
 			return ErrSkipOplog
 		}
 	}
@@ -152,9 +155,7 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	log.Debug("handleDeleteObjectLogCore: after postdelete")
 
 	// 5. set oplog is-sync (do not set sync if orig-status is alive)
-	if origStatus == types.StatusAlive {
-		oplog.IsSync = true
-	}
+	oplog.IsSync = true
 
 	// 6. updateDeleteInfo
 	if info == nil {
@@ -177,6 +178,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+
 	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,
 
@@ -223,6 +225,7 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+
 	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,
 
@@ -246,7 +249,7 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, false, removeInfoByBlockInfo, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, false, removeInfoByBlockInfo, setLogDB)
 		}
 		origObj.SetSyncInfo(nil)
 	}
@@ -268,66 +271,6 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 	}
 
 	updateDeleteInfo(origObj, oplog, info)
-
-	return nil
-}
-
-/**********
- * Set Newest DeleteObjectLog
- **********/
-
-func (pm *BaseProtocolManager) SetNewestDeleteObjectLog(
-	oplog *BaseOplog,
-	obj Object,
-) (types.Bool, error) {
-	return false, nil
-}
-
-/**********
- * Handle Failed DeleteObjectLog
- **********/
-
-func (pm *BaseProtocolManager) HandleFailedDeleteObjectLog(
-	oplog *BaseOplog,
-	obj Object,
-) error {
-
-	objID := oplog.ObjID
-	obj.SetID(objID)
-
-	// 1. lock obj
-	err := obj.Lock()
-	if err != nil {
-		return err
-	}
-	defer obj.Unlock()
-
-	// 2. get orig-obj (possibly already deleted)
-	err = obj.GetByID(true)
-	if err != nil {
-		return nil
-	}
-
-	origObj := obj
-
-	// 3. check validity
-	syncInfo := origObj.GetSyncInfo()
-	if syncInfo == nil || !reflect.DeepEqual(syncInfo.GetLogID(), oplog.ID) {
-		return nil
-	}
-
-	if oplog.UpdateTS.IsLess(syncInfo.GetUpdateTS()) {
-		return nil
-	}
-
-	// 4. handle fails
-	origObj.SetSyncInfo(nil)
-
-	// 5. obj-save
-	err = origObj.Save(true)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

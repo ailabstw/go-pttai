@@ -34,6 +34,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 	status types.Status,
 
 	setLogDB func(oplog *BaseOplog),
+
 	postdelete func(id *types.PttID, oplog *BaseOplog, origPerson Object, opData OpData) error,
 
 ) ([]*BaseOplog, error) {
@@ -104,7 +105,7 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
 		if err != nil {
 			return err
 		}
@@ -140,7 +141,6 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 
 	setLogDB func(oplog *BaseOplog),
 ) ([]*BaseOplog, error) {
-	return nil, types.ErrNotImplemented
 
 	// 1. lock person
 	personID := oplog.ObjID
@@ -209,7 +209,7 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
 		}
 		origObj.SetSyncInfo(nil)
 	}
@@ -226,27 +226,4 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 	oplog.IsSync = true
 
 	return nil
-}
-
-/**********
- * Set Newest DeleteObjectLog
- **********/
-
-func (pm *BaseProtocolManager) SetNewestDeletePersonLog(
-	oplog *BaseOplog,
-	person Object,
-) (types.Bool, error) {
-
-	return pm.SetNewestPersonLog(oplog, person)
-}
-
-/**********
- * Handle Failed DeleteObjectLog
- **********/
-
-func (pm *BaseProtocolManager) HandleFailedDeletePersonLog(
-	oplog *BaseOplog,
-	person Object,
-) error {
-	return pm.HandleFailedPersonLog(oplog, person)
 }

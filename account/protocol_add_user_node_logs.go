@@ -44,6 +44,8 @@ func (pm *ProtocolManager) handlePendingAddUserNodeLog(oplog *pkgservice.BaseOpl
 
 	opData := &UserOpAddUserNode{}
 
+	log.Debug("handlePendingAddUserNodeLog: start", "oplog", oplog.ID)
+
 	return pm.HandlePendingCreateObjectLog(oplog, obj, opData, info, pm.existsInInfoAddUserNode, pm.newUserNodeWithOplog, pm.postcreateUserNode, pm.updateAddUserNodeInfo)
 }
 
@@ -59,7 +61,7 @@ func (pm *ProtocolManager) handleFailedAddUserNodeLog(oplog *pkgservice.BaseOplo
 	obj := NewEmptyUserNode()
 	pm.SetUserNodeDB(obj)
 
-	return pm.HandleFailedCreateObjectLog(oplog, obj, pm.postfailedAddUserNode)
+	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
 /**********
@@ -77,7 +79,7 @@ func (pm *ProtocolManager) existsInInfoAddUserNode(oplog *pkgservice.BaseOplog, 
 	}
 
 	objID := oplog.ObjID
-	_, ok = info.UserNodeInfo[*objID]
+	_, ok = info.CreateUserNodeInfo[*objID]
 	if ok {
 		return true, nil
 	}
@@ -103,22 +105,7 @@ func (pm *ProtocolManager) updateAddUserNodeInfo(obj pkgservice.Object, oplog *p
 		return pkgservice.ErrInvalidData
 	}
 
-	log.Debug("updateAddUserNodeInfo: to update UserInfo", "objID", oplog.ObjID, "oplog", oplog)
-
-	info.UserNodeInfo[*oplog.ObjID] = oplog
-
-	return nil
-}
-
-/***
- * handleFailedCreateObject
- ***/
-
-func (pm *ProtocolManager) postfailedAddUserNode(theObj pkgservice.Object, oplog *pkgservice.BaseOplog) error {
-	_, ok := theObj.(*UserNode)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
+	info.CreateUserNodeInfo[*oplog.ObjID] = oplog
 
 	return nil
 }

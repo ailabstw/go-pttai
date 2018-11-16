@@ -16,8 +16,24 @@
 
 package account
 
-import "github.com/ailabstw/go-pttai/common/types"
+import pkgservice "github.com/ailabstw/go-pttai/service"
 
-func (pm *ProtocolManager) SetName(name []byte) (*UserName, error) {
-	return nil, types.ErrNotImplemented
+func (pm *ProtocolManager) SyncUserName(op pkgservice.OpType, syncIDs []*pkgservice.SyncID, peer *pkgservice.PttPeer) error {
+	return pm.SyncObject(op, syncIDs, peer)
+}
+
+func (pm *ProtocolManager) HandleSyncCreateUserName(dataBytes []byte, peer *pkgservice.PttPeer, syncAckMsg pkgservice.OpType) error {
+
+	obj := NewEmptyUserName()
+	pm.SetUserNameDB(obj)
+
+	return pm.HandleSyncCreateObject(dataBytes, peer, obj, syncAckMsg)
+}
+
+func (pm *ProtocolManager) HandleSyncUpdateUserName(dataBytes []byte, peer *pkgservice.PttPeer, syncAckMsg pkgservice.OpType) error {
+
+	obj := NewEmptyUserName()
+	pm.SetUserNameDB(obj)
+
+	return pm.HandleSyncUpdateObject(dataBytes, peer, obj, syncAckMsg)
 }

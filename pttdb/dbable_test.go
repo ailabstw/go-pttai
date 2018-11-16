@@ -17,9 +17,6 @@
 package pttdb
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
@@ -40,56 +37,4 @@ type TestBase struct {
 type TestTemp struct {
 	BaseObj  *TestBase       `json:"b"`
 	UpdateTS types.Timestamp `json:"UT"`
-}
-
-func TestDBWithStatus_Unmarshal(t *testing.T) {
-	// setup test
-	setupTest(t)
-	defer teardownTest(t)
-
-	dataBytes := []byte(`{"b":{"CT":{"T":1,"NT":5},"ID":"1234567890234567890","S":7},"UT":{"T":4,"NT":6}}`)
-
-	expectD := &DBWithStatus{BaseObj: &DBStatus{Status: types.StatusAlive}, UpdateTS: types.Timestamp{4, 6}}
-
-	// define test-structure
-	type fields struct {
-		BaseObj  *DBStatus
-		UpdateTS types.Timestamp
-	}
-	type args struct {
-		data []byte
-	}
-
-	// prepare test-cases
-	tests := []struct {
-		name    string
-		d       *DBWithStatus
-		args    args
-		want    *DBWithStatus
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-		{
-			d:    &DBWithStatus{},
-			args: args{dataBytes},
-			want: expectD,
-		},
-	}
-
-	// run test
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := tt.d
-			if err := d.Unmarshal(tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DBWithStatus.Unmarshal() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			t.Logf("DBWithStatus: d: %v %v", d.BaseObj, d.UpdateTS)
-
-			if !reflect.DeepEqual(d, tt.want) {
-				t.Errorf("DBWithStatus.Unmarshal() d = %v, want = %v", d, tt.want)
-			}
-		})
-	}
-
-	// teardown test
 }

@@ -27,10 +27,12 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os"
+	"runtime/debug"
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/math"
 	"github.com/ailabstw/go-pttai/crypto/sha3"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/rlp"
 )
 
@@ -96,6 +98,8 @@ func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
 	priv := new(ecdsa.PrivateKey)
 	priv.PublicKey.Curve = S256()
 	if strict && 8*len(d) != priv.Params().BitSize {
+		log.Error("Invalid length", "len", 8*len(d), "expected length", priv.Params().BitSize)
+		debug.PrintStack()
 		return nil, fmt.Errorf("invalid length, need %d bits", priv.Params().BitSize)
 	}
 	priv.D = new(big.Int).SetBytes(d)

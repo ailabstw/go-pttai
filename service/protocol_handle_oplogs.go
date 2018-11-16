@@ -93,7 +93,7 @@ func handleOplogs(
 	var origLogs []*BaseOplog
 	var newestUpdateTS types.Timestamp
 
-	isToBroadcast := false
+	isToBroadcast := types.Bool(false)
 	toBroadcastLogs := make([]*BaseOplog, 0, len(oplogs))
 	for _, oplog := range oplogs {
 		isToBroadcast, origLogs, err = handleOplog(oplog, info, processLog)
@@ -129,7 +129,7 @@ func handleOplog(
 	info ProcessInfo,
 
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
-) (bool, []*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	err := oplog.Lock()
 	if err != nil {
@@ -142,14 +142,14 @@ func handleOplog(
 	if err != nil {
 		return false, nil, err
 	}
-	if oplog.IsSync && !isToBroadcast {
-		return false, nil, nil
+	if oplog.IsSync {
+		return isToBroadcast, nil, nil
 	}
 
 	// process log
 	origLogs, err := processLog(oplog, info)
 	log.Debug("handleOplog: after processLog", "oplog", oplog, "e", err, "IsSync", oplog.IsSync)
-	isSync := bool(oplog.IsSync)
+	isSync := oplog.IsSync
 	if err == ErrNewerOplog {
 		oplog.IsSync = true
 		err = nil

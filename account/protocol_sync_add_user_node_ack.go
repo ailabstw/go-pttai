@@ -42,12 +42,12 @@ func (pm *ProtocolManager) HandleSyncAddUserNodeAck(objs []*UserNode, peer *pkgs
 func (pm *ProtocolManager) updateCreateUserNode(theToObj pkgservice.Object, theFromObj pkgservice.Object) error {
 	toObj, ok := theToObj.(*UserNode)
 	if !ok {
-		return pkgservice.ErrInvalidObject
+		return pkgservice.ErrInvalidData
 	}
 
 	fromObj, ok := theFromObj.(*UserNode)
 	if !ok {
-		return pkgservice.ErrInvalidObject
+		return pkgservice.ErrInvalidData
 	}
 
 	toObj.UserID = fromObj.UserID

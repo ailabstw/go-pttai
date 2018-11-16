@@ -25,20 +25,35 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncNameInfo struct {
+type SyncUserNameInfo struct {
 	*pkgservice.BaseSyncInfo `json:"b"`
 
 	Name []byte `json:"N,omitempty"`
 }
 
+func NewEmptySyncUserNameInfo() *SyncUserNameInfo {
+	return &SyncUserNameInfo{BaseSyncInfo: &pkgservice.BaseSyncInfo{}}
+}
+
+func (s *SyncUserNameInfo) ToObject(theObj pkgservice.Object) error {
+	obj, ok := theObj.(*UserName)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	s.BaseSyncInfo.ToObject(obj)
+
+	obj.Name = s.Name
+
+	return nil
+}
+
 type UserName struct {
 	*pkgservice.BaseObject `json:"b"`
+	UpdateTS               types.Timestamp   `json:"UT"`
+	SyncInfo               *SyncUserNameInfo `json:"s,omitempty"`
 
-	UpdateTS types.Timestamp `json:"UT"`
-
-	SyncInfo *SyncNameInfo `json:"s,omitempty"`
-
-	Name []byte `json:"N"`
+	Name []byte `json:"N,omitempty"`
 }
 
 func NewUserName(
@@ -50,18 +65,13 @@ func NewUserName(
 
 	status types.Status,
 
-	db *pttdb.LDBBatch,
-	dbLock *types.LockMap,
-	fullDBPrefix []byte,
-	fullDBIdxPrefix []byte,
-
 	name []byte,
 
 ) (*UserName, error) {
 
 	id := creatorID
 
-	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &UserName{
 		BaseObject: o,
@@ -103,11 +113,12 @@ func AliveUserNames(typedObjs []*UserName) []*UserName {
 
 func (pm *ProtocolManager) SetUserNameDB(u *UserName) {
 	spm := pm.Entity().Service().SPM()
-	u.SetDB(dbAccount, spm.DBObjLock(), pm.Entity().GetID(), pm.dbUserNamePrefix, pm.dbUserNameIdxPrefix)
+
+	u.SetDB(dbAccount, spm.DBObjLock(), pm.Entity().GetID(), pm.dbUserNamePrefix, pm.dbUserNameIdxPrefix, nil, nil)
 }
 
 func (spm *ServiceProtocolManager) SetUserNameDB(u *UserName) {
-	u.SetDB(dbAccount, spm.DBObjLock(), nil, DBUserNamePrefix, nil)
+	u.SetDB(dbAccount, spm.DBObjLock(), nil, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 }
 
 func (u *UserName) Save(isLocked bool) error {
@@ -157,6 +168,7 @@ func (u *UserName) NewEmptyObj() pkgservice.Object {
 
 func (u *UserName) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
 	newU := u.NewEmptyObj()
+	newU.SetID(id)
 	err := newU.GetByID(isLocked)
 	if err != nil {
 		return nil, err
@@ -227,7 +239,12 @@ func (u *UserName) GetSyncInfo() pkgservice.SyncInfo {
 }
 
 func (u *UserName) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
-	syncInfo, ok := theSyncInfo.(*SyncNameInfo)
+	if theSyncInfo == nil {
+		u.SyncInfo = nil
+		return nil
+	}
+
+	syncInfo, ok := theSyncInfo.(*SyncUserNameInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}

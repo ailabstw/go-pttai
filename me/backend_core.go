@@ -30,7 +30,12 @@ import (
 )
 
 func (b *Backend) SetMyName(name []byte) (*account.UserName, error) {
-	return nil, types.ErrNotImplemented
+
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+
+	myProfilePM := myInfo.Profile.PM().(*account.ProtocolManager)
+
+	return myProfilePM.UpdateUserName(name)
 }
 
 func (b *Backend) SetMyNodeName(nodeIDBytes []byte, name []byte) (*MyNode, error) {
@@ -38,7 +43,11 @@ func (b *Backend) SetMyNodeName(nodeIDBytes []byte, name []byte) (*MyNode, error
 }
 
 func (b *Backend) SetMyImage(imgStr string) (*account.UserImg, error) {
-	return nil, types.ErrNotImplemented
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+
+	myProfilePM := myInfo.Profile.PM().(*account.ProtocolManager)
+
+	return myProfilePM.UpdateUserImg(imgStr)
 }
 
 /**********

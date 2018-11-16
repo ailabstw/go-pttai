@@ -35,7 +35,7 @@ var (
 const (
 	_ pkgservice.OpType = iota + pkgservice.NMsg
 	// user-oplog
-	AddUserOplogMsg //30
+	AddUserOplogMsg //42
 	AddUserOplogsMsg
 
 	AddPendingUserOplogMsg
@@ -46,11 +46,23 @@ const (
 	SyncUserOplogNewOplogsMsg
 	SyncUserOplogNewOplogsAckMsg
 
-	SyncPendingUserOplogMsg
+	SyncPendingUserOplogMsg // 50
 	SyncPendingUserOplogAckMsg
 
 	SyncAddUserNodeMsg
 	SyncAddUserNodeAckMsg
+
+	SyncCreateUserNameMsg
+	SyncCreateUserNameAckMsg
+
+	SyncUpdateUserNameMsg // 56
+	SyncUpdateUserNameAckMsg
+
+	SyncCreateUserImgMsg
+	SyncCreateUserImgAckMsg
+
+	SyncUpdateUserImgMsg // 60
+	SyncUpdateUserImgAckMsg
 )
 
 // user-profile

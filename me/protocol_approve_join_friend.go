@@ -101,7 +101,7 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	newPM := f.PM().(*friend.ProtocolManager)
 
 	newOpKey := friendData.OpKeyInfo
-	newOpKey.Init(newPM.DBOpKey(), newPM.DBObjLock(), f.ID, newPM.DBOpKeyPrefix(), newPM.DBOpKeyIdxPrefix())
+	newOpKey.Init(newPM)
 	err = newOpKey.Save(false)
 	if err != nil {
 		return err

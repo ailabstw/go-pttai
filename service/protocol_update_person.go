@@ -17,17 +17,16 @@
 package service
 
 import (
-	"bytes"
-
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
 func (pm *BaseProtocolManager) UpdatePerson(
 	id *types.PttID,
-	createOp OpType,
+	addOp OpType,
 	isForce bool,
 
 	origPerson Object,
+
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
@@ -40,16 +39,21 @@ func (pm *BaseProtocolManager) UpdatePerson(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	origStatusClass := types.StatusToStatusClass(origStatus)
-	if origStatusClass <= types.StatusClassAlive {
+	if origStatus <= types.StatusAlive {
 		return nil, nil, types.ErrAlreadyExists
 	}
 	if origStatus == types.StatusTransferred {
 		return nil, nil, types.ErrAlreadyDeleted
 	}
 
+	// 3.1. check original update-info
+	origSyncInfo := origPerson.GetSyncInfo()
+	if origSyncInfo != nil {
+		return nil, nil, ErrAlreadyPending
+	}
+
 	// 4. oplog
-	theOplog, err := newOplog(id, createOp, opData)
+	theOplog, err := newOplog(id, addOp, opData)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,41 +86,4 @@ func (pm *BaseProtocolManager) UpdatePerson(
 	broadcastLog(oplog)
 
 	return origPerson, oplog, nil
-}
-
-func isReplaceOrigSyncPersonInfo(syncInfo SyncInfo, status types.Status, ts types.Timestamp, newLogID *types.PttID) bool {
-
-	if syncInfo == nil {
-		return true
-	}
-
-	statusClass := types.StatusToStatusClass(status)
-	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())
-
-	switch syncStatusClass {
-	case types.StatusClassInternalDelete:
-		syncStatusClass = types.StatusClassInternalPendingAlive
-	case types.StatusClassPendingDelete:
-		syncStatusClass = types.StatusClassPendingAlive
-	case types.StatusClassDeleted:
-		syncStatusClass = types.StatusClassAlive
-	}
-
-	if statusClass < syncStatusClass {
-		return false
-	}
-	if statusClass > syncStatusClass {
-		return true
-	}
-
-	syncTS := syncInfo.GetUpdateTS()
-	if syncTS.IsLess(ts) {
-		return false
-	}
-	if ts.IsLess(syncTS) {
-		return true
-	}
-
-	origLogID := syncInfo.GetLogID()
-	return bytes.Compare(origLogID[:], newLogID[:]) > 0
 }

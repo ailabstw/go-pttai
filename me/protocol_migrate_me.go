@@ -119,7 +119,7 @@ func (pm *ProtocolManager) setPendingDeleteMeSyncInfo(theMyInfo pkgservice.Entit
 	}
 
 	syncInfo := &pkgservice.BaseSyncInfo{}
-	syncInfo.InitWithDeleteOplog(status, oplog)
+	syncInfo.InitWithOplog(status, oplog)
 
 	myInfo.SetSyncInfo(syncInfo)
 

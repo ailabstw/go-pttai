@@ -23,16 +23,22 @@ import (
 )
 
 type ProcessUserInfo struct {
-	UserNameInfo map[types.PttID]*pkgservice.BaseOplog
-	UserImgInfo  map[types.PttID]*pkgservice.BaseOplog
-	UserNodeInfo map[types.PttID]*pkgservice.BaseOplog
+	CreateUserNameInfo map[types.PttID]*pkgservice.BaseOplog
+	UserNameInfo       map[types.PttID]*pkgservice.BaseOplog
+	CreateUserImgInfo  map[types.PttID]*pkgservice.BaseOplog
+	UserImgInfo        map[types.PttID]*pkgservice.BaseOplog
+	CreateUserNodeInfo map[types.PttID]*pkgservice.BaseOplog
+	UserNodeInfo       map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessUserInfo() *ProcessUserInfo {
 	return &ProcessUserInfo{
-		UserNameInfo: make(map[types.PttID]*pkgservice.BaseOplog),
-		UserImgInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
-		UserNodeInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		CreateUserNameInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		UserNameInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		CreateUserImgInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
+		UserImgInfo:        make(map[types.PttID]*pkgservice.BaseOplog),
+		CreateUserNodeInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		UserNodeInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -47,10 +53,17 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
 	}
 
 	switch oplog.Op {
-	case UserOpTypeSetUserName:
-	case UserOpTypeSetUserImg:
+	case UserOpTypeCreateUserName:
+		origLogs, err = pm.handleCreateUserNameLogs(oplog, info)
+	case UserOpTypeUpdateUserName:
+		origLogs, err = pm.handleUpdateUserNameLogs(oplog, info)
+
+	case UserOpTypeCreateUserImg:
+		origLogs, err = pm.handleCreateUserImgLogs(oplog, info)
+	case UserOpTypeUpdateUserImg:
+		origLogs, err = pm.handleUpdateUserImgLogs(oplog, info)
+
 	case UserOpTypeAddUserNode:
-		log.Debug("processUserLog: to handleAddUserNodeLog", "oplog", oplog)
 		origLogs, err = pm.handleAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 	}
@@ -67,9 +80,19 @@ func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, pr
 		return nil, pkgservice.ErrInvalidData
 	}
 
+	log.Debug("processPendingUserLog: to process", "op", oplog.Op)
+
 	switch oplog.Op {
-	case UserOpTypeSetUserName:
-	case UserOpTypeSetUserImg:
+	case UserOpTypeCreateUserName:
+		origLogs, err = pm.handlePendingCreateUserNameLogs(oplog, info)
+	case UserOpTypeUpdateUserName:
+		origLogs, err = pm.handlePendingUpdateUserNameLogs(oplog, info)
+
+	case UserOpTypeCreateUserImg:
+		origLogs, err = pm.handlePendingCreateUserImgLogs(oplog, info)
+	case UserOpTypeUpdateUserImg:
+		origLogs, err = pm.handlePendingUpdateUserImgLogs(oplog, info)
+
 	case UserOpTypeAddUserNode:
 		origLogs, err = pm.handlePendingAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
@@ -87,14 +110,28 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 		err = pkgservice.ErrInvalidData
 	}
 
-	userNodeInfo := info.UserNodeInfo
-
-	addUserNodeList := pkgservice.ProcessInfoToLogs(userNodeInfo, UserOpTypeAddUserNode)
-
-	log.Debug("postprocessUserOplogs: to SyncAddUserNode", "addUserNodeList", addUserNodeList, "peer", peer)
+	// user node
+	addUserNodeList := pkgservice.ProcessInfoToLogs(info.CreateUserNodeInfo, UserOpTypeAddUserNode)
 
 	pm.SyncAddUserNode(addUserNodeList, peer)
 
+	// user name
+	createUserNameIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateUserNameInfo, UserOpTypeCreateUserName)
+
+	updateUserNameIDs := pkgservice.ProcessInfoToSyncIDList(info.UserNameInfo, UserOpTypeUpdateUserName)
+
+	pm.SyncUserName(SyncCreateUserNameMsg, createUserNameIDs, peer)
+	pm.SyncUserName(SyncUpdateUserNameMsg, updateUserNameIDs, peer)
+
+	// user img
+	createUserImgIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateUserImgInfo, UserOpTypeCreateUserImg)
+
+	updateUserImgIDs := pkgservice.ProcessInfoToSyncIDList(info.UserImgInfo, UserOpTypeUpdateUserImg)
+
+	pm.SyncUserImg(SyncCreateUserImgMsg, createUserImgIDs, peer)
+	pm.SyncUserImg(SyncUpdateUserImgMsg, updateUserImgIDs, peer)
+
+	// broadcast
 	pm.broadcastUserOplogsCore(toBroadcastLogs)
 
 	return
@@ -108,8 +145,16 @@ func (pm *ProtocolManager) SetNewestUserOplog(oplog *pkgservice.BaseOplog) (err 
 	var isNewer types.Bool
 
 	switch oplog.Op {
-	case UserOpTypeSetUserName:
-	case UserOpTypeSetUserImg:
+	case UserOpTypeCreateUserName:
+		isNewer, err = pm.setNewestCreateUserNameLog(oplog)
+	case UserOpTypeUpdateUserName:
+		isNewer, err = pm.setNewestUpdateUserNameLog(oplog)
+
+	case UserOpTypeCreateUserImg:
+		isNewer, err = pm.setNewestCreateUserImgLog(oplog)
+	case UserOpTypeUpdateUserImg:
+		isNewer, err = pm.setNewestUpdateUserImgLog(oplog)
+
 	case UserOpTypeAddUserNode:
 		isNewer, err = pm.setNewestAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
@@ -126,8 +171,16 @@ func (pm *ProtocolManager) SetNewestUserOplog(oplog *pkgservice.BaseOplog) (err 
 
 func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (err error) {
 	switch oplog.Op {
-	case UserOpTypeSetUserName:
-	case UserOpTypeSetUserImg:
+	case UserOpTypeCreateUserName:
+		err = pm.handleFailedCreateUserNameLog(oplog)
+	case UserOpTypeUpdateUserName:
+		err = pm.handleFailedUpdateUserNameLog(oplog)
+
+	case UserOpTypeCreateUserImg:
+		err = pm.handleFailedCreateUserImgLog(oplog)
+	case UserOpTypeUpdateUserImg:
+		err = pm.handleFailedUpdateUserImgLog(oplog)
+
 	case UserOpTypeAddUserNode:
 		err = pm.handleFailedAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:

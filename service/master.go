@@ -44,12 +44,8 @@ func NewMaster(
 
 	status types.Status,
 
-	db *pttdb.LDBBatch,
-	dbLock *types.LockMap,
-	fullDBPrefix []byte,
-	fullDBIdxPrefix []byte,
 ) *Master {
-	o := NewObject(id, createTS, creatorID, entityID, logID, status, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+	o := NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &Master{
 		BaseObject: o,
@@ -83,7 +79,7 @@ func ObjsToMasters(objs []Object) []*Master {
  **********/
 
 func (pm *BaseProtocolManager) SetMasterObjDB(master *Master) {
-	master.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbMasterPrefix, pm.dbMasterIdxPrefix)
+	master.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbMasterPrefix, pm.dbMasterIdxPrefix, nil, nil)
 }
 
 func (m *Master) Save(isLocked bool) error {
@@ -126,12 +122,13 @@ func (m *Master) Save(isLocked bool) error {
 }
 
 func (m *Master) NewEmptyObj() Object {
-	return &Master{BaseObject: &BaseObject{EntityID: m.EntityID, db: m.db, dbLock: m.dbLock, fullDBPrefix: m.fullDBPrefix}}
-
+	obj := m.BaseObject.NewEmptyObj()
+	return &Master{BaseObject: obj}
 }
 
 func (m *Master) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {
 	newM := m.NewEmptyObj()
+	newM.SetID(id)
 	err := newM.GetByID(isLocked)
 	if err != nil {
 		return nil, err
@@ -191,6 +188,11 @@ func (m *Master) GetSyncInfo() SyncInfo {
 }
 
 func (m *Master) SetSyncInfo(theSyncInfo SyncInfo) error {
+	if theSyncInfo == nil {
+		m.SyncInfo = nil
+		return nil
+	}
+
 	syncInfo, ok := theSyncInfo.(*SyncPersonInfo)
 	if !ok {
 		return ErrInvalidSyncInfo

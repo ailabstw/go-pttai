@@ -64,8 +64,12 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 	// 3. new person
 	NewObjectWithOplog(person, oplog)
 
+	// 3.1. set is good
+	person.SetIsGood(true)
+	person.SetIsAllGood(true)
+
 	// 4. save object
-	err = pm.saveNewObjectWithOplog(person, oplog, true, true, postcreatePerson)
+	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreatePerson)
 	if err != nil {
 		return nil, err
 	}

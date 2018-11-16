@@ -69,8 +69,6 @@ func (pm *BaseProtocolManager) handleFailedAddMemberLog(oplog *BaseOplog) error 
 	} else {
 		return pm.HandleFailedUpdatePersonLog(oplog, person)
 	}
-
-	return nil
 }
 
 /**********

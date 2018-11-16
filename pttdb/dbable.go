@@ -29,16 +29,3 @@ type DBable struct {
 func (d *DBable) Unmarshal(data []byte) error {
 	return json.Unmarshal(data, d)
 }
-
-type DBStatus struct {
-	Status types.Status `json:"S"`
-}
-
-type DBWithStatus struct {
-	BaseObj  *DBStatus       `json:"b"`
-	UpdateTS types.Timestamp `json:"UT"`
-}
-
-func (d *DBWithStatus) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, d)
-}

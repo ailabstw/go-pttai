@@ -104,7 +104,7 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 	keyInfo := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(keyInfo)
 	for _, key := range toRemoveOpKeys {
-		err = keyInfo.DeleteKey(key)
+		err = keyInfo.DeleteByKey(key, true)
 		if err != nil {
 			log.Error("loadOpKeyInfos: unable to delete key", "name", e.Name(), "e", err)
 		}
@@ -411,12 +411,4 @@ func (pm *BaseProtocolManager) DBOpKeyPrefix() []byte {
 
 func (pm *BaseProtocolManager) DBOpKeyIdxPrefix() []byte {
 	return pm.dbOpKeyIdxPrefix
-}
-
-/**********
- * SetObjDB
- **********/
-
-func (pm *BaseProtocolManager) SetOpKeyObjDB(opKey *KeyInfo) {
-	opKey.SetDB(pm.DBOpKey(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbOpKeyPrefix, pm.dbOpKeyIdxPrefix)
 }

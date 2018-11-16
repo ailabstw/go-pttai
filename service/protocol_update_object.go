@@ -17,81 +17,141 @@
 package service
 
 import (
-	"bytes"
+	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 )
 
-func isReplaceOrigSyncInfo(syncInfo SyncInfo, status types.Status, ts types.Timestamp, newLogID *types.PttID) bool {
+type UpdateData interface{}
 
-	if syncInfo == nil {
-		return true
-	}
+func (pm *BaseProtocolManager) UpdateObject(
+	// id
+	id *types.PttID,
 
-	log.Debug("isReplaceOrigSyncInfo: start", "syncInfo", syncInfo)
+	// data
+	data UpdateData,
+	updateOp OpType,
 
-	statusClass := types.StatusToStatusClass(status)
-	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())
+	// obj
+	origObj Object,
 
-	switch syncStatusClass {
-	case types.StatusClassInternalMigrate:
-		syncStatusClass = types.StatusClassInternalDelete
-	case types.StatusClassPendingMigrate:
-		syncStatusClass = types.StatusClassPendingDelete
-	case types.StatusClassMigrated:
-		syncStatusClass = types.StatusClassAlive
-	}
+	// oplog
+	opData OpData,
 
-	if statusClass < syncStatusClass {
-		return false
-	}
-	if statusClass > syncStatusClass {
-		return true
-	}
+	setLogDB func(oplog *BaseOplog),
 
-	syncTS := syncInfo.GetUpdateTS()
-	if syncTS.IsLess(ts) {
-		return false
-	}
-	if ts.IsLess(syncTS) {
-		return true
-	}
+	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 
-	origLogID := syncInfo.GetLogID()
-	return bytes.Compare(origLogID[:], newLogID[:]) > 0
-}
+	inupdate func(obj Object, data UpdateData, oplog *BaseOplog, opData OpData) (SyncInfo, error),
 
-/*
-SaveUpdateObjectWithOplog saves Update Object with Oplog.
+	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 
-We can't integrate with postupdate because there are situations that we want to save without postupdate. (already updated but we have older ts).
-*/
-func (pm *BaseProtocolManager) saveUpdateObjectWithOplog(
-	obj Object,
-	oplog *BaseOplog,
-	isLocked bool,
+	broadcastLog func(oplog *BaseOplog) error,
+	postupdate func(obj Object, oplog *BaseOplog) error,
 
 ) error {
 
-	var err error
-	if !isLocked {
-		err = obj.Lock()
-		if err != nil {
-			return err
-		}
-		defer obj.Unlock()
+	myEntity := pm.Ptt().GetMyEntity()
+	myID := myEntity.GetID()
+	entity := pm.Entity()
+
+	// validate
+	if entity.GetStatus() != types.StatusAlive {
+		return types.ErrInvalidStatus
+	}
+	if myEntity.GetStatus() != types.StatusAlive {
+		return types.ErrInvalidStatus
 	}
 
-	SetUpdateObjectWithOplog(obj, oplog)
+	// 1. lock object
+	origObj.SetID(id)
+	err := origObj.Lock()
+	if err != nil {
+		return err
+	}
+	defer origObj.Unlock()
 
-	err = obj.Save(true)
+	// 2. get obj
+	err = origObj.GetByID(true)
+	log.Debug("UpdateObject: after GetByID", "e", err)
 	if err != nil {
 		return err
 	}
 
-	// set oplog is sync
-	oplog.IsSync = true
+	// 3. check validity
+	origStatus := origObj.GetStatus()
+	if origStatus != types.StatusAlive {
+		return ErrNotAlive
+	}
+
+	creatorID := origObj.GetCreatorID()
+	if !reflect.DeepEqual(myID, creatorID) && !pm.IsMaster(myID, false) {
+		return types.ErrInvalidID
+	}
+
+	origSyncInfo := origObj.GetSyncInfo()
+	if origSyncInfo != nil {
+		return ErrAlreadyPending
+	}
+
+	// 4. oplog
+	theOplog, err := newOplog(id, updateOp, opData)
+	if err != nil {
+		return err
+	}
+	oplog := theOplog.GetBaseOplog()
+
+	origLogID := origObj.GetLogID()
+	oplog.SetPreLogID(origLogID)
+
+	// 4.1. inupdate
+	if inupdate == nil {
+		return ErrInvalidFunc
+	}
+
+	syncInfo, err := inupdate(origObj, data, oplog, opData)
+	if err != nil {
+		return err
+	}
+
+	// 4.2. set is good
+	syncInfo.SetIsGood(true)
+	syncInfo.SetIsAllGood(true)
+
+	// 5. sign oplog
+	err = pm.SignOplog(oplog)
+	if err != nil {
+		return err
+	}
+
+	err = oplog.Verify()
+	if err != nil {
+		log.Warn("UpdateObject: after inupdate: unable to verify oplog")
+	}
+
+	// 6. core
+	err = pm.handleUpdateObjectCoreCore(oplog, opData, origObj, syncInfo, nil, true, setLogDB, removeMediaInfoByBlockInfo, postupdate, nil)
+	log.Debug("UpdateObject: after handleUpdateObjectCoreCore", "oplog", oplog.ID, "obj", origObj.GetID(), "e", err)
+	if err != nil {
+		return err
+	}
+
+	err = oplog.Verify()
+	if err != nil {
+		log.Warn("UpdateObject: after handleUpdateObjectCoreCore: unable to verify oplog")
+	}
+
+	// 6. oplog save
+	err = oplog.Save(false)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("UpdateObject: to broadcastLog", "oplog", oplog.ID, "obj", origObj.GetID(), "oplog.Status", oplog.ToStatus())
+
+	broadcastLog(oplog)
 
 	return nil
+
 }

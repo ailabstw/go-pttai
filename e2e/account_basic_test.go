@@ -184,7 +184,7 @@ func TestAccountBasic(t *testing.T) {
 	assert.Equal(types.StatusAlive, profile0_10.Status)
 
 	// 11. masters from profile
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterList", "params": ["%v"]}`, string(marshaledID))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterListFromCache", "params": ["%v"]}`, string(marshaledID))
 
 	dataMasterList0_11 := &struct {
 		Result []*pkgservice.Master `json:"result"`
@@ -194,7 +194,7 @@ func TestAccountBasic(t *testing.T) {
 	master0_11_0 := dataMasterList0_11.Result[0]
 
 	// 11.1
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterListFromDB", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 
 	dataMasterList0_11_1 := &struct {
 		Result []*pkgservice.Master `json:"result"`

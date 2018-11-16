@@ -19,7 +19,6 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 type MyEntity interface {
@@ -30,7 +29,7 @@ type MyEntity interface {
 
 	Name() string
 
-	NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error)
+	NewOpKeyInfo(entityID *types.PttID, setOpKeyObjDB func(k *KeyInfo)) (*KeyInfo, error)
 
 	GetProfile() Entity
 

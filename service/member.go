@@ -44,13 +44,9 @@ func NewMember(
 	logID *types.PttID,
 
 	status types.Status,
-
-	db *pttdb.LDBBatch,
-	dbLock *types.LockMap,
-	fullDBPrefix []byte,
-	fullDBIdxPrefix []byte,
 ) *Member {
-	o := NewObject(id, createTS, creatorID, entityID, logID, status, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+
+	o := NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &Member{
 		BaseObject: o,
@@ -121,16 +117,17 @@ func (m *Member) Save(isLocked bool) error {
 }
 
 func (m *Member) NewEmptyObj() Object {
-	return &Member{BaseObject: &BaseObject{EntityID: m.EntityID, db: m.db, dbLock: m.dbLock, fullDBPrefix: m.fullDBPrefix}}
-
+	obj := m.BaseObject.NewEmptyObj()
+	return &Member{BaseObject: obj}
 }
 
 func (pm *BaseProtocolManager) SetMemberObjDB(member *Member) {
-	member.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbMemberPrefix, pm.dbMemberIdxPrefix)
+	member.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbMemberPrefix, pm.dbMemberIdxPrefix, nil, nil)
 }
 
 func (m *Member) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {
 	newM := m.NewEmptyObj()
+	newM.SetID(id)
 	err := newM.GetByID(isLocked)
 	if err != nil {
 		return nil, err
@@ -179,24 +176,6 @@ func (m *Member) Unmarshal(data []byte) error {
 }
 
 /**********
- * Block Info
- **********/
-
-/*
-GetBlockInfo implements Object method
-*/
-func (m *Member) GetBlockInfo() *BlockInfo {
-	return nil
-}
-
-/*
-RemoveBlock implements Object method
-*/
-func (m *Member) RemoveBlock(blockInfo *BlockInfo, info ProcessInfo, isRemoveDB bool) error {
-	return nil
-}
-
-/**********
  * Sync Info
  **********/
 
@@ -208,6 +187,11 @@ func (m *Member) GetSyncInfo() SyncInfo {
 }
 
 func (m *Member) SetSyncInfo(theSyncInfo SyncInfo) error {
+	if theSyncInfo == nil {
+		m.SyncInfo = nil
+		return nil
+	}
+
 	syncInfo, ok := theSyncInfo.(*SyncPersonInfo)
 	if !ok {
 		return ErrInvalidSyncInfo
@@ -217,7 +201,3 @@ func (m *Member) SetSyncInfo(theSyncInfo SyncInfo) error {
 
 	return nil
 }
-
-/**********
- * SetObjDB
- **********/

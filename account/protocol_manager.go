@@ -44,6 +44,56 @@ type ProtocolManager struct {
 	// user-name
 	dbUserNamePrefix    []byte
 	dbUserNameIdxPrefix []byte
+
+	// user-img
+	dbUserImgPrefix    []byte
+	dbUserImgIdxPrefix []byte
+}
+
+func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgservice.Entity) *pkgservice.BaseProtocolManager {
+
+	b, err := pkgservice.NewBaseProtocolManager(
+		ptt,
+
+		RenewOpKeySeconds,
+		ExpireOpKeySeconds,
+		MaxSyncRandomSeconds,
+		MinSyncRandomSeconds,
+
+		MaxMasters,
+
+		// sign
+		nil,
+		nil,
+		nil,
+
+		pm.SetUserDB, // setLog0DB
+
+		nil, // isMaster
+		nil, // isMember
+
+		// peer-type
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+
+		pm.SyncUserOplog, // postsyncMemberOplog
+
+		pm.LeaveProfile,      // leave
+		pm.DeleteProfile,     // theDelete
+		pm.postdeleteProfile, // postdelete
+
+		entity, // entity
+
+		dbAccount, //db
+	)
+	if err != nil {
+		return nil
+	}
+
+	return b
 }
 
 func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager, error) {
@@ -61,19 +111,7 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 		dbUserLock:      dbUserLock,
 		userOplogMerkle: userOplogMerkle,
 	}
-	b, err := pkgservice.NewBaseProtocolManager(
-		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, MaxMasters,
-		nil, nil, nil, pm.SetUserDB,
-		nil, nil, nil, nil, nil, nil, nil,
-		pm.SyncUserOplog,     // postsyncMemberOplog
-		pm.LeaveProfile,      // leave
-		pm.DeleteProfile,     // theDelete
-		pm.postdeleteProfile, // postdelete
-		profile, dbAccount)
-	if err != nil {
-		return nil, err
-	}
-	pm.BaseProtocolManager = b
+	pm.BaseProtocolManager = newBaseProtocolManager(pm, ptt, profile)
 
 	// user-node
 	entityID := profile.ID
@@ -91,7 +129,11 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 
 	// user-name
 	pm.dbUserNamePrefix = DBUserNamePrefix
-	pm.dbUserNodeIdxPrefix = append(DBUserNameIdxPrefix, entityID[:]...)
+	pm.dbUserNameIdxPrefix = DBUserNameIdxPrefix
+
+	// user-img
+	pm.dbUserImgPrefix = DBUserImgPrefix
+	pm.dbUserImgIdxPrefix = DBUserImgIdxPrefix
 
 	return pm, nil
 }

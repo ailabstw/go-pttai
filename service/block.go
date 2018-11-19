@@ -22,9 +22,22 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
+
+type ContentBlock struct {
+	BlockID uint32   `json:"ID"`
+	Buf     [][]byte `json:"B,omitempty"`
+}
+
+func NewContentBlock(blockID uint32, buf [][]byte) *ContentBlock {
+	return &ContentBlock{
+		BlockID: blockID,
+		Buf:     buf,
+	}
+}
 
 type Block struct {
 	V          types.Version
@@ -50,17 +63,35 @@ func NewEmptyBlock() *Block {
 	return &Block{}
 }
 
+func NewBlock(
+	blockID uint32,
+	subBlockID uint8,
+	buf []byte,
+
+) (*Block, error) {
+	return &Block{
+		V: types.CurrentVersion,
+
+		BlockID:    blockID,
+		SubBlockID: subBlockID,
+
+		Buf: buf,
+	}, nil
+}
+
 func (b *Block) SetDB(
 	db *pttdb.LDBBatch,
 	fullDBPrefix []byte,
 
 	objID *types.PttID,
+	id *types.PttID,
 
 ) {
 	b.V = types.CurrentVersion
 	b.db = db
 	b.fullDBPrefix = fullDBPrefix
 	b.ObjID = objID
+	b.ID = id
 }
 
 func (b *Block) Save() error {
@@ -77,6 +108,7 @@ func (b *Block) Save() error {
 		return err
 	}
 
+	log.Debug("Block.Save: to put", "key", key)
 	err = b.db.DB().Put(key, marshaled)
 	if err != nil {
 		return err
@@ -101,11 +133,17 @@ func (b *Block) RemoveAll() error {
 }
 
 func (b *Block) GetIter(listOrder pttdb.ListOrder, isLocked bool) (iterator.Iterator, error) {
-	startKey, err := b.MarshalKey()
+	prefix, err := b.Prefix()
 	if err != nil {
 		return nil, err
 	}
-	return b.db.DB().NewIteratorWithPrefix(nil, startKey, listOrder)
+
+	log.Debug("Block.GetIter: to new-iterator", "prefix", prefix)
+	return b.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
+}
+
+func (b *Block) Prefix() ([]byte, error) {
+	return common.Concat([][]byte{b.fullDBPrefix, b.ObjID[:], b.ID[:]})
 }
 
 func (b *Block) MarshalKey() ([]byte, error) {
@@ -119,6 +157,10 @@ func (b *Block) MarshalKey() ([]byte, error) {
 
 func (b *Block) Marshal() ([]byte, error) {
 	return json.Marshal(b)
+}
+
+func (b *Block) Unmarshal(theBytes []byte) error {
+	return json.Unmarshal(theBytes, b)
 }
 
 func (b *Block) Sign(key *KeyInfo) error {
@@ -144,6 +186,8 @@ func (b *Block) Sign(key *KeyInfo) error {
 	b.Pub = pubBytes
 	b.KeyExtra = key.Extra
 
+	log.Debug("Block.Sign: to return", "blockID", b.BlockID, "subBlockID", b.SubBlockID, "hash", hash, "sig", sig, "salt", b.Salt)
+
 	return nil
 }
 
@@ -165,6 +209,8 @@ func (b *Block) Verify(expectedHash []byte, creatorID *types.PttID) error {
 	}
 
 	bytesWithSalt := append(marshaled, origSalt[:]...)
+
+	log.Debug("Block.Verify: to verify", "blockID", b.BlockID, "subBlockID", b.SubBlockID, "hash", origHash, "expectedHash", expectedHash, "sig", origSig, "salt", origSalt)
 
 	return VerifyData(bytesWithSalt, expectedHash, origSig, origPub, creatorID, origKeyExtra)
 }

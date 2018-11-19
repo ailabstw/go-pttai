@@ -69,6 +69,13 @@ func (m *MyInfo) MyMasterSign(oplog *pkgservice.BaseOplog) error {
 	return oplog.MasterSign(nodeSignID, nodeSignKey)
 }
 
+func (m *MyInfo) SignBlock(block *pkgservice.Block) error {
+
+	signKey := m.SignKey()
+
+	return block.Sign(signKey)
+}
+
 /**********
  * SignKey
  **********/

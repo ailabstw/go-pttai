@@ -26,7 +26,7 @@ func (pm *ProtocolManager) CreateUserImg() error {
 	myID := pm.Ptt().GetMyEntity().GetID()
 
 	if !pm.IsMaster(myID, false) {
-		return nil
+		return types.ErrInvalidID
 	}
 
 	_, err := pm.CreateObject(nil, UserOpTypeCreateUserImg, pm.NewUserImg, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, nil)

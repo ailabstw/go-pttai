@@ -34,12 +34,15 @@ func (pm *BaseProtocolManager) defaultIsMember(id *types.PttID, isLocked bool) b
 }
 
 func (pm *BaseProtocolManager) IsPendingMember(id *types.PttID, isLocked bool) bool {
-	member, err := pm.GetMember(id, isLocked)
+	peer, err := pm.GetPendingPeerByUserID(id, false)
 	if err != nil {
 		return false
 	}
-	return member.Status == types.StatusSync
+	if peer == nil {
+		return false
+	}
 
+	return true
 }
 
 func (pm *BaseProtocolManager) GetMember(id *types.PttID, isLocked bool) (*Member, error) {

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package account
+package friend
 
 import (
 	"encoding/json"
@@ -22,31 +22,43 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncUserNameAck struct {
-	Objs []*UserName `json:"o"`
+type SyncMessageAck struct {
+	Objs []*Message `json:"o"`
 }
 
-func (pm *ProtocolManager) HandleSyncCreateUserNameAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+func (pm *ProtocolManager) HandleSyncCreateMessageAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
-	data := &SyncUserNameAck{}
+	data := &SyncMessageAck{}
 	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
 	}
 
-	if len(data.Objs) == 0 {
-		return nil
-	}
-
-	origObj := NewEmptyUserName()
-	pm.SetUserNameDB(origObj)
+	origObj := NewEmptyMessage()
+	pm.SetMessageDB(origObj)
 	for _, obj := range data.Objs {
-		pm.SetUserNameDB(obj)
+		pm.SetMessageDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
 			obj, peer, origObj,
-			pm.SetUserDB, nil, nil, pm.broadcastUserOplogCore)
+			pm.SetFriendDB, pm.updateSyncCreateMessage, pm.postcreateMessage, pm.broadcastFriendOplogCore)
 	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) updateSyncCreateMessage(theToObj pkgservice.Object, theFromObj pkgservice.Object) error {
+	toObj, ok := theToObj.(*Message)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	fromObj, ok := theFromObj.(*Message)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	toObj.BlockInfo = fromObj.BlockInfo
 
 	return nil
 }

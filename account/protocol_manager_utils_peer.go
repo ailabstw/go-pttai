@@ -48,6 +48,7 @@ func (pm *ProtocolManager) IsMemberPeer(peer *pkgservice.PttPeer) bool {
 	return pm.IsMember(peer.UserID, false)
 }
 
+/*
 func (pm *ProtocolManager) IsPendingPeer(peer *pkgservice.PttPeer) bool {
 	if peer.UserID == nil {
 		return false
@@ -55,6 +56,7 @@ func (pm *ProtocolManager) IsPendingPeer(peer *pkgservice.PttPeer) bool {
 
 	return pm.IsPendingMember(peer.UserID, false)
 }
+*/
 
 func (pm *ProtocolManager) IsFitPeer(peer *pkgservice.PttPeer) pkgservice.PeerType {
 	return pm.GetPeerType(peer)

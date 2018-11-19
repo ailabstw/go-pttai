@@ -16,10 +16,14 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
+
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 func (pm *BaseProtocolManager) HandleSyncUpdateBlockAck(
-	blocks []*Block,
+	dataBytes []byte,
 	peer *PttPeer,
 
 	obj Object,
@@ -31,9 +35,20 @@ func (pm *BaseProtocolManager) HandleSyncUpdateBlockAck(
 
 ) error {
 
+	data := &SyncBlockAck{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	blocks := data.Blocks
+
+	if len(blocks) == 0 {
+		return nil
+	}
+
 	blocksByIDsByObjs := blocksToBlocksByIDsByObjs(blocks)
 
-	var err error
 	for objID, blocksByIDsByObj := range blocksByIDsByObjs {
 		err = pm.handleSyncUpdateBlockAck(blocksByIDsByObj, peer, &objID, obj, setLogDB, postupdate, broadcastLog)
 		if err != nil {

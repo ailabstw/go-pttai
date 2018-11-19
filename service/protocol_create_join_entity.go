@@ -52,15 +52,29 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 
 	// master-logs
 	pm := entity.PM()
+	log.Debug("CreateJoinEntity: to HandleMasterOplogs", "entity", entity.GetID(), "masterLogs", len(masterLogs))
+	for _, masterLog := range masterLogs {
+		log.Debug("CreateJoinEntity: to HandleMasterOplogs", "entity", entity.GetID(), "masterLog", masterLog.ID, "master", masterLog.ObjID)
+	}
+
 	pm.HandleMasterOplogs(masterLogs, peer, false)
 
 	// member-logs
-	log.Debug("CreateJoinEntity: to HandleMemberOplogs", "memberLogs", len(memberLogs))
+	log.Debug("CreateJoinEntity: to HandleMemberOplogs", "entity", entity.GetID(), "memberLogs", len(memberLogs))
 	for _, memberLog := range memberLogs {
-		log.Debug("CreateJoinEntity: to HandleMemberOplogs", "memberLog", memberLog.ObjID)
+		log.Debug("CreateJoinEntity: to HandleMemberOplogs", "entity", entity.GetID(), "memberLog", memberLog.ObjID)
 	}
 	pm.HandleMemberOplogs(memberLogs, peer, false)
 	pm.SetMemberSyncTime(types.ZeroTimestamp)
+
+	// register-master-peer again from
+	masters, err := pm.GetMasterListFromCache(false)
+	if err != nil {
+		return nil, err
+	}
+	for _, master := range masters {
+		pm.RegisterMaster(master, false, false)
+	}
 
 	// oplog0
 	log.Debug("CreateJoinEntity: to SetLog0DB", "oplog0", oplog0)

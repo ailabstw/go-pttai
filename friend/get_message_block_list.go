@@ -14,60 +14,37 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package account
+package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-const (
-	UserOpTypeInvalid pkgservice.OpType = iota
-	UserOpTypeCreateProfile
-	UserOpTypeDeleteProfile
-	UserOpTypeTransferProfile
+func (pm *ProtocolManager) GetMessageBlockList(msgID *types.PttID, limit uint32) (*Message, []*pkgservice.ContentBlock, error) {
 
-	UserOpTypeAddUserNode
-	UserOpTypeRemoveUserNode
+	msg := NewEmptyMessage()
+	pm.SetMessageDB(msg)
+	msg.SetID(msgID)
 
-	UserOpTypeCreateUserName
-	UserOpTypeUpdateUserName
+	err := msg.GetByID(false)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	UserOpTypeCreateUserImg
-	UserOpTypeUpdateUserImg
+	blockInfo := msg.GetBlockInfo()
+	log.Debug("GetMessageBlockList: after GetBlockInfo", "msgID", msgID, "blockInfo", blockInfo)
+	if blockInfo == nil {
+		return nil, nil, pkgservice.ErrInvalidBlock
+	}
+	pm.SetBlockInfoDB(blockInfo, msgID)
 
-	NUserOpType
-)
+	contentBlockList, err := pkgservice.GetContentBlockList(blockInfo, limit, false)
+	log.Debug("GetMessageBlockList: after GetBlockList", "err", err)
+	if err != nil {
+		return nil, nil, err
+	}
 
-type UserOpCreateProfile struct {
-}
-
-type UserOpDeleteProfile struct {
-}
-
-type UserOpTransferProfile struct {
-	ToID *types.PttID `json:"t"`
-}
-
-type UserOpAddUserNode struct {
-	NodeID *discover.NodeID `json:"n"`
-}
-
-type UserOpRemoveUserNode struct {
-	NodeID *discover.NodeID `json:"n"`
-}
-
-type UserOpCreateUserName struct {
-}
-
-type UserOpUpdateUserName struct {
-	Hash []byte `json:"H"`
-}
-
-type UserOpCreateUserImg struct {
-}
-
-type UserOpUpdateUserImg struct {
-	Hash []byte `json:"H"`
+	return msg, contentBlockList, nil
 }

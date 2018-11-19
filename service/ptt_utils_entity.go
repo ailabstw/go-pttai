@@ -56,7 +56,12 @@ func (p *BasePtt) RegisterEntityPeerWithOtherUserID(e Entity, id *types.PttID, p
 		return nil
 	}
 
+	log.Debug("RegisterEntityPeerWithOtherUserID: to GetPeerByUserID", "e", e.GetID(), "id", id, "peerType", peerType)
+
 	peer, err := p.GetPeerByUserID(id, true)
+
+	log.Debug("RegisterEntityPeerWithOtherUserID: after GetPeerByUserID", "e", e.GetID(), "id", id, "peer", peer, "e", err)
+
 	if err != nil {
 		return err
 	}

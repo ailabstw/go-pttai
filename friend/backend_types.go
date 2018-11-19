@@ -19,6 +19,7 @@ package friend
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 /*
@@ -42,37 +43,90 @@ func friendToBackendGetFriend(f *Friend, userName *account.UserName) *BackendGet
 		Name:            userName.Name,
 		Status:          f.Status,
 		BoardID:         f.BoardID,
-		ArticleCreateTS: f.ArticleCreateTS,
+		ArticleCreateTS: f.MessageCreateTS,
 		LastSeen:        f.LastSeen,
 	}
 }
 
 type BackendCreateMessage struct {
-	FriendID       *types.PttID `json:"FID"`
-	ArticleID      *types.PttID `json:"AID"`
-	ContentBlockID *types.PttID `json:"cID"`
-	NBlock         int          `json:"NB"`
+	FriendID  *types.PttID `json:"FID"`
+	MessageID *types.PttID `json:"AID"`
+	BlockID   *types.PttID `json:"cID"`
+	NBlock    int          `json:"NB"`
+}
+
+func messageToBackendCreateMessage(m *Message, e pkgservice.Entity) *BackendCreateMessage {
+	entityID := e.GetID()
+
+	return &BackendCreateMessage{
+		FriendID:  entityID,
+		MessageID: m.ID,
+		BlockID:   m.BlockInfo.ID,
+		NBlock:    m.BlockInfo.NBlock,
+	}
 }
 
 type BackendGetMessage struct {
-	ID             *types.PttID
-	CreateTS       types.Timestamp //`json:"CT"`
-	UpdateTS       types.Timestamp //`json:"UT"`
-	CreatorID      *types.PttID    //`json:"CID"`
-	FriendID       *types.PttID    //`json:"FID"`
-	ContentBlockID *types.PttID    //`json:"cID"`
-	NBlock         int             //`json:"N"`
-	Status         types.Status    `json:"S"`
+	ID        *types.PttID
+	CreateTS  types.Timestamp //`json:"CT"`
+	UpdateTS  types.Timestamp //`json:"UT"`
+	CreatorID *types.PttID    //`json:"CID"`
+	FriendID  *types.PttID    //`json:"FID"`
+	BlockID   *types.PttID    //`json:"cID"`
+	NBlock    int             //`json:"N"`
+	Status    types.Status    `json:"S"`
 }
 
-func articleToBackendGetMessage(a *Message) *BackendGetMessage {
+func messageToBackendGetMessage(m *Message, e pkgservice.Entity) *BackendGetMessage {
+	entityID := e.GetID()
+
 	return &BackendGetMessage{
-		ID:             a.ID,
-		CreateTS:       a.CreateTS,
-		UpdateTS:       a.UpdateTS,
-		CreatorID:      a.CreatorID,
-		ContentBlockID: a.BlockInfo.ID,
-		NBlock:         a.BlockInfo.NBlock,
-		Status:         a.Status,
+		ID:        m.ID,
+		CreateTS:  m.CreateTS,
+		UpdateTS:  m.UpdateTS,
+		CreatorID: m.CreatorID,
+		FriendID:  entityID,
+		BlockID:   m.BlockInfo.ID,
+		NBlock:    m.BlockInfo.NBlock,
+		Status:    m.Status,
+	}
+}
+
+type BackendMessageBlock struct {
+	V         types.Version
+	ID        *types.PttID
+	MessageID *types.PttID `json:"AID"`
+	ObjID     *types.PttID `json:"RID"`
+	BlockID   uint32       `json:"BID"`
+
+	Status types.Status `json:"S"`
+
+	CreateTS types.Timestamp `json:"CT"`
+	UpdateTS types.Timestamp `json:"UT"`
+
+	CreatorID *types.PttID `json:"CID"`
+	UpdaterID *types.PttID `json:"UID"`
+
+	Buf [][]byte `json:"B"`
+}
+
+func contentBlockToBackendMessageBlock(msg *Message, blockInfoID *types.PttID, contentBlock *pkgservice.ContentBlock) *BackendMessageBlock {
+
+	objID := msg.ID
+	return &BackendMessageBlock{
+		V:         types.CurrentVersion,
+		ID:        blockInfoID,
+		MessageID: objID,
+		ObjID:     objID,
+		BlockID:   contentBlock.BlockID,
+		Status:    msg.Status,
+
+		CreateTS: msg.CreateTS,
+		UpdateTS: msg.UpdateTS,
+
+		CreatorID: msg.CreatorID,
+		UpdaterID: msg.UpdaterID,
+
+		Buf: contentBlock.Buf,
 	}
 }

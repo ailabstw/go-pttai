@@ -60,6 +60,8 @@ type ProtocolManager interface {
 
 	IsMaster(id *types.PttID, isLocked bool) bool
 
+	RegisterMaster(master *Master, isLocked bool, isSkipPtt bool) error
+
 	// member
 
 	AddMember(id *types.PttID, isForce bool) (*Member, *MemberOplog, error)

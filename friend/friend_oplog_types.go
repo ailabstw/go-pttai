@@ -27,7 +27,7 @@ const (
 	FriendOpTypeCreateFriend
 	FriendOpTypeDeleteFriend
 
-	FriendOpTypeCreateArticle
+	FriendOpTypeCreateMessage
 
 	FriendOpTypeCreateMedia
 
@@ -41,23 +41,16 @@ type FriendOpCreateFriend struct {
 type FriendOpDeleteFriend struct {
 }
 
-type FriendOpCreateArticle struct {
-	Hashs     [][][]byte `json:"H"`
-	NBlock    int        `json:"NB"`
-	TitleHash []byte     `json:"TH"`
-
-	ContentBlockID *types.PttID `json:"bID"`
+type FriendOpCreateMessage struct {
+	BlockInfoID *types.PttID `json:"BID"`
+	Hashs       [][][]byte   `json:"H"`
+	NBlock      int          `json:"NB"`
 
 	MediaIDs []*types.PttID `json:"ms"`
 }
 
 type FriendOpCreateMedia struct {
-	Hashs          [][][]byte   `json:"H"`
-	NBlock         int          `json:"NB"`
-	ContentBlockID *types.PttID `json:"bID"` // resized content-block-id
-
-	OrigHashs          [][][]byte   `json:"oH"`
-	OrigNBlock         int          `json:"oNB"`
-	OrigContentBlockID *types.PttID `json:"obID"` // orig content-block-id
-
+	BlockInfoID *types.PttID `json:"BID"` // resized content-block-id
+	Hashs       [][][]byte   `json:"H"`
+	NBlock      int          `json:"NB"`
 }

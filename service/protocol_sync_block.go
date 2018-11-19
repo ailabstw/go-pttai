@@ -16,7 +16,76 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
+	"reflect"
+
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
+)
+
+type SyncBlock struct {
+	IDs []*SyncBlockID
+}
+
+func (pm *BaseProtocolManager) SyncBlock(op OpType, syncBlockIDs []*SyncBlockID, peer *PttPeer) error {
+	if len(syncBlockIDs) == 0 {
+		return nil
+	}
+
+	return pm.SendDataToPeer(op, &SyncBlock{IDs: syncBlockIDs}, peer)
+}
+
+func (pm *BaseProtocolManager) HandleSyncCreateBlock(
+	dataBytes []byte,
+	peer *PttPeer,
+	obj Object,
+	syncAckMsg OpType,
+) error {
+
+	data := &SyncBlock{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	lenObjs := len(data.IDs)
+	if lenObjs == 0 {
+		return nil
+	}
+
+	blocks := make([]*Block, 0, lenObjs*NSubBlock)
+
+	var blockInfo *BlockInfo
+	var newBlocks []*Block
+	for _, syncBlockID := range data.IDs {
+		newObj, err := obj.GetNewObjByID(syncBlockID.ObjID, false)
+		if err != nil {
+			continue
+		}
+
+		if newObj.GetStatus() == types.StatusInternalSync {
+			continue
+		}
+
+		blockInfo = newObj.GetBlockInfo()
+		if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
+			continue
+		}
+		pm.SetBlockInfoDB(blockInfo, syncBlockID.ObjID)
+
+		newBlocks, err = GetBlockList(blockInfo, 0, false)
+		if err != nil {
+			continue
+		}
+		log.Debug("HandleSyncCreateBlock: (in-for-loop)", "blockInfo", blockInfo, "newBlocks", newBlocks)
+		blocks = append(blocks, newBlocks...)
+	}
+
+	log.Debug("HandleSyncCreateBlock: to syncBlockAck", "blocks", blocks)
+
+	return pm.SyncBlockAck(syncAckMsg, blocks, peer)
+}
 
 func blocksToBlocksByIDsByObjs(blocks []*Block) map[types.PttID]map[types.PttID][]*Block {
 	nBlocksByIDsByObjs := make(map[types.PttID]map[types.PttID]int)
@@ -78,7 +147,7 @@ func shrinkBlocks(blockInfo *BlockInfo, blocks []*Block) []*Block {
 	for _, block := range blocks {
 		blockID = block.BlockID
 		subBlockID = block.SubBlockID
-		if blockInfo.IsGood[blockID][subBlockID] {
+		if blockInfo.GetIsGood(blockID, subBlockID) {
 			continue
 		}
 
@@ -90,11 +159,10 @@ func shrinkBlocks(blockInfo *BlockInfo, blocks []*Block) []*Block {
 
 func verifyBlocks(blocks []*Block, blockInfo *BlockInfo, creatorID *types.PttID) error {
 	var err error
-	var blockID uint32
-	var subBlockID uint8
 
 	for _, block := range blocks {
-		err = block.Verify(blockInfo.Hashs[blockID][subBlockID], creatorID)
+		err = block.Verify(blockInfo.Hashs[block.BlockID][block.SubBlockID], creatorID)
+		log.Debug("verifyBlocks: after Verify", "blockID", block.BlockID, "subBlockID", block.SubBlockID, "e", err)
 		if err != nil {
 			return err
 		}

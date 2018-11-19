@@ -132,7 +132,7 @@ func (s *BaseSyncInfo) CheckIsAllGood() types.Bool {
 		return false
 	}
 
-	if s.BlockInfo != nil && !s.BlockInfo.IsAllGood() {
+	if s.BlockInfo != nil && !s.BlockInfo.GetIsAllGood() {
 		return false
 	}
 

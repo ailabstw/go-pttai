@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) AddMember(id *types.PttID, isForce bool) (*Member, *MemberOplog, error) {
@@ -76,10 +77,18 @@ func (pm *BaseProtocolManager) postaddMember(theMember Object, oplog *BaseOplog)
 		return ErrInvalidData
 	}
 
+	log.Debug("postaddMember: start", "entity", pm.Entity().GetID(), "member", theMember.GetID(), "oplog", oplog.ID)
+
 	myID := pm.Ptt().GetMyEntity().GetID()
 	if reflect.DeepEqual(myID, member.GetID()) {
+		log.Debug("postaddMember: to myMemberLog", "entity", pm.Entity().GetID(), "member", theMember.GetID(), "myID", myID, "oplog", oplog.ID)
+
 		pm.myMemberLog = OplogToMemberOplog(oplog)
+
+		return nil
 	}
+
+	log.Debug("postaddMember: to register-member", "entity", pm.Entity().GetID(), "member", theMember.GetID(), "oplog", oplog.ID)
 
 	pm.RegisterMember(member, false)
 

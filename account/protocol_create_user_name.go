@@ -26,12 +26,10 @@ func (pm *ProtocolManager) CreateUserName(name []byte) error {
 	myID := pm.Ptt().GetMyEntity().GetID()
 
 	if !pm.IsMaster(myID, false) {
-		return nil
+		return types.ErrInvalidID
 	}
 
-	data := &UpdateUserName{Name: name}
-
-	_, err := pm.CreateObject(data, UserOpTypeCreateUserName, pm.NewUserName, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, nil)
+	_, err := pm.CreateObject(nil, UserOpTypeCreateUserName, pm.NewUserName, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, nil)
 	if err != nil {
 		return err
 	}
@@ -43,22 +41,18 @@ func (pm *ProtocolManager) NewUserName(theData pkgservice.CreateData) (pkgservic
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entityID := pm.Entity().GetID()
 
-	data := theData.(*UpdateUserName)
-
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	hash := types.Hash(data.Name)
-	opData := &UserOpCreateUserName{Hash: hash}
+	opData := &UserOpCreateUserName{}
 
 	userName, err := NewUserName(ts, myID, entityID, nil, types.StatusInit, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 	pm.SetUserNameDB(userName)
-	userName.Name = data.Name
 
 	return userName, opData, nil
 }

@@ -56,6 +56,16 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case InitFriendInfoAckMsg:
 		err = pm.HandleInitFriendInfoAck(dataBytes, peer)
 
+	// message
+	case SyncCreateMessageMsg:
+		err = pm.HandleSyncCreateMessage(dataBytes, peer, SyncCreateMessageAckMsg)
+	case SyncCreateMessageAckMsg:
+		err = pm.HandleSyncCreateMessageAck(dataBytes, peer)
+	case SyncCreateMessageBlockMsg:
+		err = pm.HandleSyncCreateMessageBlock(dataBytes, peer)
+	case SyncCreateMessageBlockAckMsg:
+		err = pm.HandleSyncCreateMessageBlockAck(dataBytes, peer)
+
 	default:
 		log.Error("invalid op", "op", op, "InitFriendInfoMsg", InitFriendInfoMsg)
 		err = pkgservice.ErrInvalidMsgCode

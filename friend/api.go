@@ -35,7 +35,7 @@ func NewPrivateAPI(b *Backend) *PrivateAPI {
  **********/
 
 func (api *PrivateAPI) CreateMessage(entityID string, message [][]byte, mediaIDs []string) (*BackendCreateMessage, error) {
-	return api.b.CreateArticle(
+	return api.b.CreateMessage(
 		[]byte(entityID),
 		message,
 		mediaIDs,
@@ -79,7 +79,7 @@ func (api *PrivateAPI) GetFriendList(startingFriendID string, limit int) ([]*Bac
  **********/
 
 func (api *PrivateAPI) GetMessageList(entityID string, startingMessageID string, limit int, listOrder pttdb.ListOrder) ([]*BackendGetMessage, error) {
-	return api.b.GetArticleList(
+	return api.b.GetMessageList(
 		[]byte(entityID),
 		[]byte(startingMessageID),
 		limit,
@@ -87,15 +87,8 @@ func (api *PrivateAPI) GetMessageList(entityID string, startingMessageID string,
 	)
 }
 
-func (api *PrivateAPI) GetMessageBlockList(entityID string, messageID string, subContentID string, contentType pkgservice.ContentType, blockID uint32, limit int) ([]*pkgservice.ArticleBlock, error) {
-	return api.b.GetArticleBlockList(
-		[]byte(entityID),
-		[]byte(messageID),
-		[]byte(subContentID),
-		contentType,
-		blockID,
-		limit,
-	)
+func (api *PrivateAPI) GetMessageBlockList(entityID string, messageID string, dummy0 string, dummy1 pkgservice.ContentType, dummy2 uint32, limit uint32) ([]*BackendMessageBlock, error) {
+	return api.b.GetMessageBlockList([]byte(entityID), []byte(messageID), limit)
 }
 
 /**********

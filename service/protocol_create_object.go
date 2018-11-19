@@ -80,6 +80,12 @@ func (pm *BaseProtocolManager) CreateObject(
 		return nil, err
 	}
 
+	err = oplog.Verify()
+	if err != nil {
+		log.Error("CreateObject: unable to sign", "e", err)
+		return nil, err
+	}
+
 	// 6. save object
 	err = pm.saveNewObjectWithOplog(obj, oplog, false, false, postcreate)
 	if err != nil {
@@ -130,10 +136,11 @@ func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 		SetNewObjectWithOplog(obj, oplog)
 		oplog.IsSync = true
 	}
-	log.Debug("saveNewObjectWithOplog: after isAllGood", "isAllGood", isAllGood, "obj", obj, "oplog", oplog.ID, "obj.status", obj.GetStatus())
+	log.Debug("saveNewObjectWithOplog: after isAllGood", "isAllGood", isAllGood, "obj", obj, "oplog", oplog.ID, "obj.status", obj.GetStatus(), "isForceNot", isForceNot)
 
 	// save
 	err = obj.Save(true)
+	log.Debug("saveNewObjectWithOplog: after Save", "e", err)
 	if err != nil {
 		return err
 	}

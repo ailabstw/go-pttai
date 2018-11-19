@@ -38,6 +38,7 @@ type MyEntity interface {
 	Sign(oplog *BaseOplog) error
 	InternalSign(oplog *BaseOplog) error
 	MasterSign(oplog *BaseOplog) error
+	SignBlock(block *Block) error
 
 	IsValidInternalOplog(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 

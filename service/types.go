@@ -118,3 +118,9 @@ type SyncID struct {
 	ID    *types.PttID
 	LogID *types.PttID `json:"l"`
 }
+
+type SyncBlockID struct {
+	ID    *types.PttID
+	ObjID *types.PttID `json:"o"`
+	LogID *types.PttID `json:"l"`
+}

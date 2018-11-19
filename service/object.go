@@ -53,7 +53,18 @@ type Object interface {
 	 * implemented in BaseObject
 	 **********/
 
-	SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte)
+	SetDB(
+		db *pttdb.LDBBatch,
+		dbLock *types.LockMap,
+
+		entityID *types.PttID,
+		fullDBPrefix []byte,
+		fullDBIdxPrefix []byte,
+
+		setBlockDB func(blockInfo *BlockInfo, objID *types.PttID),
+		setMediaDB func(media *Media),
+	)
+
 	Lock() error
 	Unlock() error
 	RLock() error
@@ -83,7 +94,15 @@ type Object interface {
 	SetEntityID(id *types.PttID)
 	GetEntityID() *types.PttID
 
+	SetIsGood(isGood types.Bool)
+	GetIsGood() types.Bool
+
+	SetIsAllGood(isAllGood types.Bool)
+	GetIsAllGood() types.Bool
+	CheckIsAllGood() types.Bool
+
 	Delete(isLocked bool) error
+
 	GetKey(id *types.PttID, isLocked bool) ([]byte, error)
 }
 
@@ -100,12 +119,18 @@ type BaseObject struct {
 
 	Status types.Status `json:"S"`
 
+	IsGood    types.Bool `json:"g"`
+	IsAllGood types.Bool `json:"a"`
+
 	BlockInfo *BlockInfo `json:"b,omitempty"`
 
 	db              *pttdb.LDBBatch
 	dbLock          *types.LockMap
 	fullDBPrefix    []byte
 	fullDBIdxPrefix []byte
+
+	setBlockDB func(blockInfo *BlockInfo, objID *types.PttID)
+	setMediaDB func(media *Media)
 }
 
 func NewObject(
@@ -117,13 +142,6 @@ func NewObject(
 	logID *types.PttID,
 
 	status types.Status,
-
-	db *pttdb.LDBBatch,
-	dbLock *types.LockMap,
-
-	fullDBPrefix []byte,
-
-	fullDBIdxPrefix []byte,
 ) *BaseObject {
 
 	return &BaseObject{
@@ -137,20 +155,27 @@ func NewObject(
 		LogID: logID,
 
 		Status: status,
-
-		db:              db,
-		dbLock:          dbLock,
-		fullDBPrefix:    fullDBPrefix,
-		fullDBIdxPrefix: fullDBIdxPrefix,
 	}
 }
 
-func (o *BaseObject) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte) {
+func (o *BaseObject) SetDB(
+	db *pttdb.LDBBatch,
+	dbLock *types.LockMap,
+	entityID *types.PttID,
+	fullDBPrefix []byte,
+	fullDBIdxPrefix []byte,
+
+	setBlockDB func(blockInfo *BlockInfo, objID *types.PttID),
+	setMediaDB func(media *Media),
+) {
 	o.db = db
 	o.dbLock = dbLock
 	o.EntityID = entityID
 	o.fullDBPrefix = fullDBPrefix
 	o.fullDBIdxPrefix = fullDBIdxPrefix
+
+	o.setBlockDB = setBlockDB
+	o.setMediaDB = setMediaDB
 }
 
 func (o *BaseObject) CloneDB(o2 *BaseObject) {
@@ -159,6 +184,8 @@ func (o *BaseObject) CloneDB(o2 *BaseObject) {
 	o.EntityID = o2.EntityID
 	o.fullDBPrefix = o2.fullDBPrefix
 	o.fullDBIdxPrefix = o2.fullDBIdxPrefix
+	o.setBlockDB = o2.setBlockDB
+	o.setMediaDB = o.setMediaDB
 }
 
 func (o *BaseObject) Lock() error {
@@ -170,11 +197,11 @@ func (o *BaseObject) Unlock() error {
 }
 
 func (o *BaseObject) RLock() error {
-	return o.dbLock.Lock(o.ID)
+	return o.dbLock.RLock(o.ID)
 }
 
 func (o *BaseObject) RUnlock() error {
-	return o.dbLock.Unlock(o.ID)
+	return o.dbLock.RUnlock(o.ID)
 }
 
 func (o *BaseObject) SetVersion(v types.Version) {
@@ -245,32 +272,6 @@ func (o *BaseObject) IdxKey() ([]byte, error) {
 	return append(o.fullDBIdxPrefix, o.ID[:]...), nil
 }
 
-func (o *BaseObject) Delete(isLocked bool) error {
-	var err error
-
-	log.Debug("Delete: start")
-
-	if !isLocked {
-		err = o.Lock()
-		if err != nil {
-			return err
-		}
-		defer o.Unlock()
-	}
-
-	idxKey, err := o.IdxKey()
-	if err != nil {
-		return err
-	}
-
-	err = o.db.DeleteAll(idxKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (o *BaseObject) GetValueByID(isLocked bool) ([]byte, error) {
 	var err error
 
@@ -314,49 +315,62 @@ func (o *BaseObject) GetKey(id *types.PttID, isLocked bool) ([]byte, error) {
 	return o.db.GetKeyByIdxKey(idxKey, 0)
 }
 
-func (o *BaseObject) KeyToIdxKey(key []byte) ([]byte, error) {
+func (o *BaseObject) KeyToID(key []byte) (*types.PttID, error) {
 
 	lenKey := len(key)
-	if lenKey != pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizeTimestamp+types.SizePttID {
+	if lenKey < pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizePttID {
 		return nil, ErrInvalidKey
 	}
 
-	idxKey := make([]byte, pttdb.SizeDBKeyPrefix+types.SizePttID+types.SizePttID)
-
-	// prefix
-	idxOffset := 0
-	nextIdxOffset := pttdb.SizeDBKeyPrefix
-	copy(idxKey[:nextIdxOffset], DBOpKeyIdxPrefix)
-
-	// entity-id
-	idxOffset = nextIdxOffset
-	nextIdxOffset += types.SizePttID
-
-	keyOffset := pttdb.SizeDBKeyPrefix
-	nextKeyOffset := keyOffset + types.SizePttID
-	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
+	id := &types.PttID{}
 
 	// id
-	idxOffset = nextIdxOffset
-	nextIdxOffset += types.SizePttID
+	keyOffset := lenKey - types.SizePttID
+	copy(id[:], key[keyOffset:])
 
-	keyOffset = lenKey - types.SizePttID
-	nextKeyOffset = lenKey
-	copy(idxKey[idxOffset:nextIdxOffset], key[keyOffset:nextKeyOffset])
-
-	return idxKey, nil
+	return id, nil
 }
 
-func (k *BaseObject) DeleteKey(key []byte) error {
-	idxKey, err := k.KeyToIdxKey(key)
+func (o *BaseObject) DeleteByKey(key []byte, isLocked bool) error {
+	id, err := o.KeyToID(key)
+	if err != nil {
+		return err
+	}
+	o.SetID(id)
+
+	return o.Delete(isLocked)
+}
+
+func (o *BaseObject) Delete(
+	isLocked bool,
+) error {
+	var err error
+
+	log.Debug("Delete: start")
+
+	if !isLocked {
+		err = o.Lock()
+		if err != nil {
+			return err
+		}
+		defer o.Unlock()
+	}
+
+	idxKey, err := o.IdxKey()
 	if err != nil {
 		return err
 	}
 
-	err = k.db.DeleteAll(idxKey)
-
+	err = o.db.DeleteAll(idxKey)
 	if err != nil {
 		return err
+	}
+
+	if o.BlockInfo != nil {
+		if o.BlockInfo.db == nil {
+			o.setBlockDB(o.BlockInfo, o.ID)
+		}
+		o.BlockInfo.Remove(false)
 	}
 
 	return nil
@@ -393,4 +407,52 @@ func (o *BaseObject) FullDBPrefix() []byte {
 
 func (o *BaseObject) FullDBIdxPrefix() []byte {
 	return o.fullDBIdxPrefix
+}
+
+func (o *BaseObject) SetBlockDB() func(blockInfo *BlockInfo, objID *types.PttID) {
+	return o.setBlockDB
+}
+
+func (o *BaseObject) SetMediaDB() func(media *Media) {
+	return o.setMediaDB
+}
+
+func (o *BaseObject) NewEmptyObj() *BaseObject {
+	newObj := &BaseObject{}
+	newObj.SetDB(o.db, o.dbLock, o.EntityID, o.fullDBPrefix, o.fullDBIdxPrefix, o.setBlockDB, o.setMediaDB)
+
+	return newObj
+}
+
+func (o *BaseObject) SetIsGood(isGood types.Bool) {
+	o.IsGood = isGood
+}
+
+func (o *BaseObject) GetIsGood() types.Bool {
+	return o.IsGood
+}
+
+func (o *BaseObject) SetIsAllGood(isAllGood types.Bool) {
+	o.IsAllGood = isAllGood
+}
+
+func (o *BaseObject) GetIsAllGood() types.Bool {
+	return o.IsAllGood
+}
+
+func (o *BaseObject) CheckIsAllGood() types.Bool {
+	if o.IsAllGood {
+		return true
+	}
+
+	if !o.IsGood {
+		return false
+	}
+
+	if o.BlockInfo != nil && !o.BlockInfo.IsAllGood() {
+		return false
+	}
+
+	o.IsAllGood = true
+	return true
 }

@@ -342,6 +342,11 @@ func (e *BaseEntity) RUnlock() error {
 }
 
 func (e *BaseEntity) SetSyncInfo(syncInfo SyncInfo) {
+	if syncInfo == nil {
+		e.SyncInfo = nil
+		return
+	}
+
 	e.SyncInfo = syncInfo
 }
 

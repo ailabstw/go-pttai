@@ -20,7 +20,6 @@ import (
 	"crypto/ecdsa"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -28,8 +27,15 @@ import (
  * OpKey
  **********/
 
-func (m *MyInfo) NewOpKeyInfo(entityID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*pkgservice.KeyInfo, error) {
-	return pkgservice.NewOpKeyInfo(entityID, m.ID, m.myKey, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+func (m *MyInfo) NewOpKeyInfo(entityID *types.PttID, setOpKeyObjDB func(k *pkgservice.KeyInfo)) (*pkgservice.KeyInfo, error) {
+
+	key, err := pkgservice.NewOpKeyInfo(entityID, m.ID, m.myKey)
+	if err != nil {
+		return nil, err
+	}
+	setOpKeyObjDB(key)
+
+	return key, nil
 }
 
 /**********

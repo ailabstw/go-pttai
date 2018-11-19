@@ -89,6 +89,7 @@ func TestVerifyData(t *testing.T) {
 	// define test-structure
 	type args struct {
 		bytesWithSalt []byte
+		hash          []byte
 		sig           []byte
 		keyBytes      []byte
 		doerID        *types.PttID
@@ -103,7 +104,7 @@ func TestVerifyData(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.CreatorID},
+			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, hash: tDefaultHash2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.CreatorID},
 			wantErr: false,
 		},
 	}
@@ -111,7 +112,7 @@ func TestVerifyData(t *testing.T) {
 	// run test
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := VerifyData(tt.args.bytesWithSalt, tt.args.sig, tt.args.keyBytes, tt.args.doerID, tt.args.extra); (err != nil) != tt.wantErr {
+			if err := VerifyData(tt.args.bytesWithSalt, tt.args.hash, tt.args.sig, tt.args.keyBytes, tt.args.doerID, tt.args.extra); (err != nil) != tt.wantErr {
 				t.Errorf("VerifyData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

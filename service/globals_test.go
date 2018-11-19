@@ -382,7 +382,7 @@ func setupTest(t *testing.T) {
 	tDefaultDoerID2, _ = types.NewPttIDFromKey(tDefaultSignKey2)
 	ts, _ := types.GetTimestamp()
 	tDefaultSignKeyInfo2 = &KeyInfo{
-		BaseObject:  NewObject(tDefaultSignID2, ts, tDefaultDoerID2, nil, nil, types.StatusAlive, nil, nil, nil, nil),
+		BaseObject:  NewObject(tDefaultSignID2, ts, tDefaultDoerID2, nil, nil, types.StatusAlive),
 		Key:         tDefaultSignKey2,
 		KeyBytes:    tDefaultSignKeyBytes2,
 		PubKeyBytes: crypto.FromECDSAPub(&tDefaultSignKey2.PublicKey),

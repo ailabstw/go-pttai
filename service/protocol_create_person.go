@@ -18,7 +18,6 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) CreatePerson(
@@ -33,20 +32,24 @@ func (pm *BaseProtocolManager) CreatePerson(
 
 ) (Object, *BaseOplog, error) {
 
-	// new person
+	// 2. new person
 	person, opData, err := newPerson(id)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// oplog
+	// 3. oplog
 	theOplog, err := newOplogWithTS(id, person.GetUpdateTS(), createOp, opData)
 	if err != nil {
 		return nil, nil, err
 	}
 	oplog := theOplog.GetBaseOplog()
 
-	// 4.1 sign oplog
+	// 4.1. set is good
+	person.SetIsGood(true)
+	person.SetIsAllGood(true)
+
+	// 5. sign oplog
 	masterLogID := pm.GetNewestMasterLogID()
 	if masterLogID == nil {
 		masterLogID = oplog.ID
@@ -66,16 +69,14 @@ func (pm *BaseProtocolManager) CreatePerson(
 	if err != nil {
 		return nil, nil, err
 	}
-	oplog.IsSync = true
-	log.Debug("CreatePeron: after sign", "op", oplog.Op, "objID", oplog.ObjID, "masterSigns", oplog.MasterSigns, "masterLogID", oplog.MasterLogID)
 
-	// save object
-	err = pm.saveNewObjectWithOplog(person, oplog, true, isForce, postcreatePerson)
+	// 6. save object
+	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreatePerson)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// oplog-save
+	// 7. oplog-save
 	err = oplog.Save(false)
 	if err != nil {
 		return nil, nil, err

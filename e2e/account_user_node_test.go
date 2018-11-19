@@ -184,7 +184,7 @@ func TestAccountUserNode(t *testing.T) {
 	assert.Equal(types.StatusAlive, profile0_10.Status)
 
 	// 11. masters from profile
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterList", "params": ["%v"]}`, string(marshaledID))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterListFromCache", "params": ["%v"]}`, string(marshaledID))
 
 	dataMasterList0_11 := &struct {
 		Result []*pkgservice.Master `json:"result"`
@@ -194,7 +194,7 @@ func TestAccountUserNode(t *testing.T) {
 	master0_11_0 := dataMasterList0_11.Result[0]
 
 	// 11.1
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterListFromDB", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 
 	dataMasterList0_11_1 := &struct {
 		Result []*pkgservice.Master `json:"result"`
@@ -233,7 +233,7 @@ func TestAccountUserNode(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_14, t, isDebug)
-	assert.Equal(2, len(dataGetUserOplogList0_14.Result))
+	assert.Equal(4, len(dataGetUserOplogList0_14.Result))
 	userOplog0_14 := dataGetUserOplogList0_14.Result[0]
 	assert.Equal(account.UserOpTypeCreateProfile, userOplog0_14.Op)
 	masterSigns0_14 := userOplog0_14.MasterSigns
@@ -241,10 +241,22 @@ func TestAccountUserNode(t *testing.T) {
 	assert.Equal(me0_3.ID, masterSigns0_14[0].ID)
 
 	userOplog0_14_1 := dataGetUserOplogList0_14.Result[1]
-	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_14_1.Op)
-	assert.Equal(userNode0_13.LogID, userOplog0_14_1.ID)
-	assert.Equal(userNode0_13.ID, userOplog0_14_1.ObjID)
+	assert.Equal(account.UserOpTypeCreateUserName, userOplog0_14_1.Op)
 	masterSigns0_14_1 := userOplog0_14_1.MasterSigns
 	assert.Equal(1, len(masterSigns0_14_1))
 	assert.Equal(me0_3.ID, masterSigns0_14_1[0].ID)
+
+	userOplog0_14_2 := dataGetUserOplogList0_14.Result[2]
+	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_14_2.Op)
+	masterSigns0_14_2 := userOplog0_14_2.MasterSigns
+	assert.Equal(1, len(masterSigns0_14_2))
+	assert.Equal(me0_3.ID, masterSigns0_14_2[0].ID)
+
+	userOplog0_14_3 := dataGetUserOplogList0_14.Result[3]
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_14_3.Op)
+	assert.Equal(userNode0_13.LogID, userOplog0_14_3.ID)
+	assert.Equal(userNode0_13.ID, userOplog0_14_3.ObjID)
+	masterSigns0_14_3 := userOplog0_14_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_14_3))
+	assert.Equal(me0_3.ID, masterSigns0_14_3[0].ID)
 }

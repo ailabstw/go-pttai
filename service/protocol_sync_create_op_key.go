@@ -17,7 +17,7 @@
 package service
 
 func (pm *BaseProtocolManager) SyncCreateOpKey(syncIDs []*SyncID, peer *PttPeer) error {
-	return pm.SyncCreateObject(SyncCreateOpKeyMsg, syncIDs, peer)
+	return pm.SyncObject(SyncCreateOpKeyMsg, syncIDs, peer)
 }
 
 func (pm *BaseProtocolManager) HandleSyncCreateOpKey(dataBytes []byte, peer *PttPeer) error {

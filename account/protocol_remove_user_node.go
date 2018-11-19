@@ -47,9 +47,21 @@ func (pm *ProtocolManager) RemoveUserNode(nodeID *discover.NodeID) error {
 	}
 
 	err = pm.DeleteObject(
-		id, UserOpTypeRemoveUserNode,
-		origObj, opData,
-		pm.SetUserDB, pm.NewUserOplog, nil, pm.setPendingDeleteUserNodeSyncInfo, pm.broadcastUserOplogCore, pm.postdeleteUserNode)
+		id,
+		UserOpTypeRemoveUserNode,
+
+		origObj,
+		opData,
+
+		pm.SetUserDB,
+
+		pm.NewUserOplog,
+		nil,
+		pm.setPendingDeleteUserNodeSyncInfo,
+		pm.broadcastUserOplogCore,
+		pm.postdeleteUserNode,
+	)
+
 	log.Debug("RemoveUserNode: after DeleteObject", "e", err)
 	if err != nil {
 		return err
@@ -66,7 +78,7 @@ func (pm *ProtocolManager) setPendingDeleteUserNodeSyncInfo(theObj pkgservice.Ob
 	}
 
 	syncInfo := &pkgservice.BaseSyncInfo{}
-	syncInfo.InitWithDeleteOplog(status, oplog)
+	syncInfo.InitWithOplog(status, oplog)
 
 	obj.SyncInfo = syncInfo
 

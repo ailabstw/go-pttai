@@ -23,12 +23,12 @@ import (
 )
 
 func (pm *ProtocolManager) DeleteProfile() error {
-	opData := &UserOpDeleteUser{}
+	opData := &UserOpDeleteProfile{}
 
 	log.Debug("DeleteProfile: start")
 
 	err := pm.DeleteEntity(
-		UserOpTypeDeleteUser, opData,
+		UserOpTypeDeleteProfile, opData,
 		types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted,
 		pm.NewUserOplog, pm.setPendingDeleteAccountSyncInfo, pm.broadcastUserOplogCore, pm.postdeleteProfile)
 
@@ -64,7 +64,7 @@ func (pm *ProtocolManager) setPendingDeleteAccountSyncInfo(theEntity pkgservice.
 	}
 
 	syncInfo := &pkgservice.BaseSyncInfo{}
-	syncInfo.InitWithDeleteOplog(status, oplog)
+	syncInfo.InitWithOplog(status, oplog)
 
 	entity.SetSyncInfo(syncInfo)
 

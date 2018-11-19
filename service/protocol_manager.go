@@ -251,7 +251,6 @@ type ProtocolManager interface {
 
 	MaybePostcreateEntity(
 		oplog *BaseOplog,
-		origStatus types.Status,
 		isForce bool,
 		postcreateEntity func(entity Entity) error,
 	) error
@@ -376,6 +375,13 @@ type BaseProtocolManager struct {
 	db     *pttdb.LDBBatch
 	dbLock *types.LockMap
 
+	// block
+	dbBlockPrefix []byte
+
+	// media
+	dbMediaPrefix    []byte
+	dbMediaIdxPrefix []byte
+
 	// is-start
 	isStart bool
 }
@@ -410,8 +416,12 @@ func NewBaseProtocolManager(
 	theDelete func() error,
 	postdelete func(opData OpData, isForce bool) error,
 
+	// entity
 	e Entity,
+
+	// db
 	db *pttdb.LDBBatch,
+
 ) (*BaseProtocolManager, error) {
 
 	entityID := e.GetID()
@@ -421,11 +431,13 @@ func NewBaseProtocolManager(
 		return nil, err
 	}
 
+	// db-lock
 	dbLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
 
+	// master
 	dbMasterLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
@@ -437,6 +449,7 @@ func NewBaseProtocolManager(
 		return nil, err
 	}
 
+	// member
 	dbMemberLock, err := types.NewLockMap(SleepTimeLock)
 	if err != nil {
 		return nil, err
@@ -448,6 +461,7 @@ func NewBaseProtocolManager(
 		return nil, err
 	}
 
+	// op-key
 	dbOpKeyLock, err := types.NewLockMap(SleepTimeOpKeyLock)
 	if err != nil {
 		return nil, err
@@ -455,7 +469,12 @@ func NewBaseProtocolManager(
 	dbOpKeyPrefix := append(DBOpKeyPrefix, entityID[:]...)
 	dbOpKeyIdxPrefix := append(DBOpKeyIdxPrefix, entityID[:]...)
 
-	log.Debug("NewBaseProtocolManager: start", "e", e.GetID())
+	// block
+	dbBlockPrefix := append(DBBlockInfoPrefix, entityID[:]...)
+
+	// media
+	dbMediaPrefix := append(DBMediaPrefix, entityID[:]...)
+	dbMediaIdxPrefix := append(DBMediaIdxPrefix, entityID[:]...)
 
 	pm := &BaseProtocolManager{
 		eventMux: new(event.TypeMux),
@@ -534,6 +553,13 @@ func NewBaseProtocolManager(
 		// db
 		db:     db,
 		dbLock: dbLock,
+
+		// block
+		dbBlockPrefix: dbBlockPrefix,
+
+		// media
+		dbMediaPrefix:    dbMediaPrefix,
+		dbMediaIdxPrefix: dbMediaIdxPrefix,
 	}
 	if pm.internalSign == nil {
 		pm.internalSign = pm.defaultInternalSign

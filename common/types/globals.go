@@ -21,10 +21,6 @@ import (
 	"github.com/shengdoushi/base58"
 )
 
-const (
-	CurrentVersion Version = 2
-)
-
 // protocol-versions
 const (
 	_ uint = iota

@@ -64,7 +64,8 @@ func (pm *BaseProtocolManager) NewMember(id *types.PttID) (Object, OpData, error
 		return nil, nil, err
 	}
 
-	member := NewMember(id, ts, myID, entity.GetID(), nil, types.StatusInternalPending, pm.DB(), pm.DBObjLock(), pm.dbMemberPrefix, pm.dbMemberIdxPrefix)
+	member := NewMember(id, ts, myID, entity.GetID(), nil, types.StatusInit)
+	pm.SetMemberObjDB(member)
 
 	return member, &MemberOpAddMember{}, nil
 }

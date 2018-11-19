@@ -46,5 +46,7 @@ var (
 
 	ErrNotBool = errors.New("not bool")
 
+	ErrNotBoolDAry = errors.New("not bool double array")
+
 	ErrInvalidStatus = errors.New("invalid status")
 )

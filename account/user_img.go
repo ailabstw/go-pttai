@@ -17,69 +17,120 @@
 package account
 
 import (
-	"bytes"
 	"encoding/json"
 
+	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncImgInfo struct {
-	LogID   *types.PttID `json:"pl,omitempty"`
-	ImgType ImgType      `json:"T"`
-	Width   uint16       `json:"W"`
-	Height  uint16       `json:"H"`
-	Str     string       `json:"I"`
-	BoardID *types.PttID `json:"bID"`
+type SyncUserImgInfo struct {
+	*pkgservice.BaseSyncInfo `json:"b"`
 
-	UpdateTS types.Timestamp `json:"UT"`
-	Status   types.Status    `json:"S"`
+	ImgType ImgType `json:"T"`
+	Width   uint16  `json:"W"`
+	Height  uint16  `json:"H"`
+	Str     string  `json:"I"`
+}
+
+func NewEmptySyncUserImgInfo() *SyncUserImgInfo {
+	return &SyncUserImgInfo{BaseSyncInfo: &pkgservice.BaseSyncInfo{}}
+}
+
+func (s *SyncUserImgInfo) ToObject(theObj pkgservice.Object) error {
+	obj, ok := theObj.(*UserImg)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	s.BaseSyncInfo.ToObject(obj)
+
+	obj.ImgType = s.ImgType
+	obj.Width = s.Width
+	obj.Height = s.Height
+	obj.Str = s.Str
+
+	return nil
 }
 
 type UserImg struct {
-	V        types.Version
-	ID       *types.PttID
-	CreateTS types.Timestamp `json:"CT"`
-	UpdateTS types.Timestamp `json:"UT"`
-	Status   types.Status    `json:"S"`
+	*pkgservice.BaseObject `json:"b"`
+	UpdateTS               types.Timestamp `json:"UT"`
 
-	ImgType     ImgType      `json:"T"`
-	Width       uint16       `json:"W"`
-	Height      uint16       `json:"H"`
-	Str         string       `json:"I"`
-	SyncImgInfo *SyncImgInfo `json:"si,omitempty"`
+	SyncInfo *SyncUserImgInfo `json:"si,omitempty"`
 
-	BoardID *types.PttID `json:"bID"`
-	LogID   *types.PttID `json:"l"`
-
-	dbLock *types.LockMap
+	ImgType ImgType `json:"T"`
+	Width   uint16  `json:"W"`
+	Height  uint16  `json:"H"`
+	Str     string  `json:"I"`
 }
 
-func NewUserImg(id *types.PttID, ts types.Timestamp) (*UserImg, error) {
+func NewUserImg(
+	createTS types.Timestamp,
+	creatorID *types.PttID,
+	entityID *types.PttID,
+
+	logID *types.PttID,
+
+	status types.Status,
+) (*UserImg, error) {
+
+	id := creatorID
+
+	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status)
+
 	return &UserImg{
-		V:        types.CurrentVersion,
-		ID:       id,
-		CreateTS: ts,
-		UpdateTS: ts,
+		BaseObject: o,
+		UpdateTS:   createTS,
 	}, nil
 }
 
-func (u *UserImg) Marshal() ([]byte, error) {
-	return json.Marshal(u)
+func NewEmptyUserImg() *UserImg {
+	return &UserImg{BaseObject: &pkgservice.BaseObject{}}
 }
 
-func (u *UserImg) MarshalKey() ([]byte, error) {
-	return append(DBUserImgPrefix, u.ID[:]...), nil
+func UserImgsToObjs(typedObjs []*UserImg) []pkgservice.Object {
+	objs := make([]pkgservice.Object, len(typedObjs))
+	for i, obj := range typedObjs {
+		objs[i] = obj
+	}
+	return objs
 }
 
-func (u *UserImg) Unmarshal(theBytes []byte) error {
-	return json.Unmarshal(theBytes, u)
+func ObjsToUserImgs(objs []pkgservice.Object) []*UserImg {
+	typedObjs := make([]*UserImg, len(objs))
+	for i, obj := range objs {
+		typedObjs[i] = obj.(*UserImg)
+	}
+	return typedObjs
+}
+
+func AliveUserImgs(typedObjs []*UserImg) []*UserImg {
+	objs := make([]*UserImg, 0, len(typedObjs))
+	for _, obj := range typedObjs {
+		if obj.Status == types.StatusAlive {
+			objs = append(objs, obj)
+		}
+	}
+	return objs
+}
+
+func (pm *ProtocolManager) SetUserImgDB(u *UserImg) {
+	spm := pm.Entity().Service().SPM()
+
+	u.SetDB(dbAccount, spm.DBObjLock(), pm.Entity().GetID(), pm.dbUserImgPrefix, pm.dbUserImgIdxPrefix, nil, nil)
+}
+
+func (spm *ServiceProtocolManager) SetUserImgDB(u *UserImg) {
+	u.SetDB(dbAccount, spm.DBObjLock(), nil, DBUserImgPrefix, DBUserImgIdxPrefix, nil, nil)
 }
 
 func (u *UserImg) Save(isLocked bool) error {
+	var err error
+
 	if !isLocked {
-		err := u.Lock()
+		err = u.Lock()
 		if err != nil {
 			return err
 		}
@@ -95,7 +146,18 @@ func (u *UserImg) Save(isLocked bool) error {
 		return err
 	}
 
-	_, err = dbAccountCore.TryPut(key, marshaled, u.UpdateTS)
+	idxKey, err := u.IdxKey()
+	if err != nil {
+		return err
+	}
+
+	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: u.UpdateTS}
+
+	kvs := []*pttdb.KeyVal{
+		&pttdb.KeyVal{K: key, V: marshaled},
+	}
+
+	_, err = u.DB().ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -103,134 +165,95 @@ func (u *UserImg) Save(isLocked bool) error {
 	return nil
 }
 
-func (u *UserImg) Get(id *types.PttID, isLocked bool) error {
-	u.ID = id
-	key, err := u.MarshalKey()
-	if err != nil {
-		return err
-	}
-
-	theBytes, err := dbAccountCore.Get(key)
-	//log.Debug("Get: after dbAccount", "theBytes", theBytes, "e", err)
-	if err != nil {
-		return err
-	}
-
-	if theBytes == nil {
-		return types.ErrInvalidID
-	}
-
-	if len(theBytes) == 0 {
-		return types.ErrInvalidID
-	}
-
-	log.Debug("to Unmarshal", "u", u, "e", err)
-	err = u.Unmarshal(theBytes)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (u *UserImg) NewEmptyObj() pkgservice.Object {
+	newU := NewEmptyUserImg()
+	newU.CloneDB(u.BaseObject)
+	return newU
 }
 
-func (u *UserImg) Delete(id *types.PttID, isLocked bool) error {
+func (u *UserImg) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
+	newU := u.NewEmptyObj()
+	newU.SetID(id)
+	err := newU.GetByID(isLocked)
+	if err != nil {
+		return nil, err
+	}
+	return newU, nil
+}
+
+func (u *UserImg) SetUpdateTS(ts types.Timestamp) {
+	u.UpdateTS = ts
+}
+
+func (u *UserImg) GetUpdateTS() types.Timestamp {
+	return u.UpdateTS
+}
+
+func (u *UserImg) Get(isLocked bool) error {
+	var err error
+
 	if !isLocked {
-		err := u.Lock()
+		err = u.RLock()
 		if err != nil {
 			return err
 		}
-		defer u.Unlock()
+		defer u.RUnlock()
 	}
 
-	u.ID = id
 	key, err := u.MarshalKey()
 	if err != nil {
 		return err
 	}
 
-	err = dbAccountCore.Delete(key)
+	val, err := u.DB().DBGet(key)
 	if err != nil {
 		return err
 	}
+
+	return u.Unmarshal(val)
+}
+
+func (u *UserImg) GetByID(isLocked bool) error {
+	var err error
+
+	val, err := u.GetValueByID(isLocked)
+	if err != nil {
+		return err
+	}
+
+	return u.Unmarshal(val)
+}
+
+func (u *UserImg) MarshalKey() ([]byte, error) {
+	return common.Concat([][]byte{DBUserImgPrefix, u.ID[:]})
+}
+
+func (u *UserImg) Marshal() ([]byte, error) {
+	return json.Marshal(u)
+}
+
+func (u *UserImg) Unmarshal(theBytes []byte) error {
+	return json.Unmarshal(theBytes, u)
+}
+
+func (u *UserImg) GetSyncInfo() pkgservice.SyncInfo {
+	if u.SyncInfo == nil {
+		return nil
+	}
+	return u.SyncInfo
+}
+
+func (u *UserImg) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
+	if theSyncInfo == nil {
+		u.SyncInfo = nil
+		return nil
+	}
+
+	syncInfo, ok := theSyncInfo.(*SyncUserImgInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+	u.SyncInfo = syncInfo
 
 	return nil
-}
-
-func (u *UserImg) GetList(id *types.PttID, limit int, listOrder pttdb.ListOrder) ([]*UserImg, error) {
-	u.ID = id
-	key, err := u.MarshalKey()
-	if err != nil {
-		return nil, err
-	}
-
-	userImgs := make([]*UserImg, 0)
-	iter, err := dbAccountCore.NewIteratorWithPrefix(key, nil, listOrder)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Release()
-
-	for i := 0; i < limit && iter.Next(); i++ {
-		val := iter.Value()
-
-		userImg := &UserImg{}
-		err := userImg.Unmarshal(val)
-		if err != nil {
-			continue
-		}
-		userImgs = append(userImgs, userImg)
-	}
-
-	return userImgs, nil
-}
-
-func (u *UserImg) IntegrateSyncImgInfo(info *SyncImgInfo) (*types.PttID, error) {
-	var origLogID *types.PttID
-
-	switch {
-	case u.SyncImgInfo == nil:
-		u.SyncImgInfo = info
-		return nil, nil
-	case info.Status != types.StatusInternalSync && u.SyncImgInfo.Status > info.Status:
-		return nil, nil
-	case u.SyncImgInfo.Status < info.Status:
-		origLogID = u.SyncImgInfo.LogID
-		u.SyncImgInfo = info
-		return origLogID, nil
-	case info.UpdateTS.IsLess(u.SyncImgInfo.UpdateTS):
-		return nil, nil
-	case u.SyncImgInfo.UpdateTS.IsLess(info.UpdateTS):
-		origLogID = u.SyncImgInfo.LogID
-		u.SyncImgInfo = info
-		return origLogID, nil
-	}
-
-	cmp := bytes.Compare(u.SyncImgInfo.LogID[:], info.LogID[:])
-	if cmp < 0 {
-		return nil, nil
-	}
-
-	origLogID = u.SyncImgInfo.LogID
-	u.SyncImgInfo = info
-	return origLogID, nil
-}
-
-func (u *UserImg) SetDBLock(dbLock *types.LockMap) {
-	u.dbLock = dbLock
-}
-
-func (u *UserImg) Lock() error {
-	return u.dbLock.Lock(u.ID)
-}
-
-func (u *UserImg) Unlock() error {
-	return u.dbLock.Unlock(u.ID)
-}
-
-func (u *UserImg) RLock() error {
-	return u.dbLock.RLock(u.ID)
-}
-
-func (u *UserImg) RUnlock() error {
-	return u.dbLock.RUnlock(u.ID)
 }

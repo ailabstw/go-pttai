@@ -27,11 +27,24 @@ type SyncInfo interface {
 	GetUpdateTS() types.Timestamp
 	SetUpdateTS(ts types.Timestamp)
 
+	GetUpdaterID() *types.PttID
+	SetUpdaterID(id *types.PttID)
+
 	GetStatus() types.Status
 	SetStatus(status types.Status)
 
-	SetBlock(block *BlockInfo) error
-	GetBlock() *BlockInfo
+	SetBlockInfo(blockInfo *BlockInfo) error
+	GetBlockInfo() *BlockInfo
+
+	SetIsGood(isGood types.Bool)
+	GetIsGood() types.Bool
+
+	SetIsAllGood(isAllGood types.Bool)
+	GetIsAllGood() types.Bool
+	CheckIsAllGood() types.Bool
+
+	FromOplog(status types.Status, oplog *BaseOplog, opData OpData) error
+	ToObject(obj Object) error
 }
 
 type BaseSyncInfo struct {
@@ -39,7 +52,11 @@ type BaseSyncInfo struct {
 	UpdateTS  types.Timestamp `json:"UT"`
 	UpdaterID *types.PttID    `json:"UID"`
 	Status    types.Status    `json:"S"`
-	BlockInfo *BlockInfo      `json:"b,omitempty"`
+
+	BlockInfo *BlockInfo `json:"b,omitempty"`
+
+	IsGood    types.Bool `json:"g"`
+	IsAllGood types.Bool `json:"a"`
 }
 
 func (s *BaseSyncInfo) SetLogID(id *types.PttID) {
@@ -58,6 +75,14 @@ func (s *BaseSyncInfo) SetUpdateTS(ts types.Timestamp) {
 	s.UpdateTS = ts
 }
 
+func (s *BaseSyncInfo) SetUpdaterID(id *types.PttID) {
+	s.UpdaterID = id
+}
+
+func (s *BaseSyncInfo) GetUpdaterID() *types.PttID {
+	return s.UpdaterID
+}
+
 func (s *BaseSyncInfo) GetStatus() types.Status {
 	return s.Status
 }
@@ -66,25 +91,74 @@ func (s *BaseSyncInfo) SetStatus(status types.Status) {
 	s.Status = status
 }
 
-func (s *BaseSyncInfo) InitWithOplog(oplog *BaseOplog) {
-	s.LogID = oplog.ID
-	s.UpdateTS = oplog.UpdateTS
-	s.UpdaterID = oplog.CreatorID
-	s.Status = oplog.ToStatus()
-}
-
-func (s *BaseSyncInfo) InitWithDeleteOplog(status types.Status, oplog *BaseOplog) {
+func (s *BaseSyncInfo) InitWithOplog(status types.Status, oplog *BaseOplog) {
 	s.LogID = oplog.ID
 	s.UpdateTS = oplog.UpdateTS
 	s.UpdaterID = oplog.CreatorID
 	s.Status = status
 }
 
-func (s *BaseSyncInfo) SetBlock(blockInfo *BlockInfo) error {
+func (s *BaseSyncInfo) SetBlockInfo(blockInfo *BlockInfo) error {
 	s.BlockInfo = blockInfo
 	return nil
 }
 
-func (s *BaseSyncInfo) GetBlock() *BlockInfo {
+func (s *BaseSyncInfo) GetBlockInfo() *BlockInfo {
 	return s.BlockInfo
+}
+
+func (s *BaseSyncInfo) SetIsGood(isGood types.Bool) {
+	s.IsGood = isGood
+}
+
+func (s *BaseSyncInfo) GetIsGood() types.Bool {
+	return s.IsGood
+}
+
+func (s *BaseSyncInfo) SetIsAllGood(isAllGood types.Bool) {
+	s.IsAllGood = isAllGood
+}
+
+func (s *BaseSyncInfo) GetIsAllGood() types.Bool {
+	return s.IsAllGood
+}
+
+func (s *BaseSyncInfo) CheckIsAllGood() types.Bool {
+	if s.IsAllGood {
+		return true
+	}
+
+	if !s.IsGood {
+		return false
+	}
+
+	if s.BlockInfo != nil && !s.BlockInfo.IsAllGood() {
+		return false
+	}
+
+	s.IsAllGood = true
+	return true
+}
+
+func (s *BaseSyncInfo) ToObject(obj Object) error {
+	obj.SetStatus(s.Status)
+	obj.SetUpdateTS(s.UpdateTS)
+	obj.SetUpdaterID(s.UpdaterID)
+	obj.SetBlockInfo(s.BlockInfo)
+	obj.SetIsGood(true)
+	obj.SetIsAllGood(true)
+	obj.SetSyncInfo(nil)
+
+	obj.SetUpdateLogID(s.LogID)
+
+	return nil
+}
+
+func (s *BaseSyncInfo) FromOplog(status types.Status, oplog *BaseOplog, opData OpData) error {
+	s.LogID = oplog.ID
+	s.UpdateTS = oplog.UpdateTS
+	s.UpdaterID = oplog.CreatorID
+	s.Status = status
+
+	return nil
 }

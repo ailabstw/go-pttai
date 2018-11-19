@@ -52,9 +52,10 @@ func SetUpdateObjectWithOplog(
 ) {
 	obj.SetStatus(types.StatusAlive)
 
-	obj.SetLogID(oplog.ID)
+	obj.SetUpdateLogID(oplog.ID)
 	obj.SetUpdateTS(oplog.UpdateTS)
 	obj.SetUpdaterID(oplog.CreatorID)
+
 }
 
 func SetFailedObjectWithOplog(
@@ -145,8 +146,9 @@ func (obj *BaseObject) GetObjIdxIterWithObj(startID *types.PttID, listOrder pttd
 		return obj.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
 	}
 
-	o := &BaseObject{ID: startID}
-	o.SetDB(obj.db, obj.dbLock, obj.EntityID, obj.fullDBPrefix, obj.fullDBIdxPrefix)
+	o := obj.NewEmptyObj()
+	o.SetID(startID)
+
 	startKey, err := o.IdxKey()
 	if err != nil {
 		return nil, err
@@ -163,8 +165,7 @@ func (obj *BaseObject) GetObjIterWithObj(startID *types.PttID, listOrder pttdb.L
 		return obj.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
 	}
 
-	o := &BaseObject{}
-	o.SetDB(obj.db, obj.dbLock, obj.EntityID, obj.fullDBPrefix, obj.fullDBIdxPrefix)
+	o := obj.NewEmptyObj()
 	startKey, err := o.GetKey(startID, isLocked)
 	if err != nil {
 		return nil, err

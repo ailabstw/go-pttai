@@ -38,6 +38,8 @@ const (
 
 	StatusFailed
 
+	// Putting intenal-deleted after alive.
+	// Because it's the competition between update-object and pending-delete, which does not affect the new-object, and no dead-lock for pending-delete (referring to new-object).
 	StatusInternalDeleted
 
 	StatusInternalRevoke
@@ -116,9 +118,9 @@ const (
 	StatusClassFailed
 	StatusClassInternalDelete
 	StatusClassPendingDelete
-	StatusClassDeleted
 	StatusClassInternalMigrate
 	StatusClassPendingMigrate
+	StatusClassDeleted
 	StatusClassMigrated
 )
 
@@ -153,12 +155,6 @@ var statusToStatusClass = map[Status]StatusClass{
 	StatusPending:         StatusClassPendingAlive,
 	StatusSync:            StatusClassPendingAlive,
 
-	StatusToBeSynced: StatusClassAlive,
-
-	StatusAlive: StatusClassAlive,
-
-	StatusFailed: StatusClassFailed,
-
 	StatusInternalDeleted:  StatusClassInternalDelete,
 	StatusInternalRevoke:   StatusClassInternalDelete,
 	StatusInternalTransfer: StatusClassInternalMigrate, // transfer and migrate is treated the same as delete in pending mode.
@@ -168,6 +164,12 @@ var statusToStatusClass = map[Status]StatusClass{
 	StatusPendingRevoke:   StatusClassPendingDelete,
 	StatusPendingTransfer: StatusClassPendingMigrate,
 	StatusPendingMigrate:  StatusClassPendingMigrate,
+
+	StatusToBeSynced: StatusClassAlive,
+
+	StatusAlive: StatusClassAlive,
+
+	StatusFailed: StatusClassFailed,
 
 	StatusDeleted:     StatusClassDeleted,
 	StatusRevoked:     StatusClassDeleted,

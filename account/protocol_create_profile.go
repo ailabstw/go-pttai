@@ -32,6 +32,17 @@ func (spm *ServiceProtocolManager) CreateProfile() (*Profile, error) {
 		return nil, pkgservice.ErrInvalidEntity
 	}
 
+	pm := profile.PM().(*ProtocolManager)
+	err = pm.CreateUserName(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pm.CreateUserImg()
+	if err != nil {
+		return nil, err
+	}
+
 	return profile, nil
 }
 
@@ -48,5 +59,5 @@ func (spm *ServiceProtocolManager) NewProfile(data pkgservice.CreateData, ptt pk
 		return nil, nil, err
 	}
 
-	return profile, &UserOpCreateUser{}, nil
+	return profile, &UserOpCreateProfile{}, nil
 }

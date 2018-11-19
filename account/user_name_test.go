@@ -99,7 +99,7 @@ func TestUserName_Unmarshal(t *testing.T) {
 				t.Errorf("UserName.Unmarshal() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			u.SetDB(u.DB(), u.DBLock(), tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			u.SetDB(u.DB(), u.DBLock(), tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 
 			if !reflect.DeepEqual(u.BaseObject.ID, tt.want.BaseObject.ID) {
 				t.Errorf("UserName.Unmarshal() u = %v, tt.want %v", u, tt.want)
@@ -133,6 +133,7 @@ func TestUserName_Save(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
+			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 			if err := u.Save(true); (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -197,12 +198,12 @@ func TestUserName_Get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
-			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 			if err := u.Get(true); (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Get() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			tt.want.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			tt.want.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 			if !reflect.DeepEqual(u, tt.want) {
 				t.Errorf("UserName.Get() u = %v, want %v", u, tt.want)
 			}
@@ -246,13 +247,13 @@ func TestUserName_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := tt.u
-			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			u.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 			if err := u.Delete(true); (err != nil) != tt.wantErr {
 				t.Errorf("UserName.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			newU := &UserName{BaseObject: &pkgservice.BaseObject{ID: tt.args.id}}
-			newU.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix)
+			newU.SetDB(dbAccount, tLockMap, tEntityID, DBUserNamePrefix, DBUserNameIdxPrefix, nil, nil)
 			err := newU.Get(true)
 			if err != leveldb.ErrNotFound {
 				t.Errorf("UserName.Delete() unable to delete: id: %v newU: %v e: %v", tt.args.id, newU, err)

@@ -31,6 +31,7 @@ func (pm *BaseProtocolManager) DeleteObject(
 	opData OpData,
 
 	setLogDB func(oplog *BaseOplog),
+
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	indelete func(origObj Object, opData OpData, oplog *BaseOplog) (*BlockInfo, error),
 	setPendingDeleteSyncInfo func(origObj Object, status types.Status, oplog *BaseOplog) error,

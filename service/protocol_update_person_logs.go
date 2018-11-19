@@ -17,6 +17,7 @@
 package service
 
 import (
+	"bytes"
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
@@ -104,7 +105,7 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
 		if err != nil {
 			return err
 		}
@@ -203,7 +204,7 @@ func (pm *BaseProtocolManager) handlePendingUpdatePersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
 		}
 		origObj.SetSyncInfo(nil)
 	}
@@ -222,68 +223,49 @@ func (pm *BaseProtocolManager) handlePendingUpdatePersonLogCore(
 	return nil
 }
 
-func (pm *BaseProtocolManager) HandleFailedUpdatePersonLog(
-	oplog *BaseOplog,
-	origPerson Object,
-) error {
-	return pm.HandleFailedPersonLog(oplog, origPerson)
-}
-
 func SetPendingPersonSyncInfo(person Object, pendingStatus types.Status, oplog *BaseOplog) error {
 
 	syncInfo := NewEmptySyncPersonInfo()
-	syncInfo.InitWithOplog(oplog)
-	syncInfo.Status = pendingStatus
+	syncInfo.InitWithOplog(pendingStatus, oplog)
 
 	person.SetSyncInfo(syncInfo)
 
 	return nil
 }
 
-func (pm *BaseProtocolManager) HandleFailedPersonLog(
-	oplog *BaseOplog,
-	person Object,
-) error {
+func isReplaceOrigSyncPersonInfo(syncInfo SyncInfo, status types.Status, ts types.Timestamp, newLogID *types.PttID) bool {
 
-	objID := oplog.ObjID
-	person.SetID(objID)
-
-	// 1. lock
-	err := person.Lock()
-	if err != nil {
-		return err
-	}
-	defer person.Unlock()
-
-	// 2. get obj
-	err = person.GetByID(true)
-	if err != nil {
-		return err
+	if syncInfo == nil {
+		return true
 	}
 
-	// 3. check validity
-	origSyncInfo := person.GetSyncInfo()
-	if origSyncInfo == nil || !reflect.DeepEqual(origSyncInfo.GetLogID(), oplog.ID) {
-		return nil
+	statusClass := types.StatusToStatusClass(status)
+	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())
+
+	switch syncStatusClass {
+	case types.StatusClassInternalDelete:
+		syncStatusClass = types.StatusClassInternalPendingAlive
+	case types.StatusClassPendingDelete:
+		syncStatusClass = types.StatusClassPendingAlive
+	case types.StatusClassDeleted:
+		syncStatusClass = types.StatusClassAlive
 	}
 
-	if oplog.UpdateTS.IsLess(origSyncInfo.GetUpdateTS()) {
-		return nil
+	if statusClass < syncStatusClass {
+		return false
+	}
+	if statusClass > syncStatusClass {
+		return true
 	}
 
-	// 4. remove block/oplog
-	blockInfo := origSyncInfo.GetBlock()
-	err = pm.removeBlockAndInfoByBlock(blockInfo, nil, oplog, true, nil)
-	if err != nil {
-		return err
+	syncTS := syncInfo.GetUpdateTS()
+	if syncTS.IsLess(ts) {
+		return false
 	}
-	person.SetSyncInfo(nil)
-
-	// 5. obj-save
-	err = person.Save(true)
-	if err != nil {
-		return err
+	if ts.IsLess(syncTS) {
+		return true
 	}
 
-	return nil
+	origLogID := syncInfo.GetLogID()
+	return bytes.Compare(origLogID[:], newLogID[:]) > 0
 }

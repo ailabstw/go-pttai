@@ -203,10 +203,15 @@ func (b *Backend) GetUserName(idBytes []byte) (*BackendUserName, error) {
 }
 
 func (b *Backend) GetUserNameByIDs(idByteList [][]byte) (map[string]*BackendUserName, error) {
+
 	backendUserNames := make(map[string]*BackendUserName)
+
+	var u *BackendUserName
+	var err error
+
 	for _, idBytes := range idByteList {
 
-		u, err := b.GetUserName(idBytes)
+		u, err = b.GetUserName(idBytes)
 		if err != nil {
 			continue
 		}
@@ -227,23 +232,19 @@ func (b *Backend) GetRawUserImg(idBytes []byte) (*UserImg, error) {
 		return nil, err
 	}
 
-	u := &UserImg{}
-	err = u.Get(id, true)
-	if err != nil {
-		return nil, err
-	}
+	return b.GetRawUserImgByID(id)
 
-	return u, nil
+}
+
+func (b *Backend) GetRawUserImgByID(id *types.PttID) (*UserImg, error) {
+
+	spm := b.SPM().(*ServiceProtocolManager)
+	return spm.GetUserImgByID(id)
 }
 
 func (b *Backend) GetUserImg(idBytes []byte) (*BackendUserImg, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
-	if err != nil {
-		return nil, err
-	}
 
-	u := &UserImg{}
-	err = u.Get(id, true)
+	u, err := b.GetRawUserImg(idBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -253,19 +254,17 @@ func (b *Backend) GetUserImg(idBytes []byte) (*BackendUserImg, error) {
 
 func (b *Backend) GetUserImgByIDs(idByteList [][]byte) (map[string]*BackendUserImg, error) {
 	backendUserImgs := make(map[string]*BackendUserImg)
+
+	var u *BackendUserImg
+	var err error
 	for _, idBytes := range idByteList {
-		id, err := types.UnmarshalTextPttID(idBytes)
+
+		u, err = b.GetUserImg(idBytes)
 		if err != nil {
 			continue
 		}
 
-		u := &UserImg{}
-		err = u.Get(id, true)
-		if err != nil {
-			continue
-		}
-
-		backendUserImgs[string(idBytes)] = userImgToBackendUserImg(u)
+		backendUserImgs[string(idBytes)] = u
 	}
 
 	return backendUserImgs, nil

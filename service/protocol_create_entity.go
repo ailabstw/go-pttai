@@ -19,7 +19,6 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 func (spm *BaseServiceProtocolManager) CreateEntity(
@@ -31,9 +30,10 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	increate func(entity Entity, oplog *BaseOplog, opData OpData) error,
 
-	postcreateEntity func(entity Entity) error,
+	postcreate func(entity Entity) error,
 ) (Entity, error) {
 
+	// 2. new entity
 	myID := spm.Ptt().GetMyEntity().GetID()
 
 	entity, opData, err := newEntity(data, spm.Ptt(), spm.Service())
@@ -50,21 +50,21 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	entityID := entity.GetID()
 	ts := entity.GetUpdateTS()
 
-	// master
+	// 2.1. master
 	_, _, err = pm.AddMaster(myID, true)
 	log.Debug("CreateEntity: after AddMaster", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// member
+	// 2.2. member
 	_, _, err = pm.AddMember(myID, true)
 	log.Debug("CreateEntity: after AddMember", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// oplog
+	// 3. oplog
 	theOplog, err := newOplogWithTS(entityID, ts, createOp, opData)
 	log.Debug("CreateEntity: after newOplogWithTS", "e", err)
 	if err != nil {
@@ -73,7 +73,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	oplog := theOplog.GetBaseOplog()
 	oplog.dbPrefixID = entityID
 
-	// in-create
+	// 4. in-create
 	if increate != nil {
 		err = increate(entity, oplog, opData)
 		if err != nil {
@@ -81,51 +81,49 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 		}
 	}
 
-	// sign oplog
+	// 5. sign oplog
 	err = pm.SignOplog(oplog)
-	log.Debug("CreateEntity: after SignOplog", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// save entity
-	origStatus := entity.GetStatus()
-
+	// 6. save entity
 	err = pm.SaveNewEntityWithOplog(oplog, true, true)
-	log.Debug("CreateEntity: after SaveNewEntityWithOplog", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// add to entities
+	// 6.1. add to entities
 	err = spm.RegisterEntity(entityID, entity)
 	log.Debug("CreateEntity: after RegisterEntity", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// oplog save
+	// 7. oplog save
 	oplog.IsSync = true
 	err = oplog.Save(false)
 	if err != nil {
 		return nil, err
 	}
 
-	// op-key, required entity to be alive to generate op-key
+	// 8. postsave
+	// 8.1. op-key, required entity to be alive to generate op-key
 	err = pm.CreateOpKey()
 	log.Debug("CreateEntity: after CreateOpKeyInfo", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// entity start
+	// 8.2. entity start
 	err = entity.PrestartAndStart()
 	log.Debug("CreateEntity: after entity Prestart and start", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	err = pm.MaybePostcreateEntity(oplog, origStatus, true, postcreateEntity)
+	// 8.3. postcreate
+	err = pm.MaybePostcreateEntity(oplog, false, postcreate)
 
 	return entity, nil
 }
@@ -138,19 +136,18 @@ func (pm *BaseProtocolManager) SaveNewEntityWithOplog(oplog *BaseOplog, isLocked
 
 	entity := pm.Entity()
 
-	origStatus := entity.GetStatus()
-	status := oplog.ToStatus()
-
-	if !isForce && origStatus >= status && !(origStatus == types.StatusFailed && status == types.StatusAlive) {
-		return nil
+	var err error
+	if !isLocked {
+		err = entity.Lock()
+		if err != nil {
+			return err
+		}
+		defer entity.Unlock()
 	}
 
-	entity.SetStatus(status)
-	entity.SetUpdateTS(oplog.UpdateTS)
-	err := entity.Save(isLocked)
-	if err == pttdb.ErrInvalidUpdateTS {
-		return nil
-	}
+	EntitySetStatusWithOplog(entity, oplog.ToStatus(), oplog)
+
+	err = entity.Save(true)
 	if err != nil {
 		return err
 	}
@@ -160,11 +157,11 @@ func (pm *BaseProtocolManager) SaveNewEntityWithOplog(oplog *BaseOplog, isLocked
 
 func (pm *BaseProtocolManager) MaybePostcreateEntity(
 	oplog *BaseOplog,
-	origStatus types.Status,
-	isForce bool,
-	postcreateEntity func(entity Entity) error,
+
+	isForceNot bool,
+	postcreate func(entity Entity) error,
 ) error {
-	if postcreateEntity == nil {
+	if postcreate == nil {
 		return nil
 	}
 
@@ -172,14 +169,9 @@ func (pm *BaseProtocolManager) MaybePostcreateEntity(
 
 	status := oplog.ToStatus()
 
-	if !isForce && origStatus >= types.StatusAlive && origStatus != types.StatusFailed {
-		// orig-status is already alive
-		return nil
-	}
-
 	if status != types.StatusAlive {
 		return nil
 	}
 
-	return postcreateEntity(entity)
+	return postcreate(entity)
 }

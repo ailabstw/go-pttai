@@ -122,12 +122,12 @@ func (pm *BaseProtocolManager) NewOpKey(data CreateData) (Object, OpData, error)
 	entity := pm.Entity()
 	myEntity := pm.Ptt().GetMyEntity()
 
-	key_info, err := myEntity.NewOpKeyInfo(entity.GetID(), pm.DBOpKey(), pm.DBObjLock(), pm.dbOpKeyPrefix, pm.dbOpKeyIdxPrefix)
+	keyInfo, err := myEntity.NewOpKeyInfo(entity.GetID(), pm.SetOpKeyObjDB)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return key_info, &OpKeyOpCreateOpKey{}, nil
+	return keyInfo, &OpKeyOpCreateOpKey{}, nil
 }
 
 func (pm *BaseProtocolManager) postcreateOpKey(theOpKey Object, oplog *BaseOplog) error {

@@ -18,14 +18,11 @@ package service
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/crypto/bip32"
-	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 // KeyInfo
@@ -59,16 +56,16 @@ func NewJoinKeyInfo(entityID *types.PttID) (*KeyInfo, error) {
 		return nil, err
 	}
 
-	return newKeyInfo(extendedKey, nil, entityID, nil, nil, nil, nil, nil)
+	return newKeyInfo(extendedKey, nil, entityID, nil)
 }
 
-func NewOpKeyInfo(entityID *types.PttID, doerID *types.PttID, masterKey *ecdsa.PrivateKey, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error) {
+func NewOpKeyInfo(entityID *types.PttID, doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo, error) {
 	key, extra, err := deriveOpKey(masterKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return newKeyInfo(key, extra, entityID, doerID, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+	return newKeyInfo(key, extra, entityID, doerID)
 }
 
 func NewSignKeyInfo(doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo, error) {
@@ -76,10 +73,10 @@ func NewSignKeyInfo(doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo,
 	if err != nil {
 		return nil, err
 	}
-	return newKeyInfo(key, extra, nil, doerID, nil, nil, nil, nil)
+	return newKeyInfo(key, extra, nil, doerID)
 }
 
-func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *types.PttID, doerID *types.PttID, db *pttdb.LDBBatch, dbLock *types.LockMap, fullDBPrefix []byte, fullDBIdxPrefix []byte) (*KeyInfo, error) {
+func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *types.PttID, doerID *types.PttID) (*KeyInfo, error) {
 
 	key, err := extendedKey.ToPrivkey()
 	if err != nil {
@@ -101,7 +98,7 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 	id := keyInfoHashToID(&hash)
 
 	return &KeyInfo{
-		BaseObject: NewObject(id, ts, doerID, entityID, nil, types.StatusInvalid, db, dbLock, fullDBPrefix, fullDBIdxPrefix),
+		BaseObject: NewObject(id, ts, doerID, entityID, nil, types.StatusInvalid),
 
 		Hash:        &hash,
 		Key:         key,
@@ -168,162 +165,4 @@ func deriveKeyBIP32(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraI
 	}
 
 	return extendedKey, extra, nil
-}
-
-func (k *KeyInfo) Init(db *pttdb.LDBBatch, dbLock *types.LockMap, entityID *types.PttID, fullDBPrefix []byte, fullDBIdxPrefix []byte) error {
-	k.SetDB(db, dbLock, entityID, fullDBPrefix, fullDBIdxPrefix)
-	key, err := crypto.ToECDSA(k.KeyBytes)
-	if err != nil {
-		return err
-	}
-
-	pubKeyBytes := crypto.FromECDSAPub(&key.PublicKey)
-
-	k.Key = key
-	k.PubKeyBytes = pubKeyBytes
-
-	return nil
-}
-
-func (k *KeyInfo) Save(isLocked bool) error {
-	var err error
-
-	if !isLocked {
-		err = k.Lock()
-		if err != nil {
-			return err
-		}
-		defer k.Unlock()
-	}
-
-	if k.Key == nil && k.KeyBytes != nil {
-		k.Key, err = crypto.ToECDSA(k.KeyBytes)
-		if err != nil {
-			return err
-		}
-	}
-	key, err := k.MarshalKey()
-	if err != nil {
-		return err
-	}
-	marshaled, err := k.Marshal()
-	if err != nil {
-		return err
-	}
-
-	idxKey, err := k.IdxKey()
-	if err != nil {
-		return err
-	}
-
-	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: k.UpdateTS}
-
-	kvs := []*pttdb.KeyVal{
-		&pttdb.KeyVal{K: key, V: marshaled},
-	}
-
-	log.Debug("KeyInfo: to Save", "idxKey", idxKey)
-
-	_, err = k.db.ForcePutAll(idxKey, idx, kvs)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (k *KeyInfo) NewEmptyObj() Object {
-	return &KeyInfo{BaseObject: &BaseObject{EntityID: k.EntityID, db: k.db, dbLock: k.dbLock, fullDBPrefix: k.fullDBPrefix}}
-
-}
-
-func (k *KeyInfo) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {
-	newK := k.NewEmptyObj()
-	err := newK.GetByID(isLocked)
-	if err != nil {
-		return nil, err
-	}
-	return newK, nil
-}
-
-func (k *KeyInfo) SetUpdateTS(ts types.Timestamp) {
-	k.UpdateTS = ts
-}
-
-func (k *KeyInfo) GetUpdateTS() types.Timestamp {
-	return k.UpdateTS
-}
-
-func (k *KeyInfo) GetByID(isLocked bool) error {
-	var err error
-
-	val, err := k.GetValueByID(isLocked)
-	if err != nil {
-		return err
-	}
-
-	return k.Unmarshal(val)
-}
-
-func (k *KeyInfo) MarshalKey() ([]byte, error) {
-	marshalTimestamp, err := k.UpdateTS.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	return common.Concat([][]byte{k.fullDBPrefix, marshalTimestamp, k.ID[:]})
-}
-
-func (k *KeyInfo) Marshal() ([]byte, error) {
-	return json.Marshal(k)
-}
-
-func (k *KeyInfo) Unmarshal(data []byte) error {
-	err := json.Unmarshal(data, k)
-	if err != nil {
-		return err
-	}
-
-	if k.KeyBytes != nil {
-		k.Key, err = crypto.ToECDSA(k.KeyBytes)
-		if err != nil {
-			return err
-		}
-
-		k.PubKeyBytes = crypto.FromECDSAPub(&k.Key.PublicKey)
-	}
-
-	return nil
-}
-
-/**********
- * Block Info
- **********/
-
-/*
-GetBlockInfo implements Object method
-*/
-func (k *KeyInfo) GetBlockInfo() *BlockInfo {
-	return nil
-}
-
-/**********
- * Sync Info
- **********/
-
-func (k *KeyInfo) GetSyncInfo() SyncInfo {
-	if k.SyncInfo == nil {
-		return nil
-	}
-	return k.SyncInfo
-}
-
-func (k *KeyInfo) SetSyncInfo(theSyncInfo SyncInfo) error {
-	syncInfo, ok := theSyncInfo.(*BaseSyncInfo)
-	if !ok {
-		return ErrInvalidSyncInfo
-	}
-
-	k.SyncInfo = syncInfo
-
-	return nil
 }

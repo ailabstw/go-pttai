@@ -66,9 +66,8 @@ func (pm *BaseProtocolManager) NewMaster(id *types.PttID) (Object, OpData, error
 		return nil, nil, err
 	}
 
-	log.Debug("NewMaster: to NewMaster", "ts", ts)
-	master := NewMaster(id, ts, myID, entity.GetID(), nil, types.StatusInternalPending, pm.DB(), pm.DBObjLock(), pm.dbMasterPrefix, pm.dbMasterIdxPrefix)
-	log.Debug("NewMaster: after NewMaster", "master", master)
+	master := NewMaster(id, ts, myID, entity.GetID(), nil, types.StatusInit)
+	pm.SetMasterObjDB(master)
 
 	return master, &MasterOpCreateMaster{}, nil
 }
@@ -78,6 +77,8 @@ func (pm *BaseProtocolManager) postaddMaster(theMaster Object, oplog *BaseOplog)
 	if !ok {
 		return ErrInvalidData
 	}
+
+	log.Debug("postaddMaster: start")
 
 	err := pm.SetNewestMasterLogID(oplog.ID)
 	if err != nil {

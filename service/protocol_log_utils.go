@@ -20,53 +20,65 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-func (pm *BaseProtocolManager) removeBlockAndInfoBySyncInfo(
+func (pm *BaseProtocolManager) removeBlockAndMediaInfoBySyncInfo(
 	syncInfo SyncInfo,
+
 	info ProcessInfo,
 	oplog *BaseOplog,
 	isRetainValid bool,
 
-	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setLogDB func(oplog *BaseOplog),
 ) error {
 
 	// remove oplog
 	syncLogID := syncInfo.GetLogID()
-	_, err := pm.removeNonSyncOplog(setLogDB, syncLogID, isRetainValid, false)
+	_, err := pm.removeNonSyncOplog(setLogDB, syncLogID, isRetainValid, oplog.UpdateTS, false)
 	if err != nil {
 		return err
 	}
 
 	// remove block
-	blockInfo := syncInfo.GetBlock()
-	return pm.removeBlockAndInfoByBlock(blockInfo, info, oplog, true, removeInfoByBlockInfo)
+	blockInfo := syncInfo.GetBlockInfo()
+	return pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, info, oplog, true, removeMediaInfoByBlockInfo)
 }
 
-func (pm *BaseProtocolManager) removeBlockAndInfoByBlock(
+func (pm *BaseProtocolManager) removeBlockAndMediaInfoByBlockInfo(
 	blockInfo *BlockInfo,
+
 	info ProcessInfo,
 	oplog *BaseOplog,
+
 	isRemoveDB bool,
 
-	removeInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
+	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 ) error {
 
 	if blockInfo == nil {
 		return nil
 	}
 
-	if removeInfoByBlockInfo != nil {
-		removeInfoByBlockInfo(blockInfo, info, oplog)
+	if info != nil && removeMediaInfoByBlockInfo != nil {
+		removeMediaInfoByBlockInfo(blockInfo, info, oplog)
 	}
 
 	if isRemoveDB {
-		return blockInfo.Remove()
+		pm.SetBlockInfoDB(blockInfo, oplog.ObjID)
+		return blockInfo.Remove(false)
 	}
 
 	return nil
 }
 
-func (pm *BaseProtocolManager) removeNonSyncOplog(setDB func(oplog *BaseOplog), logID *types.PttID, isRetainValid bool, isLocked bool) (*BaseOplog, error) {
+func (pm *BaseProtocolManager) removeNonSyncOplog(
+	setDB func(oplog *BaseOplog),
+	logID *types.PttID,
+
+	isRetainValid bool,
+	newUpdateTS types.Timestamp,
+
+	isLocked bool,
+) (*BaseOplog, error) {
 
 	oplog := &BaseOplog{}
 	setDB(oplog)
@@ -90,7 +102,7 @@ func (pm *BaseProtocolManager) removeNonSyncOplog(setDB func(oplog *BaseOplog), 
 		return nil, nil
 	}
 
-	if isRetainValid && status == types.StatusAlive {
+	if isRetainValid && status == types.StatusAlive && oplog.UpdateTS.IsLess(newUpdateTS) {
 		oplog.IsSync = true
 		err = oplog.Save(true)
 		return oplog, nil

@@ -48,15 +48,9 @@ func NewUserNode(
 
 	status types.Status,
 
-	db *pttdb.LDBBatch,
-	dbLock *types.LockMap,
-	fullDBPrefix []byte,
-	fullDBIdxPrefix []byte,
-
 	userID *types.PttID,
 	nodeID *discover.NodeID,
 
-	fullDBIdx2Prefix []byte,
 ) (*UserNode, error) {
 
 	key, err := nodeID.Pubkey()
@@ -69,7 +63,7 @@ func NewUserNode(
 		return nil, err
 	}
 
-	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status, db, dbLock, fullDBPrefix, fullDBIdxPrefix)
+	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &UserNode{
 		BaseObject: o,
@@ -77,8 +71,6 @@ func NewUserNode(
 
 		UserID: userID,
 		NodeID: nodeID,
-
-		fullDBIdx2Prefix: fullDBIdx2Prefix,
 	}, nil
 }
 
@@ -113,7 +105,7 @@ func AliveUserNodes(typedObjs []*UserNode) []*UserNode {
 }
 
 func (pm *ProtocolManager) SetUserNodeDB(u *UserNode) {
-	u.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbUserNodePrefix, pm.dbUserNodeIdxPrefix)
+	u.SetDB(pm.DB(), pm.DBObjLock(), pm.Entity().GetID(), pm.dbUserNodePrefix, pm.dbUserNodeIdxPrefix, nil, nil)
 	u.fullDBIdx2Prefix = pm.dbUserNodeIdx2Prefix
 }
 
@@ -154,6 +146,8 @@ func (u *UserNode) Save(isLocked bool) error {
 		&pttdb.KeyVal{K: idx2Key, V: key},
 	}
 
+	log.Debug("UserNode.Save: to ForcePutAll", "ID", u.ID)
+
 	_, err = u.DB().ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
@@ -171,6 +165,7 @@ func (u *UserNode) NewEmptyObj() pkgservice.Object {
 
 func (u *UserNode) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
 	newU := u.NewEmptyObj()
+	newU.SetID(id)
 	err := newU.GetByID(isLocked)
 	if err != nil {
 		return nil, err

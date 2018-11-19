@@ -17,6 +17,7 @@
 package account
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -24,26 +25,29 @@ import (
 const (
 	UserOpTypeInvalid pkgservice.OpType = iota
 	UserOpTypeCreateProfile
-	UserOpTypeSetUserName
-	UserOpTypeSetUserImg
+	UserOpTypeDeleteProfile
+	UserOpTypeTransferProfile
+
 	UserOpTypeAddUserNode
 	UserOpTypeRemoveUserNode
 
-	UserOpTypeDeleteUser
-	UserOpTypeLeaveUser
+	UserOpTypeCreateUserName
+	UserOpTypeUpdateUserName
+
+	UserOpTypeCreateUserImg
+	UserOpTypeUpdateUserImg
 
 	NUserOpType
 )
 
-type UserOpCreateUser struct {
+type UserOpCreateProfile struct {
 }
 
-type UserOpSetUserName struct {
-	Hash []byte `json:"H"`
+type UserOpDeleteProfile struct {
 }
 
-type UserOpSetUserImg struct {
-	Hash []byte `json:"H"`
+type UserOpTransferProfile struct {
+	ToID *types.PttID `json:"t"`
 }
 
 type UserOpAddUserNode struct {
@@ -54,8 +58,17 @@ type UserOpRemoveUserNode struct {
 	NodeID *discover.NodeID `json:"n"`
 }
 
-type UserOpDeleteUser struct {
+type UserOpCreateUserName struct {
+	Hash []byte `json:"H"`
 }
 
-type UserOpLeaveUser struct {
+type UserOpUpdateUserName struct {
+	Hash []byte `json:"H"`
+}
+
+type UserOpCreateUserImg struct {
+}
+
+type UserOpUpdateUserImg struct {
+	Hash []byte `json:"H"`
 }

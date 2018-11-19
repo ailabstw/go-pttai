@@ -44,11 +44,11 @@ func (pm *ProtocolManager) GetPendingUserOplogs() ([]*UserOplog, []*UserOplog, e
 		return nil, nil, err
 	}
 
-	opKeyLogs := OplogsToUserOplogs(oplogs)
+	typedLogs := OplogsToUserOplogs(oplogs)
 
 	failedUserLogs := OplogsToUserOplogs(failedLogs)
 
-	return opKeyLogs, failedUserLogs, nil
+	return typedLogs, failedUserLogs, nil
 }
 
 /**********

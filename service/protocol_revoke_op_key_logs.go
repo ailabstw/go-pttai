@@ -25,9 +25,18 @@ func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *Proc
 	pm.SetOpKeyObjDB(opKey)
 
 	toBroadcastLogs, err := pm.HandleDeleteObjectLog(
-		oplog, info,
-		opKey, nil,
-		pm.SetOpKeyDB, nil, pm.postdeleteOpKey, pm.updateDeleteOpKeyInfo)
+		oplog,
+		info,
+
+		opKey,
+		nil,
+
+		pm.SetOpKeyDB,
+
+		nil,
+		pm.postdeleteOpKey,
+		pm.updateDeleteOpKeyInfo,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +50,18 @@ func (pm *BaseProtocolManager) handlePendingRevokeOpKeyLog(oplog *BaseOplog, inf
 	pm.SetOpKeyObjDB(opKey)
 
 	return pm.HandlePendingDeleteObjectLog(
-		oplog, info, opKey, nil, pm.SetOpKeyDB, nil, pm.setPendingDeleteOpKeySyncInfo, pm.updateDeleteOpKeyInfo)
+		oplog,
+		info,
+
+		opKey,
+		nil,
+
+		pm.SetOpKeyDB,
+
+		nil,
+		pm.setPendingDeleteOpKeySyncInfo,
+		pm.updateDeleteOpKeyInfo,
+	)
 }
 
 func (pm *BaseProtocolManager) setNewestRevokeOpKeyLog(oplog *BaseOplog) (types.Bool, error) {

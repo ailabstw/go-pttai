@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"io"
 	mrand "math/rand"
+	"reflect"
 	"sort"
 
 	"github.com/ailabstw/go-pttai/common"
@@ -49,7 +50,7 @@ func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, e
 	return bytesWithSalt, hash, sig, keyInfo.PubKeyBytes, nil
 }
 
-func VerifyData(bytesWithSalt []byte, sig []byte, pubKeyBytes []byte, doerID *types.PttID, extra *KeyExtraInfo) error {
+func VerifyData(bytesWithSalt []byte, expectedHash []byte, sig []byte, pubKeyBytes []byte, doerID *types.PttID, extra *KeyExtraInfo) error {
 
 	isValidKey := verifyDataCheckKey(pubKeyBytes, doerID, extra)
 	if !isValidKey {
@@ -57,6 +58,9 @@ func VerifyData(bytesWithSalt []byte, sig []byte, pubKeyBytes []byte, doerID *ty
 	}
 
 	hash := crypto.Keccak256(bytesWithSalt)
+	if !reflect.DeepEqual(hash, expectedHash) {
+		return ErrInvalidData
+	}
 
 	isGood := crypto.VerifySignature(pubKeyBytes, hash, sig[:64])
 	if !isGood {

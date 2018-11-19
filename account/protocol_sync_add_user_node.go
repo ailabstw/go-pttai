@@ -17,7 +17,6 @@
 package account
 
 import (
-	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -28,22 +27,20 @@ func (pm *ProtocolManager) SyncAddUserNode(oplogs []*pkgservice.BaseOplog, peer 
 	opData := &UserOpAddUserNode{}
 
 	var err error
-	var userNode *UserNode
-	userNodes := make([]*UserNode, 0, len(oplogs))
+	var obj *UserNode
+	objs := make([]*UserNode, 0, len(oplogs))
 	for _, oplog := range oplogs {
 		err = oplog.GetData(opData)
 		if err != nil {
 			continue
 		}
 
-		userNode = NewEmptyUserNode()
-		pkgservice.NewObjectWithOplog(userNode, oplog)
-		userNode.UpdateTS = oplog.UpdateTS
-		userNode.Status = types.StatusAlive
-		userNode.UserID = userID
-		userNode.NodeID = opData.NodeID
-		userNodes = append(userNodes, userNode)
+		obj = NewEmptyUserNode()
+		pkgservice.NewObjectWithOplog(obj, oplog)
+		obj.UserID = userID
+		obj.NodeID = opData.NodeID
+		objs = append(objs, obj)
 	}
 
-	return pm.HandleSyncAddUserNodeAck(userNodes, peer)
+	return pm.HandleSyncAddUserNodeAck(objs, peer)
 }

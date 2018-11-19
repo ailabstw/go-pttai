@@ -214,6 +214,7 @@ func (o *BaseOplog) Save(isLocked bool) error {
 		return err
 	}
 
+	log.Debug("Oplog.Save: to ForcePutAll", "idxKey", idxKey, "key", kvs[0].K)
 	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
@@ -830,7 +831,7 @@ func (o *BaseOplog) Verify() error {
 	}
 	bytesWithSalt := append(marshaled, origSalt[:]...)
 
-	err = VerifyData(bytesWithSalt, origSig, origPubBytes, o.CreatorID, origKeyExtra)
+	err = VerifyData(bytesWithSalt, origCreatorHash, origSig, origPubBytes, o.CreatorID, origKeyExtra)
 	if err != nil {
 		log.Warn("Verify (sign)", "bytesWithSalt", bytesWithSalt, "origSig", origSig, "origPubBytes", origPubBytes)
 		return err
@@ -852,7 +853,7 @@ func (o *BaseOplog) Verify() error {
 			}
 			bytesWithSalt = append(marshaled, masterSign.Salt[:]...)
 
-			err = VerifyData(bytesWithSalt, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
+			err = VerifyData(bytesWithSalt, masterSign.Hash, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
 			if err != nil {
 				log.Warn("Verify (master-sign)", "masterSign", masterSign)
 				return err
@@ -869,7 +870,7 @@ func (o *BaseOplog) Verify() error {
 			}
 			bytesWithSalt = append(marshaled, internalSign.Salt[:]...)
 
-			err = VerifyData(bytesWithSalt, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
+			err = VerifyData(bytesWithSalt, internalSign.Hash, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
 			if err != nil {
 				log.Warn("Verify (internal-sign)", "internalSign", internalSign)
 				return err

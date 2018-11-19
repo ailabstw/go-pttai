@@ -86,6 +86,10 @@ func (k *ExtendedKey) Child(idx uint32) (*ExtendedKey, error) {
 		ilNum.Mod(ilNum, N)
 		childKey = ilNum.Bytes()
 
+		if len(childKey)*8 != crypto.BitSize { // XXX We need valid length
+			return nil, ErrInvalidChild
+		}
+
 		isPrivate = true
 	} else {
 		ilx, ily := crypto.S256().ScalarBaseMult(il)

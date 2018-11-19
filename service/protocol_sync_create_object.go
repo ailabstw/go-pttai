@@ -21,14 +21,15 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
-type SyncCreateObject struct {
+type SyncObject struct {
 	IDs []*SyncID
 }
 
-func (pm *BaseProtocolManager) SyncCreateObject(op OpType, syncIDs []*SyncID, peer *PttPeer) error {
-	err := pm.SendDataToPeer(op, &SyncCreateObject{IDs: syncIDs}, peer)
+func (pm *BaseProtocolManager) SyncObject(op OpType, syncIDs []*SyncID, peer *PttPeer) error {
+	err := pm.SendDataToPeer(op, &SyncObject{IDs: syncIDs}, peer)
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,8 @@ func (pm *BaseProtocolManager) HandleSyncCreateObject(
 	obj Object,
 	syncAckMsg OpType,
 ) error {
-	data := &SyncCreateObject{}
+
+	data := &SyncObject{}
 	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
@@ -49,6 +51,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObject(
 
 	lenObjs := len(data.IDs)
 	objs := make([]Object, 0, lenObjs)
+	log.Debug("HandleSyncCreateObject: start")
 	for _, syncID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncID.ID, false)
 		if err != nil {
@@ -72,5 +75,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObject(
 		objs = append(objs, newObj)
 	}
 
-	return pm.SyncCreateObjectAck(objs, syncAckMsg, peer)
+	log.Debug("HandleSyncCreateObject: to SyncObjectAck", "objs", objs)
+
+	return pm.SyncObjectAck(objs, syncAckMsg, peer)
 }

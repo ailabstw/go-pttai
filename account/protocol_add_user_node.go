@@ -29,12 +29,14 @@ func (pm *ProtocolManager) AddUserNode(nodeID *discover.NodeID) error {
 	// 1. validate
 	myID := pm.Ptt().GetMyEntity().GetID()
 	if !pm.IsMaster(myID, false) {
+		log.Error("AddUserNode: not Master", "myID", myID, "entity", pm.Entity().GetID())
 		return types.ErrInvalidID
 	}
 
 	// 2. add object
 	data := &UserOpAddUserNode{NodeID: nodeID}
 
+	log.Debug("AddUserNode: to CreateObject", "entity", pm.Entity().GetID())
 	_, err := pm.CreateObject(
 		data, UserOpTypeAddUserNode,
 		pm.NewUserNode, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, pm.postcreateUserNode)
@@ -56,7 +58,7 @@ func (pm *ProtocolManager) NewUserNode(theData pkgservice.CreateData) (pkgservic
 
 	entity := pm.Entity().(*Profile)
 
-	userNode, err := NewUserNode(ts, entity.MyID, entity.ID, nil, types.StatusInit, nil, nil, nil, nil, entity.MyID, data.NodeID, nil)
+	userNode, err := NewUserNode(ts, entity.MyID, entity.ID, nil, types.StatusInit, entity.MyID, data.NodeID)
 	if err != nil {
 		return nil, nil, err
 	}

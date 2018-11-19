@@ -122,18 +122,6 @@ func (pm *BaseProtocolManager) TransferPerson(
 	return nil
 }
 
-func SetPendingTransferPersonSyncInfo(person Object, toID *types.PttID, oplog *BaseOplog) error {
-
-	syncInfo := NewEmptySyncPersonInfo()
-	syncInfo.InitWithOplog(oplog)
-	syncInfo.Status = types.StatusPendingTransfer
-	syncInfo.TransferToID = toID
-
-	person.SetSyncInfo(syncInfo)
-
-	return nil
-}
-
 func (pm *BaseProtocolManager) posttransferPerson(
 	toID *types.PttID,
 	oplog *BaseOplog,
@@ -203,7 +191,7 @@ func (pm *BaseProtocolManager) posttransferCreatePerson(
 	id *types.PttID,
 	oplog *BaseOplog,
 	newPerson func(id *types.PttID) (Object, OpData, error),
-	postcreatePerson func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
 
 	log.Debug("posttransferNewPerson: start", "entity", pm.Entity().GetID(), "id", id)
@@ -215,7 +203,7 @@ func (pm *BaseProtocolManager) posttransferCreatePerson(
 	}
 
 	// save object
-	err = pm.saveNewObjectWithOplog(person, oplog, true, true, postcreatePerson)
+	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreate)
 	if err != nil {
 		return nil, err
 	}

@@ -73,7 +73,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	if origSyncInfo != nil {
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, true, nil, setLogDB)
+			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, true, nil, setLogDB)
 			if err != nil {
 				return nil, err
 			}
@@ -152,7 +152,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 				return nil, ErrNewerOplog
 			}
 
-			pm.removeBlockAndInfoBySyncInfo(origSyncInfo, info, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, false, nil, setLogDB)
 		}
 		entity.SetSyncInfo(nil)
 	}
@@ -168,16 +168,6 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 	updateDeleteInfo(oplog, info)
 
 	return nil, nil
-}
-
-/**********
- * Set Newest DeleteObjectLog
- **********/
-
-func (pm *BaseProtocolManager) SetNewestDeleteEntityLog(
-	oplog *BaseOplog,
-) (types.Bool, error) {
-	return false, nil
 }
 
 /**********

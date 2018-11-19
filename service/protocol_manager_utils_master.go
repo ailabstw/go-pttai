@@ -227,7 +227,7 @@ func (pm *BaseProtocolManager) loadMasters() ([]*Master, error) {
 	pm.SetMasterObjDB(master)
 	entity := pm.Entity()
 	for _, key := range toRemoveKeys {
-		err = master.DeleteKey(key)
+		err = master.DeleteByKey(key, true)
 		if err != nil {
 			log.Error("loadMasters: unable to delete key", "entity", entity.Name(), "e", err)
 		}

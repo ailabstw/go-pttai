@@ -78,6 +78,14 @@ var (
 	ErrInvalidSyncInfo = errors.New("invalid sync info")
 
 	ErrTooManyMasters = errors.New("too many masters")
+
+	ErrInvalidBlock = errors.New("invalid block")
+
+	ErrAlreadyPending = errors.New("already pending")
+
+	ErrNotAlive = errors.New("not alive")
+
+	ErrInvalidFunc = errors.New("invalid function")
 )
 
 func ErrResp(code error, format string, v ...interface{}) error {

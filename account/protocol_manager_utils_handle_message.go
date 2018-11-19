@@ -49,6 +49,26 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case AddPendingUserOplogsMsg:
 		err = pm.HandleAddPendingUserOplogs(dataBytes, peer)
 
+	// user-name
+	case SyncCreateUserNameMsg:
+		err = pm.HandleSyncCreateUserName(dataBytes, peer, SyncCreateUserNameAckMsg)
+	case SyncCreateUserNameAckMsg:
+		err = pm.HandleSyncCreateUserNameAck(dataBytes, peer)
+	case SyncUpdateUserNameMsg:
+		err = pm.HandleSyncUpdateUserName(dataBytes, peer, SyncUpdateUserNameAckMsg)
+	case SyncUpdateUserNameAckMsg:
+		err = pm.HandleSyncUpdateUserNameAck(dataBytes, peer)
+
+	// user-img
+	case SyncCreateUserImgMsg:
+		err = pm.HandleSyncCreateUserImg(dataBytes, peer, SyncCreateUserImgAckMsg)
+	case SyncCreateUserImgAckMsg:
+		err = pm.HandleSyncCreateUserImgAck(dataBytes, peer)
+	case SyncUpdateUserImgMsg:
+		err = pm.HandleSyncUpdateUserImg(dataBytes, peer, SyncUpdateUserImgAckMsg)
+	case SyncUpdateUserImgAckMsg:
+		err = pm.HandleSyncUpdateUserImgAck(dataBytes, peer)
+
 	}
 	return nil
 }

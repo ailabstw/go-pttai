@@ -55,7 +55,7 @@ func (pm *ProtocolManager) setPendingDeleteFriendSyncInfo(theEntity pkgservice.E
 	}
 
 	syncInfo := &pkgservice.BaseSyncInfo{}
-	syncInfo.InitWithDeleteOplog(status, oplog)
+	syncInfo.InitWithOplog(status, oplog)
 
 	entity.SetSyncInfo(syncInfo)
 

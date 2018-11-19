@@ -35,3 +35,82 @@ func (b *Bool) UnmarshalJSON(theByte []byte) error {
 
 	return nil
 }
+
+type BoolDoubleArray [][]Bool
+
+func (bdary BoolDoubleArray) MarshalJSON() ([]byte, error) {
+	bary2 := [][]Bool(bdary)
+
+	n := len(bary2)
+	if n == 0 {
+		return nil, nil
+	}
+
+	m := len(bary2[0])
+	if m == 0 {
+		return nil, nil
+	}
+
+	out := make([]byte, m*n+1)
+
+	out[0] = uint8(m + 48) // XXX hack for the BoolDoubleArry in that m can not be more than 10 (We just need 2 for our setting for now, m can be extended to 62 based on this setup.)
+
+	idx := 1
+	for _, bary := range bary2 {
+		for _, b := range bary {
+			if b {
+				out[idx] = 49
+			} else {
+				out[idx] = 48
+			}
+
+			idx++
+		}
+	}
+
+	return out, nil
+}
+
+func (bdary *BoolDoubleArray) UnmarshalJSON(theBytes []byte) error {
+	lenTheBytes := len(theBytes)
+	if lenTheBytes < 1 {
+		return ErrNotBoolDAry
+	}
+
+	m := int(theBytes[0]) - 48
+	if m < 0 {
+		return ErrNotBoolDAry
+	}
+	if m > 10 {
+		return ErrNotBoolDAry
+	}
+
+	n := (lenTheBytes - 1) / m
+
+	if n == 0 || m == 0 {
+		return nil
+	}
+
+	idx := 1
+	pBytes := theBytes[idx:]
+
+	newBDAry := make([][]Bool, n)
+	theBool := false
+	for i := 0; i < n; i++ {
+		newBDAry[i] = make([]Bool, m)
+		for j := 0; j < m; j++ {
+			if pBytes[0] == 48 {
+				theBool = false
+			} else {
+				theBool = true
+			}
+			newBDAry[i][j] = Bool(theBool)
+
+			pBytes = pBytes[1:]
+		}
+	}
+
+	*bdary = BoolDoubleArray(newBDAry)
+
+	return nil
+}

@@ -30,16 +30,16 @@ type CreatePerson struct {
 
 func (pm *BaseProtocolManager) AddPerson(
 	id *types.PttID,
-	createOp OpType,
+	addOp OpType,
 	isForce bool,
 
 	origPerson Object, // for update
-	origOpData OpData, // for update
+	opData OpData, // for update
 
 	newPerson func(id *types.PttID) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
-	postcreatePerson func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 
 	setLogDB func(oplog *BaseOplog), // for update
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error), // for update
@@ -49,7 +49,7 @@ func (pm *BaseProtocolManager) AddPerson(
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entity := pm.Entity()
 
-	// validate
+	// 1. validate
 	if !isForce {
 		if entity.GetStatus() != types.StatusAlive {
 			return nil, nil, types.ErrInvalidStatus
@@ -60,7 +60,7 @@ func (pm *BaseProtocolManager) AddPerson(
 		}
 	}
 
-	// lock orig-person
+	// 1.5. lock orig-person
 	origPerson.SetID(id)
 	err := origPerson.Lock()
 	if err != nil {
@@ -73,9 +73,9 @@ func (pm *BaseProtocolManager) AddPerson(
 	log.Debug("AddPerson: after get origPerson", "entity", entity.GetID(), "creatorID", entity.GetCreatorID(), "id", id, "e", err, "origPerson", origPerson)
 	if err == nil {
 		return pm.UpdatePerson(
-			id, createOp, isForce,
-			origPerson, origOpData,
-			setLogDB, newOplog, broadcastLog, postcreatePerson,
+			id, addOp, isForce,
+			origPerson, opData,
+			setLogDB, newOplog, broadcastLog, postcreate,
 		)
 	}
 	if err != leveldb.ErrNotFound {
@@ -83,7 +83,7 @@ func (pm *BaseProtocolManager) AddPerson(
 	}
 
 	return pm.CreatePerson(
-		id, createOp, isForce,
-		newPerson, newOplogWithTS, broadcastLog, postcreatePerson,
+		id, addOp, isForce,
+		newPerson, newOplogWithTS, broadcastLog, postcreate,
 	)
 }

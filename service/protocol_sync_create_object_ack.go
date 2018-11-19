@@ -23,16 +23,16 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-type SyncCreateObjectAck struct {
+type SyncObjectAck struct {
 	Objs []Object `json:"o"`
 }
 
-func (pm *BaseProtocolManager) SyncCreateObjectAck(objs []Object, syncAckMsg OpType, peer *PttPeer) error {
+func (pm *BaseProtocolManager) SyncObjectAck(objs []Object, syncAckMsg OpType, peer *PttPeer) error {
 	if len(objs) == 0 {
 		return nil
 	}
 
-	data := &SyncCreateObjectAck{
+	data := &SyncObjectAck{
 		Objs: objs,
 	}
 
@@ -57,14 +57,15 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	setLogDB func(oplog *BaseOplog),
 	updateCreateObject func(toObj Object, fromObj Object) error,
-	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 ) error {
 
 	// oplog
 	objID := obj.GetID()
+	logID := obj.GetLogID()
 
-	oplog := &BaseOplog{ID: objID}
+	oplog := &BaseOplog{ID: logID}
 	setLogDB(oplog)
 
 	err := oplog.Lock()
@@ -73,7 +74,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	}
 	defer oplog.Unlock()
 
-	// the temporal-oplog may be deleted.
+	// the temporal-oplog may be already deleted.
 	err = oplog.Get(obj.GetLogID(), true)
 	if err != nil {
 		return nil
@@ -93,38 +94,72 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	}
 
 	// validate
-	log.Debug("HandleSyncCreateObjectAck: to check IsSync", "oplog", oplog)
 	if oplog.IsSync { // already synced
 		return nil
 	}
 
-	log.Debug("HandleSyncCreateObjectAck: to check oplog", "objLogID", origObj.GetLogID(), "oplogID", oplog.ID, "status", origObj.GetStatus())
+	log.Debug("HandleSyncCreateObjAck: to check isGood", "objID", objID, "entity", pm.Entity().GetID(), "isGood", origObj.GetIsGood())
+
+	if origObj.GetIsGood() {
+		return nil
+	}
+
 	if origObj.GetUpdateLogID() == nil && reflect.DeepEqual(origObj.GetLogID(), oplog.ID) {
-		if origObj.GetStatus() == types.StatusInternalSync {
+		// still in sync-block
+		if updateCreateObject != nil {
 			err = updateCreateObject(origObj, obj)
 			if err != nil {
 				return err
 			}
 		}
-		err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
+		origObj.SetIsGood(true)
+		isAllGood := origObj.CheckIsAllGood()
+
+		log.Debug("HandleSyncCreateObjAck: after check isAllGood", "objID", objID, "entity", pm.Entity().GetID(), "isAllGood", isAllGood)
+
+		if !isAllGood {
+			return origObj.Save(true)
+		}
+
+		// The oplog may be synced after saveNewObjectWithOplog.
+		err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreate)
+		log.Debug("HandleSyncCreateObjAck: after saveNewObjectWithOplog", "objID", objID, "entity", pm.Entity().GetID(), "e", err)
+
 		if err != nil {
 			return err
 		}
+
+	} else {
+		oplog.IsSync = true
 	}
 
-	// oplog-save
-	origStatus := origObj.GetStatus()
+	return pm.syncCreateAckSaveOplog(oplog, origObj, broadcastLog, postcreate)
 
-	pm.SetOplogIsSync(oplog, true, broadcastLog)
-	err = oplog.Save(true)
+}
+
+func (pm *BaseProtocolManager) syncCreateAckSaveOplog(
+	oplog *BaseOplog,
+	obj Object,
+
+	broadcastLog func(oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
+) error {
+	// oplog-save
+	if oplog.IsSync {
+		pm.SetOplogIsSync(oplog, true, broadcastLog)
+	}
+	err := oplog.Save(true)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("HandleSyncCreateObjectAck: after SetOplogIsSync", "origStatus", origStatus, "oplogStatus", oplog.ToStatus())
+	if !oplog.IsSync {
+		return nil
+	}
 
-	// obj becomes alive after set-oplog
-	if origStatus >= types.StatusAlive && origStatus != types.StatusFailed {
+	log.Debug("syncCreateAckSaveOplog: to check status", "obj.Status", obj.GetStatus(), "oplog.Status", oplog.ToStatus(), "obj", obj.GetID())
+
+	if obj.GetStatus() == types.StatusAlive {
 		return nil
 	}
 
@@ -132,10 +167,5 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		return nil
 	}
 
-	err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreateObject)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return pm.saveNewObjectWithOplog(obj, oplog, true, false, postcreate)
 }

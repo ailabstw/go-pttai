@@ -69,7 +69,7 @@ const (
 	RenewJoinKeySeconds    = time.Duration(IntRenewJoinKeySeconds) * time.Second
 )
 
-// op
+// msg
 const (
 	_ OpType = iota
 
@@ -172,6 +172,25 @@ var (
 
 	DBOpKeyOplogPrefix    = []byte(".oklg")
 	DBOpKeyIdxOplogPrefix = []byte(".okig")
+)
+
+// block
+
+const (
+	NSubBlock = 2
+)
+
+var (
+	DBBlockInfoPrefix    = []byte(".bidb")
+	DBBlockInfoIdxPrefix = []byte(".biix")
+
+	DBContentBlockPrefix = []byte(".bkdb")
+)
+
+// media
+var (
+	DBMediaPrefix    = []byte(".mddb")
+	DBMediaIdxPrefix = []byte(".mdix")
 )
 
 // db

@@ -21,61 +21,80 @@ import (
 	"strings"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/syndtr/goleveldb/leveldb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (spm *ServiceProtocolManager) SetImg(ts types.Timestamp, userID *types.PttID, imgStr string, boardID *types.PttID, oplogID *types.PttID, status types.Status) (*UserImg, error) {
-
-	newImgType, newImgWidth, newImgHeight, newImgStr, err := spm.normalizeImg(imgStr)
-	if err != nil {
-		return nil, err
-	}
-
-	u := &UserImg{ID: userID}
-
-	err = u.Get(userID, true)
-	if err == leveldb.ErrNotFound {
-		err = nil
-		u, err = NewUserImg(userID, ts)
-		u.BoardID = boardID
-		u.Status = types.StatusInit
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if status == types.StatusAlive {
-		u.ImgType = newImgType
-		u.Width = newImgWidth
-		u.Height = newImgHeight
-		u.Str = newImgStr
-		u.UpdateTS = ts
-		u.BoardID = boardID
-		u.LogID = oplogID
-		u.Status = status
-		u.SyncImgInfo = nil
-	} else {
-		u.IntegrateSyncImgInfo(&SyncImgInfo{
-			LogID:    oplogID,
-			ImgType:  newImgType,
-			Width:    newImgWidth,
-			Height:   newImgHeight,
-			BoardID:  boardID,
-			Str:      newImgStr,
-			UpdateTS: ts,
-			Status:   status,
-		})
-	}
-
-	err = u.Save(true)
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+type UpdateUserImg struct {
+	ImgType ImgType `json:"T"`
+	Width   uint16  `json:"W"`
+	Height  uint16  `json:"H"`
+	Str     string  `json:"I"`
 }
 
-func (spm *ServiceProtocolManager) normalizeImg(str string) (ImgType, uint16, uint16, string, error) {
+func (pm *ProtocolManager) UpdateUserImg(imgStr string) (*UserImg, error) {
+
+	newImgType, newImgWidth, newImgHeight, newImgStr, err := normalizeUserImg(imgStr)
+	if err != nil {
+		return nil, err
+	}
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	if !pm.IsMaster(myID, false) {
+		return nil, types.ErrInvalidID
+	}
+
+	data := &UpdateUserImg{
+		ImgType: newImgType,
+		Width:   newImgWidth,
+		Height:  newImgHeight,
+		Str:     newImgStr,
+	}
+
+	origObj := NewEmptyUserImg()
+	pm.SetUserImgDB(origObj)
+
+	opData := &UserOpUpdateUserImg{}
+
+	err = pm.UpdateObject(
+		myID, data, UserOpTypeUpdateUserImg, origObj, opData,
+
+		pm.SetUserDB, pm.NewUserOplog, pm.inupdateUserImg, nil, pm.broadcastUserOplogCore, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return origObj, nil
+}
+
+func (pm *ProtocolManager) inupdateUserImg(obj pkgservice.Object, theData pkgservice.UpdateData, oplog *pkgservice.BaseOplog, theOpData pkgservice.OpData) (pkgservice.SyncInfo, error) {
+
+	data, ok := theData.(*UpdateUserImg)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
+
+	opData, ok := theOpData.(*UserOpUpdateUserImg)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
+
+	// op-data
+	opData.Hash = types.Hash([]byte(data.Str))
+
+	// sync-info
+	syncInfo := NewEmptySyncUserImgInfo()
+	syncInfo.InitWithOplog(oplog.ToStatus(), oplog)
+
+	syncInfo.ImgType = data.ImgType
+	syncInfo.Width = data.Width
+	syncInfo.Height = data.Height
+	syncInfo.Str = data.Str
+
+	return syncInfo, nil
+}
+
+func normalizeUserImg(str string) (ImgType, uint16, uint16, string, error) {
 	imgStrs := strings.SplitN(str, ";", 2) // data:image/png;
 	if len(imgStrs) < 2 {
 		return ImgTypeJPEG, 0, 0, "", ErrInvalidImg

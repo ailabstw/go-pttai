@@ -24,11 +24,12 @@ import (
 type BlockInfo struct {
 	V types.Version
 
-	ID *types.PttID
+	ID *types.PttID `json:"ID,omitempty"`
 
-	NBlock int                   `json:"N"`
-	Hashs  [][][]byte            `json:"H,omitempty"`
-	IsGood types.BoolDoubleArray `json:"G,omitempty"`
+	NBlock    int                   `json:"N"`
+	Hashs     [][][]byte            `json:"H,omitempty"`
+	IsGood    types.BoolDoubleArray `json:"G,omitempty"`
+	IsAllGood types.Bool            `json:"g"`
 
 	MediaIDs []*types.PttID `json:"M,omitempty"`
 
@@ -110,7 +111,7 @@ func (b *BlockInfo) SetDB(
 }
 
 func (b *BlockInfo) SetBlockDB(block *Block) {
-	block.SetDB(b.db, b.fullDBPrefix, b.objID)
+	block.SetDB(b.db, b.fullDBPrefix, b.objID, b.ID)
 }
 
 func (b *BlockInfo) VerifyBlocks(blocks []*Block) ([]*Block, []*Block) {
@@ -165,6 +166,9 @@ func (b *BlockInfo) SaveBlocks(isLocked bool, blocks []*Block) error {
 		defer b.dbLock.Unlock(b.ID)
 	}
 
+	if b.IsGood == nil {
+		b.InitIsGood()
+	}
 	for _, block := range blocks {
 		if b.IsGood[block.BlockID][block.SubBlockID] {
 			continue
@@ -220,7 +224,19 @@ func (b *BlockInfo) Remove(
 	return nil
 }
 
-func (b *BlockInfo) IsAllGood() bool {
+func (b *BlockInfo) GetIsAllGood() bool {
+	if b.NBlock == 0 {
+		return true
+	}
+
+	if b.IsAllGood {
+		return true
+	}
+
+	if b.IsGood == nil {
+		return false
+	}
+
 	for i := 0; i < b.NBlock; i++ {
 		for j := 0; j < NSubBlock; j++ {
 			if !b.IsGood[i][j] {
@@ -229,19 +245,37 @@ func (b *BlockInfo) IsAllGood() bool {
 		}
 	}
 
+	b.IsAllGood = true
 	return true
 }
 
 func (b *BlockInfo) ResetIsGood() {
 	b.IsGood = nil
+	b.IsAllGood = false
 }
 
-func (b *BlockInfo) SetIsGood(blockID uint32, j uint8, isGood types.Bool) {
+func (b *BlockInfo) GetIsGood(blockID uint32, subBlockID uint8) types.Bool {
+	if b.IsGood == nil {
+		return false
+	}
+
+	if blockID >= uint32(b.NBlock) {
+		return false
+	}
+
+	if subBlockID >= NSubBlock {
+		return false
+	}
+
+	return b.IsGood[blockID][subBlockID]
+}
+
+func (b *BlockInfo) SetIsGood(blockID uint32, subBlockID uint8, isGood types.Bool) {
 	if b.IsGood == nil {
 		b.InitIsGood()
 	}
 
-	b.IsGood[blockID][j] = isGood
+	b.IsGood[blockID][subBlockID] = isGood
 }
 
 func (b *BlockInfo) InitIsGood() {
@@ -251,9 +285,14 @@ func (b *BlockInfo) InitIsGood() {
 		isGood[i] = make([]types.Bool, NSubBlock)
 	}
 	b.IsGood = types.BoolDoubleArray(isGood)
+	b.IsAllGood = false
 }
 
 func (b *BlockInfo) SetIsAllGood() {
+	if b.IsGood == nil {
+		b.InitIsGood()
+	}
+
 	pIsGood := b.IsGood[:]
 	var ppIsGood []types.Bool
 	for i := 0; i < b.NBlock; i++ {
@@ -264,4 +303,5 @@ func (b *BlockInfo) SetIsAllGood() {
 		}
 		pIsGood = pIsGood[1:]
 	}
+	b.IsAllGood = true
 }

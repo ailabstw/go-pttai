@@ -161,6 +161,8 @@ func (obj *BaseObject) GetObjIterWithObj(startID *types.PttID, listOrder pttdb.L
 
 	prefix := obj.fullDBPrefix
 
+	log.Debug("GetObjIterWithObj: start", "prefix", prefix, "startID", startID)
+
 	if startID == nil {
 		return obj.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
 	}

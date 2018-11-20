@@ -175,6 +175,10 @@ func (pm *BaseProtocolManager) IsPendingPeer(peer *PttPeer) bool {
 	return pm.isPendingPeer(peer)
 }
 
+func (pm *BaseProtocolManager) GetPendingPeerByUserID(id *types.PttID, isLocked bool) (*PttPeer, error) {
+	return pm.Peers().GetPendingPeerByUserID(id, isLocked)
+}
+
 func (pm *BaseProtocolManager) defaultIsPendingPeer(peer *PttPeer) bool {
 	return pm.Peers().IsPendingPeer(peer, false)
 }

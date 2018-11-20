@@ -30,6 +30,20 @@ func ProcessInfoToSyncIDList(info map[types.PttID]*BaseOplog, op OpType) []*Sync
 	return theList
 }
 
+func ProcessInfoToSyncBlockIDList(info map[types.PttID]*BaseOplog, op OpType) []*SyncBlockID {
+
+	theList := make([]*SyncBlockID, 0, len(info))
+	var eachID *types.PttID
+	for id, eachLog := range info {
+		if eachLog.Op == op {
+			eachID = &types.PttID{}
+			copy(eachID[:], id[:])
+			theList = append(theList, &SyncBlockID{ID: eachID, ObjID: eachLog.ObjID, LogID: eachLog.ID})
+		}
+	}
+	return theList
+}
+
 func ProcessInfoToLogs(info map[types.PttID]*BaseOplog, op OpType) []*BaseOplog {
 	theList := make([]*BaseOplog, 0, len(info))
 	for _, eachLog := range info {

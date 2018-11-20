@@ -45,6 +45,12 @@ var (
 	DBFriendOplogPrefix       = []byte(".frlg")
 	DBFriendIdxOplogPrefix    = []byte(".frig")
 	DBFriendMerkleOplogPrefix = []byte(".frmk")
+
+	DBMessagePrefix    = []byte(".mgdb")
+	DBMessageIdxPrefix = []byte(".mgix")
+
+	DBLastSeenPrefix        = []byte(".frls")
+	DBMessageCreateTSPrefix = []byte(".frmc")
 )
 
 // protocol
@@ -65,8 +71,11 @@ const (
 	SyncPendingFriendOplogMsg
 	SyncPendingFriendOplogAckMsg
 
-	SyncAddFriendNodeMsg
-	SyncAddFriendNodeAckMsg
+	SyncCreateMessageMsg
+	SyncCreateMessageAckMsg
+
+	SyncCreateMessageBlockMsg
+	SyncCreateMessageBlockAckMsg
 
 	// init friend info
 	InitFriendInfoMsg

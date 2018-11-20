@@ -14,8 +14,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package friend
 
-func (pm *BaseProtocolManager) SyncCreateBlock() error {
-	return nil
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
+
+func (pm *ProtocolManager) GetMessageList(startID *types.PttID, limit int, listOrder pttdb.ListOrder, isLocked bool) ([]*Message, error) {
+	obj := NewEmptyMessage()
+	pm.SetMessageDB(obj)
+
+	objs, err := pkgservice.GetObjList(obj, startID, limit, listOrder, isLocked)
+	if err != nil {
+		return nil, err
+	}
+	typedObjs := ObjsToMessages(objs)
+
+	return typedObjs, nil
 }

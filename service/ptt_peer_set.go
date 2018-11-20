@@ -184,6 +184,21 @@ func (ps *PttPeerSet) GetPeerWithPeerType(id *discover.NodeID, peerType PeerType
 	return nil
 }
 
+func (ps *PttPeerSet) GetPendingPeerByUserID(id *types.PttID, isLocked bool) (*PttPeer, error) {
+	if !isLocked {
+		ps.RLock()
+		defer ps.RUnlock()
+	}
+
+	for _, peer := range ps.pendingPeerList {
+		if reflect.DeepEqual(peer.UserID, id) {
+			return peer, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (ps *PttPeerSet) Unregister(peer *PttPeer, isLocked bool) error {
 	if !isLocked {
 		ps.Lock()

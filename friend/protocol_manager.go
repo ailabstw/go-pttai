@@ -27,6 +27,10 @@ type ProtocolManager struct {
 	// db
 	dbFriendLock      *types.LockMap
 	friendOplogMerkle *pkgservice.Merkle
+
+	// message
+	dbMessagePrefix    []byte
+	dbMessageIdxPrefix []byte
 }
 
 func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error) {
@@ -56,6 +60,11 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		return nil, err
 	}
 	pm.BaseProtocolManager = b
+
+	// message
+	entityID := f.ID
+	pm.dbMessagePrefix = append(DBMessagePrefix, entityID[:]...)
+	pm.dbMessageIdxPrefix = append(DBMessageIdxPrefix, entityID[:]...)
 
 	return pm, nil
 }

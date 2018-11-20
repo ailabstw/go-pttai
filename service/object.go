@@ -449,10 +449,12 @@ func (o *BaseObject) CheckIsAllGood() types.Bool {
 		return false
 	}
 
-	if o.BlockInfo != nil && !o.BlockInfo.IsAllGood() {
+	log.Debug("Object.CheckIsAllGood: to check blockInfo", "blockInfo", o.BlockInfo)
+	if o.BlockInfo != nil && !o.BlockInfo.GetIsAllGood() {
 		return false
 	}
 
+	log.Debug("Object.CehckIsAllGood: is all good")
 	o.IsAllGood = true
 	return true
 }

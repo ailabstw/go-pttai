@@ -61,7 +61,7 @@ func TestBlockInfo_SetIsAllGood(t *testing.T) {
 			b := tt.b
 			b.SetIsAllGood()
 
-			if !b.IsAllGood() {
+			if !b.GetIsAllGood() {
 				t.Logf("TestBlockInfo_SetIsAllGood: not is all good")
 			}
 		})

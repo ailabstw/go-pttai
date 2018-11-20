@@ -29,8 +29,8 @@ func (spm *ServiceProtocolManager) GetFriendByFriendID(friendID *types.PttID) (*
 	ts, _ := f.LoadLastSeen()
 	f.LastSeen = ts
 
-	ts, err = f.LoadArticleCreateTS()
-	f.ArticleCreateTS = ts
+	ts, err = f.LoadMessageCreateTS()
+	f.MessageCreateTS = ts
 
 	return f, nil
 }

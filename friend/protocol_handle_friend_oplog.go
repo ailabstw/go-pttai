@@ -18,14 +18,20 @@ package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type ProcessFriendInfo struct {
+	CreateMessageInfo map[types.PttID]*pkgservice.BaseOplog
+	BlockInfo         map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessFriendInfo() *ProcessFriendInfo {
-	return &ProcessFriendInfo{}
+	return &ProcessFriendInfo{
+		CreateMessageInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		BlockInfo:         make(map[types.PttID]*pkgservice.BaseOplog),
+	}
 }
 
 /**********
@@ -33,14 +39,16 @@ func NewProcessFriendInfo() *ProcessFriendInfo {
  **********/
 
 func (pm *ProtocolManager) processFriendLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessFriendInfo)
+	info, ok := processInfo.(*ProcessFriendInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
-	case FriendOpTypeCreateArticle:
+	case FriendOpTypeCreateMessage:
+		origLogs, err = pm.handleCreateMessageLogs(oplog, info)
+
 	case FriendOpTypeCreateMedia:
 	}
 	return
@@ -51,14 +59,15 @@ func (pm *ProtocolManager) processFriendLog(oplog *pkgservice.BaseOplog, process
  **********/
 
 func (pm *ProtocolManager) processPendingFriendLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessFriendInfo)
+	info, ok := processInfo.(*ProcessFriendInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
-	case FriendOpTypeCreateArticle:
+	case FriendOpTypeCreateMessage:
+		origLogs, err = pm.handlePendingCreateMessageLogs(oplog, info)
 	case FriendOpTypeCreateMedia:
 	}
 
@@ -70,10 +79,24 @@ func (pm *ProtocolManager) processPendingFriendLog(oplog *pkgservice.BaseOplog, 
  **********/
 
 func (pm *ProtocolManager) postprocessFriendOplogs(processInfo pkgservice.ProcessInfo, toBroadcastLogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isPending bool) (err error) {
-	_, ok := processInfo.(*ProcessFriendInfo)
+	info, ok := processInfo.(*ProcessFriendInfo)
 	if !ok {
 		err = pkgservice.ErrInvalidData
 	}
+
+	// message
+	createMessageIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateMessageInfo, FriendOpTypeCreateMessage)
+
+	log.Debug("postprocessFriendOplogs: to syncMessage", "createMessageIDs", createMessageIDs)
+
+	pm.SyncMessage(SyncCreateMessageMsg, createMessageIDs, peer)
+
+	// blocks
+	blockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.BlockInfo, FriendOpTypeCreateMessage)
+
+	log.Debug("postprocessFriendOplogs: to syncBlock", "blockIDs", blockIDs)
+
+	pm.SyncBlock(SyncCreateMessageBlockMsg, blockIDs, peer)
 
 	pm.broadcastFriendOplogsCore(toBroadcastLogs)
 
@@ -89,7 +112,8 @@ func (pm *ProtocolManager) SetNewestFriendOplog(oplog *pkgservice.BaseOplog) (er
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
-	case FriendOpTypeCreateArticle:
+	case FriendOpTypeCreateMessage:
+		isNewer, err = pm.setNewestCreateMessageLog(oplog)
 	case FriendOpTypeCreateMedia:
 	}
 
@@ -106,7 +130,8 @@ func (pm *ProtocolManager) HandleFailedFriendOplog(oplog *pkgservice.BaseOplog) 
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
-	case FriendOpTypeCreateArticle:
+	case FriendOpTypeCreateMessage:
+		err = pm.handleFailedCreateMessageLog(oplog)
 	case FriendOpTypeCreateMedia:
 	}
 

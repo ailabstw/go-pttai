@@ -50,8 +50,8 @@ func (spm *ServiceProtocolManager) GetFriendList(startingFriendID *types.PttID, 
 		ts, _ := eachFriend.LoadLastSeen()
 		eachFriend.LastSeen = ts
 
-		ts, err = eachFriend.LoadArticleCreateTS()
-		eachFriend.ArticleCreateTS = ts
+		ts, err = eachFriend.LoadMessageCreateTS()
+		eachFriend.MessageCreateTS = ts
 
 		friendList = append(friendList, eachFriend)
 

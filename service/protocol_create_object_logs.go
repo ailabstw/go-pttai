@@ -150,6 +150,9 @@ func (pm *BaseProtocolManager) handleCreateObjectNewLog(
 	}
 
 	obj := newObjWithOplog(oplog, opData)
+	if obj == nil {
+		return ErrInvalidOplog
+	}
 	err = obj.Save(true)
 	log.Debug("handleCreateObjectNewLog: after newObjWithOplog", "oplog", oplog.ID, "obj", obj.GetID(), "obj.Status", obj.GetStatus(), "oplog.IsNewer", oplog.IsNewer)
 	if err != nil {

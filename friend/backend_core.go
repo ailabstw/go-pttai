@@ -19,6 +19,7 @@ package friend
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -217,20 +218,118 @@ func (b *Backend) GetFriendOplogMerkleNodeList(entityIDBytes []byte, level pkgse
 	return results, nil
 }
 
-func (b *Backend) CreateArticle(friendIDBytes []byte, article [][]byte, mediaIDStrs []string) (*BackendCreateMessage, error) {
+func (b *Backend) CreateMessage(entityIDBytes []byte, message [][]byte, mediaIDStrs []string) (*BackendCreateMessage, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	lenMediaIDs := len(mediaIDStrs)
+	var mediaIDs []*types.PttID = nil
+	if len(mediaIDStrs) != 0 {
+		mediaIDs = make([]*types.PttID, lenMediaIDs)
+		for i, mediaIDStr := range mediaIDStrs {
+			mediaIDs[i], err = types.UnmarshalTextPttID([]byte(mediaIDStr))
+			if err != nil {
+				return nil, err
+			}
+			if mediaIDs[i] == nil {
+				return nil, types.ErrInvalidID
+			}
+		}
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	theMessage, err := pm.CreateMessage(message, mediaIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return messageToBackendCreateMessage(theMessage, entity), nil
 }
 
-func (b *Backend) GetArticleList(boardIDBytes []byte, startingArticleIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetMessage, error) {
+func (b *Backend) GetMessageList(entityIDBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetMessage, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
 
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	startID, err := types.UnmarshalTextPttID(startIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	messageList, err := pm.GetMessageList(startID, limit, listOrder, true)
+
+	backendMessageList := make([]*BackendGetMessage, len(messageList))
+	for i, message := range messageList {
+		backendMessageList[i] = messageToBackendGetMessage(message, entity)
+	}
+
+	return backendMessageList, nil
 }
 
-func (b *Backend) GetArticleBlockList(boardIDBytes []byte, articleIDBytes []byte, subContentIDBytes []byte, contentType pkgservice.ContentType, blockID uint32, limit int) ([]*pkgservice.ArticleBlock, error) {
+func (b *Backend) GetMessageBlockList(entityIDBytes []byte, msgIDBytes []byte, limit uint32) ([]*BackendMessageBlock, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	msgID, err := types.UnmarshalTextPttID(msgIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if msgID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	msg, contentBlocks, err := pm.GetMessageBlockList(msgID, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	blockInfo := msg.GetBlockInfo()
+	log.Debug("GetMessageBlockList: after msg.GetBlockInfo", "blockInfo", blockInfo)
+	if blockInfo == nil {
+		return nil, pkgservice.ErrInvalidBlock
+	}
+	blockInfoID := blockInfo.ID
+
+	backendMsgBlocks := make([]*BackendMessageBlock, len(contentBlocks))
+	for i, contentBlock := range contentBlocks {
+		backendMsgBlocks[i] = contentBlockToBackendMessageBlock(msg, blockInfoID, contentBlock)
+	}
+
+	return backendMsgBlocks, nil
 }
 
 func (b *Backend) MarkFriendSeen(entityIDBytes []byte) (types.Timestamp, error) {

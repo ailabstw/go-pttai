@@ -73,6 +73,8 @@ func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
 		ProfileData: profileData,
 	}
 
+	log.Debug("InitFriendInfoAck: to SendDataToPeer", "peer", peer)
+
 	err = pm.SendDataToPeer(InitFriendInfoAckMsg, initFriendInfoAck, peer)
 	if err != nil {
 		return err
@@ -124,6 +126,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 	f.Status = types.StatusAlive
 
 	friendData.Entity = f
+	log.Debug("HandleInitFriendInfoAck: to CreateJoinFriend", "f", f.ID)
 	_, err = spm.CreateJoinEntity(friendData, peer, nil, false, false)
 	if err != nil {
 		return err

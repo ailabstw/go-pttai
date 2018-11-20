@@ -135,6 +135,7 @@ const (
 
 	BoardLastSeenMsg
 	ArticleLastSeenMsg
+
 	NMsg
 )
 
@@ -177,7 +178,9 @@ var (
 // block
 
 const (
-	NSubBlock = 2
+	NSubBlock        = 2
+	NLineInBlock     = 20
+	NScrambleInBlock = 2
 )
 
 var (

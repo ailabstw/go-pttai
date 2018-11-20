@@ -29,6 +29,10 @@ type SyncObject struct {
 }
 
 func (pm *BaseProtocolManager) SyncObject(op OpType, syncIDs []*SyncID, peer *PttPeer) error {
+	if len(syncIDs) == 0 {
+		return nil
+	}
+
 	err := pm.SendDataToPeer(op, &SyncObject{IDs: syncIDs}, peer)
 	if err != nil {
 		return err
@@ -50,8 +54,14 @@ func (pm *BaseProtocolManager) HandleSyncCreateObject(
 	}
 
 	lenObjs := len(data.IDs)
+	if lenObjs == 0 {
+		return nil
+	}
+
 	objs := make([]Object, 0, lenObjs)
+
 	log.Debug("HandleSyncCreateObject: start")
+	var blockInfo *BlockInfo
 	for _, syncID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncID.ID, false)
 		if err != nil {
@@ -69,6 +79,12 @@ func (pm *BaseProtocolManager) HandleSyncCreateObject(
 		if !reflect.DeepEqual(syncID.LogID, newObj.GetLogID()) { // deleted content
 			continue
 		}
+
+		blockInfo = newObj.GetBlockInfo()
+		if blockInfo != nil {
+			blockInfo.ResetIsGood()
+		}
+		log.Debug("HandleSyncCreateObject: (in for-loop)", "blockInfo", blockInfo)
 
 		newObj.SetSyncInfo(nil)
 

@@ -23,7 +23,6 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -47,7 +46,7 @@ type Friend struct {
 
 	// get from other dbs
 	LastSeen        types.Timestamp `json:"-"`
-	ArticleCreateTS types.Timestamp `json:"-"`
+	MessageCreateTS types.Timestamp `json:"-"`
 }
 
 func NewEmptyFriend() *Friend {
@@ -226,10 +225,10 @@ func (f *Friend) GetByFriendID(friendID *types.PttID) error {
 	return nil
 }
 
-func (b *Friend) SaveLastSeen(ts types.Timestamp) error {
-	b.LastSeen = ts
+func (f *Friend) SaveLastSeen(ts types.Timestamp) error {
+	f.LastSeen = ts
 
-	key, err := b.MarshalLastSeenKey()
+	key, err := f.MarshalLastSeenKey()
 	if err != nil {
 		return err
 	}
@@ -249,8 +248,8 @@ func (b *Friend) SaveLastSeen(ts types.Timestamp) error {
 	return nil
 }
 
-func (b *Friend) LoadLastSeen() (types.Timestamp, error) {
-	key, err := b.MarshalLastSeenKey()
+func (f *Friend) LoadLastSeen() (types.Timestamp, error) {
+	key, err := f.MarshalLastSeenKey()
 	if err != nil {
 		return types.ZeroTimestamp, err
 	}
@@ -271,14 +270,14 @@ func (b *Friend) LoadLastSeen() (types.Timestamp, error) {
 	return val.UpdateTS, nil
 }
 
-func (b *Friend) MarshalLastSeenKey() ([]byte, error) {
-	return common.Concat([][]byte{content.DBBoardLastSeenPrefix, b.ID[:]})
+func (f *Friend) MarshalLastSeenKey() ([]byte, error) {
+	return common.Concat([][]byte{DBLastSeenPrefix, f.ID[:]})
 }
 
-func (b *Friend) SaveArticleCreateTS(ts types.Timestamp) error {
-	b.ArticleCreateTS = ts
+func (f *Friend) SaveMessageCreateTS(ts types.Timestamp) error {
+	f.MessageCreateTS = ts
 
-	key, err := b.MarshalArticleCreateTSKey()
+	key, err := f.MarshalMessageCreateTSKey()
 	if err != nil {
 		return err
 	}
@@ -298,8 +297,8 @@ func (b *Friend) SaveArticleCreateTS(ts types.Timestamp) error {
 	return nil
 }
 
-func (b *Friend) LoadArticleCreateTS() (types.Timestamp, error) {
-	key, err := b.MarshalArticleCreateTSKey()
+func (f *Friend) LoadMessageCreateTS() (types.Timestamp, error) {
+	key, err := f.MarshalMessageCreateTSKey()
 	if err != nil {
 		return types.ZeroTimestamp, err
 	}
@@ -320,6 +319,6 @@ func (b *Friend) LoadArticleCreateTS() (types.Timestamp, error) {
 	return val.UpdateTS, nil
 }
 
-func (b *Friend) MarshalArticleCreateTSKey() ([]byte, error) {
-	return common.Concat([][]byte{content.DBBoardArticleCreateTSPrefix, b.ID[:]})
+func (f *Friend) MarshalMessageCreateTSKey() ([]byte, error) {
+	return common.Concat([][]byte{DBMessageCreateTSPrefix, f.ID[:]})
 }

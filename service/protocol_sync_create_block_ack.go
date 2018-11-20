@@ -17,11 +17,26 @@
 package service
 
 import (
+	"encoding/json"
+
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
+type SyncBlockAck struct {
+	Blocks []*Block `json:"B"`
+}
+
+func (pm *BaseProtocolManager) SyncBlockAck(ackMsg OpType, blocks []*Block, peer *PttPeer) error {
+	if len(blocks) == 0 {
+		return nil
+	}
+
+	return pm.SendDataToPeer(ackMsg, &SyncBlockAck{Blocks: blocks}, peer)
+}
+
 func (pm *BaseProtocolManager) HandleSyncCreateBlockAck(
-	blocks []*Block,
+	dataBytes []byte,
 	peer *PttPeer,
 
 	obj Object,
@@ -31,9 +46,20 @@ func (pm *BaseProtocolManager) HandleSyncCreateBlockAck(
 	broadcastLog func(oplog *BaseOplog) error,
 ) error {
 
+	data := &SyncBlockAck{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	blocks := data.Blocks
+
+	if len(blocks) == 0 {
+		return nil
+	}
+
 	blocksByIDsByObjs := blocksToBlocksByIDsByObjs(blocks)
 
-	var err error
 	for objID, blocksByIDsByObj := range blocksByIDsByObjs {
 		err = pm.handleSyncCreateBlockAck(blocksByIDsByObj, peer, &objID, obj, setLogDB, postcreate, broadcastLog)
 		if err != nil {
@@ -58,6 +84,8 @@ func (pm *BaseProtocolManager) handleSyncCreateBlockAck(
 
 	var err error
 
+	log.Debug("HandleSyncCreateBlockAck: start", "obj", objID)
+
 	// orig-obj
 	origObj.SetID(objID)
 	err = origObj.Lock()
@@ -72,10 +100,12 @@ func (pm *BaseProtocolManager) handleSyncCreateBlockAck(
 	}
 
 	// validate obj
+	log.Debug("HandleSyncCreateBlockAck: to GetIsAllGood", "obj", objID)
 	if origObj.GetIsAllGood() {
 		return nil
 	}
 
+	log.Debug("HandleSyncCreateBlockAck: to get blockInfo", "obj", objID)
 	blockInfo := origObj.GetBlockInfo()
 	if blockInfo == nil {
 		return nil
@@ -83,19 +113,21 @@ func (pm *BaseProtocolManager) handleSyncCreateBlockAck(
 
 	pm.SetBlockInfoDB(blockInfo, objID)
 
+	log.Debug("HandleSyncCreateBlockAck: to get blocks", "obj", objID)
 	blocks, ok := blocksByIDsByObj[*blockInfo.ID]
 	if !ok {
 		return nil
 	}
 
 	// shrink
+	log.Debug("HandleSyncCreateBlockAck: to shrink", "obj", objID)
 	blocks = shrinkBlocks(blockInfo, blocks)
 	if len(blocks) == 0 {
 		return nil
 	}
 
 	// verify
-
+	log.Debug("HandleSyncCreateBlockAck: to verify", "obj", objID)
 	creatorID := origObj.GetCreatorID()
 	err = verifyBlocks(blocks, blockInfo, creatorID)
 	if err != nil {
@@ -103,12 +135,14 @@ func (pm *BaseProtocolManager) handleSyncCreateBlockAck(
 	}
 
 	// set
+	log.Debug("HandleSyncCreateBlockAck: to set", "obj", objID)
 	isSet := saveBlocks(blocks, blockInfo)
 	if !isSet {
 		return nil
 	}
 
 	isAllGood := origObj.CheckIsAllGood()
+	log.Debug("HandleSyncCreateBlockAck: after CheckIsAllGood", "obj", objID, "isAllGood", isAllGood)
 	if !isAllGood {
 		return origObj.Save(true)
 	}

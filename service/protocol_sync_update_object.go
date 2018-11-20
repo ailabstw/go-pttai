@@ -38,6 +38,10 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObject(
 	}
 
 	lenObjs := len(data.IDs)
+	if lenObjs == 0 {
+		return nil
+	}
+
 	objs := make([]Object, 0, lenObjs)
 	var syncInfo SyncInfo
 	var blockInfo *BlockInfo

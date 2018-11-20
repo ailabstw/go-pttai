@@ -64,6 +64,7 @@ loop:
 		case <-tick.C:
 			pm.initMeInfoLoopCore()
 		case <-pm.QuitSync():
+			log.Debug("InitMeInfoLoop: QuitSync", "entity", pm.Entity().GetID())
 			break loop
 		}
 	}

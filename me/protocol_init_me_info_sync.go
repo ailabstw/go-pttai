@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -33,6 +34,7 @@ type InitMeInfoSync struct {
 	PostfixBytes []byte                        `json:"P"`
 	Oplog0       *pkgservice.BaseOplog         `json:"O"`
 	ProfileData  *pkgservice.ApproveJoinEntity `json:"p"`
+	BoardData    *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
 func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
@@ -72,12 +74,26 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 		return pkgservice.ErrInvalidData
 	}
 
+	// board
+	board := myEntity.Board
+	boardPM := board.PM()
+
+	_, theBoardData, err := boardPM.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return err
+	}
+	boardData, ok := theBoardData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	// send-data-to-peer
 	data := &InitMeInfoSync{
 		KeyBytes:     keyBytes,
 		PostfixBytes: myID[common.AddressLength:],
 		Oplog0:       oplog0,
 		ProfileData:  profileData,
+		BoardData:    boardData,
 	}
 
 	err = pm.SendDataToPeer(InitMeInfoSyncMsg, data, peer)
@@ -108,12 +124,13 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	defer myInfo.Unlock()
 
 	theProfileData := account.NewEmptyApproveJoinProfile()
-	data := &InitMeInfoSync{ProfileData: theProfileData}
+	theBoardData := content.NewEmptyApproveJoinBoard()
+	data := &InitMeInfoSync{ProfileData: theProfileData, BoardData: theBoardData}
 	err = json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
 	}
-	profileData := data.ProfileData
+	profileData, boardData := data.ProfileData, data.BoardData
 
 	// migrate origin-me
 	origMe := pm.Ptt().GetMyEntity().(*MyInfo)
@@ -138,6 +155,13 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
 	_, err = profileSPM.CreateJoinEntity(profileData, peer, oplog0.ID, false, true)
+	if err != nil {
+		return err
+	}
+
+	// board
+	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
+	_, err = contentSPM.CreateJoinEntity(boardData, peer, oplog0.ID, false, true)
 	if err != nil {
 		return err
 	}

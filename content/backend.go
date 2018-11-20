@@ -19,6 +19,7 @@ package content
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -66,6 +67,22 @@ func (b *Backend) Stop() error {
 	TeardownContent()
 
 	return nil
+}
+
+func (b *Backend) APIs() []rpc.API {
+	return []rpc.API{
+		{
+			Namespace: "content",
+			Version:   "1.0",
+			Service:   NewPrivateAPI(b),
+		},
+		{
+			Namespace: "content",
+			Version:   "1.0",
+			Service:   NewPublicAPI(b),
+			Public:    true,
+		},
+	}
 }
 
 func (b *Backend) Name() string {

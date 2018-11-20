@@ -89,8 +89,8 @@ const (
 
 // sync
 const (
-	MaxSyncRandomSeconds = 30
-	MinSyncRandomSeconds = 15
+	MaxSyncRandomSeconds = 20
+	MinSyncRandomSeconds = 10
 )
 
 // op-key

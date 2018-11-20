@@ -42,7 +42,7 @@ func NewProfile(myID *types.PttID, ts types.Timestamp, ptt pkgservice.Ptt, servi
 		return nil, err
 	}
 
-	e := pkgservice.NewBaseEntity(id, ts, myID, types.StatusPending, dbAccount, dbLock)
+	e := pkgservice.NewBaseEntity(id, ts, myID, types.StatusInit, dbAccount, dbLock)
 	e.EntityType = pkgservice.EntityTypePersonal
 
 	p := &Profile{

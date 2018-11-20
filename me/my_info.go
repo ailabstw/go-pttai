@@ -24,6 +24,7 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -35,6 +36,9 @@ type MyInfo struct {
 
 	ProfileID *types.PttID     `json:"PID"`
 	Profile   *account.Profile `json:"-"`
+
+	BoardID *types.PttID   `json:"BID"`
+	Board   *content.Board `json:"-"`
 
 	signKeyInfo     *pkgservice.KeyInfo
 	nodeSignKeyInfo *pkgservice.KeyInfo
@@ -304,4 +308,8 @@ func (m *MyInfo) GetValidateKey() *types.PttID {
 
 func (m *MyInfo) GetProfile() pkgservice.Entity {
 	return m.Profile
+}
+
+func (m *MyInfo) GetBoard() pkgservice.Entity {
+	return m.Board
 }

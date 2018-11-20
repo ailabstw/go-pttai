@@ -105,6 +105,13 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 		return err
 	}
 
+	// create my board
+	err = pm.CreateMyBoard(backend.contentBackend)
+	log.Debug("CreateFullMe: after CreateMyBoard", "e", err)
+	if err != nil {
+		return err
+	}
+
 	// my-info
 	myInfo.Status = types.StatusAlive
 	myInfo.CreateTS = meOplog.UpdateTS

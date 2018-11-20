@@ -22,12 +22,14 @@ import (
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type InitFriendInfo struct {
 	ProfileData *pkgservice.ApproveJoinEntity `json:"P"`
+	BoardData   *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
 func (pm *ProtocolManager) InitFriendInfo(peer *pkgservice.PttPeer) error {
@@ -49,9 +51,21 @@ func (pm *ProtocolManager) InitFriendInfo(peer *pkgservice.PttPeer) error {
 		return pkgservice.ErrInvalidData
 	}
 
+	// board
+	boardPM := pm.Ptt().GetMyEntity().GetBoard().(*content.Board).PM()
+	_, theBoardData, err := boardPM.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return err
+	}
+	boardData, ok := theBoardData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	// to send data
 	initFriendInfo := &InitFriendInfo{
 		ProfileData: profileData,
+		BoardData:   boardData,
 	}
 
 	err = pm.SendDataToPeer(InitFriendInfoMsg, initFriendInfo, peer)
@@ -68,13 +82,15 @@ func (pm *ProtocolManager) InitFriendInfo(peer *pkgservice.PttPeer) error {
 func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
 	theProfileData := account.NewEmptyApproveJoinProfile()
-	data := &InitFriendInfo{ProfileData: theProfileData}
+	theBoardData := content.NewEmptyApproveJoinBoard()
+	data := &InitFriendInfo{ProfileData: theProfileData, BoardData: theBoardData}
 	err := json.Unmarshal(dataBytes, data)
 	log.Debug("HandleInitFriendInfo: after unmarshal", "e", err)
 	if err != nil {
 		return err
 	}
 	profileData := data.ProfileData
+	boardData := data.BoardData
 
 	log.Debug("HandleInitFriendInfo: start", "peer", peer.RemoteAddr(), "userID", peer.UserID)
 
@@ -99,11 +115,23 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 		return err
 	}
 	profile := theProfile.(*account.Profile)
-	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeMember)
+	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+
+	// content
+	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
+	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, true, true)
+	log.Debug("HandleInitFriendInfo: after board create join entity", "e", err)
+	if err != nil {
+		return err
+	}
+	board := theBoard.(*content.Board)
+	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
 
 	// f
 	f.ProfileID = profile.ID
 	f.Profile = profile
+	f.BoardID = board.ID
+	f.Board = board
 	f.Status = types.StatusAlive
 
 	err = f.Save(false)

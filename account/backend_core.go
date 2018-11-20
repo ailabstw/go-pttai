@@ -23,12 +23,15 @@ import (
 )
 
 func (b *Backend) GetRawProfile(idBytes []byte) (*Profile, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
+	entityID, err := types.UnmarshalTextPttID(idBytes)
 	if err != nil {
 		return nil, err
 	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
 
-	profile := b.SPM().Entity(id).(*Profile)
+	profile := b.SPM().Entity(entityID).(*Profile)
 
 	return profile, nil
 }
@@ -180,6 +183,9 @@ func (b *Backend) GetRawUserName(idBytes []byte) (*UserName, error) {
 	id, err := types.UnmarshalTextPttID(idBytes)
 	if err != nil {
 		return nil, err
+	}
+	if id == nil {
+		return nil, types.ErrInvalidID
 	}
 
 	return b.GetRawUserNameByID(id)

@@ -23,6 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -39,7 +40,8 @@ type Friend struct {
 	Friend1ID *types.PttID `json:"f1"`
 	FriendID  *types.PttID `json:"f"`
 
-	BoardID *types.PttID `json:"BID,omitempty"`
+	BoardID *types.PttID   `json:"BID,omitempty"`
+	Board   *content.Board `json:"-"`
 
 	ProfileID *types.PttID     `json:"PID,omitempty"`
 	Profile   *account.Profile `json:"-"`

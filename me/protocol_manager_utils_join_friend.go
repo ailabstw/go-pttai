@@ -22,6 +22,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -69,6 +70,7 @@ loop:
 		case <-ticker.C:
 			pm.createJoinFriendKey()
 		case <-pm.QuitSync():
+			log.Debug("CreateJoinFriendKeyLoop: QuitSync", "entity", pm.Entity().GetID())
 			break loop
 		}
 	}
@@ -133,15 +135,6 @@ func (pm *ProtocolManager) IsJoinFriendKeyHash(hash *common.Address) bool {
 	return false
 }
 
-func (pm *ProtocolManager) IsJoinFriendRequests(hash *common.Address) bool {
-	pm.lockJoinFriendRequest.RLock()
-	defer pm.lockJoinFriendRequest.RUnlock()
-
-	_, ok := pm.joinFriendRequests[*hash]
-
-	return ok
-}
-
 func (pm *ProtocolManager) CleanJoinFriendKey() {
 	pm.lockJoinFriendKeyInfo.Lock()
 	defer pm.lockJoinFriendKeyInfo.Unlock()
@@ -152,6 +145,15 @@ func (pm *ProtocolManager) CleanJoinFriendKey() {
 	for _, keyInfo := range pm.joinFriendKeyInfos {
 		ptt.RemoveJoinKey(keyInfo.Hash, entityID, false)
 	}
+}
+
+func (pm *ProtocolManager) IsJoinFriendRequests(hash *common.Address) bool {
+	pm.lockJoinFriendRequest.RLock()
+	defer pm.lockJoinFriendRequest.RUnlock()
+
+	_, ok := pm.joinFriendRequests[*hash]
+
+	return ok
 }
 
 func (pm *ProtocolManager) GetFriendRequests() ([]*pkgservice.JoinRequest, error) {

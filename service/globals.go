@@ -257,7 +257,7 @@ var (
 // locale
 var (
 	DefaultLocale Locale = LocaleTW
-	CurrentLocale Locale
+	CurrentLocale Locale = DefaultLocale
 )
 
 func InitService(dataDir string) error {
@@ -280,6 +280,8 @@ func InitService(dataDir string) error {
 	if err != nil {
 		return err
 	}
+
+	CurrentLocale = LoadLocale()
 
 	return nil
 }

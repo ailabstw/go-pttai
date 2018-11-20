@@ -24,13 +24,19 @@ import (
 
 type ProcessFriendInfo struct {
 	CreateMessageInfo map[types.PttID]*pkgservice.BaseOplog
-	BlockInfo         map[types.PttID]*pkgservice.BaseOplog
+
+	CreateMediaInfo map[types.PttID]*pkgservice.BaseOplog
+
+	BlockInfo map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessFriendInfo() *ProcessFriendInfo {
 	return &ProcessFriendInfo{
 		CreateMessageInfo: make(map[types.PttID]*pkgservice.BaseOplog),
-		BlockInfo:         make(map[types.PttID]*pkgservice.BaseOplog),
+
+		CreateMediaInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+
+		BlockInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 

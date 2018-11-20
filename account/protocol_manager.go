@@ -146,7 +146,13 @@ func (pm *ProtocolManager) Start() error {
 	}
 
 	// oplog-merkle-tree
-	go pkgservice.PMOplogMerkleTreeLoop(pm, pm.userOplogMerkle)
+	syncWG := pm.SyncWG()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pkgservice.PMOplogMerkleTreeLoop(pm, pm.userOplogMerkle)
+	}()
 
 	return nil
 }

@@ -44,6 +44,7 @@ loop:
 			log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds)
 			ticker = time.NewTimer(time.Duration(toRenewSeconds) * time.Second)
 		case <-pm.QuitSync():
+			log.Debug("CreateOpKeyLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			break loop
 		}
 	}

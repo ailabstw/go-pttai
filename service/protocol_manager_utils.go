@@ -49,9 +49,10 @@ func StartPM(pm ProtocolManager) error {
 	log.Info("StartPM: start", "entity", pm.Entity().GetID())
 
 	// 1. PMSync
-	pm.SyncWG().Add(1)
+	syncWG := pm.SyncWG()
+	syncWG.Add(1)
 	go func() {
-		defer pm.SyncWG().Done()
+		defer syncWG.Done()
 
 		PMSync(pm)
 	}()
@@ -63,9 +64,9 @@ func StartPM(pm ProtocolManager) error {
 	}
 
 	// 3. op-key
-	pm.SyncWG().Add(1)
+	syncWG.Add(1)
 	go func() {
-		defer pm.SyncWG().Done()
+		defer syncWG.Done()
 		pm.CreateOpKeyLoop()
 	}()
 

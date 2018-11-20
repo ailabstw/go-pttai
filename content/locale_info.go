@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -33,6 +34,8 @@ var (
 )
 
 func InitLocaleInfo() {
+
+	log.Debug("initLocaleInfo: start")
 	localeInfos = make([]*LocaleInfo, pkgservice.NLocale)
 
 	localeInfos[pkgservice.LocaleTW] = &LocaleInfo{

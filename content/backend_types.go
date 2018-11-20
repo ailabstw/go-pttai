@@ -96,10 +96,12 @@ type BackendGetBoard struct {
 	BoardType       pkgservice.EntityType `json:"BT"`
 }
 
-func boardToBackendGetBoard(b *Board, myName string) *BackendGetBoard {
+func boardToBackendGetBoard(b *Board, myName string, theTitle *Title, myID *types.PttID) *BackendGetBoard {
 	title := b.Title
+	if theTitle != nil {
+		title = theTitle.Title
+	}
 
-	myID := b.Ptt().GetMyEntity().GetID()
 	if len(title) == 0 && b.EntityType == pkgservice.EntityTypePersonal {
 		title = DefaultTitle(myID, b.CreatorID, myName)
 	}

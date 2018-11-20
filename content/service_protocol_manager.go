@@ -16,7 +16,10 @@
 
 package content
 
-import pkgservice "github.com/ailabstw/go-pttai/service"
+import (
+	"github.com/ailabstw/go-pttai/pttdb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 type ServiceProtocolManager struct {
 	*pkgservice.BaseServiceProtocolManager
@@ -31,6 +34,25 @@ func NewServiceProtocolManager(ptt pkgservice.Ptt, service pkgservice.Service) (
 
 	spm := &ServiceProtocolManager{
 		BaseServiceProtocolManager: b,
+	}
+
+	// load boards
+	boards, err := spm.GetBoardList(nil, 0, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, eachBoard := range boards {
+		err = eachBoard.Init(ptt, service, spm)
+		if err != nil {
+			return nil, err
+		}
+
+		err = spm.RegisterEntity(eachBoard.ID, eachBoard)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	return spm, nil

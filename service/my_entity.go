@@ -32,6 +32,7 @@ type MyEntity interface {
 	NewOpKeyInfo(entityID *types.PttID, setOpKeyObjDB func(k *KeyInfo)) (*KeyInfo, error)
 
 	GetProfile() Entity
+	GetBoard() Entity
 
 	GetNodeSignID() *types.PttID
 

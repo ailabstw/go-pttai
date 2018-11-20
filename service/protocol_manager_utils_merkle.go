@@ -35,6 +35,7 @@ loop:
 		case <-ticker.C:
 			pmGenerateOplogMerkleTree(pm, merkle)
 		case <-pm.QuitSync():
+			log.Debug("PMOplogMerkleTreeLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			break loop
 		}
 	}

@@ -1,0 +1,3 @@
+[submodule "pttai.js"]
+	path = pttai.js
+	url = https://github.com/ailabstw/pttai.js.git

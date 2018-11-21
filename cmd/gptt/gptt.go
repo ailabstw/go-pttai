@@ -31,6 +31,7 @@ import (
 	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ailabstw/go-pttai/ptthttp"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -77,11 +78,20 @@ func gptt(ctx *cli.Context) error {
 		return err
 	}
 
+	// http-server
+
+	httpServer, err := ptthttp.NewServer(cfg.Utils.HTTPDir, cfg.Utils.HTTPAddr, cfg.Node.HTTPPort, cfg.Utils.ExternHTTPAddr, cfg.Node.ExternHTTPPort, n)
+	if err != nil {
+		return err
+	}
+
+	httpServer.Start()
+
 	// set-signal
-	go setSignal(n)
+	go setSignal(n, httpServer)
 
 	// wait-node
-	if err := WaitNode(n); err != nil {
+	if err := WaitNode(n, httpServer); err != nil {
 		return err
 	}
 
@@ -154,7 +164,7 @@ func registerServices(ctx *pkgservice.ServiceContext, cfg *Config) (pkgservice.P
 	return ptt, nil
 }
 
-func setSignal(n *node.Node) {
+func setSignal(n *node.Node, server *ptthttp.Server) {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
@@ -163,6 +173,7 @@ func setSignal(n *node.Node) {
 
 	log.Debug("setSignal: received break-signal")
 	go func() {
+		server.Stop()
 		n.Stop(false, false)
 	}()
 
@@ -176,7 +187,7 @@ func setSignal(n *node.Node) {
 	debug.LoudPanic("boom")
 }
 
-func WaitNode(n *node.Node) error {
+func WaitNode(n *node.Node, server *ptthttp.Server) error {
 	log.Info("start Waiting...")
 
 	ptt := n.Services()[reflect.TypeOf(&pkgservice.BasePtt{})].(*pkgservice.BasePtt)
@@ -188,14 +199,18 @@ loop:
 			if !ok {
 				break loop
 			}
+			server.Stop()
 			err := n.Restart(false, true)
 			if err != nil {
 				return err
 			}
+			server.SetRPCServer(n)
+			server.Start()
 		case _, ok := <-ptt.NotifyNodeStop().GetChan():
 			if !ok {
 				break loop
 			}
+			server.Stop()
 			n.Stop(false, false)
 			break loop
 		case err, ok := <-ptt.ErrChan().GetChan():

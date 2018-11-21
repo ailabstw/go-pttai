@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	baloo "gopkg.in/h2non/baloo.v3"
 )
@@ -100,6 +101,8 @@ func readBody(res *http.Response) ([]byte, error) {
 }
 
 func setupTest(t *testing.T) {
+	content.InitLocaleInfo()
+
 	os.RemoveAll("./test.out")
 
 	os.MkdirAll("./test.out", 0755)

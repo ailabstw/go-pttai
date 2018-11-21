@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -27,6 +28,8 @@ func (pm *ProtocolManager) handleCreateTitleLogs(oplog *pkgservice.BaseOplog, in
 	pm.SetTitleDB(obj)
 
 	opData := &BoardOpCreateTitle{}
+
+	log.Debug("handleCreateTitleLogs: to HandleCreateObjectLog", "oplog", oplog, "obj", oplog.ObjID)
 
 	return pm.HandleCreateObjectLog(
 		oplog, obj, opData, info,
@@ -38,6 +41,8 @@ func (pm *ProtocolManager) handlePendingCreateTitleLogs(oplog *pkgservice.BaseOp
 	pm.SetTitleDB(obj)
 
 	opData := &BoardOpCreateTitle{}
+
+	log.Debug("handlePendingCreateTitleLogs: to HandleCreateObjectLog", "oplog", oplog, "obj", oplog.ObjID)
 
 	return pm.HandlePendingCreateObjectLog(
 		oplog, obj, opData, info,

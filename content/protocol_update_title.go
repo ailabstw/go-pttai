@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -39,8 +40,11 @@ func (pm *ProtocolManager) UpdateTitle(title []byte) error {
 
 	opData := &BoardOpUpdateTitle{}
 
+	entityID := pm.Entity().GetID()
+	log.Debug("UpdateTitle: to UpdateObject")
+
 	err := pm.UpdateObject(
-		myID, data, BoardOpTypeUpdateTitle, origObj, opData,
+		entityID, data, BoardOpTypeUpdateTitle, origObj, opData,
 
 		pm.SetBoardDB, pm.NewBoardOplog, pm.inupdateTitle, nil, pm.broadcastBoardOplogCore, nil)
 	if err != nil {

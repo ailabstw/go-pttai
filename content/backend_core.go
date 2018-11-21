@@ -123,7 +123,11 @@ func (b *Backend) GetRawBoard(entityIDBytes []byte) (*Board, error) {
 		return nil, types.ErrInvalidID
 	}
 
-	board := b.SPM().Entity(entityID).(*Board)
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	board := entity.(*Board)
 
 	return board, nil
 }
@@ -429,17 +433,6 @@ func (b *Backend) GetRawTitle(entityIDBytes []byte) (*Title, error) {
 	}
 
 	return b.GetRawTitleByID(entityID)
-	if entityID == nil {
-		return nil, types.ErrInvalidID
-	}
-
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
-
-	return pm.GetTitle()
 }
 
 func (b *Backend) GetRawTitleByID(entityID *types.PttID) (*Title, error) {

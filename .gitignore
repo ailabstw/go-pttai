@@ -4,3 +4,4 @@ _workspace
 test.out
 /gptt.pkg
 .DS_Store*
+/static

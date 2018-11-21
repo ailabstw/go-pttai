@@ -50,7 +50,7 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case AddPendingBoardOplogsMsg:
 		err = pm.HandleAddPendingBoardOplogs(dataBytes, peer)
 
-	// message
+	// title
 	case SyncCreateTitleMsg:
 		err = pm.HandleSyncCreateTitle(dataBytes, peer, SyncCreateTitleAckMsg)
 	case SyncCreateTitleAckMsg:
@@ -59,6 +59,25 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleSyncUpdateTitle(dataBytes, peer, SyncUpdateTitleAckMsg)
 	case SyncUpdateTitleAckMsg:
 		err = pm.HandleSyncUpdateTitleAck(dataBytes, peer)
+
+	// article
+	case SyncCreateArticleMsg:
+		err = pm.HandleSyncCreateArticle(dataBytes, peer, SyncCreateArticleAckMsg)
+	case SyncCreateArticleAckMsg:
+		err = pm.HandleSyncCreateArticleAck(dataBytes, peer)
+	case SyncUpdateArticleMsg:
+		err = pm.HandleSyncUpdateArticle(dataBytes, peer, SyncUpdateArticleAckMsg)
+	case SyncUpdateArticleAckMsg:
+		err = pm.HandleSyncUpdateArticleAck(dataBytes, peer)
+
+	case SyncCreateArticleBlockMsg:
+		err = pm.HandleSyncArticleBlock(dataBytes, peer, SyncCreateArticleBlockAckMsg)
+	case SyncCreateArticleBlockAckMsg:
+		err = pm.HandleSyncCreateArticleBlockAck(dataBytes, peer)
+	case SyncUpdateArticleBlockMsg:
+		err = pm.HandleSyncArticleBlock(dataBytes, peer, SyncUpdateArticleBlockAckMsg)
+	case SyncUpdateArticleBlockAckMsg:
+		err = pm.HandleSyncUpdateArticleBlockAck(dataBytes, peer)
 
 	default:
 		log.Error("invalid op", "op", op, "SyncCreateTitleMsg", SyncCreateTitleMsg)

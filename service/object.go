@@ -73,11 +73,13 @@ type Object interface {
 	SetVersion(v types.Version)
 
 	SetCreateTS(ts types.Timestamp)
+	GetCreateTS() types.Timestamp
 
 	SetCreatorID(id *types.PttID)
 	GetCreatorID() *types.PttID
 
 	SetUpdaterID(id *types.PttID)
+	GetUpdaterID() *types.PttID
 
 	SetID(id *types.PttID)
 	GetID() *types.PttID
@@ -212,6 +214,10 @@ func (o *BaseObject) SetCreateTS(ts types.Timestamp) {
 	o.CreateTS = ts
 }
 
+func (o *BaseObject) GetCreateTS() types.Timestamp {
+	return o.CreateTS
+}
+
 func (o *BaseObject) SetCreatorID(id *types.PttID) {
 	o.CreatorID = id
 }
@@ -222,6 +228,10 @@ func (o *BaseObject) GetCreatorID() *types.PttID {
 
 func (o *BaseObject) SetUpdaterID(id *types.PttID) {
 	o.UpdaterID = id
+}
+
+func (o *BaseObject) GetUpdaterID() *types.PttID {
+	return o.UpdaterID
 }
 
 func (o *BaseObject) SetID(id *types.PttID) {

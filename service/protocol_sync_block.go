@@ -36,7 +36,7 @@ func (pm *BaseProtocolManager) SyncBlock(op OpType, syncBlockIDs []*SyncBlockID,
 	return pm.SendDataToPeer(op, &SyncBlock{IDs: syncBlockIDs}, peer)
 }
 
-func (pm *BaseProtocolManager) HandleSyncCreateBlock(
+func (pm *BaseProtocolManager) HandleSyncBlock(
 	dataBytes []byte,
 	peer *PttPeer,
 	obj Object,

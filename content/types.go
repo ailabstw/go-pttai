@@ -30,15 +30,6 @@ const (
 	ContentTypeReply
 )
 
-// board type
-type BoardType int
-
-const (
-	BoardTypePrivate BoardType = iota
-	BoardTypePersonal
-	BoardTypePublic
-)
-
 // comment type
 type CommentType int
 

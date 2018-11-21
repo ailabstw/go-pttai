@@ -20,50 +20,49 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncUpdateTitleAck struct {
-	Objs []*Title `json:"o"`
+type SyncUpdateArticleAck struct {
+	Objs []*Article `json:"o"`
 }
 
-func (pm *ProtocolManager) HandleSyncUpdateTitleAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	data := &SyncUpdateTitleAck{}
+func (pm *ProtocolManager) HandleSyncUpdateArticleAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	data := &SyncUpdateArticleAck{}
 	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
 	}
 
-	origObj := NewEmptyTitle()
-	pm.SetTitleDB(origObj)
+	origObj := NewEmptyArticle()
+	pm.SetArticleDB(origObj)
 	for _, obj := range data.Objs {
-		pm.SetTitleDB(obj)
+		pm.SetArticleDB(obj)
 
 		pm.HandleSyncUpdateObjectAck(
 			obj,
 			peer,
 
 			origObj,
-			pm.SetBoardDB, pm.updateSyncTitle, nil, pm.broadcastBoardOplogCore)
+			pm.SetBoardDB, pm.updateSyncArticle, nil, pm.broadcastBoardOplogCore)
 	}
 
 	return nil
 }
 
-func (pm *ProtocolManager) updateSyncTitle(theToSyncInfo pkgservice.SyncInfo, theFromObj pkgservice.Object, oplog *pkgservice.BaseOplog) error {
-	toSyncInfo, ok := theToSyncInfo.(*SyncTitleInfo)
+func (pm *ProtocolManager) updateSyncArticle(theToSyncInfo pkgservice.SyncInfo, theFromObj pkgservice.Object, oplog *pkgservice.BaseOplog) error {
+	toSyncInfo, ok := theToSyncInfo.(*pkgservice.BaseSyncInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
 
-	fromObj, ok := theFromObj.(*Title)
+	fromObj, ok := theFromObj.(*Article)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
 
 	// op-data
-	opData := &BoardOpUpdateTitle{}
+	opData := &BoardOpUpdateArticle{}
 	err := oplog.GetData(opData)
 	if err != nil {
 		return err
@@ -77,15 +76,13 @@ func (pm *ProtocolManager) updateSyncTitle(theToSyncInfo pkgservice.SyncInfo, th
 		return pkgservice.ErrInvalidObject
 	}
 
-	// get title
-	title := fromObj.Title
-
-	hash := types.Hash(title)
-	if !reflect.DeepEqual(opData.TitleHash, hash) {
-		return pkgservice.ErrInvalidObject
+	// get block-info
+	blockInfo := fromObj.GetBlockInfo()
+	if blockInfo == nil {
+		return pkgservice.ErrInvalidData
 	}
 
-	toSyncInfo.Title = title
+	toSyncInfo.SetBlockInfo(blockInfo)
 
 	return nil
 }

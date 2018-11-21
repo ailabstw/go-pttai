@@ -16,7 +16,10 @@
 
 package content
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 type ArticleBlock struct {
 	V           types.Version
@@ -40,4 +43,26 @@ type ArticleBlock struct {
 
 func NewArticleBlock() (*ArticleBlock, error) {
 	return &ArticleBlock{}, nil
+}
+
+func contentBlockToArticleBlock(obj pkgservice.Object, blockInfo *pkgservice.BlockInfo, contentBlock *pkgservice.ContentBlock, articleID *types.PttID, contentType ContentType, commentType CommentType) *ArticleBlock {
+	return &ArticleBlock{
+		V:           types.CurrentVersion,
+		BlockInfoID: blockInfo.ID,
+		ArticleID:   articleID,
+		RefID:       obj.GetID(),
+		ContentType: contentType,
+		CommentType: commentType,
+		BlockID:     contentBlock.BlockID,
+
+		Status: obj.GetStatus(),
+
+		CreateTS: obj.GetCreateTS(),
+		UpdateTS: obj.GetUpdateTS(),
+
+		CreatorID: obj.GetCreatorID(),
+		UpdaterID: obj.GetUpdaterID(),
+
+		Buf: contentBlock.Buf,
+	}
 }

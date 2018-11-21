@@ -31,7 +31,41 @@ func (b *Backend) CreateBoard(title []byte, isPublic bool) (*Board, error) {
 
 func (b *Backend) CreateArticle(entityIDBytes []byte, title []byte, article [][]byte, mediaIDStrs []string) (*BackendCreateArticle, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	lenMediaIDs := len(mediaIDStrs)
+	var mediaIDs []*types.PttID = nil
+	if len(mediaIDStrs) != 0 {
+		mediaIDs = make([]*types.PttID, lenMediaIDs)
+		for i, mediaIDStr := range mediaIDStrs {
+			mediaIDs[i] = &types.PttID{}
+			err := mediaIDs[i].UnmarshalText([]byte(mediaIDStr))
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	theArticle, err := pm.CreateArticle(title, article, mediaIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	backendArticle := articleToBackendCreateArticle(theArticle)
+
+	return backendArticle, nil
 }
 
 func (b *Backend) CreateComment(entityIDBytes []byte, articleIDBytes []byte, commentType CommentType, comment []byte, mediaIDBytes []byte) (*BackendCreateComment, error) {
@@ -114,6 +148,7 @@ func (b *Backend) GetBoard(entityIDBytes []byte) (*BackendGetBoard, error) {
 }
 
 func (b *Backend) GetRawBoard(entityIDBytes []byte) (*Board, error) {
+
 	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
 	log.Debug("GetRawBoard: after unmarshal", "entityIDBytes", entityIDBytes, "entityID", entityID, "e", err)
 	if err != nil {
@@ -163,12 +198,39 @@ func (b *Backend) GetBoardList(startingIDBytes []byte, limit int, listOrder pttd
 
 func (b *Backend) GetArticle(entityIDBytes []byte, articleIDBytes []byte) (*BackendGetArticle, error) {
 
-	return nil, types.ErrNotImplemented
+	article, err := b.GetRawArticle(entityIDBytes, articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return articleToBackendGetArticle(article), nil
 }
 
 func (b *Backend) GetRawArticle(entityIDBytes []byte, articleIDBytes []byte) (*Article, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return pm.GetArticle(articleID)
 }
 
 func (b *Backend) GetRawComment(entityIDBytes []byte, commentIDBytes []byte) (*Comment, error) {
@@ -183,12 +245,72 @@ func (b *Backend) GetRawReply(entityIDBytes []byte, articleIDBytes []byte, comme
 
 func (b *Backend) GetArticleBlockList(entityIDBytes []byte, articleIDBytes []byte, subContentIDBytes []byte, contentType ContentType, blockID uint32, limit int, listOrder pttdb.ListOrder) ([]*ArticleBlock, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	blockInfoID, err := types.UnmarshalTextPttID(subContentIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	articleBlockList, err := pm.GetArticleBlockList(articleID, blockInfoID, contentType, blockID, limit, listOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	return articleBlockList, nil
 }
 
 func (b *Backend) GetArticleList(entityIDBytes []byte, startingArticleIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetArticle, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	startID, err := types.UnmarshalTextPttID(startingArticleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	articleList, err := pm.GetArticleList(startID, limit, listOrder, false)
+	if err != nil {
+		return nil, err
+	}
+	theList := make([]*BackendGetArticle, len(articleList))
+	for i, article := range articleList {
+		theList[i] = articleToBackendGetArticle(article)
+	}
+
+	return theList, nil
 }
 
 func (b *Backend) GetPokedArticleList(boardID []byte) ([]*BackendGetArticle, error) {
@@ -243,13 +365,13 @@ func (b *Backend) ShowBoardURL(entityIDBytes []byte) (*pkgservice.BackendJoinURL
  * BoardOplog
  **********/
 
-func (b *Backend) GetBoardOplogList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+func (b *Backend) GetBoardOplogList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	if profileID == nil {
+	if entityID == nil {
 		return nil, types.ErrInvalidID
 	}
 
@@ -258,7 +380,7 @@ func (b *Backend) GetBoardOplogList(profileIDBytes []byte, logIDBytes []byte, li
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
+	entity := b.SPM().Entity(entityID)
 	if entity == nil {
 		return nil, types.ErrInvalidID
 	}
@@ -267,13 +389,13 @@ func (b *Backend) GetBoardOplogList(profileIDBytes []byte, logIDBytes []byte, li
 	return pm.GetBoardOplogList(logID, limit, listOrder, types.StatusAlive)
 }
 
-func (b *Backend) GetPendingBoardOplogMasterList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+func (b *Backend) GetPendingBoardOplogMasterList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	if profileID == nil {
+	if entityID == nil {
 		return nil, types.ErrInvalidID
 	}
 
@@ -282,7 +404,7 @@ func (b *Backend) GetPendingBoardOplogMasterList(profileIDBytes []byte, logIDByt
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
+	entity := b.SPM().Entity(entityID)
 	if entity == nil {
 		return nil, types.ErrInvalidID
 	}
@@ -291,35 +413,38 @@ func (b *Backend) GetPendingBoardOplogMasterList(profileIDBytes []byte, logIDByt
 	return pm.GetBoardOplogList(logID, limit, listOrder, types.StatusPending)
 }
 
-func (b *Backend) GetPendingBoardOplogInternalList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+func (b *Backend) GetPendingBoardOplogInternalList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
 
 	logID, err := types.UnmarshalTextPttID(logIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
-
 	return pm.GetBoardOplogList(logID, limit, listOrder, types.StatusInternalPending)
 }
 
-func (b *Backend) GetBoardOplogMerkleNodeList(profileIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+func (b *Backend) GetBoardOplogMerkleNodeList(entityIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
+	entity := b.SPM().Entity(entityID)
 	if entity == nil {
 		return nil, types.ErrInvalidID
 	}
@@ -360,18 +485,107 @@ func (b *Backend) GetImage(entityIDBytes []byte, imgIDBytes []byte) (*BackendGet
 
 func (b *Backend) GetArticleSummary(entityIDBytes []byte, articleInfo *BackendArticleSummaryParams) (*ArticleBlock, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID([]byte(articleInfo.ArticleID))
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	blockInfoID, err := types.UnmarshalTextPttID([]byte(articleInfo.ContentBlockID))
+	if err != nil {
+		return nil, err
+	}
+
+	articleBlockList, err := pm.GetArticleBlockList(articleID, blockInfoID, ContentTypeArticle, 0, 1, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+	if len(articleBlockList) != 1 {
+		return nil, ErrInvalidBlock
+	}
+
+	return articleBlockList[0], nil
 }
 
 func (b *Backend) GetArticleSummaryByIDs(entityIDBytes []byte, articleInfos []*BackendArticleSummaryParams) (map[string]*ArticleBlock, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleBlocks := make(map[string]*ArticleBlock)
+	var articleID *types.PttID
+	var contentBlockID *types.PttID
+	var articleBlockList []*ArticleBlock
+	for _, articleInfo := range articleInfos {
+		articleID, err = types.UnmarshalTextPttID([]byte(articleInfo.ArticleID))
+		if err != nil {
+			continue
+		}
+		if articleID == nil {
+			continue
+		}
+
+		contentBlockID, err = types.UnmarshalTextPttID([]byte(articleInfo.ContentBlockID))
+		if err != nil {
+			continue
+		}
+
+		articleBlockList, err = pm.GetArticleBlockList(articleID, contentBlockID, ContentTypeArticle, 0, 1, pttdb.ListOrderNext)
+		if err != nil {
+			continue
+		}
+		if len(articleBlockList) != 1 {
+			continue
+		}
+		articleBlocks[articleInfo.ArticleID] = articleBlockList[0]
+	}
+
+	return articleBlocks, nil
 }
 
 func (b *Backend) MarkBoardSeen(entityIDBytes []byte) (types.Timestamp, error) {
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+	if entityID == nil {
+		return types.ZeroTimestamp, types.ErrInvalidID
+	}
 
-	return types.ZeroTimestamp, types.ErrNotImplemented
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return types.ZeroTimestamp, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
 
+	return pm.SaveLastSeen(types.ZeroTimestamp)
 }
 
 func (b *Backend) MarkArticleSeen(entityIDBytes []byte, articleIDBytes []byte) (types.Timestamp, error) {
@@ -450,5 +664,15 @@ func (b *Backend) GetRawTitleByID(entityID *types.PttID) (*Title, error) {
 }
 
 func (b *Backend) GetJoinKeys(entityIDBytes []byte) ([]*pkgservice.KeyInfo, error) {
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	return pm.JoinKeyList(), nil
 }

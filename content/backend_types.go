@@ -31,6 +31,24 @@ type BackendCreateArticle struct {
 	NBlock         int          `json:"NB"`
 }
 
+func articleToBackendCreateArticle(a *Article) *BackendCreateArticle {
+	blockInfo := a.GetBlockInfo()
+	var blockInfoID *types.PttID
+	var nBlock int
+
+	if blockInfo != nil {
+		blockInfoID = blockInfo.ID
+		nBlock = blockInfo.NBlock
+	}
+
+	return &BackendCreateArticle{
+		BoardID:        a.EntityID,
+		ArticleID:      a.ID,
+		ContentBlockID: blockInfoID,
+		NBlock:         nBlock,
+	}
+}
+
 type BackendCreateComment struct {
 	BoardID        *types.PttID `json:"BID"`
 	ArticleID      *types.PttID `json:"AID"`

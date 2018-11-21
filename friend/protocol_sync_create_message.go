@@ -38,17 +38,17 @@ func (pm *ProtocolManager) HandleSyncCreateMessage(dataBytes []byte, peer *pkgse
  **********/
 
 func (pm *ProtocolManager) SyncMessageBlock(op pkgservice.OpType, syncBlockIDs []*pkgservice.SyncBlockID, peer *pkgservice.PttPeer) error {
-	return pm.SyncBlock(SyncCreateMessageBlockMsg, syncBlockIDs, peer)
+	return pm.SyncBlock(op, syncBlockIDs, peer)
 }
 
-func (pm *ProtocolManager) HandleSyncCreateMessageBlock(dataBytes []byte, peer *pkgservice.PttPeer) error {
+func (pm *ProtocolManager) HandleSyncMessageBlock(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
 	obj := NewEmptyMessage()
 	pm.SetMessageDB(obj)
 
 	log.Debug("HandleSyncCreateMessageBlock: to HandleSyncBlock")
 
-	return pm.HandleSyncCreateBlock(dataBytes, peer, obj, SyncCreateMessageBlockAckMsg)
+	return pm.HandleSyncBlock(dataBytes, peer, obj, SyncCreateMessageBlockAckMsg)
 }
 
 func (pm *ProtocolManager) HandleSyncCreateMessageBlockAck(dataBytes []byte, peer *pkgservice.PttPeer) error {

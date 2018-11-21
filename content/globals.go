@@ -58,6 +58,19 @@ const (
 
 	SyncUpdateTitleMsg
 	SyncUpdateTitleAckMsg
+
+	// sync article
+	SyncCreateArticleMsg
+	SyncCreateArticleAckMsg
+
+	SyncUpdateArticleMsg
+	SyncUpdateArticleAckMsg
+
+	SyncCreateArticleBlockMsg
+	SyncCreateArticleBlockAckMsg
+
+	SyncUpdateArticleBlockMsg
+	SyncUpdateArticleBlockAckMsg
 )
 
 // db
@@ -117,6 +130,11 @@ var (
 // article
 const (
 	NFirstLineInBlock = 1
+)
+
+// count
+const (
+	PCommentCount = 12
 )
 
 func InitContent(dataDir string, keystoreDir string) error {

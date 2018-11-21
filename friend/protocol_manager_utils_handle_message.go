@@ -62,7 +62,7 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case SyncCreateMessageAckMsg:
 		err = pm.HandleSyncCreateMessageAck(dataBytes, peer)
 	case SyncCreateMessageBlockMsg:
-		err = pm.HandleSyncCreateMessageBlock(dataBytes, peer)
+		err = pm.HandleSyncMessageBlock(dataBytes, peer)
 	case SyncCreateMessageBlockAckMsg:
 		err = pm.HandleSyncCreateMessageBlockAck(dataBytes, peer)
 

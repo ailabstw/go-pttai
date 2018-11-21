@@ -27,17 +27,19 @@ type ProcessBoardInfo struct {
 
 	CreateArticleInfo map[types.PttID]*pkgservice.BaseOplog
 	ArticleInfo       map[types.PttID]*pkgservice.BaseOplog
+	ArticleBlockInfo  map[types.PttID]*pkgservice.BaseOplog
 
 	CreateCommentInfo map[types.PttID]*pkgservice.BaseOplog
 	CommentInfo       map[types.PttID]*pkgservice.BaseOplog
+	CommentBlockInfo  map[types.PttID]*pkgservice.BaseOplog
 
 	CreateReplyInfo map[types.PttID]*pkgservice.BaseOplog
 	ReplyInfo       map[types.PttID]*pkgservice.BaseOplog
+	ReplyBlockInfo  map[types.PttID]*pkgservice.BaseOplog
 
 	CreateMediaInfo map[types.PttID]*pkgservice.BaseOplog
 	MediaInfo       map[types.PttID]*pkgservice.BaseOplog
-
-	BlockInfo map[types.PttID]*pkgservice.BaseOplog
+	MediaBlockInfo  map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessBoardInfo() *ProcessBoardInfo {
@@ -47,17 +49,19 @@ func NewProcessBoardInfo() *ProcessBoardInfo {
 
 		CreateArticleInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		ArticleInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		ArticleBlockInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
 
 		CreateCommentInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		CommentInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		CommentBlockInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
 
 		CreateReplyInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		ReplyInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		ReplyBlockInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
 
 		CreateMediaInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		MediaInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
-
-		BlockInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		MediaBlockInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -81,7 +85,9 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
 		origLogs, err = pm.handleUpdateTitleLogs(oplog, info)
 
 	case BoardOpTypeCreateArticle:
+		origLogs, err = pm.handleCreateArticleLogs(oplog, info)
 	case BoardOpTypeUpdateArticle:
+		origLogs, err = pm.handleUpdateArticleLogs(oplog, info)
 	case BoardOpTypeDeleteArticle:
 
 	case BoardOpTypeCreateMedia:
@@ -117,7 +123,9 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
 		origLogs, err = pm.handlePendingUpdateTitleLogs(oplog, info)
 
 	case BoardOpTypeCreateArticle:
+		origLogs, err = pm.handlePendingCreateArticleLogs(oplog, info)
 	case BoardOpTypeUpdateArticle:
+		origLogs, err = pm.handlePendingUpdateArticleLogs(oplog, info)
 	case BoardOpTypeDeleteArticle:
 
 	case BoardOpTypeCreateMedia:
@@ -144,7 +152,7 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 		err = pkgservice.ErrInvalidData
 	}
 
-	// user name
+	// title
 	createTitleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateTitleInfo, BoardOpTypeCreateTitle)
 
 	updateTitleIDs := pkgservice.ProcessInfoToSyncIDList(info.TitleInfo, BoardOpTypeUpdateTitle)
@@ -152,6 +160,20 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 	pm.SyncTitle(SyncCreateTitleMsg, createTitleIDs, peer)
 	pm.SyncTitle(SyncUpdateTitleMsg, updateTitleIDs, peer)
 
+	// article
+	createArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeCreateArticle)
+	updateArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeUpdateArticle)
+
+	createblockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeCreateArticle)
+	updateBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeUpdateArticle)
+
+	pm.SyncArticle(SyncCreateArticleMsg, createArticleIDs, peer)
+	pm.SyncArticle(SyncUpdateArticleMsg, updateArticleIDs, peer)
+
+	pm.SyncBlock(SyncCreateArticleBlockMsg, createblockIDs, peer)
+	pm.SyncBlock(SyncUpdateArticleBlockMsg, updateBlockIDs, peer)
+
+	// broadcast
 	pm.broadcastBoardOplogsCore(toBroadcastLogs)
 
 	return
@@ -174,7 +196,9 @@ func (pm *ProtocolManager) SetNewestBoardOplog(oplog *pkgservice.BaseOplog) (err
 		isNewer, err = pm.setNewestUpdateTitleLog(oplog)
 
 	case BoardOpTypeCreateArticle:
+		isNewer, err = pm.setNewestCreateArticleLog(oplog)
 	case BoardOpTypeUpdateArticle:
+		isNewer, err = pm.setNewestUpdateArticleLog(oplog)
 	case BoardOpTypeDeleteArticle:
 
 	case BoardOpTypeCreateMedia:
@@ -209,7 +233,9 @@ func (pm *ProtocolManager) HandleFailedBoardOplog(oplog *pkgservice.BaseOplog) (
 		err = pm.handleFailedUpdateTitleLog(oplog)
 
 	case BoardOpTypeCreateArticle:
+		err = pm.handleFailedCreateArticleLog(oplog)
 	case BoardOpTypeUpdateArticle:
+		err = pm.handleFailedUpdateArticleLog(oplog)
 	case BoardOpTypeDeleteArticle:
 
 	case BoardOpTypeCreateMedia:

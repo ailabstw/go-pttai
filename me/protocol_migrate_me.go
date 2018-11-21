@@ -19,6 +19,7 @@ package me
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -75,6 +76,9 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 
 	// delete user-profile
 	myInfo.Profile.PM().(*account.ProtocolManager).Delete()
+
+	// transfer board
+	myInfo.Board.PM().(*content.ProtocolManager).MigrateBoard(myID)
 
 	// transfer
 	for _, entity := range entities {

@@ -25,14 +25,14 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-func (b *BaseProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error) {
-	b.lockJoinKeyInfo.RLock()
-	defer b.lockJoinKeyInfo.RUnlock()
+func (pm *BaseProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error) {
+	pm.lockJoinKeyInfo.RLock()
+	defer pm.lockJoinKeyInfo.RUnlock()
 
-	log.Debug("GetJoinKeyFromHash: to for-loop", "e", b.Entity().GetID(), "hash", hash, "joinKeyInfos", b.joinKeyInfos)
+	log.Debug("GetJoinKeyFromHash: to for-loop", "e", pm.Entity().GetID(), "hash", hash, "joinKeyInfos", pm.joinKeyInfos)
 
 	var keyInfo *KeyInfo = nil
-	for _, eachKeyInfo := range b.joinKeyInfos {
+	for _, eachKeyInfo := range pm.joinKeyInfos {
 		log.Debug("GetJoinKeyFromHash (in for-loop)", "eachHash", eachKeyInfo.Hash)
 		if reflect.DeepEqual(hash, eachKeyInfo.Hash) {
 			keyInfo = eachKeyInfo
@@ -47,31 +47,32 @@ func (b *BaseProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*KeyInfo
 	return keyInfo, nil
 }
 
-func (b *BaseProtocolManager) GetJoinKey() (*KeyInfo, error) {
-	b.lockJoinKeyInfo.RLock()
-	defer b.lockJoinKeyInfo.RUnlock()
+func (pm *BaseProtocolManager) GetJoinKey() (*KeyInfo, error) {
+	pm.lockJoinKeyInfo.RLock()
+	defer pm.lockJoinKeyInfo.RUnlock()
 
-	lenKeyInfo := len(b.joinKeyInfos)
+	lenKeyInfo := len(pm.joinKeyInfos)
 
 	if lenKeyInfo == 0 {
 		return nil, ErrInvalidKeyInfo
 	}
 
-	return b.joinKeyInfos[lenKeyInfo-1], nil
+	return pm.joinKeyInfos[lenKeyInfo-1], nil
 }
 
-func (b *BaseProtocolManager) CreateJoinKeyLoop() error {
+func (pm *BaseProtocolManager) CreateJoinKeyLoop() error {
 	ticker := time.NewTicker(RenewJoinKeySeconds)
 	defer ticker.Stop()
 
-	b.createJoinKey()
+	pm.createJoinKey()
 
 loop:
 	for {
 		select {
 		case <-ticker.C:
-			b.createJoinKey()
-		case <-b.QuitSync():
+			pm.createJoinKey()
+		case <-pm.QuitSync():
+			log.Debug("CreateJoinKeyLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			break loop
 		}
 	}
@@ -79,42 +80,42 @@ loop:
 	return nil
 }
 
-func (b *BaseProtocolManager) createJoinKey() error {
-	status := b.Entity().GetStatus()
+func (pm *BaseProtocolManager) createJoinKey() error {
+	status := pm.Entity().GetStatus()
 	statusClass := types.StatusToStatusClass(status)
 	if statusClass >= types.StatusClassDeleted {
 		return nil
 	}
 
-	myEntity := b.Ptt().GetMyEntity()
+	myEntity := pm.Ptt().GetMyEntity()
 	status = myEntity.GetStatus()
 	statusClass = types.StatusToStatusClass(status)
 	if statusClass >= types.StatusClassDeleted {
 		return nil
 	}
 
-	if !b.IsMaster(myEntity.GetID(), false) {
+	if !pm.IsMaster(myEntity.GetID(), false) {
 		return nil
 	}
 
-	b.lockJoinKeyInfo.Lock()
-	defer b.lockJoinKeyInfo.Unlock()
+	pm.lockJoinKeyInfo.Lock()
+	defer pm.lockJoinKeyInfo.Unlock()
 
-	entityID := b.Entity().GetID()
+	entityID := pm.Entity().GetID()
 	newKeyInfo, err := NewJoinKeyInfo(entityID)
 	if err != nil {
 		return err
 	}
 
-	if len(b.joinKeyInfos) > 2 {
-		origKeyInfo := b.joinKeyInfos[0]
-		b.ptt.RemoveJoinKey(origKeyInfo.Hash, entityID, false)
-		b.joinKeyInfos = b.joinKeyInfos[1:]
+	if len(pm.joinKeyInfos) > 2 {
+		origKeyInfo := pm.joinKeyInfos[0]
+		pm.ptt.RemoveJoinKey(origKeyInfo.Hash, entityID, false)
+		pm.joinKeyInfos = pm.joinKeyInfos[1:]
 	}
 
-	b.joinKeyInfos = append(b.joinKeyInfos, newKeyInfo)
-	log.Debug("createJoinKeyInfo: to AddJoinKey", "e", b.Entity().GetID(), "joinKeyInfos", b.joinKeyInfos)
-	b.ptt.AddJoinKey(newKeyInfo.Hash, entityID, false)
+	pm.joinKeyInfos = append(pm.joinKeyInfos, newKeyInfo)
+	log.Debug("createJoinKeyInfo: to AddJoinKey", "e", pm.Entity().GetID(), "joinKeyInfos", pm.joinKeyInfos)
+	pm.ptt.AddJoinKey(newKeyInfo.Hash, entityID, false)
 
 	return nil
 }

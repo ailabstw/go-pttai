@@ -69,6 +69,7 @@ loop:
 		case <-ticker.C:
 			pm.SyncJoinFriend()
 		case <-pm.QuitSync():
+			log.Debug("SyncJoinFriendLoop: QuitSync", "entity", pm.Entity().GetID())
 			break loop
 		}
 	}

@@ -22,6 +22,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -33,6 +34,7 @@ func NewEmptyApproveJoinFriend() *pkgservice.ApproveJoinEntity {
 type InitFriendInfoAck struct {
 	FriendData  *pkgservice.ApproveJoinEntity `json:"F"`
 	ProfileData *pkgservice.ApproveJoinEntity `json:"P"`
+	BoardData   *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
 func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
@@ -64,6 +66,17 @@ func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
 		return pkgservice.ErrInvalidData
 	}
 
+	// board-data
+	boardPM := pm.Ptt().GetMyEntity().GetBoard().(*content.Board).PM()
+	_, theBoardData, err := boardPM.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return err
+	}
+	boardData, ok := theBoardData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	// add-master
 	pm.AddMaster(f.FriendID, true)
 
@@ -71,6 +84,7 @@ func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
 	initFriendInfoAck := &InitFriendInfoAck{
 		FriendData:  friendData,
 		ProfileData: profileData,
+		BoardData:   boardData,
 	}
 
 	log.Debug("InitFriendInfoAck: to SendDataToPeer", "peer", peer)
@@ -102,14 +116,16 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 	defer f.Unlock()
 
 	theProfileData := account.NewEmptyApproveJoinProfile()
+	theBoardData := content.NewEmptyApproveJoinBoard()
 	theFriendData := NewEmptyApproveJoinFriend()
-	initFriendInfoAck := &InitFriendInfoAck{ProfileData: theProfileData, FriendData: theFriendData}
+	initFriendInfoAck := &InitFriendInfoAck{ProfileData: theProfileData, FriendData: theFriendData, BoardData: theBoardData}
 	err = json.Unmarshal(dataBytes, initFriendInfoAck)
 	if err != nil {
 		return err
 	}
 	profileData := theProfileData
 	friendData := theFriendData
+	boardData := theBoardData
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
@@ -118,10 +134,22 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 		return err
 	}
 	profile := theProfile.(*account.Profile)
+	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+
+	// board
+	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
+	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, true, true)
+	if err != nil {
+		return err
+	}
+	board := theBoard.(*content.Board)
+	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
 
 	// friend
 	f.ProfileID = profile.ID
 	f.Profile = profile
+	f.BoardID = board.ID
+	f.Board = board
 	f.UpdateTS = friendData.Entity.GetUpdateTS()
 	f.Status = types.StatusAlive
 

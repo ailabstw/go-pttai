@@ -74,6 +74,8 @@ type Ptt interface {
 
 	// me
 
+	MyNodeID() *discover.NodeID
+
 	GetMyEntity() MyEntity
 	GetMyService() Service
 
@@ -97,7 +99,6 @@ type MyPtt interface {
 	// MyEntity
 
 	SetMyEntity(m PttMyEntity) error
-	MyNodeID() *discover.NodeID
 	MyRaftID() uint64
 	MyNodeType() NodeType
 	MyNodeKey() *ecdsa.PrivateKey

@@ -44,6 +44,11 @@ type ProtocolManager struct {
 	joinFriendRequests    map[common.Address]*pkgservice.JoinRequest
 	joinFriendSub         *event.TypeMuxSubscription
 
+	// requests to join-friend
+	lockJoinBoardRequest sync.RWMutex
+	joinBoardRequests    map[common.Address]*pkgservice.JoinRequest
+	joinBoardSub         *event.TypeMuxSubscription
+
 	// my-nodes
 	lockJoinMeRequest sync.RWMutex
 	joinMeRequests    map[common.Address]*pkgservice.JoinRequest
@@ -210,25 +215,63 @@ func (pm *ProtocolManager) Start() error {
 		go pm.StartRaft(nil, false)
 	}
 
+	syncWG := pm.SyncWG()
+
 	// join-me
 	pm.joinMeSub = pm.EventMux().Subscribe(&JoinMeEvent{})
 	go pm.JoinMeLoop()
 
-	go pm.CreateJoinKeyLoop()
-	go pm.SyncJoinMeLoop()
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.CreateJoinKeyLoop()
+	}()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.SyncJoinMeLoop()
+	}()
 
 	// join-friend
 	pm.joinFriendSub = pm.EventMux().Subscribe(&JoinFriendEvent{})
 	go pm.JoinFriendLoop()
 
-	go pm.CreateJoinFriendKeyLoop()
-	go pm.SyncJoinFriendLoop()
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.CreateJoinFriendKeyLoop()
+	}()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.SyncJoinFriendLoop()
+	}()
+
+	// join-board
+	pm.joinBoardSub = pm.EventMux().Subscribe(&JoinBoardEvent{})
+	go pm.JoinBoardLoop()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.SyncJoinBoardLoop()
+	}()
 
 	// oplog-merkle-tree
-	go pkgservice.PMOplogMerkleTreeLoop(pm, pm.meOplogMerkle)
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pkgservice.PMOplogMerkleTreeLoop(pm, pm.meOplogMerkle)
+	}()
 
 	// init me info
-	go pm.InitMeInfoLoop()
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pm.InitMeInfoLoop()
+	}()
 
 	log.Debug("Start: done")
 
@@ -243,6 +286,7 @@ func (pm *ProtocolManager) Stop() error {
 
 	pm.joinFriendSub.Unsubscribe()
 	pm.joinMeSub.Unsubscribe()
+	pm.joinBoardSub.Unsubscribe()
 
 	pm.StopRaft()
 
@@ -259,10 +303,14 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 		return nil
 	}
 
+	log.Debug("Sync: Start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
 	err := pm.SyncOplog(peer, pm.meOplogMerkle, SyncMeOplogMsg)
 	if err != nil {
 		return err
 	}
+
+	log.Debug("Sync: Done")
 
 	return nil
 }

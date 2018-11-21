@@ -117,6 +117,28 @@ func (api *PrivateAPI) GetFriendRequests(entityID string) ([]*pkgservice.Backend
 }
 
 /**********
+ * JoinBoard
+ **********/
+
+func (api *PrivateAPI) JoinBoard(friendURL string) (*pkgservice.BackendJoinRequest, error) {
+	return api.b.JoinBoard([]byte(friendURL))
+}
+
+/*
+GetBoardRequests get the friend-requests from me to the others.
+*/
+func (api *PrivateAPI) GetBoardRequests(entityID string) ([]*pkgservice.BackendJoinRequest, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return api.b.GetBoardRequests([]byte(entityID))
+}
+
+/**********
  * Op
  **********/
 func (api *PrivateAPI) GetOpKeyInfos(entityID string) ([]*pkgservice.KeyInfo, error) {

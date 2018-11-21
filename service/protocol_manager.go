@@ -359,7 +359,7 @@ type BaseProtocolManager struct {
 	minSyncRandomSeconds int
 
 	quitSync chan struct{}
-	syncWG   *sync.WaitGroup
+	syncWG   sync.WaitGroup
 
 	postsyncMemberOplog func(peer *PttPeer) error
 
@@ -538,7 +538,6 @@ func NewBaseProtocolManager(
 		minSyncRandomSeconds: minSyncRandomSeconds,
 
 		quitSync: make(chan struct{}),
-		syncWG:   ptt.SyncWG(),
 
 		postsyncMemberOplog: postsyncMemberOplog,
 
@@ -689,10 +688,22 @@ func (pm *BaseProtocolManager) Prestart() error {
 }
 
 func (pm *BaseProtocolManager) Start() error {
-	go PMOplogMerkleTreeLoop(pm, pm.masterMerkle)
-	go PMOplogMerkleTreeLoop(pm, pm.memberMerkle)
-
 	pm.isStart = true
+
+	log.Debug("Start: to master merkle-tree", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	syncWG := pm.SyncWG()
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		PMOplogMerkleTreeLoop(pm, pm.masterMerkle)
+	}()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		PMOplogMerkleTreeLoop(pm, pm.memberMerkle)
+	}()
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 	// check owner
@@ -714,13 +725,19 @@ func (pm *BaseProtocolManager) Start() error {
 }
 
 func (pm *BaseProtocolManager) PreStop() error {
+	log.Debug("Prestop: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "isStart", pm.isStart)
 	close(pm.quitSync)
 
 	return nil
 }
 
 func (pm *BaseProtocolManager) Stop() error {
+	if pm.isStart {
+		pm.syncWG.Wait()
+	}
 	pm.eventMux.Stop()
+
+	log.Debug("Stopped", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	return nil
 }

@@ -17,6 +17,7 @@
 package friend
 
 import (
+	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -33,6 +34,25 @@ func NewServiceProtocolManager(ptt pkgservice.Ptt, service pkgservice.Service) (
 
 	spm := &ServiceProtocolManager{
 		BaseServiceProtocolManager: b,
+	}
+
+	// load friends
+	friends, err := spm.GetFriendList(nil, 0, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, eachFriend := range friends {
+		err = eachFriend.Init(ptt, service, spm)
+		if err != nil {
+			return nil, err
+		}
+
+		err = spm.RegisterEntity(eachFriend.ID, eachFriend)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	return spm, nil

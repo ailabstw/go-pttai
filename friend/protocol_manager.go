@@ -18,6 +18,7 @@ package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -67,4 +68,51 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 	pm.dbMessageIdxPrefix = append(DBMessageIdxPrefix, entityID[:]...)
 
 	return pm, nil
+}
+
+func (pm *ProtocolManager) Start() error {
+	err := pm.BaseProtocolManager.Start()
+	if err != nil {
+		log.Error("Start: unable to start BaseProtocolManager", "e", err)
+		return err
+	}
+
+	// oplog-merkle-tree
+	syncWG := pm.SyncWG()
+
+	syncWG.Add(1)
+	go func() {
+		defer syncWG.Done()
+		pkgservice.PMOplogMerkleTreeLoop(pm, pm.friendOplogMerkle)
+	}()
+
+	return nil
+}
+
+func (pm *ProtocolManager) Stop() error {
+	pm.BaseProtocolManager.PreStop()
+
+	err := pm.BaseProtocolManager.Stop()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
+	log.Debug("Sync: start", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
+	if peer == nil {
+		return nil
+	}
+
+	err := pm.SyncOplog(peer, pm.MasterMerkle(), pkgservice.SyncMasterOplogMsg)
+
+	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "e", err)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

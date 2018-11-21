@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -33,6 +34,35 @@ var (
 	}
 )
 
+// protocol
+const (
+	_ pkgservice.OpType = iota + pkgservice.NMsg
+	// friend-oplog
+	AddBoardOplogMsg //30
+	AddBoardOplogsMsg
+
+	AddPendingBoardOplogMsg
+	AddPendingBoardOplogsMsg
+
+	SyncBoardOplogMsg
+	SyncBoardOplogAckMsg
+	SyncBoardOplogNewOplogsMsg
+	SyncBoardOplogNewOplogsAckMsg
+
+	SyncPendingBoardOplogMsg
+	SyncPendingBoardOplogAckMsg
+
+	SyncCreateMessageMsg
+	SyncCreateMessageAckMsg
+
+	SyncCreateMessageBlockMsg
+	SyncCreateMessageBlockAckMsg
+
+	// init board info
+	InitBoardInfoMsg
+	InitBoardInfoAckMsg
+)
+
 // db
 var (
 	dbKey *pttdb.LDBDatabase = nil
@@ -40,22 +70,11 @@ var (
 	dbBoardCore *pttdb.LDBDatabase = nil
 	dbBoard     *pttdb.LDBBatch    = nil
 
-	dbCommentCore *pttdb.LDBDatabase = nil
-	dbComment     *pttdb.LDBBatch    = nil
-
 	dbMeta *pttdb.LDBDatabase = nil
-
-	DBNodeIdxOplogPrefix    = []byte(".ndig")
-	DBNodeOplogPrefix       = []byte(".ndlg")
-	DBNodeMerkleOplogPrefix = []byte(".ndmk")
 
 	DBBoardIdxOplogPrefix    = []byte(".bdig")
 	DBBoardOplogPrefix       = []byte(".bdlg")
 	DBBoardMerkleOplogPrefix = []byte(".bdmk")
-
-	DBCommentIdxOplogPrefix    = []byte(".ctig")
-	DBCommentOplogPrefix       = []byte(".ctlg")
-	DBCommentMerkleOplogPrefix = []byte(".ctmk")
 
 	DBBoardPrefix                  = []byte(".bddb")
 	DBBoardIdxPrefix               = []byte(".bdix")
@@ -77,21 +96,30 @@ var (
 	DBImageIdxPrefix               = []byte(".imix")
 	DBMediaPrefix                  = []byte(".madb")
 	DBMediaIdxPrefix               = []byte(".maix")
+	DBTitlePrefix                  = []byte(".tldb")
+	DBTitleIdxPrefix               = []byte(".tlix")
+)
 
-	// squeeze article and comment and reply to have better reference
-	DBContentBlockPrefix = []byte(".cont")
+// max-masters
+const (
+	MaxMasters = 1
+)
 
-	DBMasterPrefix            = []byte(".mrdb")
-	DBMasterIdxPrefix         = []byte(".mrix")
-	DBMasterIdxOplogPrefix    = []byte(".mrig")
-	DBMasterOplogPrefix       = []byte(".mrlg")
-	DBMasterMerkleOplogPrefix = []byte(".mrmk")
+// sync
+const (
+	MaxSyncRandomSeconds = 30
+	MinSyncRandomSeconds = 15
+)
 
-	DBMemberPrefix            = []byte(".mbdb")
-	DBMemberIdxPrefix         = []byte(".mbix")
-	DBMemberIdxOplogPrefix    = []byte(".mbig")
-	DBMemberOplogPrefix       = []byte(".mblg")
-	DBMemberMerkleOplogPrefix = []byte(".mbmk")
+// op-key
+var (
+	RenewOpKeySeconds  int64 = 86400
+	ExpireOpKeySeconds int64 = 259200
+)
+
+// article
+const (
+	NFirstLineInBlock = 1
 )
 
 func InitContent(dataDir string, keystoreDir string) error {
@@ -108,16 +136,6 @@ func InitContent(dataDir string, keystoreDir string) error {
 		return err
 	}
 
-	dbCommentCore, err = pttdb.NewLDBDatabase("comment", dataDir, 0, 0)
-	if err != nil {
-		return err
-	}
-
-	dbComment, err = pttdb.NewLDBBatch(dbCommentCore)
-	if err != nil {
-		return err
-	}
-
 	dbKey, err = pttdb.NewLDBDatabase("key", keystoreDir, 0, 0)
 	if err != nil {
 		return err
@@ -128,11 +146,14 @@ func InitContent(dataDir string, keystoreDir string) error {
 		return err
 	}
 
+	InitLocaleInfo()
+
 	return nil
 }
 
 // default-title
 func DefaultTitle(myID *types.PttID, creatorID *types.PttID, myName string) []byte {
+	log.Debug("DefaultTitle: start", "myID", myID, "creatorID", creatorID, "myName", myName, "currentLocale", pkgservice.CurrentLocale)
 	return localeInfos[pkgservice.CurrentLocale].DefaultTitle(myID, creatorID, myName)
 }
 
@@ -144,15 +165,6 @@ func TeardownContent() {
 	if dbBoardCore != nil {
 		dbBoardCore.Close()
 		dbBoardCore = nil
-	}
-
-	if dbComment != nil {
-		dbComment = nil
-	}
-
-	if dbCommentCore != nil {
-		dbCommentCore.Close()
-		dbCommentCore = nil
 	}
 
 	if dbKey != nil {

@@ -14,11 +14,30 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package me
+package content
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func ProtocolGetFriendRequests() error {
-    return nil
+type SyncCommentInfo struct {
+	*pkgservice.BaseSyncInfo `json:"b"`
+
+	CommentType CommentType `json:"t"`
+}
+
+type Comment struct {
+	*pkgservice.BaseObject `json:"b"`
+
+	UpdateTS types.Timestamp `json:"UT"`
+
+	ArticleID        *types.PttID `json:"AID"`
+	ArticleCreatorID *types.PttID `json:"aID"`
+
+	CommentType CommentType `json:"t"`
+}
+
+func NewComment() (*Comment, error) {
+	return &Comment{}, nil
 }

@@ -37,8 +37,14 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	sspm := service.SPM()
 
 	// entity
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return nil, err
+	}
+
 	entity.SetSyncInfo(nil)
-	err := entity.Save(true)
+	entity.SetJoinTS(ts)
+	err = entity.Save(true)
 	if err != nil {
 		return nil, err
 	}

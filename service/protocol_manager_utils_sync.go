@@ -68,6 +68,7 @@ looping:
 				log.Error("unable to Sync after forceSync", "e", err)
 			}
 		case <-pm.QuitSync():
+			log.Debug("PMSync: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			err = p2p.DiscQuitting
 			break looping
 		}
@@ -105,7 +106,7 @@ func (pm *BaseProtocolManager) QuitSync() chan struct{} {
 }
 
 func (pm *BaseProtocolManager) SyncWG() *sync.WaitGroup {
-	return pm.syncWG
+	return &pm.syncWG
 }
 
 func (pm *BaseProtocolManager) Sync(peer *PttPeer) error {

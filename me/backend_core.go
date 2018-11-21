@@ -305,6 +305,56 @@ func (b *Backend) GetFriendRequests(entityIDBytes []byte) ([]*pkgservice.Backend
 }
 
 /**********
+ * JoinBoard
+ **********/
+
+func (b *Backend) JoinBoard(friendURL []byte) (*pkgservice.BackendJoinRequest, error) {
+	joinRequest, err := pkgservice.ParseBackendJoinURL(friendURL, pkgservice.PathJoinBoard)
+	if err != nil {
+		return nil, err
+	}
+
+	myNodeID := b.myPtt.MyNodeID
+	if reflect.DeepEqual(myNodeID, joinRequest.NodeID) {
+		return nil, ErrInvalidNode
+	}
+
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+	pm := myInfo.PM().(*ProtocolManager)
+	err = pm.JoinBoard(joinRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	backendJoinRequest := pkgservice.JoinRequestToBackendJoinRequest(joinRequest)
+
+	return backendJoinRequest, nil
+}
+
+func (b *Backend) GetBoardRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoinRequest, error) {
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	joinBoardRequests, err := pm.GetBoardRequests()
+	if err != nil {
+		return nil, err
+	}
+
+	theList := make([]*pkgservice.BackendJoinRequest, len(joinBoardRequests))
+	for i, request := range joinBoardRequests {
+		theList[i] = pkgservice.JoinRequestToBackendJoinRequest(request)
+	}
+	return theList, nil
+}
+
+/**********
  * MyInfo
  **********/
 

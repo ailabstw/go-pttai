@@ -55,6 +55,8 @@ type Entity interface {
 	GetCreateTS() types.Timestamp
 	GetCreatorID() *types.PttID
 
+	SetJoinTS(ts types.Timestamp)
+
 	GetUpdaterID() *types.PttID
 	SetUpdaterID(id *types.PttID)
 
@@ -103,6 +105,8 @@ type BaseEntity struct {
 	CreatorID *types.PttID    `json:"CID"`
 	UpdaterID *types.PttID    `json:"UID"`
 
+	JoinTS types.Timestamp `json:"JT"`
+
 	LogID       *types.PttID `json:"l,omitempty"`
 	UpdateLogID *types.PttID `json:"u,omitempty"`
 
@@ -129,6 +133,7 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 		V:         types.CurrentVersion,
 		ID:        id,
 		CreateTS:  createTS,
+		JoinTS:    createTS,
 		CreatorID: creatorID,
 		UpdaterID: creatorID,
 		Status:    status,
@@ -154,6 +159,7 @@ func (e *BaseEntity) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
 
 func (e *BaseEntity) PrestartAndStart() error {
 	err := e.Prestart()
+	log.Debug("PrestartAndStart: after Prestart", "e", err, "entity", e.GetID(), "service", e.Service().Name())
 	if err != nil {
 		return err
 	}
@@ -358,3 +364,7 @@ func (e *BaseEntity) GetSyncInfo() SyncInfo {
 }
 
 func (e *BaseEntity) ResetJoinMeta() {}
+
+func (e *BaseEntity) SetJoinTS(ts types.Timestamp) {
+	e.JoinTS = ts
+}

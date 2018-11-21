@@ -50,6 +50,9 @@ func (pm *ProtocolManager) HandleApproveJoin(dataBytes []byte, hash *common.Addr
 		err = pm.HandleApproveJoinFriend(dataBytes, joinRequest, peer)
 	case pm.IsJoinMeRequests(hash):
 		err = pm.HandleApproveJoinMe(dataBytes, joinRequest, peer)
+	case pm.IsJoinBoardRequests(hash):
+		log.Debug("HandleApproveJoin: is join-board request", "hash", hash)
+		err = pm.HandleApproveJoinBoard(dataBytes, joinRequest, peer)
 	}
 
 	return err

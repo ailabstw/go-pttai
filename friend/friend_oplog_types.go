@@ -24,6 +24,7 @@ import (
 // optype
 const (
 	FriendOpTypeInvalid pkgservice.OpType = iota
+
 	FriendOpTypeCreateFriend
 	FriendOpTypeDeleteFriend
 
@@ -46,7 +47,7 @@ type FriendOpCreateMessage struct {
 	Hashs       [][][]byte   `json:"H"`
 	NBlock      int          `json:"NB"`
 
-	MediaIDs []*types.PttID `json:"ms"`
+	MediaIDs []*types.PttID `json:"ms,omitempty"`
 }
 
 type FriendOpCreateMedia struct {

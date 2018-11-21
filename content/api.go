@@ -140,6 +140,10 @@ func (api *PrivateAPI) GetRawBoard(boardID string) (*Board, error) {
 	return api.b.GetRawBoard([]byte(boardID))
 }
 
+func (api *PrivateAPI) GetRawTitle(boardID string) (*Title, error) {
+	return api.b.GetRawTitle([]byte(boardID))
+}
+
 type PublicAPI struct {
 	b *Backend
 }

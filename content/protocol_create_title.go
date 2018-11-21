@@ -67,5 +67,8 @@ func (pm *ProtocolManager) NewTitle(theData pkgservice.CreateData) (pkgservice.O
 	}
 	pm.SetTitleDB(title)
 
+	// set title
+	title.Title = data.Title
+
 	return title, opData, nil
 }

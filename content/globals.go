@@ -52,15 +52,12 @@ const (
 	SyncPendingBoardOplogMsg
 	SyncPendingBoardOplogAckMsg
 
-	SyncCreateMessageMsg
-	SyncCreateMessageAckMsg
+	// sync title
+	SyncCreateTitleMsg
+	SyncCreateTitleAckMsg
 
-	SyncCreateMessageBlockMsg
-	SyncCreateMessageBlockAckMsg
-
-	// init board info
-	InitBoardInfoMsg
-	InitBoardInfoAckMsg
+	SyncUpdateTitleMsg
+	SyncUpdateTitleAckMsg
 )
 
 // db

@@ -66,7 +66,7 @@ func NewProcessBoardInfo() *ProcessBoardInfo {
  **********/
 
 func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessBoardInfo)
+	info, ok := processInfo.(*ProcessBoardInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
@@ -76,7 +76,9 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
+		origLogs, err = pm.handleCreateTitleLogs(oplog, info)
 	case BoardOpTypeUpdateTitle:
+		origLogs, err = pm.handleUpdateTitleLogs(oplog, info)
 
 	case BoardOpTypeCreateArticle:
 	case BoardOpTypeUpdateArticle:
@@ -100,7 +102,7 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
  **********/
 
 func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-	_, ok := processInfo.(*ProcessBoardInfo)
+	info, ok := processInfo.(*ProcessBoardInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
@@ -110,7 +112,9 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
+		origLogs, err = pm.handlePendingCreateTitleLogs(oplog, info)
 	case BoardOpTypeUpdateTitle:
+		origLogs, err = pm.handlePendingUpdateTitleLogs(oplog, info)
 
 	case BoardOpTypeCreateArticle:
 	case BoardOpTypeUpdateArticle:
@@ -135,10 +139,18 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
  **********/
 
 func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.ProcessInfo, toBroadcastLogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isPending bool) (err error) {
-	_, ok := processInfo.(*ProcessBoardInfo)
+	info, ok := processInfo.(*ProcessBoardInfo)
 	if !ok {
 		err = pkgservice.ErrInvalidData
 	}
+
+	// user name
+	createTitleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateTitleInfo, BoardOpTypeCreateTitle)
+
+	updateTitleIDs := pkgservice.ProcessInfoToSyncIDList(info.TitleInfo, BoardOpTypeUpdateTitle)
+
+	pm.SyncTitle(SyncCreateTitleMsg, createTitleIDs, peer)
+	pm.SyncTitle(SyncUpdateTitleMsg, updateTitleIDs, peer)
 
 	pm.broadcastBoardOplogsCore(toBroadcastLogs)
 
@@ -157,7 +169,9 @@ func (pm *ProtocolManager) SetNewestBoardOplog(oplog *pkgservice.BaseOplog) (err
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
+		isNewer, err = pm.setNewestCreateTitleLog(oplog)
 	case BoardOpTypeUpdateTitle:
+		isNewer, err = pm.setNewestUpdateTitleLog(oplog)
 
 	case BoardOpTypeCreateArticle:
 	case BoardOpTypeUpdateArticle:
@@ -190,7 +204,9 @@ func (pm *ProtocolManager) HandleFailedBoardOplog(oplog *pkgservice.BaseOplog) (
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
+		err = pm.handleFailedCreateTitleLog(oplog)
 	case BoardOpTypeUpdateTitle:
+		err = pm.handleFailedUpdateTitleLog(oplog)
 
 	case BoardOpTypeCreateArticle:
 	case BoardOpTypeUpdateArticle:

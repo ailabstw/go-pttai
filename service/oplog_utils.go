@@ -165,3 +165,26 @@ func IDInOplogSigns(id *types.PttID, signs []*SignInfo) bool {
 
 	return false
 }
+
+func ConcatLog(slices [][]*BaseOplog) ([]*BaseOplog, error) {
+	totalLen := 0
+	for _, s := range slices {
+		if s == nil {
+			continue
+		}
+
+		totalLen += len(s)
+	}
+	tmp := make([]*BaseOplog, totalLen)
+
+	i := 0
+	for _, s := range slices {
+		if s == nil {
+			continue
+		}
+
+		i += copy(tmp[i:], s)
+	}
+
+	return tmp, nil
+}

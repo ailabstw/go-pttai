@@ -143,6 +143,9 @@ func (b *Block) GetIter(listOrder pttdb.ListOrder, isLocked bool) (iterator.Iter
 }
 
 func (b *Block) Prefix() ([]byte, error) {
+	if b.ID == nil {
+		return common.Concat([][]byte{b.fullDBPrefix, b.ObjID[:]})
+	}
 	return common.Concat([][]byte{b.fullDBPrefix, b.ObjID[:], b.ID[:]})
 }
 

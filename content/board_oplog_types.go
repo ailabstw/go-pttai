@@ -88,16 +88,7 @@ type BoardOpUpdateArticle struct {
 type BoardOpDeleteArticle struct {
 }
 
-type BoardOpCreateMedia struct {
-	BlockInfoID *types.PttID `json:"bID"`
-	Hashs       [][][]byte   `json:"H"`
-	NBlock      int          `json:"NB"`
-}
-
-type BoardOpDeleteMedia struct {
-}
-
-type CommentOpCreateComment struct {
+type BoardOpCreateComment struct {
 	ArticleID *types.PttID `json:"AID"`
 
 	BlockInfoID *types.PttID   `json:"BID"`
@@ -105,11 +96,11 @@ type CommentOpCreateComment struct {
 	MediaIDs    []*types.PttID `json:"ms,omitempty"`
 }
 
-type CommentOpDeleteComment struct {
+type BoardOpDeleteComment struct {
 	ArticleID *types.PttID `json:"AID"`
 }
 
-type CommentOpCreateReply struct {
+type BoardOpCreateReply struct {
 	ArticleID *types.PttID `json:"AID"`
 	CommentID *types.PttID `json:"ACD"`
 
@@ -118,12 +109,12 @@ type CommentOpCreateReply struct {
 	MediaIDs    []*types.PttID `json:"ms,omitempty"`
 }
 
-type CommentOpDeleteReply struct {
+type BoardOpDeleteReply struct {
 	ArticleID *types.PttID `json:"AID"`
 	CommentID *types.PttID `json:"ACD"`
 }
 
-type CommentOpUpdateReply struct {
+type BoardOpUpdateReply struct {
 	BlockInfoID *types.PttID   `json:"BID"`
 	Hashs       [][][]byte     `json:"H"`
 	MediaIDs    []*types.PttID `json:"ms,omitempty"`

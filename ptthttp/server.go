@@ -32,6 +32,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/rpc"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/gorilla/mux"
 )
 
@@ -279,11 +280,11 @@ func (s *Server) imgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch backendGetImg.Type {
-	case content.MediaTypeJPEG:
+	case pkgservice.MediaTypeJPEG:
 		w.Header().Set("Content-Type", "image/jpg")
-	case content.MediaTypePNG:
+	case pkgservice.MediaTypePNG:
 		w.Header().Set("Content-Type", "image/png")
-	case content.MediaTypeGIF:
+	case pkgservice.MediaTypeGIF:
 		w.Header().Set("Content-Type", "image/gif")
 	}
 	w.Write(backendGetImg.Buf)
@@ -339,11 +340,11 @@ func (s *Server) origImgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch backendGetImg.Type {
-	case content.MediaTypeJPEG:
+	case pkgservice.MediaTypeJPEG:
 		w.Header().Set("Content-Type", "image/jpg")
-	case content.MediaTypePNG:
+	case pkgservice.MediaTypePNG:
 		w.Header().Set("Content-Type", "image/png")
-	case content.MediaTypeGIF:
+	case pkgservice.MediaTypeGIF:
 		w.Header().Set("Content-Type", "image/gif")
 	}
 	w.Write(backendGetImg.Buf)

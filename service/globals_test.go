@@ -393,6 +393,44 @@ func setupTest(t *testing.T) {
 
 }
 
+var (
+	tDefaultBuf = [][]byte{
+		[]byte("12345"),
+		[]byte("6789"),
+	}
+	tDefaultScrambleBuf = [][]byte{
+		[]byte{169, 250, 3, 58, 179, 16, 112, 182, 133, 3, 220, 116},
+		[]byte{208, 150, 36, 13, 206, 37, 111, 207, 237, 28, 163, 88},
+	}
+
+	tDefaultBuf2 = [][]byte{
+		[]byte("1"),
+		[]byte(""),
+	}
+	tDefaultScrambleBuf2 = [][]byte{
+		[]byte{169, 62, 147, 183, 253, 71},
+		[]byte{208, 48, 252, 196, 157, 122},
+	}
+
+	tDefaultBuf3 = [][]byte{
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		[]byte(""),
+	}
+	tDefaultScrambleBuf3 = [][]byte{
+		[]byte{111, 228, 65, 65, 185, 185, 135, 155, 135, 135, 121, 195},
+		[]byte{117, 135, 65, 65, 197, 197, 228, 246, 228, 228, 101, 130},
+	}
+
+	tDefaultBuf4 = [][]byte{
+		[]byte{},
+		[]byte{},
+	}
+	tDefaultScrambleBuf4 = [][]byte{
+		[]byte{169, 34, 220, 116},
+		[]byte{208, 34, 163, 88},
+	}
+)
+
 func teardownTest(t *testing.T) {
 	log.Root().SetHandler(origHandler)
 	types.GetTimestamp = origGetTimestamp

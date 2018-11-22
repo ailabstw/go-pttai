@@ -131,8 +131,8 @@ type BaseObject struct {
 	fullDBPrefix    []byte
 	fullDBIdxPrefix []byte
 
-	setBlockDB func(blockInfo *BlockInfo, objID *types.PttID)
-	setMediaDB func(media *Media)
+	setBlockInfoDB func(blockInfo *BlockInfo, objID *types.PttID)
+	setMediaDB     func(media *Media)
 }
 
 func NewObject(
@@ -176,7 +176,7 @@ func (o *BaseObject) SetDB(
 	o.fullDBPrefix = fullDBPrefix
 	o.fullDBIdxPrefix = fullDBIdxPrefix
 
-	o.setBlockDB = setBlockDB
+	o.setBlockInfoDB = setBlockDB
 	o.setMediaDB = setMediaDB
 }
 
@@ -186,7 +186,7 @@ func (o *BaseObject) CloneDB(o2 *BaseObject) {
 	o.EntityID = o2.EntityID
 	o.fullDBPrefix = o2.fullDBPrefix
 	o.fullDBIdxPrefix = o2.fullDBIdxPrefix
-	o.setBlockDB = o2.setBlockDB
+	o.setBlockInfoDB = o2.setBlockInfoDB
 	o.setMediaDB = o.setMediaDB
 }
 
@@ -378,7 +378,7 @@ func (o *BaseObject) Delete(
 
 	if o.BlockInfo != nil {
 		if o.BlockInfo.db == nil {
-			o.setBlockDB(o.BlockInfo, o.ID)
+			o.setBlockInfoDB(o.BlockInfo, o.ID)
 		}
 		o.BlockInfo.Remove(false)
 	}
@@ -411,6 +411,10 @@ func (o *BaseObject) DBLock() *types.LockMap {
 	return o.dbLock
 }
 
+func (o *BaseObject) SetFullDBPrefix(fullDBPrefix []byte) {
+	o.fullDBPrefix = fullDBPrefix
+}
+
 func (o *BaseObject) FullDBPrefix() []byte {
 	return o.fullDBPrefix
 }
@@ -419,8 +423,8 @@ func (o *BaseObject) FullDBIdxPrefix() []byte {
 	return o.fullDBIdxPrefix
 }
 
-func (o *BaseObject) SetBlockDB() func(blockInfo *BlockInfo, objID *types.PttID) {
-	return o.setBlockDB
+func (o *BaseObject) SetBlockInfoDB() func(blockInfo *BlockInfo, objID *types.PttID) {
+	return o.setBlockInfoDB
 }
 
 func (o *BaseObject) SetMediaDB() func(media *Media) {
@@ -429,7 +433,7 @@ func (o *BaseObject) SetMediaDB() func(media *Media) {
 
 func (o *BaseObject) NewEmptyObj() *BaseObject {
 	newObj := &BaseObject{}
-	newObj.SetDB(o.db, o.dbLock, o.EntityID, o.fullDBPrefix, o.fullDBIdxPrefix, o.setBlockDB, o.setMediaDB)
+	newObj.SetDB(o.db, o.dbLock, o.EntityID, o.fullDBPrefix, o.fullDBIdxPrefix, o.setBlockInfoDB, o.setMediaDB)
 
 	return newObj
 }

@@ -68,9 +68,43 @@ func (b *Backend) CreateArticle(entityIDBytes []byte, title []byte, article [][]
 	return backendArticle, nil
 }
 
-func (b *Backend) CreateComment(entityIDBytes []byte, articleIDBytes []byte, commentType CommentType, comment []byte, mediaIDBytes []byte) (*BackendCreateComment, error) {
+func (b *Backend) CreateComment(entityIDBytes []byte, articleIDBytes []byte, commentType CommentType, commentBytes []byte, mediaIDBytes []byte) (*BackendCreateComment, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	mediaID, err := types.UnmarshalTextPttID(mediaIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	theComment, err := pm.CreateComment(articleID, commentType, commentBytes, mediaID)
+	if err != nil {
+		return nil, err
+	}
+
+	backendComment := commentToBackendCreateComment(theComment)
+
+	return backendComment, nil
 }
 
 func (b *Backend) CreateReply(entityIDBytes []byte, articleIDBytes []byte, commentIDBytes []byte, reply [][]byte, mediaIDBytes []byte) (*BackendCreateReply, error) {
@@ -465,22 +499,103 @@ func (b *Backend) GetBoardOplogMerkleNodeList(entityIDBytes []byte, level pkgser
 
 func (b *Backend) UploadFile(entityIDBytes []byte, filename []byte, bytes []byte) (*BackendUploadFile, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	media, err := pm.UploadFile(filename, bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return mediaToBackendUploadFile(media), nil
 }
 
 func (b *Backend) GetFile(entityIDBytes []byte, mediaIDBytes []byte) (*BackendGetFile, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	mediaID, err := types.UnmarshalTextPttID(mediaIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if mediaID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	f, err := pm.GetMedia(mediaID)
+	if err != nil {
+		return nil, err
+	}
+
+	return mediaToBackendGetFile(f), nil
 }
 
 func (b *Backend) UploadImage(entityIDBytes []byte, fileType string, bytes []byte) (*BackendUploadImg, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	media, err := pm.UploadImage(fileType, bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return mediaToBackendUploadImg(media), nil
 }
 
-func (b *Backend) GetImage(entityIDBytes []byte, imgIDBytes []byte) (*BackendGetImg, error) {
+func (b *Backend) GetImage(entityIDBytes []byte, mediaIDBytes []byte) (*BackendGetImg, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	mediaID, err := types.UnmarshalTextPttID(mediaIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if mediaID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	media, err := pm.GetMedia(mediaID)
+	if err != nil {
+		return nil, err
+	}
+
+	return mediaToBackendGetImg(media), nil
+
 }
 
 func (b *Backend) GetArticleSummary(entityIDBytes []byte, articleInfo *BackendArticleSummaryParams) (*ArticleBlock, error) {

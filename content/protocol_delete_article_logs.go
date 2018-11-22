@@ -17,8 +17,101 @@
 package content
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func ProtocolDeleteArticleLogs() error {
-    return nil
+func (pm *ProtocolManager) handleDeleteArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	opData := &BoardOpDeleteArticle{}
+
+	return pm.HandleDeleteObjectLog(
+		oplog,
+		info,
+		obj,
+		opData,
+
+		pm.SetBoardDB,
+		pm.removeMediaInfoByBlockInfo,
+		pm.postdeleteArticle,
+		pm.updateArticleDeleteInfo,
+	)
+}
+
+func (pm *ProtocolManager) handlePendingDeleteArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	opData := &BoardOpDeleteArticle{}
+
+	return pm.HandlePendingDeleteObjectLog(
+		oplog,
+		info, obj,
+		opData,
+
+		pm.SetBoardDB,
+		pm.removeMediaInfoByBlockInfo,
+		pm.setPendingDeleteArticleSyncInfo,
+		pm.updateArticleDeleteInfo,
+	)
+}
+
+func (pm *ProtocolManager) setNewestDeleteArticleLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.SetNewestDeleteObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedDeleteArticleLog(oplog *pkgservice.BaseOplog) error {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.HandleFailedDeleteObjectLog(oplog, obj)
+}
+
+/**********
+ * Remove Media Info
+ **********/
+
+func (pm *ProtocolManager) removeMediaInfoByBlockInfo(blockInfo *pkgservice.BlockInfo, theInfo pkgservice.ProcessInfo, oplog *pkgservice.BaseOplog) {
+
+	info, ok := theInfo.(*ProcessBoardInfo)
+	if !ok {
+		return
+	}
+
+	if blockInfo == nil {
+		return
+	}
+	mediaIDs := blockInfo.MediaIDs
+	if mediaIDs == nil {
+		return
+	}
+
+	pm.RemoveMediaInfosByOplog(info.MediaInfo, mediaIDs, oplog, BoardOpTypeDeleteMedia)
+
+}
+
+/**********
+ * Customize
+ **********/
+
+func (pm *ProtocolManager) updateArticleDeleteInfo(obj pkgservice.Object, oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) error {
+
+	info, ok := theInfo.(*ProcessBoardInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	info.ArticleInfo[*oplog.ObjID] = oplog
+
+	return nil
 }

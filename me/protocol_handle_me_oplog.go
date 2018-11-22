@@ -92,14 +92,8 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 		err = pkgservice.ErrInvalidData
 	}
 
-	deleteMeInfo := info.DeleteMeInfo
-
-	log.Debug("postprocessMeOplog", "isPending", isPending, "toBroadcastLogs", toBroadcastLogs, "deleteMeInfo", deleteMeInfo)
-
 	if isPending {
-		for _, eachLog := range deleteMeInfo {
-			toBroadcastLogs = pm.PostprocessPendingDeleteOplog(eachLog, toBroadcastLogs)
-		}
+		toBroadcastLogs = pkgservice.ProcessInfoToBroadcastLogs(info.DeleteMeInfo, toBroadcastLogs)
 	}
 
 	pm.broadcastMeOplogsCore(toBroadcastLogs)

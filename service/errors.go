@@ -37,6 +37,8 @@ var (
 
 	ErrMsgTooLarge = errors.New("msg too large")
 
+	ErrFileTooLarge = errors.New("file too large")
+
 	ErrInvalidMaster0 = errors.New("invalid master0")
 
 	ErrServiceUnknown = errors.New("service unknown")

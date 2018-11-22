@@ -14,17 +14,27 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package content
+package service
 
 import "github.com/ailabstw/go-pttai/common/types"
 
-type Member struct {
-	ID       *types.PttID
-	UpdateTS types.Timestamp `json:"UT"`
-	DoerID   *types.PttID    `json:"DID"`
-	BoardID  *types.PttID    `json:"BID"`
-	Status   types.Status    `json:"S"`
-	Weight   uint32          `json:"w"`
+func (pm *BaseProtocolManager) NewMedia(theData CreateData) (Object, OpData, error) {
 
-	LogID *types.PttID `json:"l"`
+	myID := pm.Ptt().GetMyEntity().GetID()
+	entityID := pm.Entity().GetID()
+
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	opData := &OpCreateMedia{}
+
+	theMedia, err := NewMedia(ts, myID, entityID, nil, types.StatusInit)
+	if err != nil {
+		return nil, nil, err
+	}
+	pm.SetMediaDB(theMedia)
+
+	return theMedia, opData, nil
 }

@@ -70,6 +70,20 @@ func (pm *BaseProtocolManager) removeBlockAndMediaInfoByBlockInfo(
 	return nil
 }
 
+func (pm *BaseProtocolManager) RemoveMediaInfosByOplog(mediaInfos map[types.PttID]*BaseOplog, mediaIDs []*types.PttID, oplog *BaseOplog, deleteMediaOp OpType) {
+
+	var origLog *BaseOplog
+	var ok bool
+	for _, mediaID := range mediaIDs {
+		origLog, ok = mediaInfos[*mediaID]
+		if ok && origLog.Op == deleteMediaOp {
+			continue
+		}
+
+		mediaInfos[*mediaID] = oplog
+	}
+}
+
 func (pm *BaseProtocolManager) removeNonSyncOplog(
 	setDB func(oplog *BaseOplog),
 	logID *types.PttID,

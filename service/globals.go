@@ -52,7 +52,7 @@ var (
 
 // ptt-layer
 const (
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // 4MB for video-streaming
+	ProtocolMaxMsgSize = 20 * 1024 * 1024 // 20MB for video-streaming
 
 	SizeOpType   = 4 // optype uint32
 	SizeCodeType = 8 // codetype uint64
@@ -191,6 +191,15 @@ var (
 )
 
 // media
+const (
+	NByteInBlock = 65535
+
+	MaxUploadMediaSize = 10485760 // 10MB
+
+	MaxUploadImageWidth  = 8192
+	MaxUploadImageHeight = 8192
+)
+
 var (
 	DBMediaPrefix    = []byte(".mddb")
 	DBMediaIdxPrefix = []byte(".mdix")

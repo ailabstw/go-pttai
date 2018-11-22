@@ -36,6 +36,10 @@ type ProtocolManager struct {
 	// article
 	dbArticlePrefix    []byte
 	dbArticleIdxPrefix []byte
+
+	// comment
+	dbCommentPrefix    []byte
+	dbCommentIdxPrefix []byte
 }
 
 func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgservice.Entity) *pkgservice.BaseProtocolManager {
@@ -108,6 +112,10 @@ func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) 
 	entityID := b.ID
 	pm.dbArticlePrefix = append(DBArticlePrefix, entityID[:]...)
 	pm.dbArticleIdxPrefix = append(DBArticleIdxPrefix, entityID[:]...)
+
+	// comment
+	pm.dbCommentPrefix = append(DBCommentPrefix, entityID[:]...)
+	pm.dbCommentIdxPrefix = append(DBCommentIdxPrefix, entityID[:]...)
 
 	return pm, nil
 }

@@ -56,6 +56,21 @@ type BackendCreateComment struct {
 	ContentBlockID *types.PttID `json:"cID"`
 }
 
+func commentToBackendCreateComment(c *Comment) *BackendCreateComment {
+	blockInfo := c.GetBlockInfo()
+	var blockInfoID *types.PttID
+	if blockInfo != nil {
+		blockInfoID = blockInfo.ID
+	}
+
+	return &BackendCreateComment{
+		BoardID:        c.EntityID,
+		ArticleID:      c.ArticleID,
+		CommentID:      c.ID,
+		ContentBlockID: blockInfoID,
+	}
+}
+
 type BackendCreateReply struct {
 	BoardID        *types.PttID `json:"BID"`
 	ArticleID      *types.PttID `json:"AID"`
@@ -209,29 +224,29 @@ type BackendShowArticleURL struct {
 
 type BackendUploadImg struct {
 	ID      *types.PttID
-	BoardID *types.PttID `json:"BID"`
-	Type    MediaType    `json:"T"`
+	BoardID *types.PttID         `json:"BID"`
+	Type    pkgservice.MediaType `json:"T"`
 }
 
-func imgToBackendUploadImg(img *Media) *BackendUploadImg {
+func mediaToBackendUploadImg(img *pkgservice.Media) *BackendUploadImg {
 	return &BackendUploadImg{
 		ID:      img.ID,
-		BoardID: img.BoardID,
+		BoardID: img.EntityID,
 		Type:    img.MediaType,
 	}
 }
 
 type BackendGetImg struct {
 	ID      *types.PttID
-	BoardID *types.PttID `json:"BID"`
-	Type    MediaType    `json:"T"`
-	Buf     []byte       `json:"B"`
+	BoardID *types.PttID         `json:"BID"`
+	Type    pkgservice.MediaType `json:"T"`
+	Buf     []byte               `json:"B"`
 }
 
-func imgToBackendGetImg(img *Media) *BackendGetImg {
+func mediaToBackendGetImg(img *pkgservice.Media) *BackendGetImg {
 	return &BackendGetImg{
 		ID:      img.ID,
-		BoardID: img.BoardID,
+		BoardID: img.EntityID,
 		Type:    img.MediaType,
 		Buf:     img.Buf,
 	}
@@ -242,24 +257,26 @@ type BackendUploadFile struct {
 	BoardID *types.PttID `json:"BID"`
 }
 
-func mediaToBackendUploadFile(media *Media) *BackendUploadFile {
+func mediaToBackendUploadFile(media *pkgservice.Media) *BackendUploadFile {
 	return &BackendUploadFile{
 		ID:      media.ID,
-		BoardID: media.BoardID,
+		BoardID: media.EntityID,
 	}
 }
 
 type BackendGetFile struct {
-	ID      *types.PttID
-	BoardID *types.PttID `json:"BID"`
-	Buf     []byte       `json:"B"`
+	ID        *types.PttID
+	BoardID   *types.PttID         `json:"BID"`
+	MediaType pkgservice.MediaType `json:"M"`
+	Buf       []byte               `json:"B"`
 }
 
-func mediaToBackendGetFile(media *Media) *BackendGetFile {
+func mediaToBackendGetFile(media *pkgservice.Media) *BackendGetFile {
 	return &BackendGetFile{
-		ID:      media.ID,
-		BoardID: media.BoardID,
-		Buf:     media.Buf,
+		ID:        media.ID,
+		BoardID:   media.EntityID,
+		Buf:       media.Buf,
+		MediaType: media.MediaType,
 	}
 }
 

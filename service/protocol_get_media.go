@@ -14,32 +14,26 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package content
+package service
 
-type MediaType uint8
-
-const (
-	MediaTypeJPEG MediaType = iota
-	MediaTypeGIF
-	MediaTypePNG
-	MediaTypeFile
+import (
+	"github.com/ailabstw/go-pttai/common/types"
 )
 
-type MediaDataJPEG struct {
-	Width  uint16 `json:"W"`
-	Height uint16 `json:"H"`
-}
+func (pm *BaseProtocolManager) GetMedia(mediaID *types.PttID) (*Media, error) {
+	media := NewEmptyMedia()
+	pm.SetMediaDB(media)
+	media.SetID(mediaID)
 
-type MediaDataPNG struct {
-	Width  uint16 `json:"W"`
-	Height uint16 `json:"H"`
-}
+	err := media.GetByID(false)
+	if err != nil {
+		return nil, err
+	}
 
-type MediaDataGIF struct {
-	Width  uint16 `json:"W"`
-	Height uint16 `json:"H"`
-}
+	err = media.GetBuf()
+	if err != nil {
+		return nil, err
+	}
 
-type MediaDataFile struct {
-	Filename []byte `json:"f"`
+	return media, nil
 }

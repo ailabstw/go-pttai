@@ -62,15 +62,25 @@ const (
 	// sync article
 	SyncCreateArticleMsg
 	SyncCreateArticleAckMsg
-
-	SyncUpdateArticleMsg
-	SyncUpdateArticleAckMsg
-
 	SyncCreateArticleBlockMsg
 	SyncCreateArticleBlockAckMsg
 
+	SyncUpdateArticleMsg
+	SyncUpdateArticleAckMsg
 	SyncUpdateArticleBlockMsg
 	SyncUpdateArticleBlockAckMsg
+
+	// sync comment
+	SyncCreateCommentMsg
+	SyncCreateCommentAckMsg
+	SyncCreateCommentBlockMsg
+	SyncCreateCommentBlockAckMsg
+
+	// sync media
+	SyncCreateMediaMsg
+	SyncCreateMediaAckMsg
+	SyncCreateMediaBlockMsg
+	SyncCreateMediaBlockAckMsg
 )
 
 // db
@@ -130,6 +140,13 @@ var (
 // article
 const (
 	NFirstLineInBlock = 1
+)
+
+// image
+const (
+	MaxUploadImageSize   = 10485760 // 10MB
+	MaxUploadImageWidth  = 8192
+	MaxUploadImageHeight = 8192
 )
 
 // count

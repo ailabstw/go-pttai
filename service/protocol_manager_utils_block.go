@@ -25,6 +25,10 @@ import (
 )
 
 func (pm *BaseProtocolManager) FullBlockDBPrefix(prefix []byte) ([]byte, error) {
+	if prefix == nil {
+		return pm.dbBlockPrefix, nil
+	}
+
 	return common.Concat([][]byte{pm.dbBlockPrefix, prefix})
 }
 
@@ -82,8 +86,89 @@ func (pm *BaseProtocolManager) SplitContentBlocks(prefix []byte, objID *types.Pt
 	return blockInfoID, hashs, nil
 }
 
+func (pm *BaseProtocolManager) SplitMediaBlocks(objID *types.PttID, buf []byte) (*types.PttID, [][][]byte, error) {
+
+	myEntity := pm.Ptt().GetMyEntity()
+
+	blockInfoID, err := types.NewPttID()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	hashs := make([][][]byte, 0)
+
+	fullDBPrefix, err := pm.FullBlockDBPrefix(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	lenCurrentBuf := 0
+	halfLenCurrentBuf := 0
+	realLenCurrentBuf := 0
+	var eachBlock *Block
+	var bufs [][]byte
+	var eachHashs [][]byte
+	var firstHalfBuf []byte
+	var secondHalfBuf []byte
+	var scrambledBufs [][]byte
+
+	for blockID, currentBuf := 0, buf[0:]; len(currentBuf) != 0; blockID, currentBuf = blockID+1, currentBuf[lenCurrentBuf:] {
+		// 1. Unless there is only 1 char, we hope that both blocks contains at least 1 char. Squeezing the last-char to the block.
+		realLenCurrentBuf = len(currentBuf)
+		if realLenCurrentBuf == NByteInBlock+1 {
+			lenCurrentBuf = realLenCurrentBuf
+		} else {
+			lenCurrentBuf = common.MinInt(NByteInBlock, len(currentBuf))
+		}
+
+		// 2. construct the bufs
+		halfLenCurrentBuf = (lenCurrentBuf + 1) / 2
+		firstHalfBuf = currentBuf[:halfLenCurrentBuf]
+		secondHalfBuf = currentBuf[halfLenCurrentBuf:lenCurrentBuf]
+
+		bufs = [][]byte{firstHalfBuf, secondHalfBuf}
+
+		// 3. scramble the buf
+		scrambledBufs, err = ScrambleBuf(bufs)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// 4. construct the hash
+		eachHashs = make([][]byte, len(scrambledBufs))
+		for subBlockID, scrambledBuf := range scrambledBufs {
+			eachBlock, err = NewBlock(uint32(blockID), uint8(subBlockID), scrambledBuf)
+			if err != nil {
+				return nil, nil, err
+			}
+			eachBlock.SetDB(pm.DB(), fullDBPrefix, objID, blockInfoID)
+			err = myEntity.SignBlock(eachBlock)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			err = eachBlock.Save()
+			if err != nil {
+				return nil, nil, err
+			}
+			eachHashs[subBlockID] = eachBlock.Hash
+		}
+
+		// 5. append hash
+		hashs = append(hashs, eachHashs)
+	}
+
+	return blockInfoID, hashs, nil
+}
+
 /*
+ScrambleBuf scrambles the buf.
+
+	1. obtain the json-str to ensure that the 1st-char and the last-char are not 0
+	2. do scramble on the json-str.
+
 XXX TODO: better scrambleBuf
+
 */
 func ScrambleBuf(buf [][]byte) ([][]byte, error) {
 	theBytes, err := json.Marshal(buf)
@@ -120,6 +205,12 @@ func ScrambleBuf(buf [][]byte) ([][]byte, error) {
 	return newBufs[NScrambleInBlock:], nil
 }
 
+/*
+UnscrambleBuf unscramles the buf.
+
+	1. unscramble the buf.
+	2. do json.unmarshal.
+*/
 func UnscrambleBuf(buf [][]byte) ([][]byte, error) {
 	if len(buf) != NScrambleInBlock {
 		return nil, ErrInvalidBlock

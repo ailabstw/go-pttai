@@ -29,15 +29,35 @@ type Media struct {
 
 	UpdateTS types.Timestamp `json:"UT"`
 
-	SyncInfo *BaseSyncInfo `json:"s"`
+	SyncInfo *BaseSyncInfo `json:"s,omitempty"`
+
+	MediaType MediaType `json:"T"`
+	MediaData MediaData `json:"D,omitempty"`
+
+	Buf []byte `json:"-"`
 }
 
 func NewEmptyMedia() *Media {
 	return &Media{BaseObject: &BaseObject{}}
 }
 
-func NewMedia() (*Media, error) {
-	return &Media{}, nil
+func NewMedia(
+	createTS types.Timestamp,
+	creatorID *types.PttID,
+	entityID *types.PttID,
+
+	logID *types.PttID,
+
+	status types.Status,
+
+) (*Media, error) {
+
+	o := NewObject(entityID, createTS, creatorID, entityID, logID, status)
+
+	return &Media{
+		BaseObject: o,
+		UpdateTS:   createTS,
+	}, nil
 }
 
 func MediasToObjs(typedObjs []*Media) []Object {
@@ -95,6 +115,7 @@ func (m *Media) Save(isLocked bool) error {
 	return nil
 }
 
+/*
 func (m *Media) GetAndDelete(
 	isLocked bool,
 
@@ -114,12 +135,42 @@ func (m *Media) GetAndDelete(
 		return err
 	}
 
-	err = m.Delete(isLocked)
+	err = m.Delete(true)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+*/
+
+func (m *Media) DeleteAll(
+	isLocked bool,
+) error {
+
+	var err error
+	if !isLocked {
+		err = m.Lock()
+		if err != nil {
+			return err
+		}
+		defer m.Unlock()
+	}
+
+	block := NewEmptyBlock()
+	m.SetBlockDB(block)
+
+	err = block.RemoveAll()
+	if err != nil {
+		return err
+	}
+
+	return m.Delete(true)
+}
+
+func (m *Media) SetBlockDB(block *Block) {
+	fullDBPrefix := append(DBBlockInfoPrefix, m.EntityID[:]...)
+	block.SetDB(m.DB(), fullDBPrefix, m.ID, nil)
 }
 
 func (m *Media) NewEmptyObj() Object {
@@ -204,6 +255,40 @@ func (m *Media) SetSyncInfo(theSyncInfo SyncInfo) error {
 	}
 
 	m.SyncInfo = syncInfo
+
+	return nil
+}
+
+// get buf
+func (m *Media) GetBuf() error {
+
+	blockInfo := m.GetBlockInfo()
+	if blockInfo == nil {
+		return ErrInvalidBlock
+	}
+	if !blockInfo.IsAllGood {
+		return ErrInvalidBlock
+	}
+	setBlockInfoDB := m.SetBlockInfoDB()
+	setBlockInfoDB(blockInfo, m.ID)
+
+	contentBlocks, err := GetContentBlockList(blockInfo, 0, false)
+	if err != nil {
+		return err
+	}
+
+	// blocks
+	blocks := make([][]byte, blockInfo.NBlock*NScrambleInBlock)
+	for _, eachContentBlocks := range contentBlocks {
+		blocks = append(blocks, eachContentBlocks.Buf...)
+	}
+
+	buf, err := common.Concat(blocks)
+	if err != nil {
+		return err
+	}
+
+	m.Buf = buf
 
 	return nil
 }

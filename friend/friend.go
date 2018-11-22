@@ -133,7 +133,12 @@ func (f *Friend) InitPM(ptt pkgservice.Ptt, service pkgservice.Service) error {
 }
 
 func (f *Friend) MarshalKey() ([]byte, error) {
-	return common.Concat([][]byte{DBFriendPrefix, f.ID[:]})
+	marshalTimestamp, err := f.JoinTS.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	return common.Concat([][]byte{DBFriendPrefix, marshalTimestamp, f.ID[:]})
 }
 
 func (f *Friend) IdxKey() ([]byte, error) {

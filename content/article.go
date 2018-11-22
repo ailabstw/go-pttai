@@ -103,38 +103,38 @@ func (pm *ProtocolManager) SetArticleDB(u *Article) {
 	u.SetDB(dbBoard, pm.DBObjLock(), pm.Entity().GetID(), pm.dbArticlePrefix, pm.dbArticleIdxPrefix, pm.SetBlockInfoDB, pm.SetMediaDB)
 }
 
-func (t *Article) Save(isLocked bool) error {
+func (a *Article) Save(isLocked bool) error {
 	var err error
 
 	if !isLocked {
-		err = t.Lock()
+		err = a.Lock()
 		if err != nil {
 			return err
 		}
-		defer t.Unlock()
+		defer a.Unlock()
 	}
 
-	key, err := t.MarshalKey()
+	key, err := a.MarshalKey()
 	if err != nil {
 		return err
 	}
-	marshaled, err := t.Marshal()
-	if err != nil {
-		return err
-	}
-
-	idxKey, err := t.IdxKey()
+	marshaled, err := a.Marshal()
 	if err != nil {
 		return err
 	}
 
-	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: t.UpdateTS}
+	idxKey, err := a.IdxKey()
+	if err != nil {
+		return err
+	}
+
+	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: a.UpdateTS}
 
 	kvs := []*pttdb.KeyVal{
 		&pttdb.KeyVal{K: key, V: marshaled},
 	}
 
-	_, err = t.DB().ForcePutAll(idxKey, idx, kvs)
+	_, err = a.DB().ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
@@ -142,87 +142,92 @@ func (t *Article) Save(isLocked bool) error {
 	return nil
 }
 
-func (t *Article) NewEmptyObj() pkgservice.Object {
-	newU := NewEmptyArticle()
-	newU.CloneDB(t.BaseObject)
-	return newU
+func (a *Article) NewEmptyObj() pkgservice.Object {
+	newObj := NewEmptyArticle()
+	newObj.CloneDB(a.BaseObject)
+	return newObj
 }
 
-func (t *Article) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
-	newU := t.NewEmptyObj()
-	newU.SetID(id)
-	err := newU.GetByID(isLocked)
+func (a *Article) GetNewObjByID(id *types.PttID, isLocked bool) (pkgservice.Object, error) {
+	newObj := a.NewEmptyObj()
+	newObj.SetID(id)
+	err := newObj.GetByID(isLocked)
 	if err != nil {
 		return nil, err
 	}
-	return newU, nil
+	return newObj, nil
 }
 
-func (t *Article) SetUpdateTS(ts types.Timestamp) {
-	t.UpdateTS = ts
+func (a *Article) SetUpdateTS(ts types.Timestamp) {
+	a.UpdateTS = ts
 }
 
-func (t *Article) GetUpdateTS() types.Timestamp {
-	return t.UpdateTS
+func (a *Article) GetUpdateTS() types.Timestamp {
+	return a.UpdateTS
 }
 
-func (t *Article) Get(isLocked bool) error {
+func (a *Article) Get(isLocked bool) error {
 	var err error
 
 	if !isLocked {
-		err = t.RLock()
+		err = a.RLock()
 		if err != nil {
 			return err
 		}
-		defer t.RUnlock()
+		defer a.RUnlock()
 	}
 
-	key, err := t.MarshalKey()
+	key, err := a.MarshalKey()
 	if err != nil {
 		return err
 	}
 
-	val, err := t.DB().DBGet(key)
+	val, err := a.DB().DBGet(key)
 	if err != nil {
 		return err
 	}
 
-	return t.Unmarshal(val)
+	return a.Unmarshal(val)
 }
 
-func (t *Article) GetByID(isLocked bool) error {
+func (a *Article) GetByID(isLocked bool) error {
 	var err error
 
-	val, err := t.GetValueByID(isLocked)
+	val, err := a.GetValueByID(isLocked)
 	if err != nil {
 		return err
 	}
 
-	return t.Unmarshal(val)
+	return a.Unmarshal(val)
 }
 
-func (t *Article) MarshalKey() ([]byte, error) {
-	return common.Concat([][]byte{t.FullDBPrefix(), t.ID[:]})
+func (a *Article) MarshalKey() ([]byte, error) {
+	marshalTimestamp, err := a.CreateTS.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	return common.Concat([][]byte{a.FullDBPrefix(), marshalTimestamp, a.ID[:]})
 }
 
-func (t *Article) Marshal() ([]byte, error) {
-	return json.Marshal(t)
+func (a *Article) Marshal() ([]byte, error) {
+	return json.Marshal(a)
 }
 
-func (t *Article) Unmarshal(theBytes []byte) error {
-	return json.Unmarshal(theBytes, t)
+func (a *Article) Unmarshal(theBytes []byte) error {
+	return json.Unmarshal(theBytes, a)
 }
 
-func (t *Article) GetSyncInfo() pkgservice.SyncInfo {
-	if t.SyncInfo == nil {
+func (a *Article) GetSyncInfo() pkgservice.SyncInfo {
+	if a.SyncInfo == nil {
 		return nil
 	}
-	return t.SyncInfo
+	return a.SyncInfo
 }
 
-func (t *Article) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
+func (a *Article) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
 	if theSyncInfo == nil {
-		t.SyncInfo = nil
+		a.SyncInfo = nil
 		return nil
 	}
 
@@ -230,7 +235,7 @@ func (t *Article) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
-	t.SyncInfo = syncInfo
+	a.SyncInfo = syncInfo
 
 	return nil
 }

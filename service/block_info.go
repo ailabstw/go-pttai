@@ -218,7 +218,7 @@ func (b *BlockInfo) Remove(
 
 	for _, mediaID := range b.MediaIDs {
 		media.SetID(mediaID)
-		media.GetAndDelete(false)
+		media.DeleteAll(false)
 	}
 
 	return nil

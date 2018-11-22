@@ -32,7 +32,7 @@ func (pm *ProtocolManager) CreateArticle(title []byte, articleBytes [][]byte, me
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 
-	if !pm.IsMaster(myID, false) {
+	if pm.Entity().GetEntityType() == pkgservice.EntityTypePersonal && !pm.IsMaster(myID, false) {
 		return nil, types.ErrInvalidID
 	}
 

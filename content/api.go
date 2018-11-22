@@ -34,18 +34,18 @@ func (api *PrivateAPI) CreateBoard(title []byte, isPublic bool) (*Board, error) 
 	return api.b.CreateBoard(title, isPublic)
 }
 
-func (api *PrivateAPI) CreateArticle(boardID string, title []byte, article [][]byte, mediaIDs []string) (*BackendCreateArticle, error) {
+func (api *PrivateAPI) CreateArticle(entityID string, title []byte, article [][]byte, mediaIDs []string) (*BackendCreateArticle, error) {
 	return api.b.CreateArticle(
-		[]byte(boardID),
+		[]byte(entityID),
 		title,
 		article,
 		mediaIDs,
 	)
 }
 
-func (api *PrivateAPI) CreateComment(boardID string, articleID string, commentType CommentType, comment []byte, mediaID string) (*BackendCreateComment, error) {
+func (api *PrivateAPI) CreateComment(entityID string, articleID string, commentType CommentType, comment []byte, mediaID string) (*BackendCreateComment, error) {
 	return api.b.CreateComment(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		commentType,
 		comment,
@@ -53,9 +53,9 @@ func (api *PrivateAPI) CreateComment(boardID string, articleID string, commentTy
 	)
 }
 
-func (api *PrivateAPI) CreateReply(boardID string, articleID string, commentID string, reply [][]byte, mediaID string) (*BackendCreateReply, error) {
+func (api *PrivateAPI) CreateReply(entityID string, articleID string, commentID string, reply [][]byte, mediaID string) (*BackendCreateReply, error) {
 	return api.b.CreateReply(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(commentID),
 		reply,
@@ -63,22 +63,22 @@ func (api *PrivateAPI) CreateReply(boardID string, articleID string, commentID s
 	)
 }
 
-func (api *PrivateAPI) SetTitle(boardID string, title []byte) (*BackendGetBoard, error) {
-	return api.b.SetTitle([]byte(boardID), title)
+func (api *PrivateAPI) SetTitle(entityID string, title []byte) (*BackendGetBoard, error) {
+	return api.b.SetTitle([]byte(entityID), title)
 }
 
-func (api *PrivateAPI) UpdateArticle(boardID string, articleID string, article [][]byte, mediaIDs []string) (*BackendUpdateArticle, error) {
+func (api *PrivateAPI) UpdateArticle(entityID string, articleID string, article [][]byte, mediaIDs []string) (*BackendUpdateArticle, error) {
 	return api.b.UpdateArticle(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		article,
 		mediaIDs,
 	)
 }
 
-func (api *PrivateAPI) UpdateReply(boardID string, articleID string, commentID string, reply [][]byte, mediaID string) (*BackendUpdateReply, error) {
+func (api *PrivateAPI) UpdateReply(entityID string, articleID string, commentID string, reply [][]byte, mediaID string) (*BackendUpdateReply, error) {
 	return api.b.UpdateReply(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(commentID),
 		reply,
@@ -86,62 +86,62 @@ func (api *PrivateAPI) UpdateReply(boardID string, articleID string, commentID s
 	)
 }
 
-func (api *PrivateAPI) DeleteBoard(boardID string) (*BackendDeleteBoard, error) {
-	return api.b.DeleteBoard([]byte(boardID))
+func (api *PrivateAPI) DeleteBoard(entityID string) (*BackendDeleteBoard, error) {
+	return api.b.DeleteBoard([]byte(entityID))
 }
 
-func (api *PrivateAPI) DeleteArticle(boardID string, articleID string) (*BackendDeleteArticle, error) {
+func (api *PrivateAPI) DeleteArticle(entityID string, articleID string) (*BackendDeleteArticle, error) {
 	return api.b.DeleteArticle(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 	)
 }
 
-func (api *PrivateAPI) DeleteComment(boardID string, articleID string, commentID string) (*BackendDeleteComment, error) {
+func (api *PrivateAPI) DeleteComment(entityID string, articleID string, commentID string) (*BackendDeleteComment, error) {
 	return api.b.DeleteComment(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(commentID),
 	)
 }
 
-func (api *PrivateAPI) DeleteReply(boardID string, articleID string, commentID string) (*BackendDeleteReply, error) {
+func (api *PrivateAPI) DeleteReply(entityID string, articleID string, commentID string) (*BackendDeleteReply, error) {
 	return api.b.DeleteReply(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(commentID),
 	)
 }
 
-func (api *PrivateAPI) LeaveBoard(boardID string) (*BackendLeaveBoard, error) {
-	return api.b.LeaveBoard([]byte(boardID))
+func (api *PrivateAPI) LeaveBoard(entityID string) (*BackendLeaveBoard, error) {
+	return api.b.LeaveBoard([]byte(entityID))
 }
 
-func (api *PrivateAPI) InviteMaster(boardID string, userID string, nodeURL string) (*BackendInviteMaster, error) {
+func (api *PrivateAPI) InviteMaster(entityID string, userID string, nodeURL string) (*BackendInviteMaster, error) {
 	return api.b.InviteMaster(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(userID),
 		[]byte(nodeURL),
 	)
 }
 
-func (api *PrivateAPI) RevokeMaster(boardID string, userID string) (*BackendRevokeMaster, error) {
+func (api *PrivateAPI) RevokeMaster(entityID string, userID string) (*BackendRevokeMaster, error) {
 	return api.b.RevokeMaster(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(userID),
 	)
 }
 
-func (api *PrivateAPI) GetJoinKeyInfos(boardID string) ([]*pkgservice.KeyInfo, error) {
-	return api.b.GetJoinKeys([]byte(boardID))
+func (api *PrivateAPI) GetJoinKeyInfos(entityID string) ([]*pkgservice.KeyInfo, error) {
+	return api.b.GetJoinKeys([]byte(entityID))
 }
 
-func (api *PrivateAPI) GetRawBoard(boardID string) (*Board, error) {
-	return api.b.GetRawBoard([]byte(boardID))
+func (api *PrivateAPI) GetRawBoard(entityID string) (*Board, error) {
+	return api.b.GetRawBoard([]byte(entityID))
 }
 
-func (api *PrivateAPI) GetRawTitle(boardID string) (*Title, error) {
-	return api.b.GetRawTitle([]byte(boardID))
+func (api *PrivateAPI) GetRawTitle(entityID string) (*Title, error) {
+	return api.b.GetRawTitle([]byte(entityID))
 }
 
 type PublicAPI struct {
@@ -152,8 +152,8 @@ func NewPublicAPI(b *Backend) *PublicAPI {
 	return &PublicAPI{b}
 }
 
-func (api *PublicAPI) GetBoard(boardID string) (*BackendGetBoard, error) {
-	return api.b.GetBoard([]byte(boardID))
+func (api *PublicAPI) GetBoard(entityID string) (*BackendGetBoard, error) {
+	return api.b.GetBoard([]byte(entityID))
 }
 
 func (api *PublicAPI) GetBoardList(startingBoardID string, limit int, listOrder pttdb.ListOrder) ([]*BackendGetBoard, error) {
@@ -164,30 +164,30 @@ func (api *PublicAPI) GetBoardList(startingBoardID string, limit int, listOrder 
 	)
 }
 
-func (api *PublicAPI) GetArticle(boardID string, articleID string) (*BackendGetArticle, error) {
+func (api *PublicAPI) GetArticle(entityID string, articleID string) (*BackendGetArticle, error) {
 	return api.b.GetArticle(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 	)
 }
 
-func (api *PrivateAPI) GetRawArticle(boardID string, articleID string) (*Article, error) {
+func (api *PrivateAPI) GetRawArticle(entityID string, articleID string) (*Article, error) {
 	return api.b.GetRawArticle(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 	)
 }
 
-func (api *PrivateAPI) GetRawComment(boardID string, commentID string) (*Comment, error) {
+func (api *PrivateAPI) GetRawComment(entityID string, commentID string) (*Comment, error) {
 	return api.b.GetRawComment(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(commentID),
 	)
 }
 
-func (api *PrivateAPI) GetRawReply(boardID string, articleID string, commentID string) (*Reply, error) {
+func (api *PrivateAPI) GetRawReply(entityID string, articleID string, commentID string) (*Reply, error) {
 	return api.b.GetRawReply(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(commentID),
 	)
@@ -196,12 +196,12 @@ func (api *PrivateAPI) GetRawReply(boardID string, articleID string, commentID s
 /*
 GetArticleBlockList gets the list of the blocks-to-show of the article, including main-article, comment, reply.
 
-Given the boardID, articleID, and the corresponding subContentID (article: ContentBlockID, comment: commentID, reply: replyID), and the blockID (for comment and reply: blockID as 0)
+Given the entityID, articleID, and the corresponding subContentID (article: ContentBlockID, comment: commentID, reply: replyID), and the blockID (for comment and reply: blockID as 0)
 GetArticleBlockList will get the following blocks from the specified subContentID and blockID.
 */
-func (api *PublicAPI) GetArticleBlockList(boardID string, articleID string, subContentID string, contentType ContentType, blockID uint32, limit int, listOrder pttdb.ListOrder) ([]*ArticleBlock, error) {
+func (api *PublicAPI) GetArticleBlockList(entityID string, articleID string, subContentID string, contentType ContentType, blockID uint32, limit int, listOrder pttdb.ListOrder) ([]*ArticleBlock, error) {
 	return api.b.GetArticleBlockList(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(articleID),
 		[]byte(subContentID),
 		contentType,
@@ -211,73 +211,73 @@ func (api *PublicAPI) GetArticleBlockList(boardID string, articleID string, subC
 	)
 }
 
-func (api *PublicAPI) GetArticleList(boardID string, startingArticleID string, limit int, listOrder pttdb.ListOrder) ([]*BackendGetArticle, error) {
+func (api *PublicAPI) GetArticleList(entityID string, startingArticleID string, limit int, listOrder pttdb.ListOrder) ([]*BackendGetArticle, error) {
 	return api.b.GetArticleList(
-		[]byte(boardID),
+		[]byte(entityID),
 		[]byte(startingArticleID),
 		limit,
 		listOrder,
 	)
 }
 
-func (api *PublicAPI) GetPokedArticleList(boardID string) ([]*BackendGetArticle, error) {
-	return api.b.GetPokedArticleList([]byte(boardID))
+func (api *PublicAPI) GetPokedArticleList(entityID string) ([]*BackendGetArticle, error) {
+	return api.b.GetPokedArticleList([]byte(entityID))
 }
 
-func (api *PublicAPI) ShowBoardURL(boardID string) (*pkgservice.BackendJoinURL, error) {
-	return api.b.ShowBoardURL([]byte(boardID))
+func (api *PublicAPI) ShowBoardURL(entityID string) (*pkgservice.BackendJoinURL, error) {
+	return api.b.ShowBoardURL([]byte(entityID))
 }
 
 /**********
  * BoardOplog
  **********/
 
-func (api *PrivateAPI) GetBoardOplogList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
-	return api.b.GetBoardOplogList([]byte(profileID), []byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetBoardOplogList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+	return api.b.GetBoardOplogList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingBoardOplogMasterList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
-	return api.b.GetPendingBoardOplogMasterList([]byte(profileID), []byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetPendingBoardOplogMasterList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+	return api.b.GetPendingBoardOplogMasterList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetPendingBoardOplogInternalList(profileID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
-	return api.b.GetPendingBoardOplogInternalList([]byte(profileID), []byte(logID), limit, listOrder)
+func (api *PrivateAPI) GetPendingBoardOplogInternalList(entityID string, logID string, limit int, listOrder pttdb.ListOrder) ([]*BoardOplog, error) {
+	return api.b.GetPendingBoardOplogInternalList([]byte(entityID), []byte(logID), limit, listOrder)
 }
 
-func (api *PrivateAPI) GetBoardOplogMerkleNodeList(profileID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
-	return api.b.GetBoardOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+func (api *PrivateAPI) GetBoardOplogMerkleNodeList(entityID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+	return api.b.GetBoardOplogMerkleNodeList([]byte(entityID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
 }
 
-func (api *PrivateAPI) UploadFile(boardID string, filename string, bytes []byte) (*BackendUploadFile, error) {
-	return api.b.UploadFile([]byte(boardID), []byte(filename), bytes)
+func (api *PrivateAPI) UploadFile(entityID string, filename string, bytes []byte) (*BackendUploadFile, error) {
+	return api.b.UploadFile([]byte(entityID), []byte(filename), bytes)
 }
 
-func (api *PrivateAPI) GetFile(boardID string, mediaID string) (*BackendGetFile, error) {
-	return api.b.GetFile([]byte(boardID), []byte(mediaID))
+func (api *PrivateAPI) GetFile(entityID string, mediaID string) (*BackendGetFile, error) {
+	return api.b.GetFile([]byte(entityID), []byte(mediaID))
 }
 
-func (api *PrivateAPI) UploadImage(boardID string, fileType string, bytes []byte) (*BackendUploadImg, error) {
-	return api.b.UploadImage([]byte(boardID), fileType, bytes)
+func (api *PrivateAPI) UploadImage(entityID string, fileType string, bytes []byte) (*BackendUploadImg, error) {
+	return api.b.UploadImage([]byte(entityID), fileType, bytes)
 }
 
-func (api *PrivateAPI) GetImage(boardID string, imgID string) (*BackendGetImg, error) {
-	return api.b.GetImage([]byte(boardID), []byte(imgID))
+func (api *PrivateAPI) GetImage(entityID string, imgID string) (*BackendGetImg, error) {
+	return api.b.GetImage([]byte(entityID), []byte(imgID))
 }
 
-func (api *PublicAPI) GetArticleSummary(boardID string, articleInfo *BackendArticleSummaryParams) (*ArticleBlock, error) {
-	return api.b.GetArticleSummary([]byte(boardID), articleInfo)
+func (api *PublicAPI) GetArticleSummary(entityID string, articleInfo *BackendArticleSummaryParams) (*ArticleBlock, error) {
+	return api.b.GetArticleSummary([]byte(entityID), articleInfo)
 }
 
-func (api *PublicAPI) GetArticleSummaryByIDs(boardID string, articleInfos []*BackendArticleSummaryParams) (map[string]*ArticleBlock, error) {
-	return api.b.GetArticleSummaryByIDs([]byte(boardID), articleInfos)
+func (api *PublicAPI) GetArticleSummaryByIDs(entityID string, articleInfos []*BackendArticleSummaryParams) (map[string]*ArticleBlock, error) {
+	return api.b.GetArticleSummaryByIDs([]byte(entityID), articleInfos)
 }
 
-func (api *PrivateAPI) MarkBoardSeen(boardID string) (types.Timestamp, error) {
-	return api.b.MarkBoardSeen([]byte(boardID))
+func (api *PrivateAPI) MarkBoardSeen(entityID string) (types.Timestamp, error) {
+	return api.b.MarkBoardSeen([]byte(entityID))
 }
 
-func (api *PrivateAPI) MarkArticleSeen(boardID string, articleID string) (types.Timestamp, error) {
-	return api.b.MarkArticleSeen([]byte(boardID), []byte(articleID))
+func (api *PrivateAPI) MarkArticleSeen(entityID string, articleID string) (types.Timestamp, error) {
+	return api.b.MarkArticleSeen([]byte(entityID), []byte(articleID))
 }
 
 /**********

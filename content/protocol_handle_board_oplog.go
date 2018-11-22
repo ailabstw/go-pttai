@@ -89,12 +89,17 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
 	case BoardOpTypeUpdateArticle:
 		origLogs, err = pm.handleUpdateArticleLogs(oplog, info)
 	case BoardOpTypeDeleteArticle:
+		origLogs, err = pm.handleDeleteArticleLogs(oplog, info)
 
 	case BoardOpTypeCreateMedia:
+		origLogs, err = pm.handleCreateMediaLogs(oplog, info)
 	case BoardOpTypeDeleteMedia:
+		origLogs, err = pm.handleDeleteMediaLogs(oplog, info)
 
 	case BoardOpTypeCreateComment:
+		origLogs, err = pm.handleCreateCommentLogs(oplog, info)
 	case BoardOpTypeDeleteComment:
+		origLogs, err = pm.handleDeleteCommentLogs(oplog, info)
 
 	case BoardOpTypeCreateReply:
 	case BoardOpTypeUpdateReply:
@@ -127,12 +132,17 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
 	case BoardOpTypeUpdateArticle:
 		origLogs, err = pm.handlePendingUpdateArticleLogs(oplog, info)
 	case BoardOpTypeDeleteArticle:
+		origLogs, err = pm.handlePendingDeleteArticleLogs(oplog, info)
 
 	case BoardOpTypeCreateMedia:
+		origLogs, err = pm.handlePendingCreateMediaLogs(oplog, info)
 	case BoardOpTypeDeleteMedia:
+		origLogs, err = pm.handlePendingDeleteMediaLogs(oplog, info)
 
 	case BoardOpTypeCreateComment:
+		origLogs, err = pm.handlePendingCreateCommentLogs(oplog, info)
 	case BoardOpTypeDeleteComment:
+		origLogs, err = pm.handlePendingDeleteCommentLogs(oplog, info)
 
 	case BoardOpTypeCreateReply:
 	case BoardOpTypeUpdateReply:
@@ -162,18 +172,56 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 
 	// article
 	createArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeCreateArticle)
-	updateArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeUpdateArticle)
-
-	createblockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeCreateArticle)
-	updateBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeUpdateArticle)
-
+	createBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeCreateArticle)
 	pm.SyncArticle(SyncCreateArticleMsg, createArticleIDs, peer)
-	pm.SyncArticle(SyncUpdateArticleMsg, updateArticleIDs, peer)
+	pm.SyncBlock(SyncCreateArticleBlockMsg, createBlockIDs, peer)
 
-	pm.SyncBlock(SyncCreateArticleBlockMsg, createblockIDs, peer)
+	updateArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeUpdateArticle)
+	updateBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeUpdateArticle)
+	pm.SyncArticle(SyncUpdateArticleMsg, updateArticleIDs, peer)
 	pm.SyncBlock(SyncUpdateArticleBlockMsg, updateBlockIDs, peer)
 
+	var deleteArticleLogs []*pkgservice.BaseOplog
+	if isPending {
+		deleteArticleLogs = pkgservice.ProcessInfoToLogs(info.ArticleInfo, BoardOpTypeDeleteArticle)
+	}
+
+	// comment
+	createCommentIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateCommentInfo, BoardOpTypeCreateComment)
+	createCommentBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.CommentBlockInfo, BoardOpTypeCreateComment)
+	pm.SyncComment(SyncCreateCommentMsg, createCommentIDs, peer)
+	pm.SyncBlock(SyncCreateCommentBlockMsg, createCommentBlockIDs, peer)
+
+	var deleteCommentLogs []*pkgservice.BaseOplog
+	if isPending {
+		deleteCommentLogs = pkgservice.ProcessInfoToLogs(info.CommentInfo, BoardOpTypeDeleteComment)
+	}
+
+	// media
+	createMediaIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateMediaInfo, BoardOpTypeCreateMedia)
+	createMediaBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.MediaBlockInfo, BoardOpTypeCreateMedia)
+	pm.SyncMedia(SyncCreateMediaMsg, createMediaIDs, peer)
+	pm.SyncBlock(SyncCreateMediaBlockMsg, createMediaBlockIDs, peer)
+
+	var deleteMediaLogs []*pkgservice.BaseOplog
+	if isPending {
+		deleteMediaLogs = pkgservice.ProcessInfoToLogs(info.MediaInfo, BoardOpTypeDeleteMedia)
+	}
+
 	// broadcast
+	if isPending {
+		toBroadcastLogAry := [][]*pkgservice.BaseOplog{
+			toBroadcastLogs,
+			deleteArticleLogs,
+			deleteCommentLogs,
+			deleteMediaLogs,
+		}
+		toBroadcastLogs, err = pkgservice.ConcatLog(toBroadcastLogAry)
+		if err != nil {
+			return
+		}
+	}
+
 	pm.broadcastBoardOplogsCore(toBroadcastLogs)
 
 	return
@@ -200,12 +248,17 @@ func (pm *ProtocolManager) SetNewestBoardOplog(oplog *pkgservice.BaseOplog) (err
 	case BoardOpTypeUpdateArticle:
 		isNewer, err = pm.setNewestUpdateArticleLog(oplog)
 	case BoardOpTypeDeleteArticle:
+		isNewer, err = pm.setNewestDeleteArticleLog(oplog)
 
 	case BoardOpTypeCreateMedia:
+		isNewer, err = pm.SetNewestCreateMediaLog(oplog)
 	case BoardOpTypeDeleteMedia:
+		isNewer, err = pm.SetNewestDeleteMediaLog(oplog)
 
 	case BoardOpTypeCreateComment:
+		isNewer, err = pm.setNewestCreateCommentLog(oplog)
 	case BoardOpTypeDeleteComment:
+		isNewer, err = pm.setNewestDeleteCommentLog(oplog)
 
 	case BoardOpTypeCreateReply:
 	case BoardOpTypeUpdateReply:
@@ -237,12 +290,17 @@ func (pm *ProtocolManager) HandleFailedBoardOplog(oplog *pkgservice.BaseOplog) (
 	case BoardOpTypeUpdateArticle:
 		err = pm.handleFailedUpdateArticleLog(oplog)
 	case BoardOpTypeDeleteArticle:
+		err = pm.handleFailedDeleteArticleLog(oplog)
 
 	case BoardOpTypeCreateMedia:
+		err = pm.HandleFailedCreateMediaLog(oplog)
 	case BoardOpTypeDeleteMedia:
+		err = pm.HandleFailedDeleteMediaLog(oplog)
 
 	case BoardOpTypeCreateComment:
+		err = pm.handleFailedCreateCommentLog(oplog)
 	case BoardOpTypeDeleteComment:
+		err = pm.handleFailedDeleteCommentLog(oplog)
 
 	case BoardOpTypeCreateReply:
 	case BoardOpTypeUpdateReply:

@@ -18,35 +18,34 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) DeleteArticle(id *types.PttID) error {
+func (pm *ProtocolManager) DeleteComment(id *types.PttID) error {
 
-	article := NewEmptyArticle()
-	pm.SetArticleDB(article)
+	article := NewEmptyComment()
+	pm.SetCommentDB(article)
 
-	opData := &BoardOpDeleteArticle{}
+	opData := &BoardOpDeleteComment{}
 
 	return pm.DeleteObject(
 		id,
 
-		BoardOpTypeDeleteArticle,
+		BoardOpTypeDeleteComment,
 		article,
 		opData,
 
 		pm.SetBoardDB,
 		pm.NewBoardOplog,
 		nil,
-		pm.setPendingDeleteArticleSyncInfo,
+		pm.setPendingDeleteCommentSyncInfo,
 
 		pm.broadcastBoardOplogCore,
-		pm.postdeleteArticle,
+		pm.postdeleteComment,
 	)
 }
 
-func (pm *ProtocolManager) setPendingDeleteArticleSyncInfo(obj pkgservice.Object, status types.Status, oplog *pkgservice.BaseOplog) error {
+func (pm *ProtocolManager) setPendingDeleteCommentSyncInfo(obj pkgservice.Object, status types.Status, oplog *pkgservice.BaseOplog) error {
 
 	syncInfo := &pkgservice.BaseSyncInfo{}
 	syncInfo.InitWithOplog(status, oplog)
@@ -56,30 +55,7 @@ func (pm *ProtocolManager) setPendingDeleteArticleSyncInfo(obj pkgservice.Object
 	return nil
 }
 
-func (pm *ProtocolManager) postdeleteArticle(id *types.PttID, oplog *pkgservice.BaseOplog, opData pkgservice.OpData, obj pkgservice.Object, blockInfo *pkgservice.BlockInfo) error {
-
-	// comment
-	comment := NewEmptyComment()
-	pm.SetCommentDB(comment)
-	commentFullDBPrefix := append(comment.FullDBPrefix(), id[:]...)
-	comment.SetFullDBPrefix(commentFullDBPrefix)
-
-	iter, err := comment.GetObjIterWithObj(nil, pttdb.ListOrderNext, false)
-	if err != nil {
-		return err
-	}
-	defer iter.Release()
-
-	comment2 := NewEmptyComment()
-	pm.SetCommentDB(comment2)
-	var key []byte
-	var eachID *types.PttID
-	for iter.Next() {
-		key = iter.Key()
-		eachID, err = comment2.KeyToID(key)
-		comment2.SetID(eachID)
-		comment2.Delete(false)
-	}
+func (pm *ProtocolManager) postdeleteComment(id *types.PttID, oplog *pkgservice.BaseOplog, opData pkgservice.OpData, obj pkgservice.Object, blockInfo *pkgservice.BlockInfo) error {
 
 	return nil
 }

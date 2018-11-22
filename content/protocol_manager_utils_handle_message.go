@@ -65,19 +65,39 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleSyncCreateArticle(dataBytes, peer, SyncCreateArticleAckMsg)
 	case SyncCreateArticleAckMsg:
 		err = pm.HandleSyncCreateArticleAck(dataBytes, peer)
-	case SyncUpdateArticleMsg:
-		err = pm.HandleSyncUpdateArticle(dataBytes, peer, SyncUpdateArticleAckMsg)
-	case SyncUpdateArticleAckMsg:
-		err = pm.HandleSyncUpdateArticleAck(dataBytes, peer)
-
 	case SyncCreateArticleBlockMsg:
 		err = pm.HandleSyncArticleBlock(dataBytes, peer, SyncCreateArticleBlockAckMsg)
 	case SyncCreateArticleBlockAckMsg:
 		err = pm.HandleSyncCreateArticleBlockAck(dataBytes, peer)
+
+	case SyncUpdateArticleMsg:
+		err = pm.HandleSyncUpdateArticle(dataBytes, peer, SyncUpdateArticleAckMsg)
+	case SyncUpdateArticleAckMsg:
+		err = pm.HandleSyncUpdateArticleAck(dataBytes, peer)
 	case SyncUpdateArticleBlockMsg:
 		err = pm.HandleSyncArticleBlock(dataBytes, peer, SyncUpdateArticleBlockAckMsg)
 	case SyncUpdateArticleBlockAckMsg:
 		err = pm.HandleSyncUpdateArticleBlockAck(dataBytes, peer)
+
+	// comment
+	case SyncCreateCommentMsg:
+		err = pm.HandleSyncCreateComment(dataBytes, peer, SyncCreateCommentAckMsg)
+	case SyncCreateCommentAckMsg:
+		err = pm.HandleSyncCreateCommentAck(dataBytes, peer)
+	case SyncCreateCommentBlockMsg:
+		err = pm.HandleSyncCommentBlock(dataBytes, peer, SyncCreateCommentBlockAckMsg)
+	case SyncCreateCommentBlockAckMsg:
+		err = pm.HandleSyncCreateCommentBlockAck(dataBytes, peer)
+
+	// media
+	case SyncCreateMediaMsg:
+		err = pm.HandleSyncCreateMedia(dataBytes, peer, SyncCreateMediaAckMsg)
+	case SyncCreateMediaAckMsg:
+		err = pm.HandleSyncCreateMediaAck(dataBytes, peer, pm.SetBoardDB, pm.broadcastBoardOplogCore)
+	case SyncCreateMediaBlockMsg:
+		err = pm.HandleSyncMediaBlock(dataBytes, peer, SyncCreateMediaBlockAckMsg)
+	case SyncCreateMediaBlockAckMsg:
+		err = pm.HandleSyncCreateMediaBlockAck(dataBytes, peer, pm.SetBoardDB, pm.broadcastBoardOplogCore)
 
 	default:
 		log.Error("invalid op", "op", op, "SyncCreateTitleMsg", SyncCreateTitleMsg)

@@ -53,7 +53,12 @@ func NewComment(
 
 ) (*Comment, error) {
 
-	o := pkgservice.NewObject(entityID, createTS, creatorID, entityID, logID, status)
+	id, err := types.NewPttID()
+	if err != nil {
+		return nil, err
+	}
+
+	o := pkgservice.NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &Comment{
 		BaseObject: o,

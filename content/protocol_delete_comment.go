@@ -23,8 +23,8 @@ import (
 
 func (pm *ProtocolManager) DeleteComment(id *types.PttID) error {
 
-	article := NewEmptyComment()
-	pm.SetCommentDB(article)
+	comment := NewEmptyComment()
+	pm.SetCommentDB(comment)
 
 	opData := &BoardOpDeleteComment{}
 
@@ -32,7 +32,7 @@ func (pm *ProtocolManager) DeleteComment(id *types.PttID) error {
 		id,
 
 		BoardOpTypeDeleteComment,
-		article,
+		comment,
 		opData,
 
 		pm.SetBoardDB,

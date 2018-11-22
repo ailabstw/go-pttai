@@ -25,8 +25,20 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-func (b *Backend) CreateBoard(title []byte, isPublic bool) (*Board, error) {
-	return nil, types.ErrNotImplemented
+func (b *Backend) CreateBoard(title []byte, isPublic bool) (*BackendCreateBoard, error) {
+	entityType := pkgservice.EntityTypePrivate
+	if isPublic {
+		entityType = pkgservice.EntityTypePublic
+	}
+
+	board, err := b.SPM().(*ServiceProtocolManager).CreateBoard(title, entityType)
+	if err != nil {
+		return nil, err
+	}
+
+	backendBoard := boardToBackendCreateBoard(board)
+
+	return backendBoard, nil
 }
 
 func (b *Backend) CreateArticle(entityIDBytes []byte, title []byte, article [][]byte, mediaIDStrs []string) (*BackendCreateArticle, error) {
@@ -114,7 +126,49 @@ func (b *Backend) CreateReply(entityIDBytes []byte, articleIDBytes []byte, comme
 
 func (b *Backend) UpdateArticle(entityIDBytes []byte, articleIDBytes []byte, article [][]byte, mediaIDStrs []string) (*BackendUpdateArticle, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	lenMediaIDs := len(mediaIDStrs)
+	var mediaIDs []*types.PttID = nil
+	if len(mediaIDStrs) != 0 {
+		mediaIDs = make([]*types.PttID, lenMediaIDs)
+		for i, mediaIDStr := range mediaIDStrs {
+			mediaIDs[i] = &types.PttID{}
+			err := mediaIDs[i].UnmarshalText([]byte(mediaIDStr))
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	theArticle, err := pm.UpdateArticle(articleID, article, mediaIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	backendArticle := articleToBackendUpdateArticle(theArticle)
+
+	return backendArticle, nil
 }
 
 func (b *Backend) UpdateReply(entityIDBytes []byte, articleIDBytes []byte, commentIDBytes []byte, reply [][]byte, mediaIDBytes []byte) (*BackendUpdateReply, error) {
@@ -124,12 +178,66 @@ func (b *Backend) UpdateReply(entityIDBytes []byte, articleIDBytes []byte, comme
 
 func (b *Backend) DeleteArticle(entityIDBytes []byte, articleIDBytes []byte) (*BackendDeleteArticle, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if articleID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	err = pm.DeleteArticle(articleID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BackendDeleteArticle{}, nil
 }
 
-func (b *Backend) DeleteComment(entityIDBytes []byte, articleIDBytes []byte, commentIDBytes []byte) (*BackendDeleteComment, error) {
+func (b *Backend) DeleteComment(entityIDBytes []byte, commentIDBytes []byte) (*BackendDeleteComment, error) {
 
-	return nil, types.ErrNotImplemented
+	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if entityID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	entity := b.SPM().Entity(entityID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+	pm := entity.PM().(*ProtocolManager)
+
+	commentID, err := types.UnmarshalTextPttID(commentIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	if commentID == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	err = pm.DeleteComment(commentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BackendDeleteComment{}, nil
 }
 
 func (b *Backend) DeleteReply(entityIDBytes []byte, articleIDBytes []byte, commentIDBytes []byte) (*BackendDeleteReply, error) {

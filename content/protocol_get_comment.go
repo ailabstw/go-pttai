@@ -16,18 +16,17 @@
 
 package content
 
-import "errors"
+import "github.com/ailabstw/go-pttai/common/types"
 
-var (
-	ErrInvalidBoard = errors.New("invalid board")
+func (pm *ProtocolManager) GetComment(commentID *types.PttID) (*Comment, error) {
+	comment := NewEmptyComment()
+	pm.SetCommentDB(comment)
+	comment.SetID(commentID)
 
-	ErrNotFound = errors.New("not found")
+	err := comment.GetByID(false)
+	if err != nil {
+		return nil, err
+	}
 
-	ErrInvalidBlock = errors.New("invalid block")
-
-	ErrOutdated = errors.New("outdated")
-
-	ErrInvalidOP = errors.New("invalid op")
-
-	ErrInvalidTitleLength = errors.New("invalid title length")
-)
+	return comment, nil
+}

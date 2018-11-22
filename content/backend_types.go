@@ -22,6 +22,30 @@ import (
 )
 
 type BackendCreateBoard struct {
+	ID        *types.PttID
+	CreateTS  types.Timestamp `json:"CT"`
+	UpdateTS  types.Timestamp `json:"UT"`
+	CreatorID *types.PttID    `json:"CID"`
+	UpdaterID *types.PttID    `json:"UID"`
+
+	Status types.Status `json:"S"`
+
+	Title []byte `json:"T"`
+
+	BoardType pkgservice.EntityType `json:"BT"`
+}
+
+func boardToBackendCreateBoard(board *Board) *BackendCreateBoard {
+	return &BackendCreateBoard{
+		ID:        board.ID,
+		CreateTS:  board.CreateTS,
+		UpdateTS:  board.UpdateTS,
+		CreatorID: board.CreatorID,
+		UpdaterID: board.UpdaterID,
+		Status:    board.Status,
+		Title:     board.Title,
+		BoardType: board.EntityType,
+	}
 }
 
 type BackendCreateArticle struct {
@@ -84,6 +108,21 @@ type BackendUpdateArticle struct {
 	ArticleID      *types.PttID `json:"AID"`
 	ContentBlockID *types.PttID `json:"cID"`
 	NBlock         int          `json:"NB"`
+}
+
+func articleToBackendUpdateArticle(a *Article) *BackendUpdateArticle {
+	syncInfo := a.GetSyncInfo()
+	blockInfo := a.GetBlockInfo()
+	if syncInfo != nil && syncInfo.GetStatus() <= types.StatusAlive {
+		blockInfo = syncInfo.GetBlockInfo()
+	}
+
+	return &BackendUpdateArticle{
+		BoardID:        a.EntityID,
+		ArticleID:      a.ID,
+		ContentBlockID: blockInfo.ID,
+		NBlock:         blockInfo.NBlock,
+	}
 }
 
 type BackendUpdateReply struct {

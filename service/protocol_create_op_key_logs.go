@@ -32,7 +32,7 @@ func (pm *BaseProtocolManager) handleCreateOpKeyLog(oplog *BaseOplog, info *Proc
 		pm.existsInInfoCreateOpKey, pm.newOpKeyWithOplog, pm.postcreateOpKey, pm.updateCreateOpKeyInfo)
 }
 
-func (pm *BaseProtocolManager) handlePendingCreateOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingCreateOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) (types.Bool, []*BaseOplog, error) {
 
 	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)

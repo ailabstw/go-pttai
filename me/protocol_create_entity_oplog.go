@@ -35,6 +35,10 @@ func (m *MyInfo) CreateEntityOpType(entity pkgservice.Entity) (pkgservice.OpType
 }
 
 func (m *MyInfo) CreateEntityOplog(entity pkgservice.Entity) error {
+	if entity.GetEntityType() == pkgservice.EntityTypePersonal {
+		return nil
+	}
+
 	op, err := m.CreateEntityOpType(entity)
 	if err != nil {
 		return err
@@ -48,10 +52,16 @@ func (m *MyInfo) CreateEntityOplog(entity pkgservice.Entity) error {
 	}
 
 	entityID := entity.GetID()
-	oplog, err := pm.CreateMeOplog(entityID, ts, op, &MeOpCreateEntity{})
+	oplog, err := pm.CreateMeOplog(entityID, ts, op, &MeOpEntity{})
 	if err != nil {
 		return err
 	}
+
+	entity.SetMeLogID(oplog.ID)
+	entity.SetMeLogTS(oplog.UpdateTS)
+	entity.Save(true)
+
+	oplog.IsSync = true
 
 	err = oplog.Save(false)
 	if err != nil {

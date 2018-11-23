@@ -26,8 +26,16 @@ func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info 
 	opData := &MeOpMigrateMe{}
 
 	toBroadcastLogs, err := pm.HandleDeleteEntityLog(
-		oplog, info, opData, types.StatusMigrated,
-		pm.SetMeDB, pm.postdeleteMigrateMe, pm.updateDeleteMeInfo)
+		oplog,
+		info,
+
+		opData,
+		types.StatusMigrated,
+
+		pm.SetMeDB,
+		pm.postdeleteMigrateMe,
+		pm.updateDeleteMeInfo,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +43,23 @@ func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info 
 	return toBroadcastLogs, nil
 }
 
-func (pm *ProtocolManager) handlePendingMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	opData := &MeOpMigrateMe{}
 	return pm.HandlePendingDeleteEntityLog(
-		oplog, info,
-		types.StatusInternalMigrate, types.StatusPendingMigrate,
-		MeOpTypeMigrateMe, opData,
-		pm.SetMeDB, pm.setPendingDeleteMeSyncInfo, pm.updateDeleteMeInfo)
+		oplog,
+		info,
+
+		types.StatusInternalMigrate,
+		types.StatusPendingMigrate,
+
+		MeOpTypeMigrateMe,
+		opData,
+
+		pm.SetMeDB,
+		pm.setPendingDeleteMeSyncInfo,
+		pm.updateDeleteMeInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestMigrateMeLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {

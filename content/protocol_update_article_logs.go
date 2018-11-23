@@ -32,7 +32,7 @@ func (pm *ProtocolManager) handleUpdateArticleLogs(oplog *pkgservice.BaseOplog, 
 		pm.syncArticleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateArticleInfo)
 }
 
-func (pm *ProtocolManager) handlePendingUpdateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingUpdateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 

@@ -17,6 +17,8 @@
 package content
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -25,7 +27,7 @@ func (pm *ProtocolManager) handleCreateMediaLogs(oplog *pkgservice.BaseOplog, in
 	return pm.HandleCreateMediaLogs(oplog, info, pm.existsInInfoCreateMedia, pm.updateCreateMediaInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	return pm.HandlePendingCreateMediaLogs(oplog, info, pm.existsInInfoCreateMedia, pm.updateCreateMediaInfo)
 }

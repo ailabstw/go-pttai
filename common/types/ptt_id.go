@@ -149,9 +149,13 @@ func NewPttIDWithPubkeyAndRefID(key *ecdsa.PublicKey, refID *PttID) (*PttID, err
 	return NewPttIDFromPubkeyPostfix(key, refID[:common.AddressLength])
 }
 
-func UnmarshalTextPttID(b []byte) (*PttID, error) {
+func UnmarshalTextPttID(b []byte, isAllowNil bool) (*PttID, error) {
 	if len(b) == 0 {
-		return nil, nil
+		if isAllowNil {
+			return nil, nil
+		}
+
+		return nil, ErrInvalidID
 	}
 
 	p := &PttID{}

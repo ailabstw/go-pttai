@@ -149,6 +149,8 @@ type ProtocolManager interface {
 	GetMemberOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MemberOplog, error)
 	GetMemberOplogMerkleNodeList(level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error)
 
+	GetMemberLogByMemberID(id *types.PttID, isLocked bool) (*MemberOplog, error)
+
 	// log0
 	SetLog0DB(oplog *BaseOplog)
 
@@ -294,6 +296,8 @@ type BaseProtocolManager struct {
 	masters    map[types.PttID]*Master
 	maxMasters int
 
+	inposttransferMaster func(theMaster Object, theNewMaster Object, oplog *BaseOplog) error
+
 	// master-oplog
 	dbMasterLock *types.LockMap
 	masterMerkle *Merkle
@@ -302,6 +306,8 @@ type BaseProtocolManager struct {
 	isMember          func(id *types.PttID, isLocked bool) bool
 	dbMemberPrefix    []byte
 	dbMemberIdxPrefix []byte
+
+	inpostdeleteMember func(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error
 
 	// member-oplog
 	dbMemberLock *types.LockMap

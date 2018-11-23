@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -65,4 +66,51 @@ func contentBlockToArticleBlock(obj pkgservice.Object, blockInfo *pkgservice.Blo
 
 		Buf: contentBlock.Buf,
 	}
+}
+
+func commentToArticleBlock(pm *ProtocolManager, comment *Comment) (*ArticleBlock, error) {
+	articleBlock := &ArticleBlock{
+		V:           types.CurrentVersion,
+		BlockInfoID: nil,
+		ArticleID:   comment.ArticleID,
+		RefID:       comment.ID,
+		ContentType: ContentTypeComment,
+		CommentType: comment.CommentType,
+		BlockID:     0,
+
+		Status: comment.Status,
+
+		CreateTS:  comment.CreateTS,
+		UpdateTS:  comment.UpdateTS,
+		CreatorID: comment.CreatorID,
+		UpdaterID: comment.UpdaterID,
+	}
+
+	if comment.Status > types.StatusAlive {
+		articleBlock.Buf = DefaultDeletedComment
+		return articleBlock, nil
+	}
+
+	blockInfo := comment.GetBlockInfo()
+	if blockInfo == nil {
+		return nil, pkgservice.ErrInvalidBlock
+	}
+	pm.SetBlockInfoDB(blockInfo, comment.ID)
+
+	contentBlockList, err := pkgservice.GetContentBlockList(blockInfo, uint32(1), false)
+	log.Debug("commentToArticleBlock: after GetContentBlockList", "err", err)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(contentBlockList) != 1 {
+		return nil, ErrInvalidBlock
+	}
+
+	contentBlock := contentBlockList[0]
+
+	articleBlock.BlockInfoID = blockInfo.ID
+	articleBlock.Buf = contentBlock.Buf
+
+	return articleBlock, nil
 }

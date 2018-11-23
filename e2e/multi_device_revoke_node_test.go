@@ -75,6 +75,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(1, len(me0_3.OwnerIDs))
 	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
 	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
+	profileID0_3 := me0_3.ProfileID
 
 	me1_3 := &me.MyInfo{}
 	testCore(t1, bodyString, me1_3, t, isDebug)
@@ -207,6 +208,214 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(me0_1.NodeID, peer1_9_1_0.NodeID)
 	assert.Equal(pkgservice.PeerTypeMe, peer1_9_1_0.PeerType)
 
+	// 9.1 getRawProfile
+	t.Logf("9.1 getRawProfile")
+
+	marshaled, _ = profileID0_3.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile0_9_1 := &account.Profile{}
+	testCore(t0, bodyString, profile0_9_1, t, isDebug)
+	assert.Equal(types.StatusDeleted, profile0_9_1.Status)
+	assert.Equal(me0_3.ID, profile0_9_1.MyID)
+	assert.Equal(me0_3.ProfileID, profile0_9_1.ID)
+	assert.Equal(false, profile0_9_1.IsOwner(me0_1.ID))
+	assert.Equal(true, profile0_9_1.IsOwner(me1_1.ID))
+
+	marshaled, _ = profileID1_3.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile1_9_1 := &account.Profile{}
+	testCore(t1, bodyString, profile1_9_1, t, isDebug)
+	assert.Equal(types.StatusAlive, profile1_9_1.Status)
+	assert.Equal(me1_3.ID, profile1_9_1.MyID)
+	assert.Equal(me1_3.ProfileID, profile1_9_1.ID)
+
+	// 9.2. getMasterOplogList
+	t.Logf("9.2 getMasterOplogList")
+	marshaled, _ = profile0_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMasterOplogList0_9_2 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMasterOplogList0_9_2, t, isDebug)
+	assert.Equal(2, len(dataGetMasterOplogList0_9_2.Result))
+	masterOplog0_9_2 := dataGetMasterOplogList0_9_2.Result[0]
+	masterSigns0_9_2 := masterOplog0_9_2.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_2))
+	assert.Equal(me0_3.ID, masterSigns0_9_2[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, masterOplog0_9_2.MasterLogID)
+
+	marshaled, _ = profile1_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMasterOplogList1_9_2 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMasterOplogList1_9_2, t, isDebug)
+	assert.Equal(1, len(dataGetMasterOplogList1_9_2.Result))
+	masterOplog1_9_2 := dataGetMasterOplogList1_9_2.Result[0]
+	masterSigns1_9_2 := masterOplog1_9_2.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_2))
+	assert.Equal(me1_3.ID, masterSigns1_9_2[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, masterOplog1_9_2.MasterLogID)
+	assert.Equal(types.StatusAlive, masterOplog1_9_2.ToStatus())
+	assert.Equal(types.Bool(true), masterOplog1_9_2.IsSync)
+
+	marshaled, _ = profile1_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMasterOplogList0_9_2_1 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMasterOplogList0_9_2_1, t, isDebug)
+	assert.Equal(1, len(dataGetMasterOplogList0_9_2_1.Result))
+	masterOplog0_9_2_1 := dataGetMasterOplogList0_9_2_1.Result[0]
+	masterSigns0_9_2_1 := masterOplog0_9_2_1.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_2_1))
+	assert.Equal(me1_3.ID, masterSigns0_9_2_1[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, masterOplog0_9_2_1.MasterLogID)
+	assert.Equal(types.StatusAlive, masterOplog0_9_2_1.ToStatus())
+	assert.Equal(types.Bool(true), masterOplog0_9_2.IsSync)
+
+	// 9.4. getUserOplogList
+	t.Logf("9.4 GetUserOplogList: t0")
+	marshaled, _ = profile0_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList0_9_4 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserOplogList0_9_4, t, isDebug)
+	assert.Equal(5, len(dataGetUserOplogList0_9_4.Result))
+	userOplog0_9_4_0 := dataGetUserOplogList0_9_4.Result[0]
+	masterSigns0_9_4_0 := userOplog0_9_4_0.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_0))
+	assert.Equal(me0_3.ID, masterSigns0_9_4_0[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, userOplog0_9_4_0.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateProfile, userOplog0_9_4_0.Op)
+
+	userOplog0_9_4_1 := dataGetUserOplogList0_9_4.Result[1]
+	masterSigns0_9_4_1 := userOplog0_9_4_1.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_1))
+	assert.Equal(me0_3.ID, masterSigns0_9_4_1[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, userOplog0_9_4_1.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserName, userOplog0_9_4_1.Op)
+
+	userOplog0_9_4_2 := dataGetUserOplogList0_9_4.Result[2]
+	masterSigns0_9_4_2 := userOplog0_9_4_2.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_2))
+	assert.Equal(me0_3.ID, masterSigns0_9_4_2[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, userOplog0_9_4_2.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_9_4_2.Op)
+
+	userOplog0_9_4_3 := dataGetUserOplogList0_9_4.Result[3]
+	masterSigns0_9_4_3 := userOplog0_9_4_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_3))
+	assert.Equal(me0_3.ID, masterSigns0_9_4_3[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, userOplog0_9_4_3.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_9_4_3.Op)
+
+	userOplog0_9_4_4 := dataGetUserOplogList0_9_4.Result[4]
+	masterSigns0_9_4_4 := userOplog0_9_4_4.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_4))
+	assert.Equal(me0_3.ID, masterSigns0_9_4_4[0].ID)
+	assert.Equal(masterOplog0_9_2.ID, userOplog0_9_4_4.MasterLogID)
+	assert.Equal(account.UserOpTypeDeleteProfile, userOplog0_9_4_4.Op)
+
+	// t1
+	t.Logf("9.4 GetUserOplogList: t1")
+	marshaled, _ = profile1_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList1_9_4 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetUserOplogList1_9_4, t, isDebug)
+	assert.Equal(5, len(dataGetUserOplogList1_9_4.Result))
+	userOplog1_9_4_0 := dataGetUserOplogList1_9_4.Result[0]
+	masterSigns1_9_4_0 := userOplog1_9_4_0.MasterSigns
+	assert.Equal(1, len(masterSigns1_9_4_0))
+	assert.Equal(me1_3.ID, masterSigns1_9_4_0[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog1_9_4_0.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateProfile, userOplog1_9_4_0.Op)
+
+	userOplog1_9_4_1 := dataGetUserOplogList1_9_4.Result[1]
+	masterSigns1_9_4_1 := userOplog1_9_4_1.MasterSigns
+	assert.Equal(1, len(masterSigns1_9_4_1))
+	assert.Equal(me1_3.ID, masterSigns1_9_4_1[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog1_9_4_1.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserName, userOplog1_9_4_1.Op)
+
+	userOplog1_9_4_2 := dataGetUserOplogList1_9_4.Result[2]
+	masterSigns1_9_4_2 := userOplog1_9_4_2.MasterSigns
+	assert.Equal(1, len(masterSigns1_9_4_2))
+	assert.Equal(me1_3.ID, masterSigns1_9_4_2[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog1_9_4_2.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserImg, userOplog1_9_4_2.Op)
+
+	userOplog1_9_4_3 := dataGetUserOplogList1_9_4.Result[3]
+	masterSigns1_9_4_3 := userOplog1_9_4_3.MasterSigns
+	assert.Equal(1, len(masterSigns1_9_4_3))
+	assert.Equal(me1_3.ID, masterSigns1_9_4_3[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog1_9_4_3.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog1_9_4_3.Op)
+
+	userOplog1_9_4_4 := dataGetUserOplogList1_9_4.Result[4]
+	masterSigns1_9_4_4 := userOplog1_9_4_4.MasterSigns
+	assert.Equal(1, len(masterSigns1_9_4_4))
+	assert.Equal(me1_3.ID, masterSigns1_9_4_4[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog1_9_4_4.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog1_9_4_4.Op)
+
+	// new t0 (should be the same as t1)
+	t.Logf("9.4 GetUserOplogList: new t0")
+	marshaled, _ = profile1_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList0_9_4_1 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserOplogList0_9_4_1, t, isDebug)
+	assert.Equal(5, len(dataGetUserOplogList0_9_4_1.Result))
+	userOplog0_9_4_1_0 := dataGetUserOplogList0_9_4_1.Result[0]
+	mastersigns0_9_4_1_0 := userOplog0_9_4_1_0.MasterSigns
+	assert.Equal(1, len(mastersigns0_9_4_1_0))
+	assert.Equal(me1_3.ID, mastersigns0_9_4_1_0[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog0_9_4_1_0.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateProfile, userOplog0_9_4_1_0.Op)
+
+	userOplog0_9_4_1_1 := dataGetUserOplogList0_9_4_1.Result[1]
+	masterSigns0_9_4_1_1 := userOplog0_9_4_1_1.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_1_1))
+	assert.Equal(me1_3.ID, masterSigns0_9_4_1_1[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog0_9_4_1_1.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserName, userOplog0_9_4_1_1.Op)
+
+	userOplog0_9_4_1_2 := dataGetUserOplogList0_9_4_1.Result[2]
+	masterSigns0_9_4_1_2 := userOplog0_9_4_1_2.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_1_2))
+	assert.Equal(me1_3.ID, masterSigns0_9_4_1_2[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog0_9_4_1_2.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_9_4_1_2.Op)
+
+	userOplog0_9_4_1_3 := dataGetUserOplogList0_9_4_1.Result[3]
+	masterSigns0_9_4_1_3 := userOplog0_9_4_1_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_1_3))
+	assert.Equal(me1_3.ID, masterSigns0_9_4_1_3[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog0_9_4_1_3.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_9_4_1_3.Op)
+	opData0_9_4_1_3 := &account.UserOpAddUserNode{}
+	userOplog0_9_4_1_3.GetData(opData0_9_4_1_3)
+	assert.Equal(me1_1.NodeID, opData0_9_4_1_3.NodeID)
+
+	userOplog0_9_4_1_4 := dataGetUserOplogList0_9_4_1.Result[4]
+	masterSigns0_9_4_1_4 := userOplog0_9_4_1_4.MasterSigns
+	assert.Equal(1, len(masterSigns0_9_4_1_4))
+	assert.Equal(me1_3.ID, masterSigns0_9_4_1_4[0].ID)
+	assert.Equal(masterOplog1_9_2.ID, userOplog0_9_4_1_4.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_9_4_1_4.Op)
+	opData0_9_4_1_4 := &account.UserOpAddUserNode{}
+	userOplog0_9_4_1_4.GetData(opData0_9_4_1_4)
+	assert.Equal(me0_1.NodeID, opData0_9_4_1_4.NodeID)
+
+	assert.Equal(dataGetUserOplogList1_9_4, dataGetUserOplogList0_9_4_1)
+
 	// 10. revoke-node
 	marshaled, _ = me1_1.NodeID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_removeNode", "params": ["%v"]}`, string(marshaled))
@@ -278,4 +487,19 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	}
 	assert.Equal(types.StatusAlive, myUserNode0_14.Status)
 	assert.Equal(types.StatusDeleted, theirUserNode0_14.Status)
+
+	// 15. new t0 (should be the same as t1)
+	t.Logf("15 GetUserOplogList: new t0")
+	marshaled, _ = profile1_9_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList0_15 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserOplogList0_15, t, isDebug)
+	assert.Equal(6, len(dataGetUserOplogList0_15.Result))
+	assert.Equal(dataGetUserOplogList0_9_4_1.Result, dataGetUserOplogList0_15.Result[:5])
+	userOplog0_15 := dataGetUserOplogList0_15.Result[5]
+	assert.Equal(types.StatusAlive, userOplog0_15.ToStatus())
+	assert.Equal(account.UserOpTypeRemoveUserNode, userOplog0_15.Op)
+
 }

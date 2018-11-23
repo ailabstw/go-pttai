@@ -134,3 +134,21 @@ func (pm *ProtocolManager) postRegisterPeer(peer *pkgservice.PttPeer) error {
 
 	return nil
 }
+
+func (pm *ProtocolManager) LoadPeers() error {
+	ptt := pm.myPtt
+	opKey, err := pm.GetOldestOpKey(false)
+	if err != nil {
+		return err
+	}
+
+	myNodeID := ptt.MyNodeID()
+	for _, myNode := range pm.MyNodes {
+		if reflect.DeepEqual(myNode.NodeID, myNodeID) {
+			continue
+		}
+		log.Debug("LoadPeers: to AddDial", "nodeID", myNode.NodeID)
+		ptt.AddDial(myNode.NodeID, opKey.Hash, pkgservice.PeerTypeMe)
+	}
+	return nil
+}

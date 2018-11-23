@@ -17,6 +17,8 @@
 package content
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -26,7 +28,7 @@ func (pm *ProtocolManager) handleDeleteMediaLogs(oplog *pkgservice.BaseOplog, in
 
 }
 
-func (pm *ProtocolManager) handlePendingDeleteMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	return pm.BaseHandlePendingDeleteMediaLogs(oplog, info, pm.SetBoardDB, pm.updateMediaDeleteInfo)
 

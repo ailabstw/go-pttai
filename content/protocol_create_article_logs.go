@@ -36,7 +36,7 @@ func (pm *ProtocolManager) handleCreateArticleLogs(oplog *pkgservice.BaseOplog, 
 		pm.existsInInfoCreateArticle, pm.newArticleWithOplog, nil, pm.updateCreateArticleInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 

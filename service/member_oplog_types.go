@@ -18,7 +18,7 @@ package service
 
 const (
 	_ OpType = iota
-	MemberOpTypeCreateMember
+	MemberOpTypeAddMember
 	MemberOpTypeDeleteMember
 	MemberOpTypeTransferMember
 )

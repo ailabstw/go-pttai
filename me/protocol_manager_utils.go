@@ -23,23 +23,6 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) LoadPeers() error {
-	ptt := pm.myPtt
-	opKey, err := pm.GetOldestOpKey(false)
-	if err != nil {
-		return err
-	}
-
-	myNodeID := ptt.MyNodeID()
-	for _, myNode := range pm.MyNodes {
-		if reflect.DeepEqual(myNode.NodeID, myNodeID) {
-			continue
-		}
-		ptt.AddDial(myNode.NodeID, opKey.Hash)
-	}
-	return nil
-}
-
 func (pm *ProtocolManager) GetJoinKeyFromHash(hash *common.Address) (*pkgservice.KeyInfo, error) {
 	keyInfo, err := pm.BaseProtocolManager.GetJoinKeyFromHash(hash)
 	if err == nil {

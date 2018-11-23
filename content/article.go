@@ -401,3 +401,65 @@ func (a *Article) LoadBoo() (*pkgservice.Count, error) {
 
 	return count, err
 }
+
+func (a *Article) DeleteAll(comment *Comment, isLocked bool) error {
+
+	var err error
+	if !isLocked {
+		err = a.Lock()
+		if err != nil {
+			return err
+		}
+		defer a.Unlock()
+	}
+
+	// comment
+	iter, err := comment.GetCrossObjIterWithObj(a.ID[:], nil, pttdb.ListOrderNext, false)
+	if err != nil {
+		return err
+	}
+	defer iter.Release()
+
+	var key []byte
+	var id *types.PttID
+	for iter.Next() {
+		key = iter.Key()
+		id, err = comment.KeyToID(key)
+		comment.SetID(id)
+		comment.GetAndDeleteAll(false)
+	}
+
+	// block-info
+	blockInfo := a.GetBlockInfo()
+	setBlockInfoDB := a.SetBlockInfoDB()
+	setBlockInfoDB(blockInfo, a.ID)
+
+	blockInfo.Remove(false)
+
+	a.Delete(true)
+
+	// push
+	count, err := pkgservice.NewCount(dbBoard, a.EntityID, a.ID, DBPushPrefix, PCommentCount, false)
+	if err == nil {
+		count.Delete()
+	}
+
+	count, err = pkgservice.NewCount(dbBoard, a.EntityID, a.ID, DBBooPrefix, PCommentCount, false)
+	if err == nil {
+		count.Delete()
+	}
+
+	// comment-create-ts
+	key, err = a.MarshalCommentCreateTSKey()
+	if err == nil {
+		a.DB().DB().Delete(key)
+	}
+
+	// last-seen
+	key, err = a.MarshalLastSeenKey()
+	if err == nil {
+		a.DB().DB().Delete(key)
+	}
+
+	return nil
+}

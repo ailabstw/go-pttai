@@ -24,6 +24,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	pb "github.com/ailabstw/go-pttai/raft/raftpb"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 func (pm *ProtocolManager) raftEntriesToApply(ents []pb.Entry) ([]pb.Entry, error) {
@@ -244,7 +245,8 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 		if err != nil {
 			return err
 		}
-		ptt.AddDial(nodeID, opKey.Hash)
+		log.Debug("publishEntriesAddNode: to AddDial", "nodeID", nodeID)
+		ptt.AddDial(nodeID, opKey.Hash, pkgservice.PeerTypeMe)
 	}
 
 	// oplog-save

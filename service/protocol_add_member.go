@@ -36,7 +36,7 @@ func (pm *BaseProtocolManager) AddMember(id *types.PttID, isForce bool) (*Member
 
 	data := &MemberOpAddMember{}
 	person, oplog, err := pm.AddPerson(
-		id, MemberOpTypeCreateMember, isForce,
+		id, MemberOpTypeAddMember, isForce,
 		origMember, data,
 		pm.NewMember, pm.NewMemberOplogWithTS, pm.broadcastMemberOplogCore, pm.postaddMember,
 		pm.SetMemberDB, pm.NewMemberOplog,

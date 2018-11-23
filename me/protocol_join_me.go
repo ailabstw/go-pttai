@@ -48,7 +48,7 @@ func (pm *ProtocolManager) JoinMe(joinRequest *pkgservice.JoinRequest, myKeyByte
 	}
 
 	// me
-	myKey, err := types.UnmarshalTextPttID(myKeyBytes)
+	myKey, err := types.UnmarshalTextPttID(myKeyBytes, false)
 	if err != nil {
 		return err
 	}

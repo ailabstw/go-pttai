@@ -33,7 +33,7 @@ func (pm *ProtocolManager) handleCreateCommentLogs(oplog *pkgservice.BaseOplog, 
 		pm.existsInInfoCreateComment, pm.newCommentWithOplog, nil, pm.updateCreateCommentInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateCommentLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateCommentLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyComment()
 	pm.SetCommentDB(obj)
 

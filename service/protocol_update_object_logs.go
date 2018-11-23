@@ -72,14 +72,14 @@ func (pm *BaseProtocolManager) HandlePendingUpdateObjectLog(
 
 	updateUpdateInfo func(obj Object, oplog *BaseOplog, opData OpData, origSyncInfo SyncInfo, info ProcessInfo) error,
 
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	err := pm.handleUpdateObjectCore(oplog, opData, obj, info, false, syncInfoFromOplog, setLogDB, removeMediaInfoByBlockInfo, postUpdate, updateUpdateInfo)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
-	return nil, nil
+	return oplog.IsSync, nil, nil
 }
 
 func (pm *BaseProtocolManager) handleUpdateObjectCore(

@@ -53,15 +53,22 @@ type ServiceProtocolManager interface {
 	DBObjLock() *types.LockMap
 	GetDBLock() *types.LockMap
 
+	Lock(id *types.PttID) error
+	Unlock(id *types.PttID) error
+	RLock(id *types.PttID) error
+	RUnlock(id *types.PttID) error
+
 	NewEmptyEntity() Entity
 
 	CreateJoinEntity(
 		approveJoin *ApproveJoinEntity,
 		peer *PttPeer,
 
-		meLogID *types.PttID,
+		meLog *BaseOplog,
 		isStart bool,
 		isNew bool,
+		isForceNotBroadcast bool,
+		isLocked bool,
 	) (Entity, error)
 }
 
@@ -74,8 +81,11 @@ type BaseServiceProtocolManager struct {
 	ptt     Ptt
 	service Service
 
-	dbLock    *types.LockMap
+	// dbLock is the lock for entity.
+	dbLock *types.LockMap
+	// dbObjLock is the lock for global objects (user-name / user-img / user-nodes)
 	dbObjLock *types.LockMap
+	// dbLogLock is the lock for global logs (create-entity logs)
 	dbLogLock *types.LockMap
 
 	lockJoinRequest sync.RWMutex
@@ -148,4 +158,32 @@ func (spm *BaseServiceProtocolManager) Service() Service {
 
 func (spm *BaseServiceProtocolManager) NewEmptyEntity() Entity {
 	return nil
+}
+
+/*
+Lock locks the entity-level lock.
+*/
+func (spm *BaseServiceProtocolManager) Lock(id *types.PttID) error {
+	return spm.dbLock.Lock(id)
+}
+
+/*
+Unlock unlocks the entity-level lock.
+*/
+func (spm *BaseServiceProtocolManager) Unlock(id *types.PttID) error {
+	return spm.dbLock.Unlock(id)
+}
+
+/*
+RLock rlocks the entity-level lock.
+*/
+func (spm *BaseServiceProtocolManager) RLock(id *types.PttID) error {
+	return spm.dbLock.RLock(id)
+}
+
+/*
+RUnlock runlocks the entity-level lock.
+*/
+func (spm *BaseServiceProtocolManager) RUnlock(id *types.PttID) error {
+	return spm.dbLock.RUnlock(id)
 }

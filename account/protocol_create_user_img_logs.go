@@ -33,7 +33,7 @@ func (pm *ProtocolManager) handleCreateUserImgLogs(oplog *pkgservice.BaseOplog, 
 		pm.existsInInfoCreateUserImg, pm.newUserImgWithOplog, nil, pm.updateCreateUserImgInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateUserImgLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateUserImgLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyUserImg()
 	pm.SetUserImgDB(obj)
 

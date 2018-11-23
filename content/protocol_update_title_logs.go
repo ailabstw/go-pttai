@@ -32,7 +32,7 @@ func (pm *ProtocolManager) handleUpdateTitleLogs(oplog *pkgservice.BaseOplog, in
 		pm.syncTitleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateTitleInfo)
 }
 
-func (pm *ProtocolManager) handlePendingUpdateTitleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingUpdateTitleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyTitle()
 	pm.SetTitleDB(obj)
 

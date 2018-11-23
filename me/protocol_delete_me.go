@@ -19,6 +19,7 @@ package me
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -39,12 +40,25 @@ func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData, isFor
 	myID := myInfo.ID
 	myService := pm.Entity().Service()
 
-	log.Debug("postdeleteMe: start", "myProfileID", myInfo.ProfileID, "myProfile", myInfo.Profile, "isForce", isForce)
+	raftLead := pm.GetRaftLead(true)
+	myRaftID := pm.myPtt.MyRaftID()
+
+	log.Debug("postdeleteMe: start", "myProfileID", myInfo.ProfileID, "myProfile", myInfo.Profile, "isForce", isForce, "raftLead", raftLead, "myRaftID", myRaftID)
+
+	if raftLead != myRaftID {
+		return nil
+	}
 
 	// delete profile
 	myProfile := myInfo.Profile
 	if myProfile != nil {
 		myProfile.PM().(*account.ProtocolManager).Delete()
+	}
+
+	// delete board
+	myBoard := myInfo.Board
+	if myBoard != nil {
+		myBoard.PM().(*content.ProtocolManager).Delete()
 	}
 
 	entities := pm.myPtt.GetEntities()

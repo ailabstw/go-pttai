@@ -26,22 +26,20 @@ import (
 
 func (pm *ProtocolManager) HandleApproveJoinBoard(dataBytes []byte, joinRequest *pkgservice.JoinRequest, peer *pkgservice.PttPeer) error {
 
-	approveJoin := &pkgservice.ApproveJoin{Data: &pkgservice.ApproveJoinEntity{}}
+	theBoardData := content.NewEmptyApproveJoinBoard()
+	approveJoin := &pkgservice.ApproveJoin{Data: theBoardData}
 	err := json.Unmarshal(dataBytes, approveJoin)
 	if err != nil {
 		log.Error("HandleApproveJoinBoard: unable to unmarshal", "e", err)
 		return err
 	}
 
-	boardData, ok := approveJoin.Data.(*pkgservice.ApproveJoinEntity)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
+	boardData := theBoardData
 
 	// board
 	contentService := pm.Entity().Service().(*Backend).contentBackend
 	contentSPM := contentService.SPM().(*content.ServiceProtocolManager)
-	_, err = contentSPM.CreateJoinEntity(boardData, peer, nil, true, true)
+	_, err = contentSPM.CreateJoinEntity(boardData, peer, nil, true, true, false, false)
 	if err != nil {
 		return err
 	}

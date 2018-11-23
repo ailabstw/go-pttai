@@ -34,7 +34,7 @@ func (pm *ProtocolManager) handleCreateMessageLogs(oplog *pkgservice.BaseOplog, 
 		pm.existsInInfoCreateMessage, pm.newMessageWithOplog, pm.postcreateMessage, pm.updateCreateMessageInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateMessageLogs(oplog *pkgservice.BaseOplog, info *ProcessFriendInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateMessageLogs(oplog *pkgservice.BaseOplog, info *ProcessFriendInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyMessage()
 	pm.SetMessageDB(obj)
 

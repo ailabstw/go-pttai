@@ -54,7 +54,7 @@ func (pm *BaseProtocolManager) BaseHandlePendingDeleteMediaLogs(
 	setLogDB func(oplog *BaseOplog),
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	obj := NewEmptyMedia()
 	pm.SetMediaDB(obj)

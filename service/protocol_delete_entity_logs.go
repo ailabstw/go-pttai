@@ -121,7 +121,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
 
 	updateDeleteInfo func(oplog *BaseOplog, info ProcessInfo) error,
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	entity := pm.Entity()
 
@@ -130,14 +130,14 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 	// 1. lock obj
 	err := entity.Lock()
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	defer entity.Unlock()
 
 	// 3. already deleted
 	origStatus := entity.GetStatus()
 	if origStatus >= types.StatusDeleted {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 
 	// 4. sync info
@@ -149,7 +149,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
 			if !isReplaceOrigSyncInfo(origSyncInfo, oplogStatus, oplog.UpdateTS, oplog.ID) {
-				return nil, ErrNewerOplog
+				return false, nil, ErrNewerOplog
 			}
 
 			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, false, nil, setLogDB)
@@ -161,13 +161,13 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 	setPendingDeleteSyncInfo(entity, oplogStatus, oplog)
 	err = entity.Save(true)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
 	// 7. update delete info
 	updateDeleteInfo(oplog, info)
 
-	return nil, nil
+	return true, nil, nil
 }
 
 /**********

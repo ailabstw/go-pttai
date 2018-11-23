@@ -90,8 +90,8 @@ func (pm *BaseProtocolManager) HandlePendingCreatePersonLog(
 
 	opData OpData,
 
-) ([]*BaseOplog, error) {
-	return nil, types.ErrNotImplemented
+) (types.Bool, []*BaseOplog, error) {
+	return false, nil, types.ErrNotImplemented
 }
 
 /**********

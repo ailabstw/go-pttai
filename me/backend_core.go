@@ -144,6 +144,7 @@ func (b *Backend) RefreshMyNodeSignKey() (*pkgservice.KeyInfo, error) {
  **********/
 
 func (b *Backend) ShowMeURL() (*pkgservice.BackendJoinURL, error) {
+
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 	pm := myInfo.PM().(*ProtocolManager)
 	myID := myInfo.ID
@@ -191,15 +192,11 @@ func (b *Backend) JoinMe(meURL []byte, myKeyBytes []byte) (*pkgservice.BackendJo
 
 func (b *Backend) GetMeRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoinRequest, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	joinMeRequests, lockJoinMeRequest := pm.GetJoinMeRequests()
 
@@ -220,15 +217,12 @@ func (b *Backend) GetMeRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoin
 }
 
 func (b *Backend) GetJoinKeys(entityIDBytes []byte) ([]*pkgservice.KeyInfo, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	return pm.JoinKeyList(), nil
 }
@@ -282,15 +276,12 @@ func (b *Backend) JoinFriend(friendURL []byte) (*pkgservice.BackendJoinRequest, 
 }
 
 func (b *Backend) GetFriendRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoinRequest, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	joinFriendRequests, err := pm.GetFriendRequests()
 	if err != nil {
@@ -332,15 +323,12 @@ func (b *Backend) JoinBoard(friendURL []byte) (*pkgservice.BackendJoinRequest, e
 }
 
 func (b *Backend) GetBoardRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoinRequest, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	joinBoardRequests, err := pm.GetBoardRequests()
 	if err != nil {
@@ -366,19 +354,17 @@ func (b *Backend) Get() (*BackendMyInfo, error) {
 }
 
 func (b *Backend) GetRawMe(entityIDBytes []byte) (*MyInfo, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	entity, err := b.EntityIDToEntity(entityIDBytes)
 	if err != nil {
 		return nil, err
-	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
 	}
 
 	return entity.(*MyInfo), nil
 }
 
 func (b *Backend) GetMyIDStr() (string, error) {
+
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 	myIDBytes, err := myInfo.ID.MarshalText()
 	if err != nil {
@@ -388,6 +374,7 @@ func (b *Backend) GetMyIDStr() (string, error) {
 }
 
 func (b *Backend) GetMeList() ([]*BackendMyInfo, error) {
+
 	entities := b.SPM().Entities()
 
 	myInfoList := make([]*BackendMyInfo, 0, len(entities))
@@ -401,6 +388,7 @@ func (b *Backend) GetMeList() ([]*BackendMyInfo, error) {
 }
 
 func (b *Backend) Revoke(myKey []byte) (bool, error) {
+
 	isValid, err := b.ValidateValidateKey(myKey)
 	if err != nil {
 		return false, err
@@ -426,15 +414,12 @@ func (b *Backend) Revoke(myKey []byte) (bool, error) {
  **********/
 
 func (b *Backend) GetMyNodes(entityIDBytes []byte) ([]*MyNode, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	pm.RLockMyNodes()
 	defer pm.RUnlockMyNodes()
@@ -456,6 +441,7 @@ func (b *Backend) GetMyNodes(entityIDBytes []byte) ([]*MyNode, error) {
  **********/
 
 func (b *Backend) RequestRaftLead() (bool, error) {
+
 	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
 	pm := myInfo.PM().(*ProtocolManager)
 
@@ -465,29 +451,23 @@ func (b *Backend) RequestRaftLead() (bool, error) {
 }
 
 func (b *Backend) GetRaftStatus(entityIDBytes []byte) (*RaftStatus, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	return pm.GetRaftStatus()
 }
 
 func (b *Backend) GetTotalWeight(entityIDBytes []byte) (uint32, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return 0, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return 0, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	return pm.totalWeight, nil
 }
@@ -527,17 +507,13 @@ func (b *Backend) ForceRemoveNode(nodeIDStr string) (bool, error) {
 
 func (b *Backend) GetMeOplogList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
 	if err != nil {
 		return nil, err
 	}
@@ -547,17 +523,13 @@ func (b *Backend) GetMeOplogList(entityIDBytes []byte, logIDBytes []byte, limit 
 
 func (b *Backend) GetPendingMeOplogMasterList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
 	if err != nil {
 		return nil, err
 	}
@@ -567,17 +539,13 @@ func (b *Backend) GetPendingMeOplogMasterList(entityIDBytes []byte, logIDBytes [
 
 func (b *Backend) GetPendingMeOplogInternalList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*MeOplog, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
 	if err != nil {
 		return nil, err
 	}
@@ -587,15 +555,11 @@ func (b *Backend) GetPendingMeOplogInternalList(entityIDBytes []byte, logIDBytes
 
 func (b *Backend) GetMeOplogMerkleNodeList(entityIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
 	merkleNodeList, err := pm.GetMeOplogMerkleNodeList(level, startKey, limit, listOrder)
 	if err != nil {
@@ -616,17 +580,13 @@ func (b *Backend) GetMeOplogMerkleNodeList(entityIDBytes []byte, level pkgservic
 
 func (b *Backend) GetMyMasterOplogList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*MasterOplog, error) {
 
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+	thePM, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
+	pm := thePM.(*ProtocolManager)
 
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +599,18 @@ func (b *Backend) GetMyMasterOplogList(entityIDBytes []byte, logIDBytes []byte, 
  **********/
 
 func (b *Backend) GetBoard(entityIDBytes []byte) (*content.BackendGetBoard, error) {
-	return nil, types.ErrNotImplemented
+
+	entity, err := b.EntityIDToEntity(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	boardIDBytes, err := entity.(*MyInfo).BoardID.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+
+	return b.contentBackend.GetBoard(boardIDBytes)
 }
 
 /**********
@@ -647,13 +618,10 @@ func (b *Backend) GetBoard(entityIDBytes []byte) (*content.BackendGetBoard, erro
  **********/
 
 func (b *Backend) GetMyProfile(entityIDBytes []byte) (*account.Profile, error) {
-	entityID, err := types.UnmarshalTextPttID(entityIDBytes)
+
+	entity, err := b.EntityIDToEntity(entityIDBytes)
 	if err != nil {
 		return nil, err
-	}
-	entity := b.SPM().Entity(entityID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
 	}
 
 	return entity.(*MyInfo).Profile, nil

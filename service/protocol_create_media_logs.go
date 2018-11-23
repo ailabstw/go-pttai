@@ -59,7 +59,7 @@ func (pm *BaseProtocolManager) HandlePendingCreateMediaLogs(
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 	obj := NewEmptyMedia()
 	pm.SetMediaDB(obj)
 

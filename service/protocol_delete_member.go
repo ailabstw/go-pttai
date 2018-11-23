@@ -20,36 +20,43 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-func (pm *BaseProtocolManager) DeleteMember(id *types.PttID) (bool, error) {
-	return false, types.ErrNotImplemented
+func (pm *BaseProtocolManager) DeleteMember(
+	id *types.PttID,
+) (bool, error) {
 
-	/*
-		person := NewEmptyMember()
-		pm.SetMemberObjDB(person)
+	person := NewEmptyMember()
+	pm.SetMemberObjDB(person)
 
-		opData := &MemberOpDeleteMember{}
+	opData := &MemberOpDeleteMember{}
 
-		err := pm.DeletePerson(
-			id, MemberOpTypeDeleteMember,
-			person, opData,
-			pm.NewMemberOplog, pm.broadcastMemberOplogCore, pm.postdeleteMember,
-		)
-		if err != nil {
-			return false, err
-		}
+	err := pm.DeletePerson(
+		id,
+		MemberOpTypeDeleteMember,
+		person,
+		opData,
 
-		return true, nil
-	*/
+		types.StatusInternalDeleted,
+		types.StatusPendingDeleted,
+		types.StatusDeleted,
+
+		pm.SetMemberDB,
+		pm.NewMemberOplog,
+		pm.broadcastMemberOplogCore,
+		pm.postdeleteMember,
+	)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
-/**********
- * utils
- **********/
-
-/*
-postdeleteMember deals with ops after deletingMember. Assuming obj already locked (in DeleteObject and DeleteObjectLogs).
-*/
 func (pm *BaseProtocolManager) postdeleteMember(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
+
+	if pm.inpostdeleteMember != nil {
+		return pm.inpostdeleteMember(id, oplog, origObj, opData)
+	}
 
 	return nil
 }

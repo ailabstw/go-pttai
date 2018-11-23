@@ -35,7 +35,7 @@ func (pm *ProtocolManager) handleUpdateUserNameLogs(oplog *pkgservice.BaseOplog,
 		pm.syncUserNameInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserNameInfo)
 }
 
-func (pm *ProtocolManager) handlePendingUpdateUserNameLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingUpdateUserNameLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyUserName()
 	pm.SetUserNameDB(obj)
 

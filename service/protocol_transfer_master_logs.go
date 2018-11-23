@@ -51,6 +51,13 @@ func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *typ
 		return err
 	}
 
+	if pm.inposttransferMaster != nil {
+		err = pm.inposttransferMaster(theMaster, newMaster, oplog)
+		if err != nil {
+			return err
+		}
+	}
+
 	return pm.postposttransferMaster(theMaster, newMaster, oplog)
 }
 
@@ -87,7 +94,7 @@ func (pm *BaseProtocolManager) postposttransferMaster(theMaster Object, theNewMa
 	return nil
 }
 
-func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMaster()
 	pm.SetMasterObjDB(person)

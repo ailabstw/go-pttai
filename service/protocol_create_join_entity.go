@@ -25,10 +25,16 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	approveJoin *ApproveJoinEntity,
 	peer *PttPeer,
 
-	meLogID *types.PttID,
+	meLog *BaseOplog,
+
 	isStart bool,
 	isNew bool,
+	isForceNotBroadcast bool,
+
+	isLocked bool,
 ) (Entity, error) {
+
+	var err error
 
 	entity, oplog0, masterLogs, memberLogs, opKey, opKeyLog := approveJoin.Entity, approveJoin.Oplog0, approveJoin.MasterLogs, approveJoin.MemberLogs, approveJoin.OpKey, approveJoin.OpKeyLog
 
@@ -36,14 +42,39 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	service := spm.Service()
 	sspm := service.SPM()
 
+	if !isLocked {
+		err = sspm.Lock(entity.GetID())
+		if err != nil {
+			return nil, err
+		}
+		defer sspm.Unlock(entity.GetID())
+	}
+
 	// entity
-	ts, err := types.GetTimestamp()
-	if err != nil {
-		return nil, err
+	var ts types.Timestamp
+
+	// check is new
+	if isNew {
+		origEntity := spm.Entity(entity.GetID())
+		if origEntity != nil {
+			entity = origEntity
+			isNew = false
+		}
+	}
+
+	if meLog == nil {
+		ts, err = types.GetTimestamp()
+		if err != nil {
+			return nil, err
+		}
+		entity.SetJoinTS(ts)
+	} else {
+		entity.SetJoinTS(meLog.UpdateTS)
+		entity.SetMeLogTS(meLog.UpdateTS)
+		entity.SetMeLogID(meLog.ID)
 	}
 
 	entity.SetSyncInfo(nil)
-	entity.SetJoinTS(ts)
 	err = entity.Save(true)
 	if err != nil {
 		return nil, err
@@ -110,16 +141,19 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	// spm-register
 	spm.RegisterEntity(entity.GetID(), entity)
 
+	entity.SetStatus(types.StatusAlive)
+	entity.Save(true)
+
 	if isStart {
 		entity.PrestartAndStart()
 	}
 
 	// me-oplog
-	if meLogID != nil {
+	if meLog != nil {
 		return entity, nil
 	}
 
-	if entity.GetEntityType() == EntityTypePersonal {
+	if isForceNotBroadcast {
 		return entity, nil
 	}
 

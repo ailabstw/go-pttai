@@ -154,14 +154,14 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
-	_, err = profileSPM.CreateJoinEntity(profileData, peer, oplog0.ID, false, true)
+	_, err = profileSPM.CreateJoinEntity(profileData, peer, oplog0, false, true, true, false)
 	if err != nil {
 		return err
 	}
 
 	// board
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
-	_, err = contentSPM.CreateJoinEntity(boardData, peer, oplog0.ID, false, true)
+	_, err = contentSPM.CreateJoinEntity(boardData, peer, oplog0, false, true, true, false)
 	if err != nil {
 		return err
 	}

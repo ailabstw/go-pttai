@@ -22,52 +22,41 @@ import (
 
 func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
 
-	return nil, types.ErrNotImplemented
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
 
-	/*
-		obj := NewEmptyMember()
-		pm.SetMemberObjDB(obj)
+	opData := &MemberOpDeleteMember{}
 
-		toBroadcastLogs, err := pm.HandleDeleteObjectLog(oplog, info, obj, nil, pm.SetMemberDB, pm.postdeleteMember)
-		if err != nil {
-			return nil, err
-		}
+	toBroadcastLogs, err := pm.HandleDeletePersonLog(oplog, obj, opData, types.StatusDeleted, pm.SetMemberDB, pm.postdeleteMember)
+	if err != nil {
+		return nil, err
+	}
 
-		return toBroadcastLogs, nil
-	*/
+	return toBroadcastLogs, nil
 }
 
-func (pm *BaseProtocolManager) handlePendingDeleteMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingDeleteMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
-	return nil, types.ErrNotImplemented
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
 
-	/*
-		obj := NewEmptyMember()
-		pm.SetMemberObjDB(obj)
+	opData := &MemberOpDeleteMember{}
 
-		return pm.HandlePendingDeleteObjectLog(oplog, info, obj, nil, pm.SetMemberDB)
-	*/
+	return pm.HandlePendingDeletePersonLog(oplog, info, obj, opData, types.StatusInternalDeleted, types.StatusPendingDeleted, pm.SetMemberDB)
 }
 
 func (pm *BaseProtocolManager) setNewestDeleteMemberLog(oplog *BaseOplog) (types.Bool, error) {
-	return false, types.ErrNotImplemented
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
 
-	/*
-		obj := NewEmptyMember()
-		pm.SetMemberObjDB(obj)
-
-		return pm.SetNewestDeleteObjectLog(oplog, obj)
-	*/
+	return pm.SetNewestDeletePersonLog(oplog, obj)
 }
 
 func (pm *BaseProtocolManager) handleFailedDeleteMemberLog(oplog *BaseOplog) error {
 	return types.ErrNotImplemented
 
-	/*
-		obj := NewEmptyMember()
-		pm.SetMemberObjDB(obj)
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
 
-		return pm.HandleFailedDeleteObjectLog(oplog, obj)
-	*/
-
+	return pm.HandleFailedDeletePersonLog(oplog, obj)
 }

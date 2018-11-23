@@ -27,7 +27,7 @@ type UpdateArticle struct {
 	MediaIDs []*types.PttID `json:"m"`
 }
 
-func (pm *ProtocolManager) UpdateArticle(articleBytes [][]byte, mediaIDs []*types.PttID) error {
+func (pm *ProtocolManager) UpdateArticle(articleID *types.PttID, articleBytes [][]byte, mediaIDs []*types.PttID) (*Article, error) {
 
 	data := &UpdateArticle{Article: articleBytes, MediaIDs: mediaIDs}
 
@@ -36,18 +36,25 @@ func (pm *ProtocolManager) UpdateArticle(articleBytes [][]byte, mediaIDs []*type
 
 	opData := &BoardOpUpdateTitle{}
 
-	entityID := pm.Entity().GetID()
-	log.Debug("UpdateArticle: to UpdateObject")
-
 	err := pm.UpdateObject(
-		entityID, data, BoardOpTypeUpdateTitle, origObj, opData,
+		articleID,
+		data,
+		BoardOpTypeUpdateTitle,
+		origObj,
+		opData,
 
-		pm.SetBoardDB, pm.NewBoardOplog, pm.inupdateArticle, nil, pm.broadcastBoardOplogCore, nil)
+		pm.SetBoardDB,
+		pm.NewBoardOplog,
+		pm.inupdateArticle,
+		nil,
+		pm.broadcastBoardOplogCore,
+		nil,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return origObj, nil
 }
 
 func (pm *ProtocolManager) inupdateArticle(obj pkgservice.Object, theData pkgservice.UpdateData, oplog *pkgservice.BaseOplog, theOpData pkgservice.OpData) (pkgservice.SyncInfo, error) {

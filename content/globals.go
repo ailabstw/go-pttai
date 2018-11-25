@@ -183,6 +183,13 @@ func InitContent(dataDir string, keystoreDir string) error {
 	return nil
 }
 
+// comment
+var (
+	DefaultDeletedComment = [][]byte{
+		[]byte("(本文已被刪除)"),
+	}
+)
+
 // default-title
 func DefaultTitle(myID *types.PttID, creatorID *types.PttID, myName string) []byte {
 	log.Debug("DefaultTitle: start", "myID", myID, "creatorID", creatorID, "myName", myName, "currentLocale", pkgservice.CurrentLocale)

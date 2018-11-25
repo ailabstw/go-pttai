@@ -56,22 +56,23 @@ func (pm *BaseProtocolManager) processOpKeyLog(oplog *BaseOplog, processInfo Pro
  * Process Pending Oplog
  **********/
 
-func (pm *BaseProtocolManager) processPendingOpKeyLog(oplog *BaseOplog, processInfo ProcessInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) processPendingOpKeyLog(oplog *BaseOplog, processInfo ProcessInfo) (types.Bool, []*BaseOplog, error) {
 
 	info, ok := processInfo.(*ProcessOpKeyInfo)
 	if !ok {
-		return nil, ErrInvalidData
+		return false, nil, ErrInvalidData
 	}
 
+	var isToSign types.Bool
 	var origLogs []*BaseOplog
 	var err error
 	switch oplog.Op {
 	case OpKeyOpTypeCreateOpKey:
-		origLogs, err = pm.handlePendingCreateOpKeyLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateOpKeyLog(oplog, info)
 	case OpKeyOpTypeRevokeOpKey:
-		origLogs, err = pm.handlePendingRevokeOpKeyLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingRevokeOpKeyLog(oplog, info)
 	}
-	return origLogs, err
+	return isToSign, origLogs, err
 }
 
 /**********

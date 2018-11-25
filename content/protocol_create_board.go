@@ -33,7 +33,7 @@ func (spm *ServiceProtocolManager) CreateBoard(title []byte, entityType pkgservi
 		EntityType: entityType,
 	}
 
-	entity, err := spm.CreateEntity(data, BoardOpTypeCreateBoard, spm.NewBoard, spm.NewBoardOplogWithTS, nil, nil)
+	entity, err := spm.CreateEntity(data, BoardOpTypeCreateBoard, spm.NewBoard, spm.NewBoardOplogWithTS, nil, spm.postcreateBoard)
 	if err != nil {
 		return nil, err
 	}
@@ -68,4 +68,15 @@ func (spm *ServiceProtocolManager) NewBoard(theData pkgservice.CreateData, ptt p
 	board.Title = data.Title
 
 	return board, &BoardOpCreateBoard{Title: data.Title}, nil
+}
+
+func (spm *ServiceProtocolManager) postcreateBoard(entity pkgservice.Entity) error {
+
+	err := spm.Ptt().GetMyEntity().CreateEntityOplog(entity)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

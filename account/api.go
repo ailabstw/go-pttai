@@ -62,6 +62,10 @@ func (api *PrivateAPI) GetUserNodeInfo(idStr string) (*UserNodeInfo, error) {
 	return api.b.GetUserNodeInfo([]byte(idStr))
 }
 
+func (api *PrivateAPI) RemoveUserNode(entityIDStr string, nodeIDStr string) (types.Bool, error) {
+	return api.b.RemoveUserNode([]byte(entityIDStr), []byte(nodeIDStr))
+}
+
 /**********
  * Raw Data
  **********/

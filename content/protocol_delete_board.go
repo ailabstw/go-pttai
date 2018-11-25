@@ -39,8 +39,10 @@ func (pm *ProtocolManager) postdeleteBoard(theOpData pkgservice.OpData, isForce 
 		return nil
 	}
 
-	// friend-oplog
+	// board-oplog
 	pm.CleanBoardOplog()
+
+	pm.CleanObject()
 
 	pm.DefaultPostdeleteEntity(theOpData, isForce)
 

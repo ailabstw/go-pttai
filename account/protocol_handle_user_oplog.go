@@ -66,6 +66,7 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
 	case UserOpTypeAddUserNode:
 		origLogs, err = pm.handleAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
+		origLogs, err = pm.handleRemoveUserNodeLog(oplog, info)
 	}
 	return
 }
@@ -74,28 +75,29 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
  * Process Pending Oplog
  **********/
 
-func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
+func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (isToSign types.Bool, origLogs []*pkgservice.BaseOplog, err error) {
 	info, ok := processInfo.(*ProcessUserInfo)
 	if !ok {
-		return nil, pkgservice.ErrInvalidData
+		return false, nil, pkgservice.ErrInvalidData
 	}
 
 	log.Debug("processPendingUserLog: to process", "op", oplog.Op)
 
 	switch oplog.Op {
 	case UserOpTypeCreateUserName:
-		origLogs, err = pm.handlePendingCreateUserNameLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateUserNameLogs(oplog, info)
 	case UserOpTypeUpdateUserName:
-		origLogs, err = pm.handlePendingUpdateUserNameLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingUpdateUserNameLogs(oplog, info)
 
 	case UserOpTypeCreateUserImg:
-		origLogs, err = pm.handlePendingCreateUserImgLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateUserImgLogs(oplog, info)
 	case UserOpTypeUpdateUserImg:
-		origLogs, err = pm.handlePendingUpdateUserImgLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingUpdateUserImgLogs(oplog, info)
 
 	case UserOpTypeAddUserNode:
-		origLogs, err = pm.handlePendingAddUserNodeLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
+		isToSign, origLogs, err = pm.handlePendingRemoveUserNodeLog(oplog, info)
 	}
 	return
 }
@@ -132,6 +134,7 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 	pm.SyncUserImg(SyncUpdateUserImgMsg, updateUserImgIDs, peer)
 
 	// broadcast
+	log.Debug("postprocessUserOplogs: to broadcast", "logs", toBroadcastLogs)
 	pm.broadcastUserOplogsCore(toBroadcastLogs)
 
 	return
@@ -158,6 +161,7 @@ func (pm *ProtocolManager) SetNewestUserOplog(oplog *pkgservice.BaseOplog) (err 
 	case UserOpTypeAddUserNode:
 		isNewer, err = pm.setNewestAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
+		isNewer, err = pm.setNewestRemoveUserNodeLog(oplog)
 	}
 
 	oplog.IsNewer = isNewer
@@ -184,6 +188,7 @@ func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (e
 	case UserOpTypeAddUserNode:
 		err = pm.handleFailedAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
+		err = pm.handleFailedRemoveUserNodeLog(oplog)
 	}
 
 	return

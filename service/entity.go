@@ -66,6 +66,12 @@ type Entity interface {
 	GetUpdateLogID() *types.PttID
 	SetUpdateLogID(id *types.PttID)
 
+	GetMeLogTS() types.Timestamp
+	SetMeLogTS(ts types.Timestamp)
+
+	GetMeLogID() *types.PttID
+	SetMeLogID(id *types.PttID)
+
 	GetStatus() types.Status
 	SetStatus(status types.Status)
 
@@ -113,6 +119,9 @@ type BaseEntity struct {
 	Status types.Status `json:"S"`
 
 	OwnerIDs []*types.PttID `json:"o,omitempty"`
+
+	MeLogID *types.PttID    `json:"m,omitempty"`
+	MeLogTS types.Timestamp `json:"mt"`
 
 	EntityType EntityType `json:"e"`
 
@@ -217,6 +226,22 @@ func (e *BaseEntity) GetUpdateLogID() *types.PttID {
 
 func (e *BaseEntity) SetUpdateLogID(id *types.PttID) {
 	e.UpdateLogID = id
+}
+
+func (e *BaseEntity) GetMeLogID() *types.PttID {
+	return e.MeLogID
+}
+
+func (e *BaseEntity) SetMeLogID(id *types.PttID) {
+	e.MeLogID = id
+}
+
+func (e *BaseEntity) GetMeLogTS() types.Timestamp {
+	return e.MeLogTS
+}
+
+func (e *BaseEntity) SetMeLogTS(ts types.Timestamp) {
+	e.MeLogTS = ts
 }
 
 func (e *BaseEntity) GetStatus() types.Status {

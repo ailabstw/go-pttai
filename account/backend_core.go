@@ -18,20 +18,19 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (b *Backend) GetRawProfile(idBytes []byte) (*Profile, error) {
-	entityID, err := types.UnmarshalTextPttID(idBytes)
+func (b *Backend) GetRawProfile(entityIDBytes []byte) (*Profile, error) {
+
+	entity, err := b.EntityIDToEntity(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
-	if entityID == nil {
-		return nil, types.ErrInvalidID
-	}
 
-	profile := b.SPM().Entity(entityID).(*Profile)
+	profile := entity.(*Profile)
 
 	return profile, nil
 }
@@ -40,89 +39,59 @@ func (b *Backend) GetRawProfile(idBytes []byte) (*Profile, error) {
  * UserOplog
  **********/
 
-func (b *Backend) GetUserOplogList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+func (b *Backend) GetUserOplogList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
-	if err != nil {
-		return nil, err
-	}
-	if profileID == nil {
-		return nil, types.ErrInvalidID
-	}
-
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
+	if err != nil {
+		return nil, err
 	}
-	pm := entity.PM().(*ProtocolManager)
 
-	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusAlive)
+	return pm.(*ProtocolManager).GetUserOplogList(logID, limit, listOrder, types.StatusAlive)
 }
 
-func (b *Backend) GetPendingUserOplogMasterList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+func (b *Backend) GetPendingUserOplogMasterList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
-	if err != nil {
-		return nil, err
-	}
-	if profileID == nil {
-		return nil, types.ErrInvalidID
-	}
-
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
+	if err != nil {
+		return nil, err
 	}
-	pm := entity.PM().(*ProtocolManager)
 
-	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusPending)
+	return pm.(*ProtocolManager).GetUserOplogList(logID, limit, listOrder, types.StatusPending)
 }
 
-func (b *Backend) GetPendingUserOplogInternalList(profileIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
+func (b *Backend) GetPendingUserOplogInternalList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserOplog, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	logID, err := types.UnmarshalTextPttID(logIDBytes)
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
-
-	return pm.GetUserOplogList(logID, limit, listOrder, types.StatusInternalPending)
+	return pm.(*ProtocolManager).GetUserOplogList(logID, limit, listOrder, types.StatusInternalPending)
 }
 
-func (b *Backend) GetUserOplogMerkleNodeList(profileIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
+func (b *Backend) GetUserOplogMerkleNodeList(entityIDBytes []byte, level pkgservice.MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
 
-	profileID, err := types.UnmarshalTextPttID(profileIDBytes)
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	entity := b.SPM().Entity(profileID)
-	if entity == nil {
-		return nil, types.ErrInvalidID
-	}
-	pm := entity.PM().(*ProtocolManager)
-
-	merkleNodeList, err := pm.GetUserOplogMerkleNodeList(level, startKey, limit, listOrder)
+	merkleNodeList, err := pm.(*ProtocolManager).GetUserOplogMerkleNodeList(level, startKey, limit, listOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -139,40 +108,50 @@ func (b *Backend) GetUserOplogMerkleNodeList(profileIDBytes []byte, level pkgser
  * User Node
  **********/
 
-func (b *Backend) GetUserNodeList(idBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserNode, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
+func (b *Backend) GetUserNodeList(entityIDBytes []byte, startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*UserNode, error) {
+
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	var startID *types.PttID
-	if len(startIDBytes) != 0 {
-		startID, err = types.UnmarshalTextPttID(startIDBytes)
-		if err != nil {
-			return nil, err
-		}
+	startID, err := types.UnmarshalTextPttID(startIDBytes, true)
+	if err != nil {
+		return nil, err
 	}
 
-	profile := b.SPM().Entity(id).(*Profile)
-	if profile == nil {
-		return nil, types.ErrInvalidID
-	}
-
-	return profile.PM().(*ProtocolManager).GetUserNodeList(startID, limit, listOrder, false)
+	return pm.(*ProtocolManager).GetUserNodeList(startID, limit, listOrder, false)
 }
 
-func (b *Backend) GetUserNodeInfo(idBytes []byte) (*UserNodeInfo, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
+func (b *Backend) GetUserNodeInfo(entityIDBytes []byte) (*UserNodeInfo, error) {
+
+	pm, err := b.EntityIDToPM(entityIDBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	profile := b.SPM().Entity(id).(*Profile)
-	if profile == nil {
-		return nil, types.ErrInvalidID
+	return pm.(*ProtocolManager).GetUserNodeInfo(), nil
+}
+
+func (b *Backend) RemoveUserNode(entityIDBytes []byte, nodeIDBytes []byte) (types.Bool, error) {
+
+	pm, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
 	}
 
-	return profile.PM().(*ProtocolManager).GetUserNodeInfo(), nil
+	nodeID, err := discover.BytesID(nodeIDBytes)
+	if err != nil {
+		return false, err
+	}
+
+	err = pm.(*ProtocolManager).RemoveUserNode(&nodeID)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
 }
 
 /**********
@@ -180,12 +159,10 @@ func (b *Backend) GetUserNodeInfo(idBytes []byte) (*UserNodeInfo, error) {
  **********/
 
 func (b *Backend) GetRawUserName(idBytes []byte) (*UserName, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
+
+	id, err := types.UnmarshalTextPttID(idBytes, false)
 	if err != nil {
 		return nil, err
-	}
-	if id == nil {
-		return nil, types.ErrInvalidID
 	}
 
 	return b.GetRawUserNameByID(id)
@@ -233,7 +210,8 @@ func (b *Backend) GetUserNameByIDs(idByteList [][]byte) (map[string]*BackendUser
  **********/
 
 func (b *Backend) GetRawUserImg(idBytes []byte) (*UserImg, error) {
-	id, err := types.UnmarshalTextPttID(idBytes)
+
+	id, err := types.UnmarshalTextPttID(idBytes, false)
 	if err != nil {
 		return nil, err
 	}

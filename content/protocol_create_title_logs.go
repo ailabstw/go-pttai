@@ -36,7 +36,7 @@ func (pm *ProtocolManager) handleCreateTitleLogs(oplog *pkgservice.BaseOplog, in
 		pm.existsInInfoCreateTitle, pm.newTitleWithOplog, nil, pm.updateCreateTitleInfo)
 }
 
-func (pm *ProtocolManager) handlePendingCreateTitleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingCreateTitleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyTitle()
 	pm.SetTitleDB(obj)
 

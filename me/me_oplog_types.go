@@ -48,10 +48,13 @@ type MeOpSetNodeName struct {
 	Name   []byte           `json:"n"`
 }
 
+/*
 type MeOpCreateEntity struct {
+	LogID *types.PttID `json:"l"`
 }
+*/
 
-type MeOpJoinEntity struct {
+type MeOpEntity struct {
 }
 
 type MeOpMigrateMe struct {

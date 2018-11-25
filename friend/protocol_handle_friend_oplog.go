@@ -64,16 +64,18 @@ func (pm *ProtocolManager) processFriendLog(oplog *pkgservice.BaseOplog, process
  * Process Pending Oplog
  **********/
 
-func (pm *ProtocolManager) processPendingFriendLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
+func (pm *ProtocolManager) processPendingFriendLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (isToSign types.Bool, origLogs []*pkgservice.BaseOplog, err error) {
 	info, ok := processInfo.(*ProcessFriendInfo)
 	if !ok {
-		return nil, pkgservice.ErrInvalidData
+		return false, nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
+
 	case FriendOpTypeCreateMessage:
-		origLogs, err = pm.handlePendingCreateMessageLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateMessageLogs(oplog, info)
+
 	case FriendOpTypeCreateMedia:
 	}
 

@@ -139,6 +139,7 @@ func handleOplog(
 
 	// select
 	isToBroadcast, err := oplog.SelectExisting(true)
+	log.Debug("handleOplog: after SelectExisting", "oplog", oplog, "e", err, "IsSync", oplog.IsSync)
 	if err != nil {
 		return false, nil, err
 	}
@@ -180,7 +181,7 @@ func HandlePendingOplogs(
 	info ProcessInfo,
 
 	setDB func(oplog *BaseOplog),
-	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
+	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
 ) error {
@@ -204,13 +205,17 @@ func HandlePendingOplogs(
 	return nil
 }
 
+/*
+
+We require separated isToSign from processPendingLog, because in the "delete" situation, we still need to sign the oplog, but the oplog is not synced yet.
+*/
 func handlePendingOplogs(
 	oplogs []*BaseOplog, peer *PttPeer,
 
 	pm ProtocolManager,
 	info ProcessInfo,
 
-	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
+	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
 ) error {
@@ -257,7 +262,7 @@ func handlePendingOplog(
 	pm ProtocolManager,
 	info ProcessInfo,
 
-	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
+	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) (bool, []*BaseOplog, error) {
 
@@ -301,7 +306,7 @@ func handlePendingOplog(
 	}
 
 	// process pending log
-	origLogs, err := processPendingLog(oplog, info)
+	isToSign, origLogs, err := processPendingLog(oplog, info)
 	if err == ErrNewerOplog {
 		err = ErrSkipOplog
 	}
@@ -310,7 +315,7 @@ func handlePendingOplog(
 	}
 
 	// is-sync: sign
-	if oplog.IsSync {
+	if isToSign {
 		_, err = pm.InternalSign(oplog)
 		if err != nil {
 			return false, nil, err

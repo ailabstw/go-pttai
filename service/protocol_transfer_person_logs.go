@@ -140,7 +140,7 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 
 	setLogDB func(oplog *BaseOplog),
 
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	// 1. lock person
 	fromID := oplog.ObjID
@@ -148,32 +148,32 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 
 	err := origPerson.Lock()
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	defer origPerson.Unlock()
 
 	// 2. get person
 	err = origPerson.GetByID(true)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
-		return nil, ErrInvalidPreLog
+		return false, nil, ErrInvalidPreLog
 	}
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
 	if origStatus == types.StatusTransferred {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 
 	// 4. core
 	err = pm.handlePendingTransferPersonLogCore(oplog, origPerson, opData, setLogDB)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
-	return nil, nil
+	return true, nil, nil
 }
 
 func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
@@ -214,10 +214,6 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 	if err != nil {
 		return err
 	}
-
-	// 5. oplog.is-sync
-
-	oplog.IsSync = true
 
 	return nil
 }

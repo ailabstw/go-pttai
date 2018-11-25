@@ -44,7 +44,7 @@ func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *Proc
 	return toBroadcastLogs, nil
 }
 
-func (pm *BaseProtocolManager) handlePendingRevokeOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingRevokeOpKeyLog(oplog *BaseOplog, info *ProcessOpKeyInfo) (types.Bool, []*BaseOplog, error) {
 
 	opKey := NewEmptyOpKey()
 	pm.SetOpKeyObjDB(opKey)

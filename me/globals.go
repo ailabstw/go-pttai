@@ -69,6 +69,14 @@ const (
 	InitMeInfoMsg
 	InitMeInfoAckMsg
 	InitMeInfoSyncMsg
+
+	// sync-board
+	InternalSyncBoardMsg
+	InternalSyncBoardAckMsg
+
+	// sync-friend
+	InternalSyncFriendMsg
+	InternalSyncFriendAckMsg
 )
 
 // db

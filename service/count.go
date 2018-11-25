@@ -106,6 +106,16 @@ func (c *Count) MarshalKey() ([]byte, error) {
 	return common.Concat([][]byte{c.dbPrefix, c.dbPrefixID[:], c.dbID[:]})
 }
 
+func (c *Count) Delete() error {
+	key, err := c.MarshalKey()
+	if err != nil {
+		return err
+	}
+	c.db.DB().Delete(key)
+
+	return nil
+}
+
 func (c *Count) Load() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()

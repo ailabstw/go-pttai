@@ -106,7 +106,7 @@ func (pm *BaseProtocolManager) handlePendingMasterOplogs(
 
 	info ProcessInfo,
 
-	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
+	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) error {
 
@@ -152,7 +152,7 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 
 	info ProcessInfo,
 
-	processPendingLog func(oplog *BaseOplog, i ProcessInfo) ([]*BaseOplog, error),
+	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) (bool, []*BaseOplog, error) {
 
@@ -216,7 +216,7 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 	}
 
 	// process pending log
-	origLogs, err := processPendingLog(oplog, info)
+	isToSign, origLogs, err := processPendingLog(oplog, info)
 	if err == ErrNewerOplog {
 		err = ErrSkipOplog
 	}
@@ -225,7 +225,7 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 	}
 
 	// is-sync: sign
-	if oplog.IsSync {
+	if isToSign {
 		if oplog.Op == MasterOpTypeTransferMaster {
 			err = pm.signMasterOplog(oplog, fromID, toID)
 			if err != nil {

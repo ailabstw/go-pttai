@@ -105,9 +105,12 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
-		if err != nil {
-			return err
+		syncLogID := origSyncInfo.GetLogID()
+		if !reflect.DeepEqual(syncLogID, oplog.ID) {
+			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
+			if err != nil {
+				return err
+			}
 		}
 		origPerson.SetSyncInfo(nil)
 	}
@@ -132,7 +135,8 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
  **********/
 
 func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
-	oplog *BaseOplog, info ProcessInfo,
+	oplog *BaseOplog,
+	info ProcessInfo,
 	origPerson Object,
 	opData OpData,
 
@@ -140,7 +144,7 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 	pendingStatus types.Status,
 
 	setLogDB func(oplog *BaseOplog),
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	// 1. lock person
 	personID := oplog.ObjID
@@ -148,35 +152,35 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 
 	err := origPerson.Lock()
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	defer origPerson.Unlock()
 
 	// 2. get person
 	err = origPerson.GetByID(true)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
-		return nil, ErrInvalidPreLog
+		return false, nil, ErrInvalidPreLog
 	}
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
 	if origStatus == types.StatusAlive {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 	if origStatus == types.StatusTransferred {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 
 	// 4. core
 	err = pm.handlePendingDeletePersonLogCore(oplog, origPerson, opData, internalPendingStatus, pendingStatus, setLogDB)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
-	return nil, nil
+	return true, nil, nil
 }
 
 func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
@@ -209,7 +213,10 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			if err != nil {
+				return err
+			}
 		}
 		origObj.SetSyncInfo(nil)
 	}
@@ -220,10 +227,6 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 	if err != nil {
 		return err
 	}
-
-	// 5. oplog.is-sync
-
-	oplog.IsSync = true
 
 	return nil
 }

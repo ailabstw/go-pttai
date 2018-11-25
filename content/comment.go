@@ -242,3 +242,43 @@ func (c *Comment) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
 
 	return nil
 }
+
+func (c *Comment) DeleteAll(isLocked bool) error {
+	var err error
+	if !isLocked {
+		err = c.Lock()
+		if err != nil {
+			return err
+		}
+		defer c.Unlock()
+	}
+
+	// block-info
+	blockInfo := c.GetBlockInfo()
+	setBlockInfoDB := c.SetBlockInfoDB()
+	setBlockInfoDB(blockInfo, c.ID)
+
+	blockInfo.Remove(false)
+
+	c.Delete(true)
+
+	return nil
+}
+
+func (c *Comment) GetAndDeleteAll(isLocked bool) error {
+	var err error
+	if !isLocked {
+		err = c.Lock()
+		if err != nil {
+			return err
+		}
+		defer c.Unlock()
+	}
+
+	err = c.GetByID(true)
+	if err != nil {
+		return err
+	}
+
+	return c.DeleteAll(true)
+}

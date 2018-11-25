@@ -37,7 +37,7 @@ func (pm *ProtocolManager) handleAddUserNodeLog(oplog *pkgservice.BaseOplog, inf
 		pm.existsInInfoAddUserNode, pm.newUserNodeWithOplog, pm.postcreateUserNode, pm.updateAddUserNodeInfo)
 }
 
-func (pm *ProtocolManager) handlePendingAddUserNodeLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingAddUserNodeLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	obj := NewEmptyUserNode()
 	pm.SetUserNodeDB(obj)

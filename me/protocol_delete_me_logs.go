@@ -35,7 +35,7 @@ func (pm *ProtocolManager) handleDeleteMeLog(oplog *pkgservice.BaseOplog, info *
 	return toBroadcastLogs, nil
 }
 
-func (pm *ProtocolManager) handlePendingDeleteMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	opData := &MeOpDeleteMe{}
 	return pm.HandlePendingDeleteEntityLog(

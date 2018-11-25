@@ -120,6 +120,7 @@ func GetContentBlockList(blockInfo *BlockInfo, limit uint32, isLocked bool) ([]*
 		}
 
 		bufs[each.BlockID][each.SubBlockID] = each.Buf
+
 	}
 
 	// check

@@ -42,7 +42,7 @@ func (pm *ProtocolManager) handleDeleteArticleLogs(oplog *pkgservice.BaseOplog, 
 	)
 }
 
-func (pm *ProtocolManager) handlePendingDeleteArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)

@@ -42,7 +42,7 @@ func (pm *ProtocolManager) handleDeleteCommentLogs(oplog *pkgservice.BaseOplog, 
 	)
 }
 
-func (pm *ProtocolManager) handlePendingDeleteCommentLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteCommentLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
 	obj := NewEmptyComment()
 	pm.SetCommentDB(obj)
@@ -51,7 +51,8 @@ func (pm *ProtocolManager) handlePendingDeleteCommentLogs(oplog *pkgservice.Base
 
 	return pm.HandlePendingDeleteObjectLog(
 		oplog,
-		info, obj,
+		info,
+		obj,
 		opData,
 
 		pm.SetBoardDB,

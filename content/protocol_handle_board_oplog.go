@@ -112,10 +112,10 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
  * Process Pending Oplog
  **********/
 
-func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
+func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (isToSign types.Bool, origLogs []*pkgservice.BaseOplog, err error) {
 	info, ok := processInfo.(*ProcessBoardInfo)
 	if !ok {
-		return nil, pkgservice.ErrInvalidData
+		return false, nil, pkgservice.ErrInvalidData
 	}
 
 	switch oplog.Op {
@@ -123,26 +123,26 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
-		origLogs, err = pm.handlePendingCreateTitleLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateTitleLogs(oplog, info)
 	case BoardOpTypeUpdateTitle:
-		origLogs, err = pm.handlePendingUpdateTitleLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingUpdateTitleLogs(oplog, info)
 
 	case BoardOpTypeCreateArticle:
-		origLogs, err = pm.handlePendingCreateArticleLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateArticleLogs(oplog, info)
 	case BoardOpTypeUpdateArticle:
-		origLogs, err = pm.handlePendingUpdateArticleLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingUpdateArticleLogs(oplog, info)
 	case BoardOpTypeDeleteArticle:
-		origLogs, err = pm.handlePendingDeleteArticleLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingDeleteArticleLogs(oplog, info)
 
 	case BoardOpTypeCreateMedia:
-		origLogs, err = pm.handlePendingCreateMediaLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateMediaLogs(oplog, info)
 	case BoardOpTypeDeleteMedia:
-		origLogs, err = pm.handlePendingDeleteMediaLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingDeleteMediaLogs(oplog, info)
 
 	case BoardOpTypeCreateComment:
-		origLogs, err = pm.handlePendingCreateCommentLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingCreateCommentLogs(oplog, info)
 	case BoardOpTypeDeleteComment:
-		origLogs, err = pm.handlePendingDeleteCommentLogs(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingDeleteCommentLogs(oplog, info)
 
 	case BoardOpTypeCreateReply:
 	case BoardOpTypeUpdateReply:

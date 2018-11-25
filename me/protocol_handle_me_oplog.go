@@ -23,19 +23,18 @@ import (
 )
 
 type ProcessMeInfo struct {
-	DeleteMeInfo    map[types.PttID]*pkgservice.BaseOplog
-	MetaInfo        map[types.PttID]*pkgservice.BaseOplog
-	CreateBoardInfo map[types.PttID]*pkgservice.BaseOplog
-	JoinBoardInfo   map[types.PttID]*pkgservice.BaseOplog
-	BoardInfo       map[types.PttID]*pkgservice.BaseOplog
+	DeleteMeInfo map[types.PttID]*pkgservice.BaseOplog
+	MetaInfo     map[types.PttID]*pkgservice.BaseOplog
+	BoardInfo    map[types.PttID]*pkgservice.BaseOplog
+	FriendInfo   map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessMeInfo() *ProcessMeInfo {
 	return &ProcessMeInfo{
-		DeleteMeInfo:    make(map[types.PttID]*pkgservice.BaseOplog),
-		MetaInfo:        make(map[types.PttID]*pkgservice.BaseOplog),
-		CreateBoardInfo: make(map[types.PttID]*pkgservice.BaseOplog),
-		BoardInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		DeleteMeInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		MetaInfo:     make(map[types.PttID]*pkgservice.BaseOplog),
+		BoardInfo:    make(map[types.PttID]*pkgservice.BaseOplog),
+		FriendInfo:   make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -44,6 +43,7 @@ func NewProcessMeInfo() *ProcessMeInfo {
  **********/
 
 func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
+
 	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
@@ -54,6 +54,16 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
 		origLogs, err = pm.handleMigrateMeLog(oplog, info)
 	case MeOpTypeDeleteMe:
 		origLogs, err = pm.handleDeleteMeLog(oplog, info)
+
+	case MeOpTypeCreateBoard:
+		origLogs, err = pm.handleBoardLog(oplog, info)
+	case MeOpTypeJoinBoard:
+		origLogs, err = pm.handleBoardLog(oplog, info)
+
+	case MeOpTypeCreateFriend:
+		origLogs, err = pm.handleFriendLog(oplog, info)
+	case MeOpTypeJoinFriend:
+		origLogs, err = pm.handleFriendLog(oplog, info)
 	}
 	return
 }
@@ -62,22 +72,18 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
  * Process Pending Oplog
  **********/
 
-func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (origLogs []*pkgservice.BaseOplog, err error) {
-
-	log.Debug("processPendingMeLog: start")
+func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (isToSign types.Bool, origLogs []*pkgservice.BaseOplog, err error) {
 
 	info, ok := processInfo.(*ProcessMeInfo)
 	if !ok {
-		return nil, pkgservice.ErrInvalidData
+		return false, nil, pkgservice.ErrInvalidData
 	}
-
-	log.Debug("processPendingMeLog: to oplog", "op", oplog.Op)
 
 	switch oplog.Op {
 	case MeOpTypeMigrateMe:
-		origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
 	case MeOpTypeDeleteMe:
-		origLogs, err = pm.handlePendingDeleteMeLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingDeleteMeLog(oplog, info)
 	}
 	return
 }
@@ -91,6 +97,20 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 	if !ok {
 		err = pkgservice.ErrInvalidData
 	}
+
+	// board
+	for _, oplog := range info.BoardInfo {
+		pm.InternalSyncBoard(oplog, peer)
+	}
+
+	// friend
+	for _, oplog := range info.FriendInfo {
+		pm.InternalSyncFriend(oplog, peer)
+	}
+
+	// delete-me
+
+	log.Debug("postprocessMeOplogs: to check delete-me", "isPending", isPending, "DeleteMeInfo", info.DeleteMeInfo)
 
 	if isPending {
 		toBroadcastLogs = pkgservice.ProcessInfoToBroadcastLogs(info.DeleteMeInfo, toBroadcastLogs)
@@ -113,6 +133,16 @@ func (pm *ProtocolManager) SetNewestMeOplog(oplog *pkgservice.BaseOplog) (err er
 		isNewer, err = pm.setNewestMigrateMeLog(oplog)
 	case MeOpTypeDeleteMe:
 		isNewer, err = pm.setNewestDeleteMeLog(oplog)
+
+	case MeOpTypeCreateBoard:
+		isNewer, err = pm.setNewestBoardLog(oplog)
+	case MeOpTypeJoinBoard:
+		isNewer, err = pm.setNewestBoardLog(oplog)
+
+	case MeOpTypeCreateFriend:
+		isNewer, err = pm.setNewestFriendLog(oplog)
+	case MeOpTypeJoinFriend:
+		isNewer, err = pm.setNewestFriendLog(oplog)
 	}
 
 	oplog.IsNewer = isNewer

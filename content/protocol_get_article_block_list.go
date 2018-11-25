@@ -44,15 +44,13 @@ func (pm *ProtocolManager) GetArticleBlockList(articleID *types.PttID, subConten
 		return blocks, nil
 	}
 
-	/*
-		commentAndReplyBlocks, _, err := pm.getArticleBlockListCommentAndReplyBlocks(articleID, subContentID, contentType, limit, listOrder)
+	commentAndReplyBlocks, _, err := pm.getArticleBlockListCommentAndReplyBlocks(articleID, subContentID, contentType, limit, listOrder)
 
-		if err != nil && err != ErrNotFound {
-			return nil, err
-		}
+	if err != nil && err != ErrNotFound {
+		return nil, err
+	}
 
-		blocks = append(blocks, commentAndReplyBlocks...)
-	*/
+	blocks = append(blocks, commentAndReplyBlocks...)
 
 	return blocks, nil
 }
@@ -90,10 +88,11 @@ func (pm *ProtocolManager) getArticleBlockListMainBlocks(articleID *types.PttID,
 	return articleBlocks, nBlock, nil
 }
 
-/*
 func (pm *ProtocolManager) getArticleBlockListCommentAndReplyBlocks(articleID *types.PttID, subContentID *types.PttID, contentType ContentType, limit int, listOrder pttdb.ListOrder) ([]*ArticleBlock, int, error) {
-	board := pm.Entity().(*Board)
-	iter, err := getCommentIter(board.ID, articleID, subContentID, listOrder)
+
+	comment := NewEmptyComment()
+	pm.SetCommentDB(comment)
+	iter, err := comment.GetCrossObjIterWithObj(articleID[:], subContentID, listOrder, false)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -103,6 +102,7 @@ func (pm *ProtocolManager) getArticleBlockListCommentAndReplyBlocks(articleID *t
 
 	articleBlocks := make([]*ArticleBlock, 0)
 	nBlock := 0
+	var eachArticleBlock *ArticleBlock
 	for iterFunc() {
 		if limit > 0 && nBlock >= limit {
 			break
@@ -115,34 +115,15 @@ func (pm *ProtocolManager) getArticleBlockListCommentAndReplyBlocks(articleID *t
 			continue
 		}
 
-		eachArticleBlock, err := commentToArticleBlock(eachComment)
+		eachArticleBlock, err = commentToArticleBlock(pm, eachComment)
 		if err != nil {
-			log.Warn("getArticleBlockListcommentAndReplyBlocks: unable commentToArticleBlock", "e", err)
 			continue
 		}
 		articleBlocks = append(articleBlocks, eachArticleBlock)
 
 		nBlock++
 
-		if eachComment.Status == types.StatusDeleted {
-			continue
-		}
-
-		// XXX TODO: add reply
-		eachReply, err := pm.GetReply(articleID, eachComment.ID, false)
-		if err == nil {
-			eachArticleBlock, err := replyToArticleBlock(eachReply)
-			if err != nil {
-				log.Warn("getArticleBlockListcommentAndReplyBlocks: unable replyToArticleBlock", "e", err)
-				continue
-			}
-
-			articleBlocks = append(articleBlocks, eachArticleBlock)
-			nBlock++
-		}
-
 	}
 
 	return articleBlocks, nBlock, nil
 }
-*/

@@ -101,7 +101,7 @@ func (pm *BaseProtocolManager) posttransferMember(fromID *types.PttID, toID *typ
 	return err
 }
 
-func (pm *BaseProtocolManager) handlePendingTransferMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingTransferMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMember()
 	pm.SetMemberObjDB(person)

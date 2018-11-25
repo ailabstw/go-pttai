@@ -61,24 +61,20 @@ func (pm *ProtocolManager) postdeleteArticle(id *types.PttID, oplog *pkgservice.
 	// comment
 	comment := NewEmptyComment()
 	pm.SetCommentDB(comment)
-	commentFullDBPrefix := append(comment.FullDBPrefix(), id[:]...)
-	comment.SetFullDBPrefix(commentFullDBPrefix)
 
-	iter, err := comment.GetObjIterWithObj(nil, pttdb.ListOrderNext, false)
+	iter, err := comment.GetCrossObjIterWithObj(id[:], nil, pttdb.ListOrderNext, false)
 	if err != nil {
 		return err
 	}
 	defer iter.Release()
 
-	comment2 := NewEmptyComment()
-	pm.SetCommentDB(comment2)
 	var key []byte
 	var eachID *types.PttID
 	for iter.Next() {
 		key = iter.Key()
-		eachID, err = comment2.KeyToID(key)
-		comment2.SetID(eachID)
-		comment2.Delete(false)
+		eachID, err = comment.KeyToID(key)
+		comment.SetID(eachID)
+		comment.GetAndDeleteAll(false)
 	}
 
 	return nil

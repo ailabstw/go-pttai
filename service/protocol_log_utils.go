@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) removeBlockAndMediaInfoBySyncInfo(
@@ -34,6 +35,7 @@ func (pm *BaseProtocolManager) removeBlockAndMediaInfoBySyncInfo(
 	// remove oplog
 	syncLogID := syncInfo.GetLogID()
 	_, err := pm.removeNonSyncOplog(setLogDB, syncLogID, isRetainValid, oplog.UpdateTS, false)
+	log.Debug("removeBlockAndMediaInfoBySyncInfo: after removeNonSyncOplog", "e", err)
 	if err != nil {
 		return err
 	}
@@ -62,9 +64,11 @@ func (pm *BaseProtocolManager) removeBlockAndMediaInfoByBlockInfo(
 		removeMediaInfoByBlockInfo(blockInfo, info, oplog)
 	}
 
+	var err error
 	if isRemoveDB {
 		pm.SetBlockInfoDB(blockInfo, oplog.ObjID)
-		return blockInfo.Remove(false)
+		err = blockInfo.Remove(false)
+		log.Debug("removeBlockAndMediaInfoBySyncInfo: after remove DB", "e", err)
 	}
 
 	return nil

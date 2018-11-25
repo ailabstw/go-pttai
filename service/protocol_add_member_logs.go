@@ -37,7 +37,7 @@ func (pm *BaseProtocolManager) handleAddMemberLog(oplog *BaseOplog, info *Proces
 	}
 }
 
-func (pm *BaseProtocolManager) handlePendingAddMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingAddMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMember()
 	pm.SetMemberObjDB(person)

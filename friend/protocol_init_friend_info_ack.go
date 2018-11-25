@@ -38,54 +38,22 @@ type InitFriendInfoAck struct {
 }
 
 func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
-	f := pm.Entity().(*Friend)
+
+	// init friend info-ack
+	initFriendInfoAck, err := pm.InitFriendInfoAckCore(peer)
+	if err != nil {
+		return err
+	}
 
 	// register-peer
-	log.Debug("InitFriendInfoAck: start", "peer", peer)
 	pm.RegisterPeer(peer, pkgservice.PeerTypeMember)
 
-	// friend-data
-	joinEntity := &pkgservice.JoinEntity{ID: f.FriendID}
-	_, theFriendData, err := pm.ApproveJoin(joinEntity, nil, peer)
-	if err != nil {
-		return err
-	}
-	friendData, ok := theFriendData.(*pkgservice.ApproveJoinEntity)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
-
-	// profile-data
-	profilePM := pm.Ptt().GetMyEntity().GetProfile().(*account.Profile).PM()
-	_, theProfileData, err := profilePM.ApproveJoin(joinEntity, nil, peer)
-	if err != nil {
-		return err
-	}
-	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
-
-	// board-data
-	boardPM := pm.Ptt().GetMyEntity().GetBoard().(*content.Board).PM()
-	_, theBoardData, err := boardPM.ApproveJoin(joinEntity, nil, peer)
-	if err != nil {
-		return err
-	}
-	boardData, ok := theBoardData.(*pkgservice.ApproveJoinEntity)
-	if !ok {
-		return pkgservice.ErrInvalidData
-	}
-
 	// add-master
+	f := pm.Entity().(*Friend)
+
 	pm.AddMaster(f.FriendID, true)
 
 	// send-data-to-peer
-	initFriendInfoAck := &InitFriendInfoAck{
-		FriendData:  friendData,
-		ProfileData: profileData,
-		BoardData:   boardData,
-	}
 
 	log.Debug("InitFriendInfoAck: to SendDataToPeer", "peer", peer)
 
@@ -97,8 +65,77 @@ func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) InitFriendInfoAckCore(peer *pkgservice.PttPeer) (*InitFriendInfoAck, error) {
+
+	f := pm.Entity().(*Friend)
+
+	// friend-data
+	joinEntity := &pkgservice.JoinEntity{ID: f.FriendID}
+	_, theFriendData, err := pm.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return nil, err
+	}
+	friendData, ok := theFriendData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
+
+	// profile-data
+	profilePM := pm.Ptt().GetMyEntity().GetProfile().(*account.Profile).PM()
+	_, theProfileData, err := profilePM.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return nil, err
+	}
+	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
+
+	// board-data
+	boardPM := pm.Ptt().GetMyEntity().GetBoard().(*content.Board).PM()
+	_, theBoardData, err := boardPM.ApproveJoin(joinEntity, nil, peer)
+	if err != nil {
+		return nil, err
+	}
+	boardData, ok := theBoardData.(*pkgservice.ApproveJoinEntity)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
+
+	initFriendInfoAck := &InitFriendInfoAck{
+		FriendData:  friendData,
+		ProfileData: profileData,
+		BoardData:   boardData,
+	}
+
+	return initFriendInfoAck, nil
+}
+
 func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
 	log.Debug("HandleInitFriendInfoAck: start")
+
+	theProfileData := account.NewEmptyApproveJoinProfile()
+	theBoardData := content.NewEmptyApproveJoinBoard()
+	theFriendData := NewEmptyApproveJoinFriend()
+	initFriendInfoAck := &InitFriendInfoAck{ProfileData: theProfileData, FriendData: theFriendData, BoardData: theBoardData}
+	err := json.Unmarshal(dataBytes, initFriendInfoAck)
+	if err != nil {
+		return err
+	}
+
+	return pm.HandleInitFriendInfoAckCore(initFriendInfoAck, nil, peer, true)
+}
+
+func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
+	initFriendInfoAck *InitFriendInfoAck,
+	oplog *pkgservice.BaseOplog,
+
+	peer *pkgservice.PttPeer,
+
+	isNew bool,
+) error {
+
+	profileData, friendData, boardData := initFriendInfoAck.ProfileData, initFriendInfoAck.FriendData, initFriendInfoAck.BoardData
 
 	f := pm.Entity().(*Friend)
 	spm := f.Service().SPM()
@@ -115,21 +152,9 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 	}
 	defer f.Unlock()
 
-	theProfileData := account.NewEmptyApproveJoinProfile()
-	theBoardData := content.NewEmptyApproveJoinBoard()
-	theFriendData := NewEmptyApproveJoinFriend()
-	initFriendInfoAck := &InitFriendInfoAck{ProfileData: theProfileData, FriendData: theFriendData, BoardData: theBoardData}
-	err = json.Unmarshal(dataBytes, initFriendInfoAck)
-	if err != nil {
-		return err
-	}
-	profileData := theProfileData
-	friendData := theFriendData
-	boardData := theBoardData
-
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
-	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, true, true)
+	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, oplog, isNew, isNew, true, false)
 	if err != nil {
 		return err
 	}
@@ -138,7 +163,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 
 	// board
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
-	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, true, true)
+	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, oplog, isNew, isNew, true, false)
 	if err != nil {
 		return err
 	}
@@ -151,11 +176,10 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 	f.BoardID = board.ID
 	f.Board = board
 	f.UpdateTS = friendData.Entity.GetUpdateTS()
-	f.Status = types.StatusAlive
 
 	friendData.Entity = f
 	log.Debug("HandleInitFriendInfoAck: to CreateJoinFriend", "f", f.ID)
-	_, err = spm.CreateJoinEntity(friendData, peer, nil, false, false)
+	_, err = spm.CreateJoinEntity(friendData, peer, oplog, false, false, false, true)
 	if err != nil {
 		return err
 	}

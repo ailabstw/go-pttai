@@ -157,6 +157,23 @@ func (obj *BaseObject) GetObjIdxIterWithObj(startID *types.PttID, listOrder pttd
 	return obj.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
+func (obj *BaseObject) GetCrossObjIterWithObj(startPrefix []byte, startID *types.PttID, listOrder pttdb.ListOrder, isLocked bool) (iterator.Iterator, error) {
+	prefix := append(obj.fullDBPrefix, startPrefix...)
+
+	if startID == nil {
+		return obj.db.DB().NewIteratorWithPrefix(nil, prefix, listOrder)
+	}
+
+	o := obj.NewEmptyObj()
+	startKey, err := o.GetKey(startID, isLocked)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
+
+}
+
 func (obj *BaseObject) GetObjIterWithObj(startID *types.PttID, listOrder pttdb.ListOrder, isLocked bool) (iterator.Iterator, error) {
 
 	prefix := obj.fullDBPrefix

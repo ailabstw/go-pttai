@@ -138,7 +138,7 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 
 	setLogDB func(oplog *BaseOplog),
 
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	// 1. lock person
 	personID := oplog.ObjID
@@ -146,35 +146,35 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 
 	err := origPerson.Lock()
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	defer origPerson.Unlock()
 
 	// 2. get person
 	err = origPerson.GetByID(true)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
-		return nil, ErrInvalidPreLog
+		return false, nil, ErrInvalidPreLog
 	}
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
 	if origStatus == types.StatusAlive {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 	if origStatus == types.StatusTransferred {
-		return nil, ErrNewerOplog
+		return false, nil, ErrNewerOplog
 	}
 
 	// 4. core
 	err = pm.handlePendingUpdatePersonLogCore(oplog, origPerson, opData, setLogDB)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
-	return nil, nil
+	return oplog.IsSync, nil, nil
 }
 
 func (pm *BaseProtocolManager) handlePendingUpdatePersonLogCore(

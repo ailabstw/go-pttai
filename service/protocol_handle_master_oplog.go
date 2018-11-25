@@ -42,22 +42,23 @@ func (pm *BaseProtocolManager) processMasterLog(oplog *BaseOplog, processInfo Pr
  * Process Pending Oplog
  **********/
 
-func (pm *BaseProtocolManager) processPendingMasterLog(oplog *BaseOplog, processInfo ProcessInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) processPendingMasterLog(oplog *BaseOplog, processInfo ProcessInfo) (types.Bool, []*BaseOplog, error) {
 
 	info, ok := processInfo.(*ProcessPersonInfo)
 	if !ok {
-		return nil, ErrInvalidData
+		return false, nil, ErrInvalidData
 	}
 
+	var isToSign types.Bool
 	var origLogs []*BaseOplog
 	var err error
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
-		origLogs, err = pm.handlePendingAddMasterLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingAddMasterLog(oplog, info)
 	case MasterOpTypeTransferMaster:
-		origLogs, err = pm.handlePendingTransferMasterLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingTransferMasterLog(oplog, info)
 	}
-	return origLogs, err
+	return isToSign, origLogs, err
 }
 
 /**********

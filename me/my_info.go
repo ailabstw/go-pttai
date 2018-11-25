@@ -156,6 +156,26 @@ func (m *MyInfo) Init(thePtt pkgservice.Ptt, service pkgservice.Service, spm pkg
 		return nil
 	}
 
+	// profile
+	accountSPM := service.(*Backend).accountBackend.SPM()
+	if m.ProfileID != nil {
+		profile := accountSPM.Entity(m.ProfileID)
+		if profile == nil {
+			return pkgservice.ErrInvalidEntity
+		}
+		m.Profile = profile.(*account.Profile)
+	}
+
+	// board
+	contentSPM := service.(*Backend).contentBackend.SPM()
+	if m.BoardID != nil {
+		board := contentSPM.Entity(m.BoardID)
+		if board == nil {
+			return pkgservice.ErrInvalidEntity
+		}
+		m.Board = board.(*content.Board)
+	}
+
 	ptt.SetMyEntity(m)
 
 	return nil

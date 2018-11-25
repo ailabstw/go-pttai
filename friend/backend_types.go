@@ -55,11 +55,10 @@ type BackendCreateMessage struct {
 	NBlock    int          `json:"NB"`
 }
 
-func messageToBackendCreateMessage(m *Message, e pkgservice.Entity) *BackendCreateMessage {
-	entityID := e.GetID()
+func messageToBackendCreateMessage(m *Message) *BackendCreateMessage {
 
 	return &BackendCreateMessage{
-		FriendID:  entityID,
+		FriendID:  m.EntityID,
 		MessageID: m.ID,
 		BlockID:   m.BlockInfo.ID,
 		NBlock:    m.BlockInfo.NBlock,
@@ -77,15 +76,14 @@ type BackendGetMessage struct {
 	Status    types.Status    `json:"S"`
 }
 
-func messageToBackendGetMessage(m *Message, e pkgservice.Entity) *BackendGetMessage {
-	entityID := e.GetID()
+func messageToBackendGetMessage(m *Message) *BackendGetMessage {
 
 	return &BackendGetMessage{
 		ID:        m.ID,
 		CreateTS:  m.CreateTS,
 		UpdateTS:  m.UpdateTS,
 		CreatorID: m.CreatorID,
-		FriendID:  entityID,
+		FriendID:  m.EntityID,
 		BlockID:   m.BlockInfo.ID,
 		NBlock:    m.BlockInfo.NBlock,
 		Status:    m.Status,

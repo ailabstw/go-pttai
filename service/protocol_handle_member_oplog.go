@@ -30,7 +30,7 @@ func (pm *BaseProtocolManager) processMemberLog(oplog *BaseOplog, processInfo Pr
 	}
 
 	switch oplog.Op {
-	case MemberOpTypeCreateMember:
+	case MemberOpTypeAddMember:
 		origLogs, err = pm.handleAddMemberLog(oplog, info)
 	case MemberOpTypeDeleteMember:
 		origLogs, err = pm.handleDeleteMemberLog(oplog, info)
@@ -44,24 +44,25 @@ func (pm *BaseProtocolManager) processMemberLog(oplog *BaseOplog, processInfo Pr
  * Process Pending Oplog
  **********/
 
-func (pm *BaseProtocolManager) processPendingMemberLog(oplog *BaseOplog, processInfo ProcessInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) processPendingMemberLog(oplog *BaseOplog, processInfo ProcessInfo) (types.Bool, []*BaseOplog, error) {
 
 	info, ok := processInfo.(*ProcessPersonInfo)
 	if !ok {
-		return nil, ErrInvalidData
+		return false, nil, ErrInvalidData
 	}
 
+	var isToSign types.Bool
 	var origLogs []*BaseOplog
 	var err error
 	switch oplog.Op {
-	case MemberOpTypeCreateMember:
-		origLogs, err = pm.handlePendingAddMemberLog(oplog, info)
+	case MemberOpTypeAddMember:
+		isToSign, origLogs, err = pm.handlePendingAddMemberLog(oplog, info)
 	case MemberOpTypeDeleteMember:
-		origLogs, err = pm.handlePendingDeleteMemberLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingDeleteMemberLog(oplog, info)
 	case MemberOpTypeTransferMember:
-		origLogs, err = pm.handlePendingTransferMemberLog(oplog, info)
+		isToSign, origLogs, err = pm.handlePendingTransferMemberLog(oplog, info)
 	}
-	return origLogs, err
+	return isToSign, origLogs, err
 }
 
 /**********
@@ -96,7 +97,7 @@ func (pm *BaseProtocolManager) SetNewestMemberOplog(oplog *BaseOplog) error {
 	var isNewer types.Bool
 
 	switch oplog.Op {
-	case MemberOpTypeCreateMember:
+	case MemberOpTypeAddMember:
 		isNewer, err = pm.setNewestAddMemberLog(oplog)
 	case MemberOpTypeDeleteMember:
 		isNewer, err = pm.setNewestDeleteMemberLog(oplog)
@@ -121,7 +122,7 @@ func (pm *BaseProtocolManager) HandleFailedMemberOplog(oplog *BaseOplog) error {
 	var err error
 
 	switch oplog.Op {
-	case MemberOpTypeCreateMember:
+	case MemberOpTypeAddMember:
 		err = pm.handleFailedAddMemberLog(oplog)
 	case MemberOpTypeDeleteMember:
 		err = pm.handleFailedDeleteMemberLog(oplog)

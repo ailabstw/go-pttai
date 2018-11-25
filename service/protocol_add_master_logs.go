@@ -35,7 +35,7 @@ func (pm *BaseProtocolManager) handleAddMasterLog(oplog *BaseOplog, info *Proces
 	}
 }
 
-func (pm *BaseProtocolManager) handlePendingAddMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingAddMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMaster()
 	pm.SetMasterObjDB(person)

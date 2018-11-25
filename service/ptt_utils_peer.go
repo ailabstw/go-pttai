@@ -683,10 +683,24 @@ func (p *BasePtt) dropAnyPeerCore(peers map[discover.NodeID]*PttPeer) error {
  * Dail
  **********/
 
-func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address) error {
+func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType) error {
 	peer := p.GetPeer(nodeID, false)
 
 	if peer != nil && peer.UserID != nil {
+		log.Debug("ptt.AddDial: already got peer userID", "userID", peer.UserID, "peerType", peer.PeerType, "peerType", peerType)
+
+		// setup peer with high peer type and check all the entities.
+		if peer.PeerType < peerType {
+			p.SetupPeer(peer, peerType, false)
+			return nil
+		}
+
+		// just do the specific entity
+		entity, err := p.getEntityFromHash(opKey, &p.lockOps, p.ops)
+		if err != nil {
+			return err
+		}
+		entity.PM().RegisterPeer(peer, peerType)
 		return nil
 	}
 
@@ -695,6 +709,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address) error 
 		return err
 	}
 
+	log.Debug("ptt.AddDial: to CheckDialEntityAndIdentifyPeer", "nodeID", nodeID, "peer", peer)
 	if peer != nil {
 		return p.CheckDialEntityAndIdentifyPeer(peer)
 	}

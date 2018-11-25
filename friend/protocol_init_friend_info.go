@@ -109,7 +109,7 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
-	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, true, true)
+	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, true, true, true, false)
 	log.Debug("HandleInitFriendInfo: after profile create join entity", "e", err)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 
 	// content
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
-	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, true, true)
+	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, true, true, true, false)
 	log.Debug("HandleInitFriendInfo: after board create join entity", "e", err)
 	if err != nil {
 		return err

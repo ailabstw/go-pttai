@@ -59,10 +59,10 @@ func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
 	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
 	postcreateObject func(obj Object, oplog *BaseOplog) error,
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
-) ([]*BaseOplog, error) {
+) (types.Bool, []*BaseOplog, error) {
 
 	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
-	return nil, err
+	return oplog.IsSync, nil, err
 }
 
 /*

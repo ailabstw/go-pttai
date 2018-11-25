@@ -70,6 +70,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setHTTP(ctx, cfg)
 	setWS(ctx, cfg)
 
+	// data-dir
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
 		cfg.DataDir = ctx.GlobalString(DataDirFlag.Name)
@@ -85,14 +86,8 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 // SetMyConfig applies node-related command line flags to the config.
 func SetMeConfig(ctx *cli.Context, cfg *me.Config, cfgNode *node.Config) {
 	// data-dir
-	switch {
-	case ctx.GlobalIsSet(MyDataDirFlag.Name):
-		cfg.DataDir = ctx.GlobalString(MyDataDirFlag.Name)
-	case ctx.GlobalBool(TestnetFlag.Name):
-		cfg.DataDir = filepath.Join(filepath.Join(node.DefaultDataDir(), "testnet"), "me")
-	default:
-		cfg.DataDir = filepath.Join(cfgNode.DataDir, "me")
-	}
+	log.Debug("SetMeConfig: to set DataDir", "cfgNode.DataDIR", cfgNode.DataDir)
+	cfg.DataDir = filepath.Join(cfgNode.DataDir, "me")
 
 	// key/id/postfix
 	setMyKey(ctx, cfg)
@@ -118,19 +113,16 @@ func setMyKey(ctx *cli.Context, cfg *me.Config) error {
 
 // SetContentConfig applies node-related command line flags to the config.
 func SetAccountConfig(ctx *cli.Context, cfg *account.Config, cfgNode *node.Config) {
+	// datadir
+	log.Debug("SetAccountConfig: to set DataDir", "cfgNode.DataDIR", cfgNode.DataDir)
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "account")
 }
 
 // SetContentConfig applies node-related command line flags to the config.
 func SetContentConfig(ctx *cli.Context, cfg *content.Config, cfgNode *node.Config) {
-	switch {
-	case ctx.GlobalIsSet(ContentDataDirFlag.Name):
-		cfg.DataDir = ctx.GlobalString(ContentDataDirFlag.Name)
-	case ctx.GlobalBool(TestnetFlag.Name):
-		cfg.DataDir = filepath.Join(filepath.Join(node.DefaultDataDir(), "testnet"), "content")
-	default:
-		cfg.DataDir = filepath.Join(cfgNode.DataDir, "content")
-	}
+	// datadir
+	log.Debug("SetContentConfig: to set DataDir", "cfgNode.DataDIR", cfgNode.DataDir)
+	cfg.DataDir = filepath.Join(cfgNode.DataDir, "content")
 
 	switch {
 	case ctx.GlobalIsSet(ContentKeystoreDirFlag.Name):
@@ -142,13 +134,18 @@ func SetContentConfig(ctx *cli.Context, cfg *content.Config, cfgNode *node.Confi
 
 // SetContentConfig applies node-related command line flags to the config.
 func SetFriendConfig(ctx *cli.Context, cfg *friend.Config, cfgNode *node.Config) {
+	// datadir
+	log.Debug("SetFriendConfig: to set DataDir", "cfgNode.DataDIR", cfgNode.DataDir)
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "friend")
 }
 
 // SetPttConfig applies ptt-related command line flags to the config.
 func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config, gitCommit string) {
-	log.Debug("SetPttConfig: start", "cfg", cfg, "cfgNode", cfgNode)
+	log.Debug("SetPttConfig: start", "cfg", cfg, "cfgNode", cfgNode, "cfgNode.DataDir", cfgNode.DataDir)
+
+	// data-dir
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "ptt")
+
 	cfg.Version = params.Version
 	cfg.GitCommit = gitCommit
 

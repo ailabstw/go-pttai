@@ -47,6 +47,7 @@ func gptt(ctx *cli.Context) error {
 
 	utils.SetUtilsConfig(ctx, cfg.Utils)
 
+	// we need NodeConfig be the 1st. The DataDir in other configs are referring to the DataDir in NodeConfig.
 	utils.SetNodeConfig(ctx, cfg.Node)
 
 	utils.SetMeConfig(ctx, cfg.Me, cfg.Node)

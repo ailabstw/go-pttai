@@ -446,6 +446,7 @@ func (srv *Server) Start() (err error) {
 			return err
 		}
 		realaddr = conn.LocalAddr().(*net.UDPAddr)
+		log.Debug("Start: to check NAT", "NAT", srv.NAT, "realaddr", realaddr, "IP", realaddr.IP, "port", realaddr.Port)
 		if srv.NAT != nil {
 			if !realaddr.IP.IsLoopback() {
 				go nat.Map(srv.NAT, srv.quit, "udp", realaddr.Port, realaddr.Port, "ethereum discovery")
@@ -537,7 +538,8 @@ func (srv *Server) startListening() error {
 	if !laddr.IP.IsLoopback() && srv.NAT != nil {
 		srv.loopWG.Add(1)
 		go func() {
-			nat.Map(srv.NAT, srv.quit, "tcp", laddr.Port, laddr.Port, "ethereum p2p")
+			log.Debug("startListening: to NAT", "laddr", laddr.Port)
+			nat.Map(srv.NAT, srv.quit, "tcp", laddr.Port, laddr.Port, "pttai p2p")
 			srv.loopWG.Done()
 		}()
 	}

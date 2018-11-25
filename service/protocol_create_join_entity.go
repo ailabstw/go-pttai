@@ -148,6 +148,9 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		entity.PrestartAndStart()
 	}
 
+	// register member
+	pm.RegisterPeer(peer, PeerTypeImportant)
+
 	// me-oplog
 	if meLog != nil {
 		return entity, nil

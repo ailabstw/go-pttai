@@ -18,7 +18,8 @@ package service
 
 import "github.com/ailabstw/go-pttai/common/types"
 
-func EntitySetStatusWithOplog(entity Entity, status types.Status, oplog *BaseOplog) error {
+func SetNewEntityWithOplog(entity Entity, status types.Status, oplog *BaseOplog) error {
+	entity.SetCreateTS(oplog.UpdateTS)
 	entity.SetStatus(status)
 	entity.SetUpdateTS(oplog.UpdateTS)
 	entity.SetLogID(oplog.ID)

@@ -145,7 +145,7 @@ func (pm *BaseProtocolManager) SaveNewEntityWithOplog(oplog *BaseOplog, isLocked
 		defer entity.Unlock()
 	}
 
-	EntitySetStatusWithOplog(entity, oplog.ToStatus(), oplog)
+	SetNewEntityWithOplog(entity, oplog.ToStatus(), oplog)
 
 	err = entity.Save(true)
 	if err != nil {

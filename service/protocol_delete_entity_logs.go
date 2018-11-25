@@ -57,7 +57,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	origStatusClass := types.StatusToStatusClass(origStatus)
 	if origStatusClass == statusClass {
 		if oplog.UpdateTS.IsLess(entity.GetUpdateTS()) {
-			err = EntitySetStatusWithOplog(entity, status, oplog)
+			err = SetNewEntityWithOplog(entity, status, oplog)
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +83,7 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	}
 
 	// 7. saveDeleteObj
-	err = EntitySetStatusWithOplog(entity, status, oplog)
+	err = SetNewEntityWithOplog(entity, status, oplog)
 	if err != nil {
 		return nil, err
 	}

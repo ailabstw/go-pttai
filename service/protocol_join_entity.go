@@ -98,6 +98,7 @@ func (p *BasePtt) HandleJoinEntity(dataBytes []byte, hash *common.Address, entit
 
 	confirmKey := getConfirmKey(id, entity.GetID())
 	joinType, err := entity.PM().GetJoinType(hash)
+	log.Debug("HandleJoinEntity: after get join type", "e", err, "joinType", joinType, "entity", entity.Service().Name())
 	if err != nil {
 		return err
 	}

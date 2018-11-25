@@ -37,13 +37,23 @@ type BackendGetFriend struct {
 }
 
 func friendToBackendGetFriend(f *Friend, userName *account.UserName) *BackendGetFriend {
+	messageCreateTS := f.MessageCreateTS
+	if messageCreateTS.IsLess(f.CreateTS) {
+		messageCreateTS = f.CreateTS
+	}
+
+	lastSeen := f.LastSeen
+	if lastSeen.IsLess(f.CreateTS) {
+		lastSeen = f.CreateTS
+	}
+
 	return &BackendGetFriend{
 		ID:              f.ID,
 		FriendID:        f.FriendID,
 		Name:            userName.Name,
 		Status:          f.Status,
 		BoardID:         f.BoardID,
-		ArticleCreateTS: f.MessageCreateTS,
+		ArticleCreateTS: messageCreateTS,
 		LastSeen:        f.LastSeen,
 	}
 }

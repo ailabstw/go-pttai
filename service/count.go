@@ -23,7 +23,6 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/spaolacci/murmur3"
 )
@@ -166,7 +165,6 @@ func (c *Count) Add(item []byte) {
 	c.hash.Write(item)
 	hash := c.hash.Sum64()
 	bucket := hash >> (64 - c.p) // top p bits are the bucket
-	log.Debug("Add: to Set", "hash", hash, "bucket", bucket)
 	c.Bits.Set(bucket)
 }
 

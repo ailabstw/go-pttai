@@ -128,6 +128,8 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 
 		joinMeRequests: make(map[common.Address]*pkgservice.JoinRequest),
 
+		joinBoardRequests: make(map[common.Address]*pkgservice.JoinRequest),
+
 		// merkle
 		meOplogMerkle: meOplogMerkle,
 

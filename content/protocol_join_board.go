@@ -15,3 +15,12 @@
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
 package content
+
+import (
+	"github.com/ailabstw/go-pttai/common"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
+
+func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinType, error) {
+	return pkgservice.JoinTypeBoard, nil
+}

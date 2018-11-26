@@ -411,6 +411,32 @@ func (a *Article) DeleteAll(comment *Comment, isLocked bool) error {
 		defer a.Unlock()
 	}
 
+	// block-info
+	blockInfo := a.GetBlockInfo()
+	setBlockInfoDB := a.SetBlockInfoDB()
+	setBlockInfoDB(blockInfo, a.ID)
+
+	blockInfo.Remove(false)
+
+	// postdelete
+
+	a.Postdelete(comment, true)
+
+	a.Delete(true)
+
+	return nil
+}
+
+func (a *Article) Postdelete(comment *Comment, isLocked bool) error {
+	var err error
+	if !isLocked {
+		err = a.Lock()
+		if err != nil {
+			return err
+		}
+		defer a.Unlock()
+	}
+
 	// comment
 	iter, err := comment.GetCrossObjIterWithObj(a.ID[:], nil, pttdb.ListOrderNext, false)
 	if err != nil {
@@ -427,21 +453,13 @@ func (a *Article) DeleteAll(comment *Comment, isLocked bool) error {
 		comment.GetAndDeleteAll(false)
 	}
 
-	// block-info
-	blockInfo := a.GetBlockInfo()
-	setBlockInfoDB := a.SetBlockInfoDB()
-	setBlockInfoDB(blockInfo, a.ID)
-
-	blockInfo.Remove(false)
-
-	a.Delete(true)
-
 	// push
 	count, err := pkgservice.NewCount(dbBoard, a.EntityID, a.ID, DBPushPrefix, PCommentCount, false)
 	if err == nil {
 		count.Delete()
 	}
 
+	// boo
 	count, err = pkgservice.NewCount(dbBoard, a.EntityID, a.ID, DBBooPrefix, PCommentCount, false)
 	if err == nil {
 		count.Delete()

@@ -200,11 +200,12 @@ func (pm *BaseProtocolManager) handleCreateObjectSameLog(
 	oplogStatus := oplog.ToStatus()
 
 	origTS := origObj.GetUpdateTS()
+
+	log.Debug("handleCreateObjectSameLog: to check saveNewObjectWithOplog", "oplogStatus", oplogStatus, "origStatus", origStatus)
+
 	if oplogStatus < origStatus || oplogStatus == origStatus && origTS.IsLessEqual(oplog.UpdateTS) {
 		return ErrNewerOplog
 	}
-
-	log.Debug("handleCreateObjectSameLog: to saveNewObjectWithOplog", "oplogStatus", oplogStatus, "origStatus", origStatus)
 
 	if oplogStatus == origStatus {
 		// the status is already the same, we just update the object without postcreate.

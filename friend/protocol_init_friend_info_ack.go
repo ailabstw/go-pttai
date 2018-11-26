@@ -154,7 +154,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
-	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, oplog, isNew, isNew, true, false)
+	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, isNew, isNew, true, false)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 
 	// board
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
-	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, oplog, isNew, isNew, true, false)
+	theBoard, err := contentSPM.CreateJoinEntity(boardData, peer, nil, isNew, isNew, true, false)
 	if err != nil {
 		return err
 	}
@@ -171,6 +171,11 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
 
 	// friend
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return err
+	}
+
 	f.ProfileID = profile.ID
 	f.Profile = profile
 	f.BoardID = board.ID
@@ -179,16 +184,12 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 
 	friendData.Entity = f
 	log.Debug("HandleInitFriendInfoAck: to CreateJoinFriend", "f", f.ID)
-	_, err = spm.CreateJoinEntity(friendData, peer, oplog, false, false, false, true)
+	_, err = spm.CreateJoinEntity(friendData, peer, nil, false, false, false, true)
 	if err != nil {
 		return err
 	}
 
 	// ptt-oplog
-	ts, err := types.GetTimestamp()
-	if err != nil {
-		return err
-	}
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 

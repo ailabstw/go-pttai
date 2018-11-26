@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -28,9 +29,10 @@ func (pm *ProtocolManager) handleCreateCommentLogs(oplog *pkgservice.BaseOplog, 
 
 	opData := &BoardOpCreateComment{}
 
+	log.Debug("handleCreateCommentLogs: to HandleCreateObjectLog")
 	return pm.HandleCreateObjectLog(
 		oplog, obj, opData, info,
-		pm.existsInInfoCreateComment, pm.newCommentWithOplog, nil, pm.updateCreateCommentInfo)
+		pm.existsInInfoCreateComment, pm.newCommentWithOplog, pm.postcreateComment, pm.updateCreateCommentInfo)
 }
 
 func (pm *ProtocolManager) handlePendingCreateCommentLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -41,7 +43,7 @@ func (pm *ProtocolManager) handlePendingCreateCommentLogs(oplog *pkgservice.Base
 
 	return pm.HandlePendingCreateObjectLog(
 		oplog, obj, opData, info,
-		pm.existsInInfoCreateComment, pm.newCommentWithOplog, nil, pm.updateCreateCommentInfo)
+		pm.existsInInfoCreateComment, pm.newCommentWithOplog, pm.postcreateComment, pm.updateCreateCommentInfo)
 }
 
 func (pm *ProtocolManager) setNewestCreateCommentLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {

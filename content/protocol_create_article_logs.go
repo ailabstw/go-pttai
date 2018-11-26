@@ -33,7 +33,7 @@ func (pm *ProtocolManager) handleCreateArticleLogs(oplog *pkgservice.BaseOplog, 
 
 	return pm.HandleCreateObjectLog(
 		oplog, obj, opData, info,
-		pm.existsInInfoCreateArticle, pm.newArticleWithOplog, nil, pm.updateCreateArticleInfo)
+		pm.existsInInfoCreateArticle, pm.newArticleWithOplog, pm.postcreateArticle, pm.updateCreateArticleInfo)
 }
 
 func (pm *ProtocolManager) handlePendingCreateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -46,7 +46,7 @@ func (pm *ProtocolManager) handlePendingCreateArticleLogs(oplog *pkgservice.Base
 
 	return pm.HandlePendingCreateObjectLog(
 		oplog, obj, opData, info,
-		pm.existsInInfoCreateArticle, pm.newArticleWithOplog, nil, pm.updateCreateArticleInfo)
+		pm.existsInInfoCreateArticle, pm.newArticleWithOplog, pm.postcreateArticle, pm.updateCreateArticleInfo)
 }
 
 func (pm *ProtocolManager) setNewestCreateArticleLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {

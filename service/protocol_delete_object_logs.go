@@ -132,7 +132,6 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	// 2. block info
 	blockInfo := origObj.GetBlockInfo()
 	err = pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, info, oplog, true, removeMediaInfoByBlockInfo)
-	log.Debug("handleDeleteObjectLogCore: after removeBlockAndMediaInfoByBlockInfo", "e", err)
 	if err != nil {
 		return err
 	}
@@ -150,19 +149,14 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 
 	// 4. saveDeleteObj
 	err = pm.saveDeleteObjectWithOplog(origObj, oplog, types.StatusDeleted, true)
-	log.Debug("handleDeleteObjectLogCore: after saveDeleteObjectWithOplog", "e", err)
 	if err != nil {
 		return err
 	}
-
-	log.Debug("handleDeleteObjectLogCore: to postdelete")
 
 	// 4.1
 	if postdelete != nil {
 		postdelete(objID, oplog, opData, origObj, blockInfo)
 	}
-
-	log.Debug("handleDeleteObjectLogCore: after postdelete")
 
 	// 5. set oplog is-sync (do not set sync if orig-status is alive)
 	oplog.IsSync = true

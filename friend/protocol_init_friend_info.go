@@ -152,8 +152,28 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 
 func (pm *ProtocolManager) postcreateFriend(entity pkgservice.Entity) error {
 
+	// me-oplog
 	err := pm.Ptt().GetMyEntity().CreateEntityOplog(entity)
 
+	if err != nil {
+		return err
+	}
+
+	// ptt-oplog
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return err
+	}
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	f := entity.(*Friend)
+
+	oplog, err := pkgservice.NewPttOplog(entity.GetID(), ts, f.FriendID, pkgservice.PttOpTypeCreateFriend, pkgservice.PttOpTypeCreateFriend, myID)
+	if err != nil {
+		return err
+	}
+	err = oplog.Save(false)
 	if err != nil {
 		return err
 	}

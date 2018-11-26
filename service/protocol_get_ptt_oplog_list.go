@@ -27,8 +27,8 @@ import (
 func (p *BasePtt) GetPttOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*PttOplog, error) {
 
 	oplog := &BaseOplog{}
-	pm := p.myEntity.MyPM()
-	pm.SetPttDB(oplog)
+	myID := p.myEntity.GetID()
+	SetPttDB(myID, oplog)
 
 	oplogs, err := GetOplogList(oplog, logID, limit, listOrder, status, false)
 	if err != nil {

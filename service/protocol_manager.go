@@ -272,7 +272,6 @@ type MyProtocolManager interface {
 
 	SetMeDB(log *BaseOplog)
 	SetMasterDB(log *BaseOplog)
-	SetPttDB(log *BaseOplog)
 }
 
 type PttProtocolManager interface {

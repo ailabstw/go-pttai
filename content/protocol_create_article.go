@@ -17,6 +17,8 @@
 package content
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -129,9 +131,36 @@ func (pm *ProtocolManager) postcreateArticle(theObj pkgservice.Object, oplog *pk
 
 	log.Debug("postcreateArticle: start")
 
+	article, ok := theObj.(*Article)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
 	entity := pm.Entity().(*Board)
 	entity.SaveArticleCreateTS(oplog.UpdateTS)
 	pm.SaveLastSeen(oplog.UpdateTS)
+
+	// ptt-oplog
+	if reflect.DeepEqual(article.CreatorID, myID) {
+		return nil
+	}
+
+	opData := &pkgservice.PttOpCreateArticle{
+		BoardID: entity.GetID(),
+		Title:   article.Title,
+	}
+
+	pttOplog, err := pkgservice.NewPttOplog(article.ID, article.UpdateTS, oplog.CreatorID, pkgservice.PttOpTypeCreateArticle, opData, myID)
+	if err != nil {
+		return err
+	}
+
+	err = pttOplog.Save(false)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

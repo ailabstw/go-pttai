@@ -24,9 +24,13 @@ import (
 const (
 	_ OpType = iota
 	PttOpTypeCreateMe
+
 	PttOpTypeCreateArticle
 	PttOpTypeCreateComment
 	PttOpTypeCreateReply
+
+	PttOpTypeCreateFriend
+	PttOpTypeJoinBoard
 )
 
 type PttOpCreateMe struct {
@@ -48,3 +52,7 @@ type PttOpCreateReply struct {
 	ArticleID *types.PttID `json:"aID"`
 	CommentID *types.PttID `json:"cID"`
 }
+
+type PttOpCreateFriend struct{}
+
+type PttOpJoinBoard struct{}

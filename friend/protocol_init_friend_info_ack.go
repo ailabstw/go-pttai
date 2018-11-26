@@ -184,6 +184,23 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 		return err
 	}
 
+	// ptt-oplog
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return err
+	}
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	pttOplog, err := pkgservice.NewPttOplog(f.GetID(), ts, f.FriendID, pkgservice.PttOpTypeCreateFriend, pkgservice.PttOpTypeCreateFriend, myID)
+	if err != nil {
+		return err
+	}
+	err = pttOplog.Save(false)
+	if err != nil {
+		return err
+	}
+
 	log.Debug("HandleInitFriendInfoAck: done")
 
 	return nil

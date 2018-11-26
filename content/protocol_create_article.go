@@ -19,6 +19,7 @@ package content
 import (
 	"reflect"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -144,6 +145,13 @@ func (pm *ProtocolManager) postcreateArticle(theObj pkgservice.Object, oplog *pk
 
 	// ptt-oplog
 	if reflect.DeepEqual(article.CreatorID, myID) {
+		return nil
+	}
+
+	// I can get only mine and my friends' user name
+	accountSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
+	_, err := accountSPM.GetUserNameByID(article.CreatorID)
+	if err != nil {
 		return nil
 	}
 

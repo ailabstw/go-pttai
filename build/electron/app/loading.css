@@ -1,0 +1,32 @@
+html, body {
+    height: 100%;
+    background-color: #efefef;
+}
+
+body {
+    display: table;
+    width: 100%;
+    overflow:hidden;
+}
+
+.wrapper {
+    display: table-cell;
+    margin: auto;
+    width: fit-content;
+    vertical-align: middle;
+}
+
+.loader {
+    border: 16px solid #ffffff; /* Light grey */
+    border-top: 16px solid #8baa6a; /* Blue */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    margin: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -163,6 +163,7 @@ type BackendGetBoard struct {
 	Status          types.Status `json:"S"`
 	CreateTS        types.Timestamp
 	UpdateTS        types.Timestamp
+	JoinTS          types.Timestamp `json:"JT"`
 	ArticleCreateTS types.Timestamp
 	LastSeen        types.Timestamp
 	CreatorID       *types.PttID          `json:"C"`
@@ -195,6 +196,7 @@ func boardToBackendGetBoard(b *Board, myName string, theTitle *Title, myID *type
 		Status:          b.Status,
 		CreateTS:        b.CreateTS,
 		UpdateTS:        b.UpdateTS,
+		JoinTS:          b.JoinTS,
 		ArticleCreateTS: articleCreateTS,
 		LastSeen:        lastSeen,
 		CreatorID:       b.CreatorID,

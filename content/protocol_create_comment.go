@@ -45,6 +45,7 @@ func (pm *ProtocolManager) CreateComment(articleID *types.PttID, commentType Com
 	}
 
 	theComment, err := pm.CreateObject(data, BoardOpTypeCreateComment, pm.NewComment, pm.NewBoardOplogWithTS, pm.increateComment, pm.broadcastBoardOplogCore, pm.postcreateComment)
+
 	if err != nil {
 		return nil, err
 	}

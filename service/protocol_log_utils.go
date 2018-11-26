@@ -56,6 +56,8 @@ func (pm *BaseProtocolManager) removeBlockAndMediaInfoByBlockInfo(
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 ) error {
 
+	log.Debug("removeBlockAndMediaInfoByBlockInfo: start", "blockInfo", blockInfo)
+
 	if blockInfo == nil {
 		return nil
 	}

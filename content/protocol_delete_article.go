@@ -18,7 +18,6 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -58,24 +57,17 @@ func (pm *ProtocolManager) setPendingDeleteArticleSyncInfo(obj pkgservice.Object
 
 func (pm *ProtocolManager) postdeleteArticle(id *types.PttID, oplog *pkgservice.BaseOplog, opData pkgservice.OpData, obj pkgservice.Object, blockInfo *pkgservice.BlockInfo) error {
 
+	article, ok := obj.(*Article)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	// comment
 	comment := NewEmptyComment()
 	pm.SetCommentDB(comment)
 
-	iter, err := comment.GetCrossObjIterWithObj(id[:], nil, pttdb.ListOrderNext, false)
-	if err != nil {
-		return err
-	}
-	defer iter.Release()
-
-	var key []byte
-	var eachID *types.PttID
-	for iter.Next() {
-		key = iter.Key()
-		eachID, err = comment.KeyToID(key)
-		comment.SetID(eachID)
-		comment.GetAndDeleteAll(false)
-	}
+	// postdelete
+	article.Postdelete(comment, true)
 
 	return nil
 }

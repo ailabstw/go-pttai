@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -141,11 +142,22 @@ func TestFriend3Comment(t *testing.T) {
 	assert.Equal(2, len(dataGetFriendList1_8.Result))
 	friend1_8 := dataGetFriendList1_8.Result[0]
 	assert.Equal(types.StatusAlive, friend1_8.Status)
-	assert.Equal(me0_1.ID, friend1_8.FriendID)
+	//assert.Equal(me0_1.ID, friend1_8.FriendID)
 	assert.Equal(friend0_8.ID, friend1_8.ID)
 	friend1_8_1 := dataGetFriendList1_8.Result[1]
 	assert.Equal(types.StatusAlive, friend1_8_1.Status)
-	assert.Equal(me2_1.ID, friend1_8_1.FriendID)
+	//assert.Equal(me2_1.ID, friend1_8_1.FriendID)
+	var friend1_0_8 *friend.BackendGetFriend
+	var friend1_2_8 *friend.BackendGetFriend
+
+	if reflect.DeepEqual(me0_1.ID, friend1_8.FriendID) {
+		friend1_0_8 = friend1_8
+		friend1_2_8 = friend1_8_1
+	} else {
+		friend1_0_8 = friend1_8_1
+		friend1_2_8 = friend1_8
+	}
+	assert.Equal(me2_1.ID, friend1_2_8.FriendID)
 
 	dataGetFriendList2_8 := &struct {
 		Result []*friend.BackendGetFriend `json:"result"`
@@ -155,7 +167,7 @@ func TestFriend3Comment(t *testing.T) {
 	friend2_8 := dataGetFriendList2_8.Result[0]
 	assert.Equal(types.StatusAlive, friend2_8.Status)
 	assert.Equal(me1_1.ID, friend2_8.FriendID)
-	assert.Equal(friend1_8_1.ID, friend2_8.ID)
+	assert.Equal(friend1_2_8.ID, friend2_8.ID)
 
 	// 9. get-raw-friend
 	marshaled, _ = friend0_8.ID.MarshalText()
@@ -168,7 +180,7 @@ func TestFriend3Comment(t *testing.T) {
 
 	friend1_9 := &friend.Friend{}
 	testCore(t1, bodyString, friend1_9, t, isDebug)
-	assert.Equal(friend1_8.ID, friend1_9.ID)
+	assert.Equal(friend1_0_8.ID, friend1_9.ID)
 	assert.Equal(friend0_9.Friend0ID, friend1_9.Friend0ID)
 	assert.Equal(friend0_9.Friend1ID, friend1_9.Friend1ID)
 	assert.Equal(me0_1.ID, friend1_9.FriendID)

@@ -17,6 +17,8 @@
 package content
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -148,6 +150,31 @@ func (pm *ProtocolManager) postcreateComment(theObj pkgservice.Object, oplog *pk
 
 	article.IncreaseComment(comment.ID, comment.CommentType, oplog.UpdateTS)
 	article.SaveLastSeen(oplog.UpdateTS)
+
+	// ptt-oplog
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	if reflect.DeepEqual(comment.CreatorID, myID) {
+		return nil
+	}
+	if !reflect.DeepEqual(comment.ArticleCreatorID, myID) {
+		return nil
+	}
+
+	opData := &pkgservice.PttOpCreateComment{
+		BoardID:   comment.EntityID,
+		ArticleID: comment.ArticleID,
+	}
+
+	pttOplog, err := pkgservice.NewPttOplog(comment.ID, comment.UpdateTS, oplog.CreatorID, pkgservice.PttOpTypeCreateComment, opData, myID)
+	if err != nil {
+		return err
+	}
+
+	err = pttOplog.Save(false)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -141,12 +141,9 @@ func (p *BasePtt) GetOps() map[common.Address]*types.PttID {
 
 func (p *BasePtt) BEGetPttOplogList(logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*PttOplog, error) {
 
-	var logID *types.PttID = nil
-	if len(logIDBytes) != 0 {
-		err := logID.Unmarshal(logIDBytes)
-		if err != nil {
-			return nil, err
-		}
+	logID, err := types.UnmarshalTextPttID(logIDBytes, true)
+	if err != nil {
+		return nil, err
 	}
 
 	return p.GetPttOplogList(logID, limit, listOrder, types.StatusAlive)

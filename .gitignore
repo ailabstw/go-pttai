@@ -5,3 +5,7 @@ test.out
 /gptt.pkg
 .DS_Store*
 /static
+/build/electron/node_modules
+/build/electron/dist
+/build/electron/app/gptt.bin
+/build/electron/app/static

@@ -88,7 +88,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	// 5. update obj
 	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), internalPendingStatus, pendingStatus, status)
 	if oplogStatus >= types.StatusDeleted {
-		EntitySetStatusWithOplog(entity, status, oplog)
+		SetNewEntityWithOplog(entity, status, oplog)
 	} else {
 		if !isReplaceOrigSyncInfo(entity.GetSyncInfo(), oplogStatus, oplog.UpdateTS, oplog.ID) {
 			return types.ErrAlreadyPendingDelete

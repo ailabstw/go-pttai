@@ -21,7 +21,6 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -354,7 +353,6 @@ func (a *Article) IncreaseComment(commentID *types.PttID, commentType CommentTyp
 		count, err = a.LoadPush()
 		if err != nil {
 			count, err = pkgservice.NewCount(dbBoard, entityID, a.ID, DBPushPrefix, PCommentCount, true)
-			log.Debug("IncreaseComment: CommentTypePush: after NewCount", "e", err)
 			if err != nil {
 				return err
 			}

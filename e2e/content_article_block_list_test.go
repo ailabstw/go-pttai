@@ -218,6 +218,7 @@ func TestContentArticleBlockList(t *testing.T) {
 
 	defaultTitle0_10_0 := content.DefaultTitleTW(me0_1.ID, me0_1.ID, "")
 	assert.Equal(defaultTitle0_10_0, board0_10_0.Title)
+	assert.Equal(board0_10_0.CreateTS, board0_10_0.ArticleCreateTS)
 
 	// 10.1.
 	marshaledID, _ = board0_10_0.ID.MarshalText()
@@ -277,6 +278,27 @@ func TestContentArticleBlockList(t *testing.T) {
 	testListCore(t0, bodyString, dataGetArticleList0_36, t, isDebug)
 	assert.Equal(1, len(dataGetArticleList0_36.Result))
 	article0_36 := dataGetArticleList0_36.Result[0]
+
+	assert.Equal(0, article0_36.NPush)
+	assert.Equal(0, article0_36.NBoo)
+	assert.Equal(article0_36.CreateTS, article0_36.CommentCreateTS)
+
+	// 36.1 content-get-board
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)
+
+	dataBoardList0_36_1 := &struct {
+		Result []*content.BackendGetBoard `json:"result"`
+	}{}
+
+	testListCore(t0, bodyString, dataBoardList0_36_1, t, isDebug)
+	assert.Equal(1, len(dataBoardList0_36_1.Result))
+	board0_36_1_0 := dataBoardList0_36_1.Result[0]
+	assert.Equal(me0_3.BoardID, board0_36_1_0.ID)
+	assert.Equal(types.StatusAlive, board0_36_1_0.Status)
+
+	defaultTitle0_36_1_0 := content.DefaultTitleTW(me0_1.ID, me0_1.ID, "")
+	assert.Equal(defaultTitle0_36_1_0, board0_36_1_0.Title)
+	assert.Equal(article0_36.UpdateTS, board0_36_1_0.ArticleCreateTS)
 
 	// 38. get-article-block
 	marshaledID2, _ = article0_36.ID.MarshalText()
@@ -369,4 +391,21 @@ func TestContentArticleBlockList(t *testing.T) {
 	assert.Equal(1, len(dataGetArticleBlockList0_41.Result))
 	articleBlock0_41 := dataGetArticleBlockList0_41.Result[0]
 	assert.Equal(articleBlock0_40, articleBlock0_41)
+
+	// 42. content-get-article-list
+	marshaledID, _ = board0_10_0.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+	dataGetArticleList0_42 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleList0_42, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList0_42.Result))
+	article0_42 := dataGetArticleList0_42.Result[0]
+
+	assert.Equal(1, article0_42.NPush)
+	assert.Equal(0, article0_42.NBoo)
+	assert.Equal(articleBlock0_40.UpdateTS, article0_42.CommentCreateTS)
+	assert.Equal(true, article0_42.CreateTS.IsLess(article0_42.CommentCreateTS))
+
 }

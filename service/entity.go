@@ -53,6 +53,7 @@ type Entity interface {
 	SetID(id *types.PttID)
 
 	GetCreateTS() types.Timestamp
+	SetCreateTS(ts types.Timestamp)
 	GetCreatorID() *types.PttID
 
 	SetJoinTS(ts types.Timestamp)
@@ -198,6 +199,10 @@ func (e *BaseEntity) SetID(id *types.PttID) {
 
 func (e *BaseEntity) GetCreateTS() types.Timestamp {
 	return e.CreateTS
+}
+
+func (e *BaseEntity) SetCreateTS(ts types.Timestamp) {
+	e.CreateTS = ts
 }
 
 func (e *BaseEntity) GetCreatorID() *types.PttID {

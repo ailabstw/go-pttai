@@ -37,9 +37,14 @@ func (pm *ProtocolManager) GetJoinRequest(hash *common.Address) (*pkgservice.Joi
 		return joinRequest, nil
 	}
 
+	// content
+	joinRequest, err = pm.getJoinRequestCore(hash, &pm.lockJoinBoardRequest, pm.joinBoardRequests)
+	if err == nil {
+		return joinRequest, nil
+	}
+
 	return nil, pkgservice.ErrInvalidMsg
 
-	// content
 }
 
 func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinType, error) {

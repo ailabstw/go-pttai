@@ -19,6 +19,7 @@ package content
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -409,11 +410,13 @@ func (b *Backend) ShowBoardURL(entityIDBytes []byte) (*pkgservice.BackendJoinURL
 	}
 
 	keyInfo, err := pm.GetJoinKey()
+	log.Debug("ShowBoardURL: after get join key", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
 	theTitle, err := pm.GetTitle()
+	log.Debug("ShowBoardURL: after get title", "e", err)
 	if err != nil {
 		return nil, err
 	}

@@ -161,6 +161,7 @@ type BackendGetBoard struct {
 	ID              *types.PttID
 	Title           []byte
 	Status          types.Status `json:"S"`
+	CreateTS        types.Timestamp
 	UpdateTS        types.Timestamp
 	ArticleCreateTS types.Timestamp
 	LastSeen        types.Timestamp
@@ -183,13 +184,19 @@ func boardToBackendGetBoard(b *Board, myName string, theTitle *Title, myID *type
 		articleCreateTS = b.CreateTS
 	}
 
+	lastSeen := b.LastSeen
+	if lastSeen.IsLess(b.CreateTS) {
+		lastSeen = b.CreateTS
+	}
+
 	return &BackendGetBoard{
 		ID:              b.ID,
 		Title:           title,
 		Status:          b.Status,
+		CreateTS:        b.CreateTS,
 		UpdateTS:        b.UpdateTS,
-		ArticleCreateTS: b.ArticleCreateTS,
-		LastSeen:        b.LastSeen,
+		ArticleCreateTS: articleCreateTS,
+		LastSeen:        lastSeen,
 		CreatorID:       b.CreatorID,
 		BoardType:       b.EntityType,
 	}
@@ -216,15 +223,19 @@ func articleToBackendGetArticle(a *Article) *BackendGetArticle {
 	if a.NPush != nil {
 		nPush = a.NPush.Count()
 	}
-
 	nBoo := uint64(0)
 	if a.NBoo != nil {
 		nBoo = a.NBoo.Count()
 	}
 
 	commentCreateTS := a.CommentCreateTS
-	if commentCreateTS.IsLess(a.UpdateTS) {
-		commentCreateTS = a.UpdateTS
+	if commentCreateTS.IsLess(a.CreateTS) {
+		commentCreateTS = a.CreateTS
+	}
+
+	lastSeen := a.LastSeen
+	if lastSeen.IsLess(a.CreateTS) {
+		lastSeen = a.CreateTS
 	}
 
 	return &BackendGetArticle{
@@ -239,7 +250,7 @@ func articleToBackendGetArticle(a *Article) *BackendGetArticle {
 		NBoo:            int(nBoo),
 		Title:           a.Title,
 		CommentCreateTS: commentCreateTS,
-		LastSeen:        a.LastSeen,
+		LastSeen:        lastSeen,
 		Status:          a.Status,
 	}
 }

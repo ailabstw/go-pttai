@@ -16,6 +16,8 @@
 
 package content
 
+import "github.com/syndtr/goleveldb/leveldb"
+
 func (pm *ProtocolManager) GetTitle() (*Title, error) {
 	entityID := pm.Entity().GetID()
 
@@ -24,6 +26,9 @@ func (pm *ProtocolManager) GetTitle() (*Title, error) {
 	title.SetID(entityID)
 
 	err := title.GetByID(false)
+	if err == leveldb.ErrNotFound {
+		err = nil
+	}
 	if err != nil {
 		return nil, err
 	}

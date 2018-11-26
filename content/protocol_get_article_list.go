@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -31,6 +32,26 @@ func (pm *ProtocolManager) GetArticleList(startID *types.PttID, limit int, listO
 		return nil, err
 	}
 	typedObjs := ObjsToArticles(objs)
+
+	for _, typedObj := range typedObjs {
+
+		ts, err := typedObj.LoadLastSeen()
+		log.Debug("GetArticleList: after LoadLastSeen", "e", err, "ts", ts)
+		if err != nil {
+			continue
+		}
+		typedObj.LastSeen = ts
+
+		ts, err = typedObj.LoadCommentCreateTS()
+		log.Debug("GetArticleList: after LoadCommentCreateTS", "e", err, "ts", ts)
+		if err != nil {
+			return nil, err
+		}
+		typedObj.CommentCreateTS = ts
+
+		typedObj.NPush, _ = typedObj.LoadPush()
+		typedObj.NBoo, _ = typedObj.LoadBoo()
+	}
 
 	return typedObjs, nil
 }

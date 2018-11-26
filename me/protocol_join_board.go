@@ -31,6 +31,16 @@ type JoinBoardEvent struct {
 }
 
 func (pm *ProtocolManager) JoinBoard(joinRequest *pkgservice.JoinRequest) error {
+
+	myInfo := pm.Entity().(*MyInfo)
+	if myInfo.Status != types.StatusAlive {
+		return nil
+	}
+
+	// lock
+	pm.lockJoinBoardRequest.Lock()
+	defer pm.lockJoinBoardRequest.Unlock()
+
 	// hash-val
 	hashVal := *joinRequest.Hash
 

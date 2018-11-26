@@ -137,11 +137,16 @@ func (pm *ProtocolManager) postcreateComment(theObj pkgservice.Object, oplog *pk
 
 	log.Debug("postcreateComment: start")
 
+	comment, ok := theObj.(*Comment)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	article := NewEmptyArticle()
 	pm.SetArticleDB(article)
-	article.SetID(oplog.ObjID)
+	article.SetID(comment.ArticleID)
 
-	article.SaveCommentCreateTS(oplog.UpdateTS)
+	article.IncreaseComment(comment.ID, comment.CommentType, oplog.UpdateTS)
 	article.SaveLastSeen(oplog.UpdateTS)
 
 	return nil

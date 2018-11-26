@@ -129,7 +129,7 @@ func setupTest(t *testing.T) {
 		port := fmt.Sprintf("%d", 9500+i)
 
 		Ctxs[i], Cancels[i] = context.WithTimeout(context.Background(), TimeoutSeconds)
-		Nodes[i] = exec.CommandContext(Ctxs[i], "../build/bin/gptt", "--verbosity", "4", "--datadir", dir, "--rpcaddr", "127.0.0.1", "--rpcport", rpcport, "--port", port, "--bootnodes", "pnode://847e1b261cd827f83a62c6fa6d335179054cecb5651d47b4b152cef67e4b45d7f872e07a2e222771124e0354e58b6b3b1fc8908bb63ec30744abd9784ced31e8@127.0.0.1:9489", "--ipcdisable")
+		Nodes[i] = exec.CommandContext(Ctxs[i], "../build/bin/gptt", "--server", "--verbosity", "4", "--datadir", dir, "--rpcaddr", "127.0.0.1", "--rpcport", rpcport, "--port", port, "--bootnodes", "pnode://847e1b261cd827f83a62c6fa6d335179054cecb5651d47b4b152cef67e4b45d7f872e07a2e222771124e0354e58b6b3b1fc8908bb63ec30744abd9784ced31e8@127.0.0.1:9489", "--ipcdisable")
 		filename := fmt.Sprintf("./test.out/log.err.%d.txt", i)
 		stderrs[i], _ = os.Create(filename)
 		Nodes[i].Stderr = stderrs[i]

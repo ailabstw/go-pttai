@@ -2,7 +2,8 @@
 
 cd pttai.js
 
-npm install
+./scripts/setup.sh
+
 npm run build
 
 cd ..

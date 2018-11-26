@@ -21,6 +21,7 @@ import (
 	"os/signal"
 	"reflect"
 	"syscall"
+	"time"
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/cmd/utils"
@@ -90,6 +91,14 @@ func gptt(ctx *cli.Context) error {
 
 	// set-signal
 	go setSignal(n, httpServer)
+
+	// open-browser
+	if !ctx.GlobalIsSet(utils.ServerFlag.Name) && !ctx.GlobalIsSet(utils.ExternRPCPortFlag.Name) && !ctx.GlobalIsSet(utils.ExternHTTPAddrFlag.Name) {
+		go func() {
+			time.Sleep(5 * time.Second)
+			utils.OpenBrowser(cfg.Utils.HTTPAddr)
+		}()
+	}
 
 	// wait-node
 	if err := WaitNode(n, httpServer); err != nil {

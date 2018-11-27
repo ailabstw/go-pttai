@@ -24,9 +24,9 @@ import (
 
 type ArticleBlock struct {
 	V           types.Version
-	BlockInfoID *types.PttID `json:"ID"`
+	BlockInfoID *types.PttID `json:"bID"`
 	ArticleID   *types.PttID `json:"AID"`
-	RefID       *types.PttID `json:"RID"`
+	RefID       *types.PttID `json:"ID"`
 	ContentType ContentType  `json:"ct"`
 	CommentType CommentType  `json:"mt"`
 	BlockID     uint32       `json:"BID"`

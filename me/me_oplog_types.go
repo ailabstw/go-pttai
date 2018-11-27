@@ -26,6 +26,9 @@ const (
 	MeOpTypeInvalid pkgservice.OpType = iota
 	MeOpTypeCreateMe
 	MeOpTypeSetNodeName
+
+	OffsetMeOpTypeEntity
+
 	MeOpTypeCreateBoard
 	MeOpTypeJoinBoard
 	MeOpTypeCreateFriend

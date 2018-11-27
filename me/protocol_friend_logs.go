@@ -28,11 +28,11 @@ func (pm *ProtocolManager) handleFriendLog(
 	info *ProcessMeInfo,
 ) ([]*pkgservice.BaseOplog, error) {
 
-	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM()
+	friendSPM := pm.Entity().Service().(*Backend).friendBackend.SPM()
 
 	opData := &MeOpEntity{}
 
-	return pm.HandleEntityLog(oplog, contentSPM, opData, info, pm.updateFriendInfo)
+	return pm.HandleEntityLog(oplog, friendSPM, opData, info, pm.updateFriendInfo)
 
 }
 

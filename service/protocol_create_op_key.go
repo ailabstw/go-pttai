@@ -97,7 +97,6 @@ func (pm *BaseProtocolManager) ToRenewOpKeyTS() (types.Timestamp, error) {
 /***
  * CreateObject
  ***/
-
 func (pm *BaseProtocolManager) CreateOpKey() error {
 	ptt := pm.Ptt()
 	myID := ptt.GetMyEntity().GetID()
@@ -110,6 +109,27 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 	// 2. create object
 	_, err := pm.CreateObject(
+		nil, OpKeyOpTypeCreateOpKey,
+		pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
+	if err != nil {
+		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
+		return err
+	}
+	return nil
+}
+
+func (pm *BaseProtocolManager) ForceCreateOpKey() error {
+	ptt := pm.Ptt()
+	myID := ptt.GetMyEntity().GetID()
+
+	// 1. validate
+	if !pm.IsMaster(myID, false) {
+		log.Warn("CreateOpKeyInfo: not master")
+		return nil
+	}
+
+	// 2. create object
+	_, err := pm.ForceCreateObject(
 		nil, OpKeyOpTypeCreateOpKey,
 		pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
 	if err != nil {

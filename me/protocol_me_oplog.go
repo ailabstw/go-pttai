@@ -35,6 +35,10 @@ func (pm *ProtocolManager) CreateMeOplog(objID *types.PttID, ts types.Timestamp,
 		return nil, err
 	}
 
+	if op > OffsetMeOpTypeEntity && oplog.MasterLogID == nil {
+		oplog.SetMasterLogID(pm.GetNewestMasterLogID(), 1)
+	}
+
 	return oplog, nil
 }
 

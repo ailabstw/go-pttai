@@ -23,6 +23,19 @@ import (
 
 type CreateData interface{}
 
+func (pm *BaseProtocolManager) ForceCreateObject(
+	data CreateData,
+	createOp OpType,
+
+	newObj func(data CreateData) (Object, OpData, error),
+	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
+	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
+	broadcastLog func(oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
+) (Object, error) {
+	return pm.createObjectCore(data, createOp, true, newObj, newOplogWithTS, increate, broadcastLog, postcreate)
+}
+
 func (pm *BaseProtocolManager) CreateObject(
 	data CreateData,
 	createOp OpType,
@@ -33,7 +46,21 @@ func (pm *BaseProtocolManager) CreateObject(
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
+	return pm.createObjectCore(data, createOp, false, newObj, newOplogWithTS, increate, broadcastLog, postcreate)
+}
 
+func (pm *BaseProtocolManager) createObjectCore(
+	data CreateData,
+	createOp OpType,
+
+	isForce bool,
+
+	newObj func(data CreateData) (Object, OpData, error),
+	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
+	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
+	broadcastLog func(oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
+) (Object, error) {
 	entity := pm.Entity()
 
 	// 1. validate
@@ -74,7 +101,11 @@ func (pm *BaseProtocolManager) CreateObject(
 	obj.SetIsAllGood(true)
 
 	// 5. sign oplog
-	err = pm.SignOplog(oplog)
+	if !isForce {
+		err = pm.SignOplog(oplog)
+	} else {
+		err = pm.ForceSignOplog(oplog)
+	}
 	if err != nil {
 		log.Warn("CreateObject: unable to sign", "e", err)
 		return nil, err

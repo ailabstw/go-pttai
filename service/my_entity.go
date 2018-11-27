@@ -19,6 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/p2p/discover"
 )
 
 type MyEntity interface {
@@ -35,6 +36,8 @@ type MyEntity interface {
 	GetBoard() Entity
 
 	GetNodeSignID() *types.PttID
+
+	GetUserNodeID(id *types.PttID) (*discover.NodeID, error)
 
 	Sign(oplog *BaseOplog) error
 	InternalSign(oplog *BaseOplog) error

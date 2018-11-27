@@ -25,11 +25,11 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-func (b *Backend) CreateBoard(title []byte, isPublic bool) (*BackendCreateBoard, error) {
+func (b *Backend) CreateBoard(title []byte, isPrivate bool) (*BackendCreateBoard, error) {
 	entityType := pkgservice.EntityTypePrivate
 
-	if isPublic {
-		entityType = pkgservice.EntityTypePublic
+	if isPrivate {
+		entityType = pkgservice.EntityTypePrivate
 	}
 
 	board, err := b.SPM().(*ServiceProtocolManager).CreateBoard(title, entityType)

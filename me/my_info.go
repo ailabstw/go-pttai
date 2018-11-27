@@ -26,6 +26,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/p2p/discover"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -332,4 +333,8 @@ func (m *MyInfo) GetProfile() pkgservice.Entity {
 
 func (m *MyInfo) GetBoard() pkgservice.Entity {
 	return m.Board
+}
+
+func (m *MyInfo) GetUserNodeID(id *types.PttID) (*discover.NodeID, error) {
+	return nil, types.ErrNotImplemented
 }

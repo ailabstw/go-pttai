@@ -30,8 +30,8 @@ func NewPrivateAPI(b *Backend) *PrivateAPI {
 	return &PrivateAPI{b}
 }
 
-func (api *PrivateAPI) CreateBoard(title []byte, isPublic bool) (*BackendCreateBoard, error) {
-	return api.b.CreateBoard(title, isPublic)
+func (api *PrivateAPI) CreateBoard(title []byte, isPrivate bool) (*BackendCreateBoard, error) {
+	return api.b.CreateBoard(title, isPrivate)
 }
 
 func (api *PrivateAPI) CreateArticle(entityID string, title []byte, article [][]byte, mediaIDs []string) (*BackendCreateArticle, error) {

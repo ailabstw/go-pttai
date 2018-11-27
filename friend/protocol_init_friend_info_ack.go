@@ -123,7 +123,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAck(dataBytes []byte, peer *pkgse
 		return err
 	}
 
-	return pm.HandleInitFriendInfoAckCore(initFriendInfoAck, nil, peer, true)
+	return pm.HandleInitFriendInfoAckCore(initFriendInfoAck, nil, peer, true, false)
 }
 
 func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
@@ -133,6 +133,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 	peer *pkgservice.PttPeer,
 
 	isNew bool,
+	isLocked bool,
 ) error {
 
 	profileData, friendData, boardData := initFriendInfoAck.ProfileData, initFriendInfoAck.FriendData, initFriendInfoAck.BoardData
@@ -141,16 +142,18 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 	spm := f.Service().SPM()
 
 	// validate
-	if !reflect.DeepEqual(f.FriendID, peer.UserID) {
+	if peer.PeerType != pkgservice.PeerTypeMe && !reflect.DeepEqual(f.FriendID, peer.UserID) {
 		return types.ErrInvalidID
 	}
 
 	// lock
-	err := f.Lock()
-	if err != nil {
-		return err
+	if !isLocked {
+		err := f.Lock()
+		if err != nil {
+			return err
+		}
+		defer f.Unlock()
 	}
-	defer f.Unlock()
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)

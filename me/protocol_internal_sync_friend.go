@@ -18,11 +18,13 @@ package me
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/friend"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -38,6 +40,7 @@ func (pm *ProtocolManager) InternalSyncFriend(
 ) error {
 
 	syncID := &pkgservice.SyncID{ID: oplog.ObjID, LogID: oplog.ID}
+	log.Debug("InternalSyncFriend: to SendDataToPeer", "syncID", syncID, "peer", peer)
 
 	return pm.SendDataToPeer(InternalSyncFriendMsg, syncID, peer)
 }
@@ -61,6 +64,7 @@ func (pm *ProtocolManager) HandleInternalSyncFriend(
 	friendPM := f.PM().(*friend.ProtocolManager)
 
 	initFriendInfoAck, err := friendPM.InitFriendInfoAckCore(peer)
+	log.Debug("HandleInternalSyncFriend: after InitFriendInfoAckCore", "e", err)
 
 	ackData := &InternalSyncFriendAck{LogID: syncID.LogID, InitFriendInfoAck: initFriendInfoAck}
 
@@ -89,31 +93,67 @@ func (pm *ProtocolManager) HandleInternalSyncFriendAck(
 
 	// oplog
 	oplog := &pkgservice.BaseOplog{ID: data.LogID}
+	pm.SetMeDB(oplog)
 
+	// lock
 	err = oplog.Lock()
 	if err != nil {
 		return err
 	}
 	defer oplog.Unlock()
 
-	pm.SetMeDB(oplog)
+	// get
 	err = oplog.Get(data.LogID, true)
+	log.Debug("HandleInternalSyncFriendAck: after oplog.Get", "e", err, "isSync", oplog.IsSync)
 	if oplog.IsSync {
 		return nil
 	}
 
-	return types.ErrNotImplemented
+	// lock entity
+	friendBackend := pm.Entity().Service().(*Backend).friendBackend
+	friendSPM := friendBackend.SPM().(*friend.ServiceProtocolManager)
+
+	err = friendSPM.Lock(oplog.ObjID)
+	if err != nil {
+		return err
+	}
+	defer friendSPM.Unlock(oplog.ObjID)
+
+	theFriend := friendSPM.Entity(oplog.ObjID)
+	log.Debug("HandleInternalSyncFriendAck: after get theFriend", "theFriend", theFriend)
+	if theFriend == nil {
+		return pm.handleInternalSyncFriendAckNew(friendBackend, friendSPM, data, oplog, peer)
+	}
+	f, ok := theFriend.(*friend.Friend)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	// exists
+	friendStatus := f.Status
+
+	switch {
+	case friendStatus == types.StatusAlive && reflect.DeepEqual(f.LogID, oplog.ID):
+		err = pm.handleInternalSyncEntityAckSameLog(f, oplog, peer)
+	case friendStatus >= types.StatusTerminal:
+	case friendStatus == types.StatusAlive:
+		err = pm.handleInternalSyncEntityAckDiffAliveLog(f, oplog, peer)
+	default:
+		err = pm.handleInternalSyncFriendAckDiffLog(data, oplog, peer)
+	}
+
+	oplog.IsSync = true
+	oplog.Save(true)
+	return nil
 }
 
 func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
+	svc *friend.Backend,
+	spm *friend.ServiceProtocolManager,
 	data *InternalSyncFriendAck,
 	oplog *pkgservice.BaseOplog,
 	peer *pkgservice.PttPeer,
 ) error {
-
-	ptt := pm.Ptt()
-	friendService := pm.Entity().Service().(*Backend).friendBackend
-	friendSPM := friendService.SPM()
 
 	theFriendData := data.InitFriendInfoAck.FriendData
 
@@ -121,15 +161,44 @@ func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
 
 	f.Status = types.StatusInit
 
-	err := f.Init(ptt, friendService, friendSPM)
-	err = f.Save(false)
+	ptt := pm.Ptt()
+	err := f.Init(ptt, svc, spm)
+	err = f.Save(true)
 	if err != nil {
 		return err
 	}
-	friendSPM.RegisterEntity(f.ID, f)
+	spm.RegisterEntity(f.ID, f)
 	f.PrestartAndStart()
 
 	friendPM := f.PM().(*friend.ProtocolManager)
 
-	return friendPM.HandleInitFriendInfoAckCore(data.InitFriendInfoAck, oplog, peer, true)
+	log.Debug("HandleInternalSyncFriendAckNew: to HandleInitFriendInfoAckCore")
+
+	err = friendPM.HandleInitFriendInfoAckCore(data.InitFriendInfoAck, oplog, peer, true, true)
+	log.Debug("HandleInternalSyncFriendAckNew: after HandleInitFriendInfoAckCore", "e", err)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pm *ProtocolManager) handleInternalSyncFriendAckDiffLog(
+	data *InternalSyncFriendAck,
+	oplog *pkgservice.BaseOplog,
+	peer *pkgservice.PttPeer,
+) error {
+
+	theFriendData := data.InitFriendInfoAck.FriendData
+
+	f := theFriendData.Entity.(*friend.Friend)
+
+	friendPM := f.PM().(*friend.ProtocolManager)
+
+	err := friendPM.HandleInitFriendInfoAckCore(data.InitFriendInfoAck, oplog, peer, false, true)
+	log.Debug("HandleInternalSyncFriendAckDiffLog: after HandleInitFriendInfoAckCore", "e", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

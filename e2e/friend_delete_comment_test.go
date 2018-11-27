@@ -260,7 +260,7 @@ func TestFriendDeleteComment(t *testing.T) {
 	title := []byte("標題1")
 	marshaledStr = base64.StdEncoding.EncodeToString(title)
 
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createBoard", "params": ["%v", false]}`, marshaledStr)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createBoard", "params": ["%v", true]}`, marshaledStr)
 
 	dataCreateBoard0_13 := &content.BackendCreateBoard{}
 

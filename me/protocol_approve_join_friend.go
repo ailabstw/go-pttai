@@ -44,6 +44,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	// get friend-key and friend oplog
 	friendPM := theFriend.PM().(*friend.ProtocolManager)
 	friendOpKeyInfo, friendData, err := friendPM.ApproveJoinFriend(joinEntity, keyInfo, peer)
+	log.Debug("ApproveJoinFriend: after friend.ApproveJoinFriend", "e", err)
 	if err != nil {
 		return nil, nil, err
 	}

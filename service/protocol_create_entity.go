@@ -82,7 +82,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	}
 
 	// 5. sign oplog
-	err = pm.SignOplog(oplog)
+	err = pm.ForceSignOplog(oplog)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	// 8. postsave
 	// 8.1. op-key, required entity to be alive to generate op-key
-	err = pm.CreateOpKey()
+	err = pm.ForceCreateOpKey()
 	log.Debug("CreateEntity: after CreateOpKeyInfo", "e", err)
 	if err != nil {
 		return nil, err

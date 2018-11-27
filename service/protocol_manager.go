@@ -76,6 +76,7 @@ type ProtocolManager interface {
 	BroadcastOplogs(oplogs []*BaseOplog, msg OpType, pendingMsg OpType) error
 
 	SignOplog(oplog *BaseOplog) error
+	ForceSignOplog(oplog *BaseOplog) error
 
 	IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error)
 	InternalSign(oplog *BaseOplog) (bool, error)
@@ -195,6 +196,7 @@ type ProtocolManager interface {
 	CreateOpKeyLoop() error
 
 	CreateOpKey() error
+	ForceCreateOpKey() error
 
 	// op-key-oplog
 

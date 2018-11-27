@@ -253,3 +253,35 @@ func (pm *BaseProtocolManager) registerMasters(masters []*Master, isLocked bool)
 func (pm *BaseProtocolManager) GetMasters() map[types.PttID]*Master {
 	return pm.masters
 }
+
+func (pm *BaseProtocolManager) ConnectMaster() error {
+	masters := pm.GetMasters()
+	var master *Master
+
+	myEntity := pm.Ptt().GetMyEntity()
+	myID := myEntity.GetID()
+	for _, eachMaster := range masters {
+		if !reflect.DeepEqual(eachMaster.ID, myID) {
+			master = eachMaster
+			break
+		}
+	}
+
+	if master == nil {
+		return nil
+	}
+
+	nodeID, err := myEntity.GetUserNodeID(master.ID)
+	if err != nil {
+		return err
+	}
+
+	opKey, err := pm.GetOldestOpKey(false)
+	if err != nil {
+		return err
+	}
+
+	pm.Ptt().AddDial(nodeID, opKey.Hash, PeerTypeImportant)
+
+	return nil
+}

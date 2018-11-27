@@ -74,6 +74,33 @@ func (pm *BaseProtocolManager) SignOplog(oplog *BaseOplog) error {
 	return nil
 }
 
+func (pm *BaseProtocolManager) ForceSignOplog(oplog *BaseOplog) error {
+	myEntity := pm.Ptt().GetMyEntity()
+
+	err := myEntity.Sign(oplog)
+	if err != nil {
+		return err
+	}
+
+	if oplog.MasterLogID != nil {
+		return nil
+	}
+
+	err = myEntity.MasterSign(oplog)
+	if err != nil {
+		return err
+	}
+
+	masterLogID := pm.GetNewestMasterLogID()
+
+	err = oplog.SetMasterLogID(masterLogID, 1)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (pm *BaseProtocolManager) GetOplogMerkleNodeList(merkle *Merkle, level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error) {
 
 	var err error
@@ -152,6 +179,11 @@ func (pm *BaseProtocolManager) BroadcastOplog(oplog *BaseOplog, msg OpType, pend
 	log.Debug("BroadcastOplog: to SendDataToPeers", "e", pm.Entity().GetID(), "op", op, "toSendPeers", toSendPeers)
 
 	if len(toSendPeers) == 0 {
+		// check whether we need to connect to the masters
+		if oplog.MasterLogID == nil && oplog.InternalSigns == nil {
+			pm.ConnectMaster()
+		}
+
 		return nil
 	}
 
@@ -218,6 +250,11 @@ func (pm *BaseProtocolManager) BroadcastOplogs(oplogs []*BaseOplog, msg OpType, 
 
 	if len(allLogs) != 0 && len(allPeerList) != 0 {
 		pm.SendDataToPeers(msg, &AddOplogs{Oplogs: allLogs}, allPeerList)
+	}
+
+	// check whether we need to connect to the masters
+	if len(masterLogs) != 0 && len(masterPeerList) == 0 {
+		pm.ConnectMaster()
 	}
 
 	return nil

@@ -71,6 +71,18 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case AddPendingMeOplogsMsg:
 		err = pm.HandleAddPendingMeOplogs(dataBytes, peer)
 
+	// internal-sync-board
+	case InternalSyncBoardMsg:
+		err = pm.HandleInternalSyncBoard(dataBytes, peer)
+	case InternalSyncBoardAckMsg:
+		err = pm.HandleInternalSyncBoardAck(dataBytes, peer)
+
+	// internal-sync-friend
+	case InternalSyncFriendMsg:
+		err = pm.HandleInternalSyncFriend(dataBytes, peer)
+	case InternalSyncFriendAckMsg:
+		err = pm.HandleInternalSyncFriendAck(dataBytes, peer)
+
 	default:
 		err = pkgservice.ErrInvalidMsgCode
 	}

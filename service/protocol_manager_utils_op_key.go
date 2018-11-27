@@ -49,8 +49,8 @@ func (pm *BaseProtocolManager) RegisterOpKey(keyInfo *KeyInfo, isLocked bool) er
 	ptt := pm.Ptt()
 	entityID := pm.Entity().GetID()
 	ptt.AddOpKey(keyInfo.Hash, entityID, false)
-	log.Debug("RegisterOpKeyInfo: after ptt.AddOpKey", "hash", keyInfo.Hash, "entity", entityID)
-	log.Trace("RegisterOpKeyInfo: done", "newestOpKey", pm.newestOpKeyInfo, "oldestOpKey", pm.oldestOpKeyInfo)
+	log.Debug("RegisterOpKeyInfo: after ptt.AddOpKey", "hash", keyInfo.Hash, "entity", entityID, "service", pm.Entity().Service().Name())
+	log.Debug("RegisterOpKeyInfo: done", "newestOpKey", pm.newestOpKeyInfo, "oldestOpKey", pm.oldestOpKeyInfo)
 
 	return nil
 }
@@ -152,7 +152,7 @@ func (pm *BaseProtocolManager) GetNewestOpKey(isLocked bool) (*KeyInfo, error) {
 	}
 
 	if pm.newestOpKeyInfo == nil {
-		log.Warn("GetNewestOpKey: newestOpKeyInfo nil to getNewestOpKeyFullScan", "e", pm.Entity().GetID(), "pm", pm)
+		log.Warn("GetNewestOpKey: newestOpKeyInfo nil to getNewestOpKeyFullScan", "e", pm.Entity().GetID())
 		return pm.getNewestOpKeyFullScan(true)
 	}
 
@@ -208,7 +208,7 @@ func (pm *BaseProtocolManager) getNewestOpKeyFullScan(isLocked bool) (*KeyInfo, 
 	for _, keyInfo := range pm.opKeyInfos {
 		pm.checkNewestOpKeyInfo(keyInfo, expireRenewTS)
 	}
-	log.Trace("getNewestOpKeyFullScan: after checkNewestOpKeyInfo", "newestOpKey", pm.newestOpKeyInfo)
+	log.Debug("getNewestOpKeyFullScan: after checkNewestOpKeyInfo", "newestOpKey", pm.newestOpKeyInfo)
 	if pm.newestOpKeyInfo == nil {
 		return nil, ErrInvalidKey
 	}
@@ -355,7 +355,7 @@ func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRene
 
 	if pm.newestOpKeyInfo == nil || pm.newestOpKeyInfo.UpdateTS.IsLess(keyInfo.UpdateTS) {
 		pm.newestOpKeyInfo = keyInfo
-		log.Trace("checkNewestOpKeyInfo: after set newestOpKeyInfo", "keyInfo", keyInfo.UpdateTS, "e", pm.Entity().GetID(), "pm", pm)
+		log.Debug("checkNewestOpKeyInfo: after set newestOpKeyInfo", "keyInfo", keyInfo.UpdateTS, "e", pm.Entity().GetID(), "pm", pm)
 	}
 
 	return

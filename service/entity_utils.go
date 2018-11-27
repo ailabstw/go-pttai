@@ -26,3 +26,11 @@ func SetNewEntityWithOplog(entity Entity, status types.Status, oplog *BaseOplog)
 	entity.SetUpdaterID(oplog.CreatorID)
 	return nil
 }
+
+func SetEntityWithOplog(entity Entity, status types.Status, oplog *BaseOplog) error {
+	entity.SetStatus(status)
+	entity.SetUpdateTS(oplog.UpdateTS)
+	entity.SetLogID(oplog.ID)
+	entity.SetUpdaterID(oplog.CreatorID)
+	return nil
+}

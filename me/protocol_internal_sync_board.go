@@ -18,8 +18,11 @@ package me
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -35,6 +38,7 @@ func (pm *ProtocolManager) InternalSyncBoard(
 ) error {
 
 	syncID := &pkgservice.SyncID{ID: oplog.ObjID, LogID: oplog.ID}
+	log.Debug("InternalSyncBoard: to SendDataToPeer", "syncID", syncID, "peer", peer)
 
 	return pm.SendDataToPeer(InternalSyncBoardMsg, syncID, peer)
 }
@@ -60,6 +64,7 @@ func (pm *ProtocolManager) HandleInternalSyncBoard(
 	myID := pm.Ptt().GetMyEntity().GetID()
 	joinEntity := &pkgservice.JoinEntity{ID: myID}
 	_, theApproveJoinEntity, err := boardPM.ApproveJoin(joinEntity, nil, peer)
+	log.Debug("HandleInternalSyncBoard: after ApproveJoin", "e", err)
 	if err != nil {
 		return err
 	}
@@ -70,6 +75,7 @@ func (pm *ProtocolManager) HandleInternalSyncBoard(
 	}
 
 	ackData := &InternalSyncBoardAck{LogID: syncID.LogID, BoardData: approveJoinEntity}
+	log.Debug("HandleInternalSyncBoard: to SendData", "ackData", ackData)
 
 	pm.SendDataToPeer(InternalSyncBoardAckMsg, ackData, peer)
 
@@ -82,5 +88,120 @@ func (pm *ProtocolManager) HandleInternalSyncBoardAck(
 
 ) error {
 
-	return types.ErrNotImplemented
+	// unmarshal data
+	log.Debug("HandleInternalSyncBoardAck: start")
+	theBoardData := content.NewEmptyApproveJoinBoard()
+
+	data := &InternalSyncBoardAck{BoardData: theBoardData}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	// oplog
+	oplog := &pkgservice.BaseOplog{ID: data.LogID}
+	pm.SetMeDB(oplog)
+
+	// lock
+	err = oplog.Lock()
+	if err != nil {
+		return err
+	}
+	defer oplog.Unlock()
+
+	// get
+	err = oplog.Get(data.LogID, true)
+	log.Debug("HandleInternalSyncBoardAck: after oplog.Get", "e", err, "isSync", oplog.IsSync)
+	if oplog.IsSync {
+		return nil
+	}
+
+	// lock entity
+	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
+
+	err = contentSPM.Lock(oplog.ObjID)
+	if err != nil {
+		return err
+	}
+	defer contentSPM.Unlock(oplog.ObjID)
+
+	theBoard := contentSPM.Entity(oplog.ObjID)
+	if theBoard == nil {
+		return pm.handleInternalSyncBoardAckNew(contentSPM, theBoardData, oplog, peer)
+	}
+	board, ok := theBoard.(*content.Board)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	// exists
+	boardStatus := board.Status
+
+	switch {
+	case boardStatus == types.StatusAlive && reflect.DeepEqual(board.LogID, oplog.ID):
+		err = pm.handleInternalSyncEntityAckSameLog(board, oplog, peer)
+	case boardStatus >= types.StatusTerminal:
+	case boardStatus == types.StatusAlive:
+		err = pm.handleInternalSyncEntityAckDiffAliveLog(board, oplog, peer)
+	default:
+		err = pm.handleInternalSyncBoardAckDiffLog(contentSPM, theBoardData, oplog, peer)
+	}
+
+	oplog.IsSync = true
+	oplog.Save(true)
+	return nil
+}
+
+func (pm *ProtocolManager) handleInternalSyncBoardAckNew(
+	spm *content.ServiceProtocolManager,
+	data *pkgservice.ApproveJoinEntity,
+	oplog *pkgservice.BaseOplog,
+	peer *pkgservice.PttPeer,
+) error {
+
+	_, err := spm.CreateJoinEntity(data, peer, oplog, true, true, true, true)
+	log.Debug("HandleInternalSyncBoardAckNew: after CreateJoinEntity", "e", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) handleInternalSyncEntityAckSameLog(entity pkgservice.Entity, oplog *pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
+	log.Debug("HandleInternalSyncEntityAckSameLog: to check updateTS", "oplog.UpdateTS", oplog.UpdateTS, "entity.UpdateTS", entity.GetUpdateTS())
+	if oplog.UpdateTS.IsLess(entity.GetUpdateTS()) {
+		pkgservice.SetEntityWithOplog(entity, types.StatusAlive, oplog)
+		entity.Save(true)
+	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) handleInternalSyncEntityAckDiffAliveLog(entity pkgservice.Entity, oplog *pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
+
+	entityUpdateTS := entity.GetUpdateTS()
+	log.Debug("HandleInternalSyncEntityAckDiffAliveLog: to check updateTS", "oplog.UpdateTS", oplog.UpdateTS, "entity.UpdateTS", entityUpdateTS)
+	if entityUpdateTS.IsLess(oplog.UpdateTS) {
+		pkgservice.SetEntityWithOplog(entity, types.StatusAlive, oplog)
+		entity.Save(true)
+	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) handleInternalSyncBoardAckDiffLog(
+	spm *content.ServiceProtocolManager,
+	data *pkgservice.ApproveJoinEntity,
+	oplog *pkgservice.BaseOplog,
+	peer *pkgservice.PttPeer,
+) error {
+
+	_, err := spm.CreateJoinEntity(data, peer, oplog, false, false, true, true)
+	log.Debug("HandleInternalSyncBoardAckDiffLog: after CreateJoinEntity", "e", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -42,7 +42,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	keyInfo *KeyInfo,
 	peer *PttPeer,
 ) (*KeyInfo, interface{}, error) {
-	log.Debug("ApproveJoin: start", "name", pm.Entity().Name(), "peer", peer, "peerType", peer.PeerType)
+	log.Debug("ApproveJoin: start", "name", pm.Entity().Name(), "service", pm.Entity().Service().Name(), "peer", peer, "peerType", peer.PeerType)
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 
@@ -55,6 +55,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	}
 
 	opKey, err := pm.GetNewestOpKey(false)
+	log.Debug("ApproveJoin: after GetNewestOpKey", "err", err)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,6 +78,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	oplog := &BaseOplog{}
 	pm.SetMasterDB(oplog)
 	masterLogs, err := GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusAlive, false)
+	log.Debug("ApproveJoin: after get master oplogs", "err", err)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -103,15 +105,19 @@ func (pm *BaseProtocolManager) ApproveJoin(
 
 	}
 	memberLogs = append(memberLogs, pm.myMemberLog.BaseOplog)
+	log.Debug("ApproveJoin: after get memberLogs", "memberLogs", memberLogs)
 
 	// register-peer
 	if peer.UserID == nil {
 		peer.UserID = joinEntity.ID
 	}
 
-	if peer.PeerType < PeerTypeMember {
+	switch {
+	case peer.PeerType < PeerTypeMember:
 		pm.Ptt().SetupPeer(peer, PeerTypeMember, false)
-	} else {
+	case peer.PeerType == PeerTypeMe:
+		pm.RegisterPeer(peer, PeerTypeMe)
+	default:
 		pm.RegisterPeer(peer, PeerTypeMember)
 	}
 

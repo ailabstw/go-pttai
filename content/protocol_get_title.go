@@ -27,7 +27,7 @@ func (pm *ProtocolManager) GetTitle() (*Title, error) {
 
 	err := title.GetByID(false)
 	if err == leveldb.ErrNotFound {
-		err = nil
+		return nil, nil
 	}
 	if err != nil {
 		return nil, err

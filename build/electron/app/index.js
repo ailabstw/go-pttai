@@ -1,18 +1,106 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, Menu } = require('electron')
 const path  = require('path')
-let exec    = require('child_process').execFile;
 
+let exec    = require('child_process').execFile;
 
 let gptt_node   = null
 let gptt_win    = null;
 let first_load  = true;
 let force_quit = false;
 
+const template = [
+  {
+    label: 'Edit',
+    submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      { role: 'pasteandmatchstyle' },
+      { role: 'delete' },
+      { role: 'selectall' }
+    ]
+  },
+  {
+    label: 'View',
+    submenu: [
+      { role: 'reload' },
+      { role: 'forcereload' },
+      { role: 'toggledevtools' },
+      { type: 'separator' },
+      { role: 'resetzoom' },
+      { role: 'zoomin' },
+      { role: 'zoomout' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ]
+  },
+  {
+    role: 'window',
+    submenu: [
+      { role: 'minimize' },
+      { role: 'close' }
+    ]
+  },
+  {
+    role: 'help',
+    submenu: [
+      {
+        label: 'Learn More',
+        click () { require('electron').shell.openExternal('https://electronjs.org') }
+      }
+    ]
+  }
+]
+
+if (process.platform === 'darwin') {
+  template.unshift({
+    label: app.getName(),
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideothers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  })
+
+  // Edit menu
+  template[1].submenu.push(
+    { type: 'separator' },
+    {
+      label: 'Speech',
+      submenu: [
+        { role: 'startspeaking' },
+        { role: 'stopspeaking' }
+      ]
+    }
+  )
+
+  // Window menu
+  template[3].submenu = [
+    { role: 'close' },
+    { role: 'minimize' },
+    { role: 'zoom' },
+    { type: 'separator' },
+    { role: 'front' }
+  ]
+}
+
 function createGptt() {
     // run node
     run_gptt_node()
 
     open_window()
+
+    const menu = Menu.buildFromTemplate(template)
+    Menu.setApplicationMenu(menu)
 }
 
 function run_gptt_node () {

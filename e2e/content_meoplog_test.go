@@ -246,12 +246,21 @@ func TestContentMeoplog(t *testing.T) {
 	assert.Equal(me0_1.ID, dataCreateBoard0_13.CreatorID)
 	assert.Equal(me0_1.ID, dataCreateBoard0_13.UpdaterID)
 
-	// 13.1. get-board
+	// 13.1. get-raw-board
 	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaledID))
 
 	board0_13_1 := content.NewEmptyBoard()
 	testCore(t0, bodyString, board0_13_1, t, isDebug)
+	assert.Equal(title, board0_13_1.Title)
+
+	// 13.2. get-board
+	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoard", "params": ["%v"]}`, string(marshaledID))
+
+	board0_13_2 := &content.BackendGetBoard{}
+	testCore(t0, bodyString, board0_13_2, t, isDebug)
+	assert.Equal(title, board0_13_2.Title)
 
 	// 14. MeOplog
 	bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`

@@ -381,19 +381,19 @@ func TestArticleFriend2(t *testing.T) {
 	assert.Equal(me0_1.ID, friend1_48.FriendID)
 	assert.Equal(friend0_48.ID, friend1_48.ID)
 
-	// 36. content-get-article-list
+	// 49. content-get-article-list
 	marshaledID, _ = board0_10_0.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
-	dataGetArticleList0_36 := &struct {
+	dataGetArticleList0_49 := &struct {
 		Result []*content.BackendGetArticle `json:"result"`
 	}{}
-	testListCore(t0, bodyString, dataGetArticleList0_36, t, isDebug)
-	assert.Equal(1, len(dataGetArticleList0_36.Result))
+	testListCore(t0, bodyString, dataGetArticleList0_49, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList0_49.Result))
 
-	dataGetArticleList0_36 := &struct {
+	dataGetArticleList1_49 := &struct {
 		Result []*content.BackendGetArticle `json:"result"`
 	}{}
-	testListCore(t0, bodyString, dataGetArticleList0_36, t, isDebug)
-	assert.Equal(1, len(dataGetArticleList0_36.Result))
+	testListCore(t1, bodyString, dataGetArticleList1_49, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList1_49.Result))
 }

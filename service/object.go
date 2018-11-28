@@ -187,7 +187,7 @@ func (o *BaseObject) CloneDB(o2 *BaseObject) {
 	o.fullDBPrefix = o2.fullDBPrefix
 	o.fullDBIdxPrefix = o2.fullDBIdxPrefix
 	o.setBlockInfoDB = o2.setBlockInfoDB
-	o.setMediaDB = o.setMediaDB
+	o.setMediaDB = o2.setMediaDB
 }
 
 func (o *BaseObject) Lock() error {

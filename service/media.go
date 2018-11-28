@@ -52,7 +52,12 @@ func NewMedia(
 
 ) (*Media, error) {
 
-	o := NewObject(entityID, createTS, creatorID, entityID, logID, status)
+	id, err := types.NewPttID()
+	if err != nil {
+		return nil, err
+	}
+
+	o := NewObject(id, createTS, creatorID, entityID, logID, status)
 
 	return &Media{
 		BaseObject: o,

@@ -45,7 +45,7 @@ func (pm *BaseProtocolManager) SetNewestUpdateObjectLog(
 	defer obj.Unlock()
 
 	// 2. get data
-	err = obj.GetByID(false)
+	err = obj.GetByID(true)
 	if err != nil {
 		// possibly already deleted
 		return true, nil

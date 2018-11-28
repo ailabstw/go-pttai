@@ -18,7 +18,6 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -28,8 +27,6 @@ func (pm *ProtocolManager) handleUpdateUserNameLogs(oplog *pkgservice.BaseOplog,
 
 	opData := &UserOpUpdateUserName{}
 
-	log.Debug("handleUpdateUserNameLogs: start", "oplog", oplog.ID, "objID", oplog.ObjID)
-
 	return pm.HandleUpdateObjectLog(
 		oplog, opData, obj, info,
 		pm.syncUserNameInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserNameInfo)
@@ -38,8 +35,6 @@ func (pm *ProtocolManager) handleUpdateUserNameLogs(oplog *pkgservice.BaseOplog,
 func (pm *ProtocolManager) handlePendingUpdateUserNameLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 	obj := NewEmptyUserName()
 	pm.SetUserNameDB(obj)
-
-	log.Debug("handlePendingUpdateUserNameLogs: start", "oplog", oplog.ID, "objID", oplog.ObjID)
 
 	opData := &UserOpUpdateUserName{}
 

@@ -157,6 +157,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
+	log.Debug("HandleInitFriendInfoAckCore: to CreateJoinProfile", "isNew", isNew)
 	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, isNew, isNew, true, false)
 	if err != nil {
 		return err

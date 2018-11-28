@@ -53,8 +53,6 @@ func (pm *BaseProtocolManager) setNewestDeleteMemberLog(oplog *BaseOplog) (types
 }
 
 func (pm *BaseProtocolManager) handleFailedDeleteMemberLog(oplog *BaseOplog) error {
-	return types.ErrNotImplemented
-
 	obj := NewEmptyMember()
 	pm.SetMemberObjDB(obj)
 

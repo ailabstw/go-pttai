@@ -131,10 +131,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 		return ErrNewerOplog
 	}
 
-	if objStatus != types.StatusAlive {
-		return ErrInvalidOplog
-	}
-
 	// prelog
 	log.Debug("handleUpdateObjectCore: to check pre-log-id", "objID", objID, "oplog", oplog.ID, "obj.logID", obj.GetLogID(), "oplog.PreLogID", oplog.PreLogID)
 	if !reflect.DeepEqual(origObj.GetLogID(), oplog.PreLogID) {

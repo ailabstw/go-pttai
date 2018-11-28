@@ -109,6 +109,7 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
+
 	theProfile, err := profileSPM.CreateJoinEntity(profileData, peer, nil, true, true, true, false)
 	log.Debug("HandleInitFriendInfo: after profile create join entity", "e", err)
 	if err != nil {

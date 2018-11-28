@@ -49,7 +49,7 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 		return nil
 	}
 
-	// check validity
+	// 3. check validity
 	objLogID := obj.GetLogID()
 	if obj.GetUpdateLogID() != nil || !reflect.DeepEqual(objLogID, oplog.ID) {
 		return nil
@@ -59,12 +59,21 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 		return nil
 	}
 
-	// handle fail
-	err = prefailed(obj, oplog)
+	// 4. handle fail
+	if prefailed != nil {
+		err = prefailed(obj, oplog)
+		if err != nil {
+			return err
+		}
+	}
+
+	blockInfo := obj.GetBlockInfo()
+	err = pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, nil, oplog, true, nil)
 	if err != nil {
 		return err
 	}
 
+	// 5. obj-save
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return err

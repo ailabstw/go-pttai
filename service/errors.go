@@ -63,6 +63,8 @@ var (
 	ErrNewerOplog         = errors.New("newer oplog")
 	ErrInvalidPreLog      = errors.New("invalid pre-log")
 
+	ErrNoValidOplogs = errors.New("no valid oplogs")
+
 	ErrInvalidKeyInfo = errors.New("invalid key info")
 
 	ErrNotFound = errors.New("not found")

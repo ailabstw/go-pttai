@@ -48,9 +48,16 @@ func HandleOplogs(
 
 	var err error
 
+	if len(oplogs) == 0 {
+		return nil
+	}
+
 	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, merkle, peer)
 	if err != nil {
 		return err
+	}
+	if len(oplogs) == 0 {
+		return nil
 	}
 
 	// handle oplogs
@@ -188,11 +195,19 @@ func HandlePendingOplogs(
 
 	var err error
 
+	if len(oplogs) == 0 {
+		return nil
+	}
+
 	log.Debug("HandlePendingOplogs: to preprocessOplogs", "e", err, "oplogs", oplogs)
 	oplogs, err = preprocessOplogs(oplogs, setDB, false, nil, peer)
 	log.Debug("HandlePendingOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs)
 	if err != nil {
 		return err
+	}
+
+	if len(oplogs) == 0 {
+		return nil
 	}
 
 	// process
@@ -395,9 +410,9 @@ func preprocessOplogs(
 	}
 	if startIdx != 0 {
 		expiredLog := oplogs[0]
-		log.Warn("preprocessOplogs: received expired oplogs", "expiredLog", expiredLog, "peer", peer)
+		log.Warn("preprocessOplogs: received expired oplogs", "expiredLog", expiredLog.ID, "expiredTS", expiredLog.UpdateTS, "expireTS", expireTS, "peer", peer)
+		oplogs = oplogs[startIdx:]
 	}
-	oplogs = oplogs[startIdx:]
 
 	log.Debug("preprocessOplogs: after startIdx", "startIdx", startIdx, "oplogs", oplogs)
 
@@ -411,12 +426,16 @@ func preprocessOplogs(
 		}
 	}
 	if endIdx != lenLogs {
-		futureLog := oplogs[endIdx-1]
-		log.Warn("preprocessOplogs: received future oplogs", "futureLog", futureLog, "peer", peer)
+		futureLog := oplogs[lenLogs-1]
+		log.Warn("preprocessOplogs: received future oplogs", "futureLog", futureLog.ID, "futureTS", futureLog.UpdateTS, "now", now, "peer", peer)
 	}
 	oplogs = oplogs[:endIdx]
 
-	log.Debug("preprocessOplogs: after endIdx", "endIdx", endIdx, "oplogs", oplogs)
+	log.Debug("preprocessOplogs: after endIdx", "endIdx", endIdx, "oplogs", len(oplogs))
+
+	if len(oplogs) == 0 {
+		return oplogs, nil
+	}
 
 	// init
 	for _, oplog := range oplogs {

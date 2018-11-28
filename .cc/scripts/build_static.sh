@@ -2,7 +2,7 @@
 
 cd pttai.js
 
-./scripts/setup.sh
+#./scripts/setup.sh
 
 npm run build
 

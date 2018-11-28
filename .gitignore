@@ -4,7 +4,7 @@ _workspace
 test.out
 /gptt.pkg
 .DS_Store*
-/static
+# /static
 /build/electron/node_modules
 /build/electron/dist
 /build/electron/app/gptt.bin

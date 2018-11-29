@@ -52,6 +52,9 @@ var (
 	origHandler log.Handler
 
 	nilPttID *types.PttID
+
+	TimeSleepRestart = 15 * time.Second
+	TimeSleepDefault = 8 * time.Second
 )
 
 type RBody struct {
@@ -109,7 +112,7 @@ func setupTest(t *testing.T) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), TimeoutSeconds)
 
-	tBootnode = exec.CommandContext(ctx, "../build/bin/bootnode", "--nodekeyhex", "03f509202abd40be562951247c7fe05294bb71ccad54f4853f2d75e3bf94affd", "--addr", "127.0.0.1:9489")
+	tBootnode = exec.CommandContext(ctx, "../build/bin/p2pbootnode", "--nodekeyhex", "03f509202abd40be562951247c7fe05294bb71ccad54f4853f2d75e3bf94affd", "--addr", "/ip4/127.0.0.1/tcp/9489")
 	err := tBootnode.Start()
 	if err != nil {
 		t.Errorf("unable to start tBootnode, e: %v", err)
@@ -126,10 +129,23 @@ func setupTest(t *testing.T) {
 	for i := 0; i < NNodes; i++ {
 		dir := fmt.Sprintf("./test.out/.test%d", i)
 		rpcport := fmt.Sprintf("%d", 9450+i)
-		port := fmt.Sprintf("%d", 9500+i)
+		p2pport := fmt.Sprintf("%d", 9500+i)
+		port := fmt.Sprintf("%d", 9600+i)
 
 		Ctxs[i], Cancels[i] = context.WithTimeout(context.Background(), TimeoutSeconds)
-		Nodes[i] = exec.CommandContext(Ctxs[i], "../build/bin/gptt", "--exthttpaddr", "http://localhost:9776", "--verbosity", "4", "--datadir", dir, "--rpcaddr", "127.0.0.1", "--rpcport", rpcport, "--port", port, "--bootnodes", "pnode://847e1b261cd827f83a62c6fa6d335179054cecb5651d47b4b152cef67e4b45d7f872e07a2e222771124e0354e58b6b3b1fc8908bb63ec30744abd9784ced31e8@127.0.0.1:9489", "--ipcdisable")
+		Nodes[i] = exec.CommandContext(
+			Ctxs[i],
+			"../build/bin/gptt",
+			"--exthttpaddr", "http://localhost:9776",
+			"--verbosity", "4",
+			"--datadir", dir,
+			"--rpcaddr", "127.0.0.1",
+			"--rpcport", rpcport,
+			"--port", port,
+			"--p2pport", p2pport,
+			"--p2pbootnodes", "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489",
+			"--ipcdisable",
+		)
 		filename := fmt.Sprintf("./test.out/log.err.%d.txt", i)
 		stderrs[i], _ = os.Create(filename)
 		Nodes[i].Stderr = stderrs[i]
@@ -142,11 +158,11 @@ func setupTest(t *testing.T) {
 	seconds := 0
 	switch {
 	case NNodes <= 3:
-		seconds = 7
+		seconds = 20
 	case NNodes == 4:
-		seconds = 8
+		seconds = 20
 	case NNodes == 5:
-		seconds = 9
+		seconds = 20
 	}
 
 	log.Debug("wait for node starting", "seconds", seconds)

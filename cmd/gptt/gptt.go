@@ -34,10 +34,13 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/ptthttp"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	logging "github.com/whyrusleeping/go-logging"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 func gptt(ctx *cli.Context) error {
+	logging.SetLevel(logging.DEBUG, "swarm2")
+
 	log.Info("Ptt.ai: Hello world!")
 
 	// Load Config

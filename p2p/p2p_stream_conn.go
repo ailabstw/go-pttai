@@ -14,22 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package crypto
+package p2p
 
 import (
-	"crypto/ecdsa"
+	"net"
+
+	inet "github.com/libp2p/go-libp2p-net"
 )
 
-const (
-	NGenerateKey = 10
-)
+type P2PStreamConn struct {
+	inet.Stream
+}
 
-var (
-	BitSize = 256
-)
+func (p *P2PStreamConn) LocalAddr() net.Addr {
+	return nil
+}
 
-func init() {
-	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
-	BitSize = priv.Params().BitSize
+func (p *P2PStreamConn) RemoteAddr() net.Addr {
+	//conn := p.Stream.Conn()
+	//addrs := conn.RemoteMultiaddr()
+	//log.Debug("RemoteAddr", "id", conn.RemotePeer(), "addrs", addrs)
+	return nil
 }

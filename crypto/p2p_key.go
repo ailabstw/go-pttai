@@ -43,6 +43,14 @@ func PubKeyToP2PPubkey(key *ecdsa.PublicKey) (p2pcrypto.PubKey, error) {
 	return (*p2pcrypto.Secp256k1PublicKey)(key), nil
 }
 
+func P2PPubkeyToPubkey(theKey p2pcrypto.PubKey) (*ecdsa.PublicKey, error) {
+	key, ok := theKey.(*p2pcrypto.Secp256k1PublicKey)
+	if !ok {
+		return nil, ErrInvalidKey
+	}
+	return (*ecdsa.PublicKey)(key), nil
+}
+
 /*
 IsValidPrivateKey is to ensure that crypto.S256() is the same as btcec.S256()
 (p2pcrypto is using btcec.S256, while ecsda is using crypto.S256)

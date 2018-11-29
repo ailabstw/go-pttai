@@ -21,4 +21,5 @@ import "errors"
 var (
 	ErrInvalidKey    = errors.New("invalid key")
 	ErrInvalidNodeID = errors.New("invalid node id")
+	ErrInvalidURL    = errors.New("invalid url")
 )

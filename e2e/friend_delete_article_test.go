@@ -101,7 +101,7 @@ func TestFriendDeleteArticle(t *testing.T) {
 
 	// wait 10
 	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(10 * time.Second)
+	time.Sleep(TimeSleepRestart)
 
 	// 8. get-friend-list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendList", "params": ["", 0]}`)

@@ -159,8 +159,8 @@ func TestMultiDevice3Basic(t *testing.T) {
 	assert.Equal(me1_1.NodeID, dataJoinMe0_7.NodeID)
 
 	// wait 15
-	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(5 * time.Second)
+	t.Logf("wait 15 seconds for hand-shaking")
+	time.Sleep(TimeSleepRestart)
 
 	// 7.1
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_5, myKey2_4)
@@ -172,8 +172,8 @@ func TestMultiDevice3Basic(t *testing.T) {
 	assert.Equal(me1_1.NodeID, dataJoinMe2_7.NodeID)
 
 	// wait 15
-	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(10 * time.Second)
+	t.Logf("wait 15 seconds for hand-shaking")
+	time.Sleep(15 * time.Second)
 
 	// 8. me_GetMyNodes
 

@@ -158,12 +158,6 @@ func (pm *ProtocolManager) Start() error {
 }
 
 func (pm *ProtocolManager) Stop() error {
-	pm.BaseProtocolManager.PreStop()
-
-	err := pm.BaseProtocolManager.Stop()
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

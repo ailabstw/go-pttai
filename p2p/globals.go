@@ -14,22 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package crypto
+package p2p
 
 import (
-	"crypto/ecdsa"
+	cid "github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
 )
 
+// p2p
 const (
-	NGenerateKey = 10
+	SleepTimeSecondAnnounceP2P = 30
+	TimeoutSecondAnnounceP2P   = 10
+
+	TimeoutSecondResolveP2P = 10
+
+	PTTAI_STREAM_PATH = "/pttai/0.1.0"
 )
 
 var (
-	BitSize = 256
+	v1b                = cid.V1Builder{Codec: cid.Raw, MhType: mh.SHA2_256}
+	rendezvousString   = "PTTAI_RENDEZVOUS"
+	RendezvousPoint, _ = v1b.Sum([]byte(rendezvousString))
 )
-
-func init() {
-	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
-	BitSize = priv.Params().BitSize
-}

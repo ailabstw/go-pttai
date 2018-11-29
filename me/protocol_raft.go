@@ -135,7 +135,7 @@ loop:
 			pm.raftNode.Tick()
 
 		case rd, ok := <-pm.raftNode.Ready():
-			log.Debug("ServeRaftChannels: received Ready", "rd", rd)
+			//log.Debug("ServeRaftChannels: received Ready", "rd", rd)
 			if !ok {
 				break loop
 			}
@@ -159,7 +159,7 @@ loop:
 			pm.SendRaftMsgs(rd.Messages)
 
 			raftEntriesToApply, err := pm.raftEntriesToApply(rd.CommittedEntries)
-			log.Debug("ServeRaftChannels: after raftEntriesToApply", "raftEntriesToAppply", raftEntriesToApply, "e", err)
+			//log.Debug("ServeRaftChannels: after raftEntriesToApply", "raftEntriesToAppply", raftEntriesToApply, "e", err)
 			if err != nil {
 				ptt.ErrChan().PassChan(err)
 				break loop

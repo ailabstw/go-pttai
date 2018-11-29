@@ -136,6 +136,8 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 		return err
 	}
 
+	log.Debug("FinishIdentifyPeer: to SetupPeer", "peer", peer, "peerType", peerType)
+
 	return p.SetupPeer(peer, peerType, true)
 }
 
@@ -714,7 +716,11 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 		return p.CheckDialEntityAndIdentifyPeer(peer)
 	}
 
-	p.Server().AddPeer(&discover.Node{ID: *nodeID})
+	node, err := discover.NewP2PNodeWithNodeID(*nodeID)
+	if err != nil {
+		return err
+	}
+	p.Server().AddPeer(node)
 
 	return nil
 }

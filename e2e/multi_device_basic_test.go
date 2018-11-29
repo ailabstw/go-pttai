@@ -134,8 +134,8 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(me1_1.NodeID, dataJoinMe0_7.NodeID)
 
 	// wait 10
-	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(10 * time.Second)
+	t.Logf("wait 15 seconds for hand-shaking")
+	time.Sleep(TimeSleepRestart)
 
 	// 8. me_GetMyNodes
 	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`

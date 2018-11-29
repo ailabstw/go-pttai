@@ -35,6 +35,10 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/crypto/secp256k1"
+	"github.com/ailabstw/go-pttai/log"
+	peer "github.com/libp2p/go-libp2p-peer"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 const NodeIDBits = 512
@@ -45,6 +49,10 @@ type Node struct {
 	IP       net.IP // len 4 for IPv4 or 16 for IPv6
 	UDP, TCP uint16 // port numbers
 	ID       NodeID // the node's public key
+
+	IsP2P    bool
+	PeerID   peer.ID
+	PeerInfo *pstore.PeerInfo `rlp:"-"`
 
 	// This is a cached copy of sha3(ID) which is used for node
 	// distance calculations. This is part of Node in order to make it
@@ -72,12 +80,63 @@ func NewNode(id NodeID, ip net.IP, udpPort, tcpPort uint16) *Node {
 	}
 }
 
+func NewP2PNode(id NodeID, peerID peer.ID, peerInfo *pstore.PeerInfo) *Node {
+	return &Node{
+		ID:       id,
+		IsP2P:    true,
+		PeerID:   peerID,
+		PeerInfo: peerInfo,
+		sha:      crypto.Keccak256Hash(id[:]),
+	}
+}
+
+func NewP2PNodeWithNodeID(id NodeID) (*Node, error) {
+	peerID, err := NodeIDToPeerID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &Node{
+		ID:     id,
+		IsP2P:  true,
+		PeerID: peerID,
+		sha:    crypto.Keccak256Hash(id[:]),
+	}, nil
+}
+
+func NewMyPeerInfo(peerID peer.ID, ip net.IP, tcpPort uint64) (*pstore.PeerInfo, error) {
+	m, err := NewMyMultiaddr(ip, tcpPort)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pstore.PeerInfo{
+		ID:    peerID,
+		Addrs: []ma.Multiaddr{m},
+	}, nil
+}
+
+func NewMyMultiaddr(ip net.IP, tcpPort uint64) (ma.Multiaddr, error) {
+	tcpStr := strconv.Itoa(int(tcpPort))
+	maStr := "/ip4/" + ip.String() + "/tcp/" + tcpStr
+
+	m, err := ma.NewMultiaddr(maStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
 func (n *Node) addr() *net.UDPAddr {
 	return &net.UDPAddr{IP: n.IP, Port: int(n.UDP)}
 }
 
 // Incomplete returns true for nodes with no IP address.
 func (n *Node) Incomplete() bool {
+	if n.IsP2P {
+		return n.PeerInfo == nil
+	}
+
 	return n.IP == nil
 }
 
@@ -86,15 +145,19 @@ func (n *Node) validateComplete() error {
 	if n.Incomplete() {
 		return errors.New("incomplete node")
 	}
-	if n.UDP == 0 {
-		return errors.New("missing UDP port")
+
+	if !n.IsP2P {
+		if n.UDP == 0 {
+			return errors.New("missing UDP port")
+		}
+		if n.TCP == 0 {
+			return errors.New("missing TCP port")
+		}
+		if n.IP.IsMulticast() || n.IP.IsUnspecified() {
+			return errors.New("invalid IP (multicast/unspecified)")
+		}
 	}
-	if n.TCP == 0 {
-		return errors.New("missing TCP port")
-	}
-	if n.IP.IsMulticast() || n.IP.IsUnspecified() {
-		return errors.New("invalid IP (multicast/unspecified)")
-	}
+
 	_, err := n.ID.Pubkey() // validate the key (on curve, etc.)
 	return err
 }
@@ -102,12 +165,16 @@ func (n *Node) validateComplete() error {
 // The string representation of a Node is a URL.
 // Please see ParseNode for a description of the format.
 func (n *Node) String() string {
-	u := url.URL{Scheme: "pnode"}
+	if n.IsP2P {
+		return n.p2pString()
+	}
+
+	u := url.URL{Scheme: PNode}
 	if n.Incomplete() {
 		u.Host = fmt.Sprintf("%x", n.ID[:])
 	} else {
-		addr := net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
 		u.User = url.User(fmt.Sprintf("%x", n.ID[:]))
+		addr := net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
 		u.Host = addr.String()
 		if n.UDP != n.TCP {
 			u.RawQuery = "discport=" + strconv.Itoa(int(n.UDP))
@@ -116,7 +183,17 @@ func (n *Node) String() string {
 	return u.String()
 }
 
+func (n *Node) p2pString() string {
+	u := url.URL{Scheme: PNode}
+
+	u.Host = peer.IDB58Encode(n.PeerID)
+	u.RawQuery = "p2p=1"
+
+	return u.String()
+}
+
 var incompleteNodeURL = regexp.MustCompile("(?i)^(?:pnode://)?([0-9a-f]+)$")
+var incompleteP2PNodeURL = regexp.MustCompile("(?i)^(?:pnode://)?([0-9A-Za-z]+)$")
 
 // ParseNode parses a node designator.
 //
@@ -141,6 +218,87 @@ var incompleteNodeURL = regexp.MustCompile("(?i)^(?:pnode://)?([0-9a-f]+)$")
 // and UDP discovery port 30301.
 //
 //    pnode://<hex node id>@10.3.58.6:30303?discport=30301
+func ParseP2PNode(rawurl string) (*Node, error) {
+	if m := incompleteP2PNodeURL.FindStringSubmatch(rawurl); m != nil {
+		log.Debug("ParseP2PNode: incomplete P2P Node", "m", m[1])
+		peerID, err := peer.IDB58Decode(m[1])
+		if err != nil {
+			return nil, ErrInvalidURL
+		}
+		id, err := PeerIDToNodeID(peerID)
+		if err != nil {
+			return nil, ErrInvalidURL
+		}
+		return NewP2PNode(id, peerID, nil), nil
+	}
+	return parseP2PComplete(rawurl)
+}
+
+func parseP2PComplete(rawurl string) (*Node, error) {
+	var (
+		id      NodeID
+		peerID  peer.ID
+		ip      net.IP
+		tcpPort uint64
+	)
+
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme != PNode {
+		return nil, ErrInvalidURL
+	}
+	// Parse the Node ID from the user portion.
+	if u.User == nil {
+		return nil, ErrInvalidURL
+	}
+
+	peerID, err = peer.IDB58Decode(u.User.String())
+	log.Debug("parseP2Complete: after ID", "peerID", peerID, "len", len(peerID), "e", err)
+	if err != nil {
+		return nil, ErrInvalidURL
+	}
+
+	// Parse the IP address.
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, ErrInvalidURL
+	}
+	if ip = net.ParseIP(host); ip == nil {
+		return nil, ErrInvalidURL
+	}
+	// Ensure the IP is 4 bytes long for IPv4 addresses.
+	if ipv4 := ip.To4(); ipv4 != nil {
+		ip = ipv4
+	}
+	// Parse the port numbers.
+	if tcpPort, err = strconv.ParseUint(port, 10, 16); err != nil {
+		return nil, ErrInvalidURL
+	}
+
+	id, err = PeerIDToNodeID(peerID)
+	if err != nil {
+		return nil, err
+	}
+
+	peerInfo, err := NewMyPeerInfo(peerID, ip, tcpPort)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewP2PNode(id, peerID, peerInfo), nil
+}
+
+// MustParseP2PNode parses a p2pnode URL. It panics if the URL is not valid.
+func MustParseP2PNode(rawurl string) *Node {
+	n, err := ParseP2PNode(rawurl)
+	if err != nil {
+		panic("invalid node URL: " + err.Error())
+	}
+	return n
+}
+
 func ParseNode(rawurl string) (*Node, error) {
 	if m := incompleteNodeURL.FindStringSubmatch(rawurl); m != nil {
 		id, err := HexID(m[1])
@@ -480,4 +638,36 @@ func LoadECDSA(filename string) (*ecdsa.PrivateKey, error) {
 	}
 
 	return key, nil
+}
+
+func PeerIDToNodeID(peerID peer.ID) (NodeID, error) {
+	if len(peerID) == LenPeerIDNoPubkey {
+		return NodeID{}, nil
+	}
+
+	p2pPubKey, err := peerID.ExtractPublicKey()
+	if err != nil {
+		return NodeID{}, err
+	}
+
+	pubKey, err := crypto.P2PPubkeyToPubkey(p2pPubKey)
+	if err != nil {
+		return NodeID{}, err
+	}
+
+	return PubkeyID(pubKey), nil
+}
+
+func NodeIDToPeerID(nodeID NodeID) (peer.ID, error) {
+	pubKey, err := nodeID.Pubkey()
+	if err != nil {
+		return "", err
+	}
+
+	p2pPubKey, err := crypto.PubKeyToP2PPubkey(pubKey)
+	if err != nil {
+		return "", err
+	}
+
+	return peer.IDFromPublicKey(p2pPubKey)
 }

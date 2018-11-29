@@ -28,5 +28,12 @@ var (
 	NGenerateNodeKey      = 10
 )
 
+// p2p
+const (
+	PNode                        = "pnode"
+	OffsetP2PPubkeyBytesInPeerID = 4
+	LenPeerIDNoPubkey            = 34
+)
+
 func init() {
 }

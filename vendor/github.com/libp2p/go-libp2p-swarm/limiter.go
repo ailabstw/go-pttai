@@ -3,6 +3,7 @@ package swarm
 import (
 	"context"
 	"sync"
+	"time"
 
 	addrutil "github.com/libp2p/go-addr-util"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -17,11 +18,10 @@ type dialResult struct {
 }
 
 type dialJob struct {
-	addr    ma.Multiaddr
-	peer    peer.ID
-	ctx     context.Context
-	resp    chan dialResult
-	success bool
+	addr ma.Multiaddr
+	peer peer.ID
+	ctx  context.Context
+	resp chan dialResult
 }
 
 func (dj *dialJob) cancelled() bool {
@@ -31,6 +31,15 @@ func (dj *dialJob) cancelled() bool {
 	default:
 		return false
 	}
+}
+
+func (dj *dialJob) dialTimeout() time.Duration {
+	timeout := transport.DialTimeout
+	if lowTimeoutFilters.AddrBlocked(dj.addr) {
+		timeout = DialTimeoutLocal
+	}
+
+	return timeout
 }
 
 type dialLimiter struct {
@@ -90,7 +99,7 @@ func (dl *dialLimiter) freePeerToken(dj *dialJob) {
 	}
 
 	waitlist := dl.waitingOnPeerLimit[dj.peer]
-	if !dj.success && len(waitlist) > 0 {
+	if len(waitlist) > 0 {
 		next := waitlist[0]
 		if len(waitlist) == 1 {
 			delete(dl.waitingOnPeerLimit, next.peer)
@@ -169,7 +178,10 @@ func (dl *dialLimiter) executeDial(j *dialJob) {
 		return
 	}
 
-	con, err := dl.dialFunc(j.ctx, j.peer, j.addr)
+	dctx, cancel := context.WithTimeout(j.ctx, j.dialTimeout())
+	defer cancel()
+
+	con, err := dl.dialFunc(dctx, j.peer, j.addr)
 	select {
 	case j.resp <- dialResult{Conn: con, Addr: j.addr, Err: err}:
 	case <-j.ctx.Done():

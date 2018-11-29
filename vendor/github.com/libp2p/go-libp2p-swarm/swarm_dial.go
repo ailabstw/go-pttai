@@ -183,6 +183,11 @@ func (s *Swarm) DialPeer(ctx context.Context, p peer.ID) (inet.Conn, error) {
 func (s *Swarm) dialPeer(ctx context.Context, p peer.ID) (*Conn, error) {
 	log.Debugf("[%s] swarm dialing peer [%s]", s.local, p)
 	var logdial = lgbl.Dial("swarm", s.LocalPeer(), p, nil, nil)
+	err := p.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	if p == s.local {
 		log.Event(ctx, "swarmDialSelf", logdial)
 		return nil, ErrDialToSelf
@@ -202,10 +207,15 @@ func (s *Swarm) dialPeer(ctx context.Context, p peer.ID) (*Conn, error) {
 		return nil, ErrDialBackoff
 	}
 
-	conn, err := s.dsync.DialLock(ctx, p)
+	// apply the DialPeer timeout
+	ctx, cancel := context.WithTimeout(ctx, inet.GetDialPeerTimeout(ctx))
+	defer cancel()
+
+	conn, err = s.dsync.DialLock(ctx, p)
 	if err != nil {
 		return nil, err
 	}
+
 	log.Debugf("network for %s finished dialing %s", s.local, p)
 	return conn, err
 }
@@ -220,9 +230,6 @@ func (s *Swarm) doDial(ctx context.Context, p peer.ID) (*Conn, error) {
 	if c != nil {
 		return c, nil
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, DialTimeout)
-	defer cancel()
 
 	logdial := lgbl.Dial("swarm", s.LocalPeer(), p, nil, nil)
 
@@ -274,42 +281,24 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 		log.Debug("Dial not given PrivateKey, so WILL NOT SECURE conn.")
 	}
 
-	ila, _ := s.InterfaceListenAddresses()
-	subtractFilter := addrutil.SubtractFilter(append(ila, s.peers.Addrs(s.local)...)...)
-
-	// get live channel of addresses for peer, filtered by the given filters
-	/*
-		remoteAddrChan := s.peers.AddrsChan(ctx, p,
-			addrutil.AddrUsableFilter,
-			subtractFilter,
-			s.Filters.AddrBlocked)
-	*/
-
 	//////
 	/*
-		This code is temporary, the peerstore can currently provide
+		This slice-to-chan code is temporary, the peerstore can currently provide
 		a channel as an interface for receiving addresses, but more thought
 		needs to be put into the execution. For now, this allows us to use
 		the improved rate limiter, while maintaining the outward behaviour
 		that we previously had (halting a dial when we run out of addrs)
 	*/
-	paddrs := s.peers.Addrs(p)
-	goodAddrs := addrutil.FilterAddrs(paddrs,
-		subtractFilter,
-		s.canDial,
-		// TODO: Consider allowing this?
-		addrutil.AddrOverNonLocalIP,
-		addrutil.FilterNeg(s.Filters.AddrBlocked),
-	)
-	remoteAddrChan := make(chan ma.Multiaddr, len(goodAddrs))
+	goodAddrs := s.filterKnownUndialables(s.peers.Addrs(p))
+	goodAddrsChan := make(chan ma.Multiaddr, len(goodAddrs))
 	for _, a := range goodAddrs {
-		remoteAddrChan <- a
+		goodAddrsChan <- a
 	}
-	close(remoteAddrChan)
+	close(goodAddrsChan)
 	/////////
 
 	// try to get a connection to any addr
-	connC, err := s.dialAddrs(ctx, p, remoteAddrChan)
+	connC, err := s.dialAddrs(ctx, p, goodAddrsChan)
 	if err != nil {
 		logdial["error"] = err.Error()
 		return nil, err
@@ -318,7 +307,7 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 		"localAddr":  connC.LocalMultiaddr(),
 		"remoteAddr": connC.RemoteMultiaddr(),
 	}
-	swarmC, err := s.addConn(connC)
+	swarmC, err := s.addConn(connC, inet.DirOutbound)
 	if err != nil {
 		logdial["error"] = err.Error()
 		connC.Close() // close the connection. didn't work out :(
@@ -327,6 +316,31 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 
 	logdial["dial"] = "success"
 	return swarmC, nil
+}
+
+// filterKnownUndialables takes a list of multiaddrs, and removes those
+// that we definitely don't want to dial: addresses configured to be blocked,
+// IPv6 link-local addresses, addresses without a dial-capable transport,
+// and addresses that we know to be our own.
+// This is an optimization to avoid wasting time on dials that we know are going to fail.
+func (s *Swarm) filterKnownUndialables(addrs []ma.Multiaddr) []ma.Multiaddr {
+	lisAddrs, _ := s.InterfaceListenAddresses()
+	var ourAddrs []ma.Multiaddr
+	for _, addr := range lisAddrs {
+		protos := addr.Protocols()
+		// we're only sure about filtering out /ip4 and /ip6 addresses, so far
+		if len(protos) == 2 && (protos[0].Code == ma.P_IP4 || protos[0].Code == ma.P_IP6) {
+			ourAddrs = append(ourAddrs, addr)
+		}
+	}
+
+	return addrutil.FilterAddrs(addrs,
+		addrutil.SubtractFilter(ourAddrs...),
+		s.canDial,
+		// TODO: Consider allowing link-local addresses
+		addrutil.AddrOverNonLocalIP,
+		addrutil.FilterNeg(s.Filters.AddrBlocked),
+	)
 }
 
 func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.Multiaddr) (transport.Conn, error) {
@@ -398,12 +412,12 @@ func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (tra
 	}
 	log.Debugf("%s swarm dialing %s %s", s.local, p, addr)
 
-	transport := s.TransportForDialing(addr)
-	if transport == nil {
+	tpt := s.TransportForDialing(addr)
+	if tpt == nil {
 		return nil, ErrNoTransport
 	}
 
-	connC, err := transport.Dial(ctx, addr, p)
+	connC, err := tpt.Dial(ctx, addr, p)
 	if err != nil {
 		return nil, fmt.Errorf("%s --> %s dial attempt failed: %s", s.local, p, err)
 	}
@@ -411,7 +425,7 @@ func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (tra
 	// Trust the transport? Yeah... right.
 	if connC.RemotePeer() != p {
 		connC.Close()
-		err = fmt.Errorf("BUG in transport %T: tried to dial %s, dialed %s", p, connC.RemotePeer(), transport)
+		err = fmt.Errorf("BUG in transport %T: tried to dial %s, dialed %s", p, connC.RemotePeer(), tpt)
 		log.Error(err)
 		return nil, err
 	}

@@ -9,3 +9,4 @@ test.out
 /build/electron/dist
 /build/electron/app/gptt.bin
 /build/electron/app/static
+/bootnode.local

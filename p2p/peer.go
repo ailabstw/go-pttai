@@ -155,7 +155,8 @@ func (p *Peer) Disconnect(reason DiscReason) {
 
 // String implements fmt.Stringer.
 func (p *Peer) String() string {
-	return fmt.Sprintf("Peer %x %v", p.rw.id[:8], p.RemoteAddr())
+	remoteAddr := p.RemoteAddr()
+	return fmt.Sprintf("Peer %x %v", p.rw.id[:8], remoteAddr)
 }
 
 // Inbound returns true if the peer is an inbound connection
@@ -193,15 +194,18 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 	go p.pingLoop()
 
 	// Start all protocol handlers.
+	log.Debug("Peer.run: to writeStart")
 	writeStart <- struct{}{}
+	log.Debug("Peer.run: after writeStart")
 	p.startProtocols(writeStart, writeErr)
+	log.Debug("Peer.run: after startProtocols")
 
 	// Wait for an error or disconnect.
 loop:
 	for {
 		select {
 		case err = <-writeErr:
-			//p.log.Debug("run: write error", "e", err)
+			p.log.Debug("Peer.run: after write", "e", err)
 			// A write finished. Allow the next write to start if
 			// there was no error.
 			if err != nil {
@@ -209,8 +213,9 @@ loop:
 				break loop
 			}
 			writeStart <- struct{}{}
+			p.log.Debug("Peer.run: after writeStart")
 		case err = <-readErr:
-			p.log.Debug("run: read error", "e", err)
+			p.log.Debug("Peer.run: after read", "e", err)
 			if r, ok := err.(DiscReason); ok {
 				remoteRequested = true
 				reason = r
@@ -219,11 +224,11 @@ loop:
 			}
 			break loop
 		case err = <-p.protoErr:
-			p.log.Debug("run: proto error", "e", err)
+			p.log.Debug("Peer.run: after proto", "e", err)
 			reason = discReasonForError(err)
 			break loop
 		case err = <-p.disc:
-			p.log.Debug("run: disc error", "e", err)
+			p.log.Debug("Peer.run: after disc", "e", err)
 			reason = discReasonForError(err)
 			break loop
 		}
@@ -277,11 +282,11 @@ func (p *Peer) handle(msg Msg) error {
 	//p.log.Info("handle (msg): start", "msg", msg)
 	switch {
 	case msg.Code == pingMsg:
-		// p.log.Info("handle (msg): pingMsg")
+		p.log.Info("handle (msg): pingMsg")
 		msg.Discard()
 		go SendItems(p.rw, pongMsg)
 	case msg.Code == pongMsg:
-		// p.log.Info("handle (msg): pongMsg")
+		p.log.Info("handle (msg): pongMsg")
 		return msg.Discard()
 	case msg.Code == discMsg:
 		var reason [1]DiscReason
@@ -404,12 +409,15 @@ func (rw *protoRW) WriteMsg(msg Msg) (err error) {
 	msg.Code += rw.offset
 	select {
 	case <-rw.wstart:
+		log.Debug("WriteMsg: to writeMsg")
 		err = rw.w.WriteMsg(msg)
+		log.Debug("WriteMsg: after writeMsg", "e", err)
 		// Report write status back to Peer.run. It will initiate
 		// shutdown if the error is non-nil and unblock the next write
 		// otherwise. The calling protocol code should exit for errors
 		// as well but we don't want to rely on that.
 		rw.werr <- err
+		log.Debug("WriteMsg: after werr")
 	case <-rw.closed:
 		err = fmt.Errorf("shutting down")
 	}
@@ -437,6 +445,7 @@ type PeerInfo struct {
 		LocalAddress  string `json:"localAddress"`  // Local endpoint of the TCP data connection
 		RemoteAddress string `json:"remoteAddress"` // Remote endpoint of the TCP data connection
 		Inbound       bool   `json:"inbound"`
+		P2P           bool   `json:"p2p"`
 		Trusted       bool   `json:"trusted"`
 		Static        bool   `json:"static"`
 	} `json:"network"`
@@ -461,6 +470,7 @@ func (p *Peer) Info() *PeerInfo {
 	info.Network.RemoteAddress = p.RemoteAddr().String()
 	info.Network.Inbound = p.rw.is(inboundConn)
 	info.Network.Trusted = p.rw.is(trustedConn)
+	info.Network.P2P = p.rw.is(P2PConn)
 	info.Network.Static = p.rw.is(staticDialedConn)
 
 	// Gather all the running protocol infos

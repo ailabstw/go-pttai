@@ -290,6 +290,9 @@ func testHTTPServer(t *testing.T) (*Network, *httptest.Server) {
 // TestHTTPNetwork tests interacting with a simulation network using the HTTP
 // API
 func TestHTTPNetwork(t *testing.T) {
+	setupTest(t)
+	defer teardownTest(t)
+
 	// start the server
 	network, s := testHTTPServer(t)
 	defer s.Close()

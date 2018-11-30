@@ -18,6 +18,7 @@ package p2p
 
 import (
 	"container/heap"
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -27,6 +28,8 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
+	host "github.com/libp2p/go-libp2p-host"
+	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
 const (
@@ -82,6 +85,9 @@ type dialstate struct {
 
 	start     time.Time        // time when the dialer was first used
 	bootnodes []*discover.Node // default dials when there are no peers
+
+	p2phost host.Host
+	p2pctx  context.Context
 }
 
 type discoverTable interface {
@@ -127,7 +133,7 @@ type waitExpireTask struct {
 	time.Duration
 }
 
-func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab discoverTable, maxdyn int, netrestrict *netutil.Netlist) *dialstate {
+func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab discoverTable, maxdyn int, netrestrict *netutil.Netlist, p2phost host.Host, p2pctx context.Context) *dialstate {
 	s := &dialstate{
 		maxDynDials: maxdyn,
 		ntab:        ntab,
@@ -137,6 +143,8 @@ func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab disc
 		bootnodes:   make([]*discover.Node, len(bootnodes)),
 		randomNodes: make([]*discover.Node, maxdyn/2),
 		hist:        new(dialHistory),
+		p2phost:     p2phost,
+		p2pctx:      p2pctx,
 	}
 	copy(s.bootnodes, bootnodes)
 	for _, n := range static {
@@ -170,6 +178,11 @@ func (s *dialstate) newTasks(nRunning int, peers map[discover.NodeID]*Peer, now 
 			log.Trace("Skipping dial candidate", "id", n.ID, "addr", &net.TCPAddr{IP: n.IP, Port: int(n.TCP)}, "err", err)
 			return false
 		}
+		var addrs []multiaddr.Multiaddr
+		if n.PeerInfo != nil {
+			addrs = n.PeerInfo.Addrs
+		}
+		log.Debug("newTasks: to addDial", "id", n.ID, "addrs", addrs)
 		s.dialing[n.ID] = flag
 		newtasks = append(newtasks, &dialTask{flags: flag, dest: n})
 		return true
@@ -297,12 +310,15 @@ func (t *dialTask) Do(srv *Server) {
 	err := t.dial(srv, t.dest)
 	if err != nil {
 		log.Trace("Dial error", "task", t, "err", err)
+		t.dest.PeerInfo = nil
 		// Try resolving the ID of static nodes if dialing failed.
-		if _, ok := err.(*dialError); ok && t.flags&staticDialedConn != 0 {
-			if t.resolve(srv) {
-				t.dial(srv, t.dest)
+		/*
+			if _, ok := err.(*dialError); ok && t.flags&staticDialedConn != 0 {
+				if t.resolve(srv) {
+					t.dial(srv, t.dest)
+				}
 			}
-		}
+		*/
 	}
 }
 
@@ -313,6 +329,16 @@ func (t *dialTask) Do(srv *Server) {
 // discovery network with useless queries for nodes that don't exist.
 // The backoff delay resets when the node is found.
 func (t *dialTask) resolve(srv *Server) bool {
+	isResolved := false
+	if t.dest.IsP2P {
+		isResolved = t.resolveP2P(srv)
+		log.Debug("resolve: after resolveP2P", "id", t.dest.ID, "peerInfo", t.dest.PeerInfo, "isResolved", isResolved)
+		return isResolved
+	}
+	if t.dest.PeerInfo != nil {
+		return true
+	}
+
 	if srv.ntab == nil {
 		log.Debug("Can't resolve node", "id", t.dest.ID, "err", "discovery is disabled")
 		return false
@@ -340,18 +366,60 @@ func (t *dialTask) resolve(srv *Server) bool {
 	return true
 }
 
+func (t *dialTask) resolveP2P(srv *Server) bool {
+	if t.resolveDelay == 0 {
+		t.resolveDelay = initialResolveDelay
+	}
+	if time.Since(t.lastResolved) < t.resolveDelay {
+		return false
+	}
+
+	resolved := srv.ResolveP2P(t.dest)
+	t.lastResolved = time.Now()
+	if resolved == nil {
+		t.resolveDelay *= 2
+		if t.resolveDelay > maxResolveDelay {
+			t.resolveDelay = maxResolveDelay
+		}
+		log.Debug("Resolving node failed", "id", t.dest.ID, "newdelay", t.resolveDelay)
+		return false
+	}
+
+	// The node was found.
+	t.resolveDelay = initialResolveDelay
+	t.dest = resolved
+
+	log.Debug("Resolved P2P node", "id", t.dest.ID, "peerID", t.dest.PeerID, "addrs", t.dest.PeerInfo.Addrs)
+
+	return true
+}
+
 type dialError struct {
 	error
 }
 
 // dial performs the actual connection attempt.
 func (t *dialTask) dial(srv *Server, dest *discover.Node) error {
+	if dest.IsP2P {
+		return t.dialP2P(srv, dest)
+	}
+
 	fd, err := srv.Dialer.Dial(dest)
 	if err != nil {
 		return &dialError{err}
 	}
 	mfd := newMeteredConn(fd, false)
 	return srv.SetupConn(mfd, t.flags, dest)
+}
+
+func (t *dialTask) dialP2P(srv *Server, dest *discover.Node) error {
+	streamConn, err := srv.DialP2P(dest)
+	if err != nil {
+		return &dialError{err}
+	}
+
+	mfd := newMeteredConn(streamConn, false)
+	return srv.SetupConn(mfd, t.flags|P2PConn, dest)
 }
 
 func (t *dialTask) String() string {

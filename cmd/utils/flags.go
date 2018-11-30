@@ -64,6 +64,18 @@ var (
 		Name:  "testnet",
 		Usage: "Test network: pre-configured Ptt.ai test network",
 	}
+	TestP2PFlag = cli.BoolFlag{
+		Name:  "testp2p",
+		Usage: "Test p2p-network: pre-configured Ptt.ai test p2p-network",
+	}
+	IPFSP2PFlag = cli.BoolFlag{
+		Name:  "ipfsp2p",
+		Usage: "IPFS network: pre-configured Ptt.ai ipfs p2p-network",
+	}
+	DevP2PFlag = cli.BoolFlag{
+		Name:  "devp2p",
+		Usage: "Dev p2p-network: pre-configured Ptt.ai dev p2p-network",
+	}
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",
 		Usage: "Custom user name",
@@ -270,7 +282,7 @@ var (
 	ListenPortFlag = cli.IntFlag{
 		Name:  "port",
 		Usage: "Network listening port",
-		Value: 9487,
+		Value: 29487,
 	}
 	BootnodesFlag = cli.StringFlag{
 		Name:  "bootnodes",
@@ -285,6 +297,16 @@ var (
 	BootnodesV5Flag = cli.StringFlag{
 		Name:  "bootnodesv5",
 		Usage: "Comma separated enode URLs for P2P v5 discovery bootstrap (light server, light nodes)",
+		Value: "",
+	}
+	P2PListenPortFlag = cli.IntFlag{
+		Name:  "p2pport",
+		Usage: "Network listening port",
+		Value: 9487,
+	}
+	P2PBootnodesFlag = cli.StringFlag{
+		Name:  "p2pbootnodes",
+		Usage: "Comma separated enode URLs for libp2p bootstrap",
 		Value: "",
 	}
 	NodeKeyFileFlag = cli.StringFlag{

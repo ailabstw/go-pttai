@@ -16,4 +16,8 @@
 
 package crypto
 
-var ()
+import "errors"
+
+var (
+	ErrInvalidKey = errors.New("invalid key")
+)

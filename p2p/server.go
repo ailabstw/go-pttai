@@ -18,6 +18,7 @@
 package p2p
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
@@ -27,12 +28,18 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/mclock"
+	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/discv5"
 	"github.com/ailabstw/go-pttai/p2p/nat"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
+	libp2p "github.com/libp2p/go-libp2p"
+	host "github.com/libp2p/go-libp2p-host"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	inet "github.com/libp2p/go-libp2p-net"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 const (
@@ -141,6 +148,11 @@ type Config struct {
 
 	// Logger is a custom logger to use with the p2p.Server.
 	Logger log.Logger `toml:",omitempty"`
+
+	// P2P
+
+	P2PListenAddr string
+	P2PBootnodes  []*discover.Node
 }
 
 // Server manages all peer connections.
@@ -176,6 +188,12 @@ type Server struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
+
+	// p2p
+	p2pserver host.Host
+	p2pctx    context.Context
+	p2pcancel context.CancelFunc
+	p2pKadDHT *dht.IpfsDHT
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -192,6 +210,7 @@ const (
 	dynDialedConn connFlag = 1 << iota
 	staticDialedConn
 	inboundConn
+	P2PConn
 	trustedConn
 )
 
@@ -244,6 +263,9 @@ func (f connFlag) String() string {
 	if f&inboundConn != 0 {
 		s += "-inbound"
 	}
+	if f&P2PConn != 0 {
+		s += "-p2p"
+	}
 	if s != "" {
 		s = s[1:]
 	}
@@ -270,6 +292,210 @@ func (srv *Server) Peers() []*Peer {
 	case <-srv.quit:
 	}
 	return ps
+}
+
+func (srv *Server) InitP2P() error {
+	cfg := srv.Config
+	if cfg.P2PListenAddr == "" {
+		return nil
+	}
+
+	p2pctx, p2pcancel := context.WithCancel(context.Background())
+	srv.p2pctx = p2pctx
+	srv.p2pcancel = p2pcancel
+
+	privKey, err := crypto.PrivateKeyToP2PPrivKey(cfg.PrivateKey)
+	if err != nil {
+		return err
+	}
+
+	p2pserver, err := libp2p.New(
+		p2pctx,
+		libp2p.Identity(privKey),
+		libp2p.ListenAddrStrings(cfg.P2PListenAddr),
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Info("p2p.InitP2P: after libp2p.New", "p2pserver", p2pserver.ID(), "addrs", p2pserver.Addrs())
+
+	kadDHT, err := dht.New(p2pctx, p2pserver)
+	if err != nil {
+		return err
+	}
+
+	p2pserver.SetStreamHandler(PTTAI_STREAM_PATH, srv.handleP2PStream)
+
+	srv.p2pserver = p2pserver
+	srv.p2pKadDHT = kadDHT
+
+	return nil
+}
+
+func (srv *Server) handleP2PStream(stream inet.Stream) {
+	log.Info("handleP2PStream: received stream", "id", stream.Conn().RemotePeer(), "addr", stream.Conn().RemoteMultiaddr())
+
+	streamConn := &P2PStreamConn{Stream: stream}
+
+	mfd := newMeteredConn(streamConn, false)
+
+	srv.SetupConn(mfd, inboundConn|P2PConn, nil)
+}
+
+func (srv *Server) startP2P() error {
+	// init bootnodes
+	srv.startP2PBootnodes()
+
+	err := srv.startP2PAnnounceLoop()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (srv *Server) startP2PBootnodes() error {
+	if srv.p2pctx == nil {
+		return nil
+	}
+
+	cfg := srv.Config
+	if len(cfg.P2PBootnodes) == 0 {
+		return nil
+	}
+
+	var err error
+	ok := false
+	for _, node := range cfg.P2PBootnodes {
+		if node.PeerInfo == nil {
+			log.Warn("startP2PBootnodes: peerInfo is nil", "node", node)
+			continue
+		}
+		log.Debug("startP2PBootnodes: to connect", "peerID", node.PeerInfo.ID, "addrs", node.PeerInfo.Addrs)
+		err = srv.p2pserver.Connect(srv.p2pctx, *node.PeerInfo)
+		if err != nil {
+			log.Warn("startP2PBootnodes: Unable to connect to the bootnode", "node", node, "addrs", node.PeerInfo.Addrs, "e", err)
+			continue
+		}
+
+		log.Info("Bootnode connected", "peerID", node.PeerInfo.ID, "addrs", node.PeerInfo.Addrs)
+		ok = true
+	}
+
+	if !ok {
+		log.Warn("startP2PBootnodes: no p2p bootnodes")
+		return ErrNoP2PBootnodes
+	}
+
+	return nil
+}
+
+func (srv *Server) startP2PAnnounceLoop() error {
+	srv.loopWG.Add(1)
+	go func() {
+		defer srv.loopWG.Done()
+		srv.AnnounceP2PLoop()
+	}()
+
+	return nil
+}
+
+func (srv *Server) AnnounceP2PLoop() error {
+	if srv.p2pctx == nil {
+		return nil
+	}
+
+	var err error
+
+looping:
+	for {
+		if !srv.running {
+			break looping
+		}
+
+		err = srv.AnnounceP2P()
+		if err != nil {
+			// unable to do announcement. possibly not in the network. restarting with bootnoode.
+			srv.startP2PBootnodes()
+		}
+
+		srv.SleepAnnounceP2P()
+	}
+
+	return nil
+}
+
+func (srv *Server) SleepAnnounceP2P() {
+	tick := time.NewTicker(SleepTimeSecondAnnounceP2P * time.Second)
+	defer tick.Stop()
+
+	log.Debug("SleepAnnounceP2P: to Sleep")
+
+	select {
+	case <-tick.C:
+	case <-srv.quit:
+	}
+
+	log.Debug("SleepAnnounceP2P: after Sleep")
+}
+
+func (srv *Server) AnnounceP2P() error {
+	if srv.p2pctx == nil {
+		return nil
+	}
+
+	tctx, cancel := context.WithTimeout(srv.p2pctx, TimeoutSecondAnnounceP2P*time.Second)
+	defer cancel()
+
+	now := time.Now()
+	err := srv.p2pKadDHT.Provide(tctx, RendezvousPoint, true)
+	timediff := time.Since(now)
+	log.Debug("AnnounceP2P: after dht.Provide", "timediff", timediff, "e", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (srv *Server) ResolveP2P(node *discover.Node) *discover.Node {
+	if srv.p2pctx == nil {
+		return nil
+	}
+
+	tctx, cancel := context.WithTimeout(srv.p2pctx, TimeoutSecondResolveP2P*time.Second)
+	defer cancel()
+
+	peerInfo, err := srv.p2pKadDHT.FindPeer(tctx, node.PeerID)
+	if err != nil {
+		return nil
+	}
+
+	log.Info("ResolveP2P: found info", "peerID", peerInfo.ID, "addrs", peerInfo.Addrs)
+
+	node.PeerInfo = &peerInfo
+
+	return node
+}
+
+func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
+	var addrs []ma.Multiaddr
+	if node.PeerInfo != nil {
+		addrs = node.PeerInfo.Addrs
+	}
+
+	stream, err := srv.p2pserver.NewStream(srv.p2pctx, node.PeerID, PTTAI_STREAM_PATH)
+	log.Debug("DialP2P: after NewStream", "peerID", node.PeerID, "addrs", addrs, "e", err)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("DialP2P: success", "peerID", node.PeerID, "addrs", addrs)
+
+	streamConn := &P2PStreamConn{Stream: stream}
+
+	return streamConn, nil
 }
 
 // PeerCount returns the number of connected peers.
@@ -362,6 +588,10 @@ func (srv *Server) Stop() {
 		srv.listener.Close()
 	}
 	close(srv.quit)
+
+	if srv.p2pcancel != nil {
+		srv.p2pcancel()
+	}
 
 	log.Debug("Stop: to loopWG.Wait")
 	srv.loopWG.Wait()
@@ -500,7 +730,7 @@ func (srv *Server) Start() (err error) {
 	}
 
 	dynPeers := srv.maxDialedConns()
-	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, srv.ntab, dynPeers, srv.NetRestrict)
+	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, srv.ntab, dynPeers, srv.NetRestrict, srv.p2pserver, srv.p2pctx)
 
 	// handshake
 	srv.ourHandshake = &protoHandshake{Version: baseProtocolVersion, Name: srv.Name, ID: discover.PubkeyID(&srv.PrivateKey.PublicKey)}
@@ -515,6 +745,12 @@ func (srv *Server) Start() (err error) {
 	}
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
+	}
+
+	// startP2P
+	err = srv.startP2P()
+	if err != nil {
+		return err
 	}
 
 	srv.loopWG.Add(1)
@@ -954,7 +1190,9 @@ func (srv *Server) runPeer(p *Peer) {
 	})
 
 	// run the protocol
+	log.Debug("runPeer: to p.run")
 	remoteRequested, err := p.run()
+	log.Debug("runPeer: after p.run")
 
 	// broadcast peer drop
 	srv.peerFeed.Send(&PeerEvent{

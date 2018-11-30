@@ -32,7 +32,9 @@ import (
 type ProtocolManager interface {
 	Prestart() error
 	Start() error
+	Prestop() error
 	Stop() error
+	Poststop() error
 
 	HandleMessage(op OpType, dataBytes []byte, peer *PttPeer) error
 
@@ -361,6 +363,9 @@ type BaseProtocolManager struct {
 	newPeerCh   chan *PttPeer
 	noMorePeers chan struct{}
 
+	sendDataToPeersSub        *event.TypeMuxSubscription
+	sendDataToPeerWithCodeSub *event.TypeMuxSubscription
+
 	// sync
 	maxSyncRandomSeconds int
 	minSyncRandomSeconds int
@@ -392,7 +397,8 @@ type BaseProtocolManager struct {
 	dbMediaIdxPrefix []byte
 
 	// is-start
-	isStart bool
+	isStart    bool
+	isPrestart bool
 }
 
 func NewBaseProtocolManager(
@@ -618,6 +624,14 @@ func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *
 }
 
 func (pm *BaseProtocolManager) Prestart() error {
+	pm.isPrestart = true
+
+	pm.sendDataToPeersSub = pm.eventMux.Subscribe(&SendDataToPeersEvent{})
+	go pm.sendDataToPeersLoop()
+
+	pm.sendDataToPeerWithCodeSub = pm.eventMux.Subscribe(&SendDataToPeerWithCodeEvent{})
+	go pm.sendDataToPeerWithCodeLoop()
+
 	// master
 	log.Debug("Prestart: to loadMasters", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	masters, err := pm.loadMasters()
@@ -731,7 +745,7 @@ func (pm *BaseProtocolManager) Start() error {
 	return nil
 }
 
-func (pm *BaseProtocolManager) PreStop() error {
+func (pm *BaseProtocolManager) Prestop() error {
 	log.Debug("Prestop: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "isStart", pm.isStart)
 	close(pm.quitSync)
 
@@ -739,9 +753,19 @@ func (pm *BaseProtocolManager) PreStop() error {
 }
 
 func (pm *BaseProtocolManager) Stop() error {
+	return nil
+}
+
+func (pm *BaseProtocolManager) Poststop() error {
 	if pm.isStart {
 		pm.syncWG.Wait()
 	}
+
+	if pm.isPrestart {
+		pm.sendDataToPeersSub.Unsubscribe()
+		pm.sendDataToPeerWithCodeSub.Unsubscribe()
+	}
+
 	pm.eventMux.Stop()
 
 	log.Debug("Stopped", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())

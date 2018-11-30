@@ -27,12 +27,15 @@ import (
 )
 
 type InitMeInfo struct {
+	Status types.Status `json:"S"`
 }
 
 func (pm *ProtocolManager) InitMeInfo(peer *pkgservice.PttPeer) error {
 	log.Debug("InitMeInfo: start")
 
-	data := &InitMeInfo{}
+	myInfo := pm.Entity().(*MyInfo)
+
+	data := &InitMeInfo{Status: myInfo.Status}
 	err := pm.SendDataToPeer(InitMeInfoMsg, data, peer)
 	if err != nil {
 		return err
@@ -50,6 +53,8 @@ func (pm *ProtocolManager) HandleInitMeInfo(dataBytes []byte, peer *pkgservice.P
 	if err != nil {
 		return err
 	}
+
+	pm.handleInitMeInfoCore(data.Status, peer)
 
 	return pm.InitMeInfoAck(data, peer)
 }

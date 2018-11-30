@@ -355,7 +355,7 @@ func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRene
 
 	if pm.newestOpKeyInfo == nil || pm.newestOpKeyInfo.UpdateTS.IsLess(keyInfo.UpdateTS) {
 		pm.newestOpKeyInfo = keyInfo
-		log.Debug("checkNewestOpKeyInfo: after set newestOpKeyInfo", "keyInfo", keyInfo.UpdateTS, "e", pm.Entity().GetID(), "pm", pm)
+		log.Debug("checkNewestOpKeyInfo: after set newestOpKeyInfo", "keyInfo", keyInfo.UpdateTS, "id", pm.Entity().GetID())
 	}
 
 	return

@@ -281,7 +281,6 @@ func (pm *ProtocolManager) Start() error {
 }
 
 func (pm *ProtocolManager) Stop() error {
-	pm.BaseProtocolManager.PreStop()
 	if !pm.IsStart() {
 		return nil
 	}
@@ -291,11 +290,6 @@ func (pm *ProtocolManager) Stop() error {
 	pm.joinBoardSub.Unsubscribe()
 
 	pm.StopRaft()
-
-	err := pm.BaseProtocolManager.Stop()
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

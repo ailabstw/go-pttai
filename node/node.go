@@ -154,7 +154,8 @@ func (n *Node) Start() error {
 		return ErrNodeRunning
 	}
 
-	if err := n.openDataDir(); err != nil {
+	err := n.openDataDir()
+	if err != nil {
 		return err
 	}
 
@@ -174,6 +175,11 @@ func (n *Node) Start() error {
 		n.serverConfig.NodeDatabase = n.Config.NodeDB()
 	}
 	running := &p2p.Server{Config: n.serverConfig}
+	err = running.InitP2P()
+	if err != nil {
+		log.Error("Start: unable to init p2p", "listenAddr", running.Config.P2PListenAddr, "e", err)
+		return err
+	}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration

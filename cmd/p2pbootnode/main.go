@@ -27,6 +27,7 @@ import (
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	libp2p "github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
@@ -137,8 +138,14 @@ func main() {
 
 	log.Info("P2PBootnode: Listening addr", "addr", addrWithPeerInfo)
 
-	for {
-
+	// init dht
+	_, err = dht.New(ctx, h)
+	if err != nil {
+		return
 	}
+
+	done := make(chan struct{})
+
+	<-done
 
 }

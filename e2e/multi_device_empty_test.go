@@ -14,22 +14,27 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package crypto
+package e2e
 
 import (
-	"crypto/ecdsa"
+	"testing"
+	"time"
 )
 
-const (
-	NGenerateKey = 10
-)
+func TestMultiDeviceEmpty(t *testing.T) {
+	NNodes = 3
+	// isDebug := true
 
-var (
-	BitSize = 256
-)
+	//var err error
+	//var bodyString string
+	//var marshaledID []byte
+	//var dummyBool bool
+	//assert := assert.New(t)
 
-func init() {
-	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
-	BitSize = priv.Params().BitSize
+	setupTest(t)
+	defer teardownTest(t)
+
+	time.Sleep(TimeSleepRestart)
+	time.Sleep(TimeSleepRestart)
+
 }

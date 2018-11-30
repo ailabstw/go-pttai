@@ -180,6 +180,22 @@ func SaveECDSA(file string, key *ecdsa.PrivateKey) error {
 }
 
 func GenerateKey() (*ecdsa.PrivateKey, error) {
+	var key *ecdsa.PrivateKey
+	var err error
+	for i := 0; i < NGenerateKey; i++ {
+		key, err = generateKeyCore()
+		if err != nil {
+			return nil, err
+		}
+		if IsValidPrivateKey(key) {
+			return key, nil
+		}
+	}
+
+	return nil, errInvalidPubkey
+}
+
+func generateKeyCore() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(S256(), rand.Reader)
 }
 

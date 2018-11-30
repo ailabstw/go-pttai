@@ -14,22 +14,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package crypto
+package p2p
 
-import (
-	"crypto/ecdsa"
-)
+import "testing"
 
-const (
-	NGenerateKey = 10
-)
+const ()
 
-var (
-	BitSize = 256
-)
+var ()
 
-func init() {
-	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
-	BitSize = priv.Params().BitSize
+func setupTest(t *testing.T) {
+}
+
+func teardownTest(t *testing.T) {
 }

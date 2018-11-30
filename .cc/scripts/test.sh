@@ -17,4 +17,4 @@ fi
 
 make
 
-gotest -v -timeout 5s "${prefix}/${pkg}"
+gotest -v -timeout 40s "${prefix}/${pkg}"

@@ -14,22 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package crypto
+package simulations
 
 import (
-	"crypto/ecdsa"
+	"testing"
+
+	"github.com/ailabstw/go-pttai/log"
 )
 
-const (
-	NGenerateKey = 10
-)
+const ()
 
 var (
-	BitSize = 256
+	origHandler log.Handler
 )
 
-func init() {
-	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
-	BitSize = priv.Params().BitSize
+func setupTest(t *testing.T) {
+	origHandler = log.Root().GetHandler()
+	log.Root().SetHandler(log.Must.FileHandler("log.tmp.txt", log.TerminalFormat(true)))
+}
+
+func teardownTest(t *testing.T) {
+	log.Root().SetHandler(origHandler)
 }

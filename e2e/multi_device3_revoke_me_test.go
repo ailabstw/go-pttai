@@ -161,7 +161,7 @@ func TestMultiDevice3RevokeMe(t *testing.T) {
 
 	// wait 15
 	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(10 * time.Second)
+	time.Sleep(TimeSleepRestart)
 
 	// 7.1
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_5, myKey2_4)

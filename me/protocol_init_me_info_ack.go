@@ -61,10 +61,12 @@ func (pm *ProtocolManager) InitMeInfoAck(data *InitMeInfo, peer *pkgservice.PttP
 			return err
 		}
 	}
-	log.Debug("InitMeInfoAck: start", "myID", myInfo.ID, "Status", myInfo.Status)
+	log.Debug("InitMeInfoAck: to SendDataToPeer", "myID", myInfo.ID, "Status", myInfo.Status)
 
-	return pm.SendDataToPeer(InitMeInfoAckMsg, &InitMeInfoAck{Status: myInfo.Status}, peer)
+	err = pm.SendDataToPeer(InitMeInfoAckMsg, &InitMeInfoAck{Status: myInfo.Status}, peer)
+	log.Debug("InitMeInfoAck: after SendDataToPeer", "e", err)
 
+	return err
 }
 
 func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
@@ -80,7 +82,11 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 		return pm.InitMeInfoSync(peer)
 	}
 
-	log.Debug("HandleInitMeInfoAck: to get raftID", "peer", peer, "status", data.Status)
+	return pm.handleInitMeInfoCore(data.Status, peer)
+
+}
+
+func (pm *ProtocolManager) handleInitMeInfoCore(status types.Status, peer *pkgservice.PttPeer) error {
 
 	nodeID := peer.GetID()
 	raftID, err := nodeID.ToRaftID()
@@ -94,18 +100,18 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 		return ErrInvalidNode
 	}
 
-	if myNode.Status == data.Status {
+	if myNode.Status == status {
 		return nil
 	}
 
-	log.Debug("HandleInitMeInfoAck: start", "peerID", nodeID, "status", data.Status)
+	log.Debug("HandleInitMeInfoAck: start", "peerID", nodeID, "status", status)
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return err
 	}
 
-	myNode.Status = data.Status
+	myNode.Status = status
 	myNode.UpdateTS = ts
 	_, err = myNode.Save()
 	if err != nil {
@@ -113,7 +119,6 @@ func (pm *ProtocolManager) HandleInitMeInfoAck(dataBytes []byte, peer *pkgservic
 	}
 
 	// set peer
-
 	ptt := pm.myPtt
 	ptt.SetupPeer(peer, pkgservice.PeerTypeMe, false)
 

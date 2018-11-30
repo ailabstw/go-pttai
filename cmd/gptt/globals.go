@@ -83,6 +83,11 @@ var (
 		utils.KeyStoreDirFlag,
 
 		utils.TestnetFlag,
+
+		utils.TestP2PFlag,
+		utils.IPFSP2PFlag,
+		utils.DevP2PFlag,
+
 		utils.IdentityFlag,
 
 		utils.CacheFlag,
@@ -116,6 +121,9 @@ var (
 		utils.NoDiscoverFlag,
 		utils.DiscoveryV5Flag,
 		utils.NetrestrictFlag,
+
+		utils.P2PBootnodesFlag,
+		utils.P2PListenPortFlag,
 	}
 
 	// flags that configure rpc

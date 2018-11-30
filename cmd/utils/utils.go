@@ -65,6 +65,7 @@ func SetUtilsConfig(ctx *cli.Context, cfg *Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
+	log.Debug("SetNodeConfig: start")
 	setP2PConfig(ctx, &cfg.P2P)
 	setIPC(ctx, cfg)
 	setHTTP(ctx, cfg)
@@ -228,11 +229,48 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	}
 }
 
+func setP2PBootnodes(ctx *cli.Context, cfg *p2p.Config) {
+	var urls []string
+	switch {
+	case ctx.GlobalIsSet(P2PBootnodesFlag.Name):
+		urls = strings.Split(ctx.GlobalString(P2PBootnodesFlag.Name), ",")
+	case ctx.GlobalBool(TestP2PFlag.Name):
+		urls = params.TestP2PBootnodes
+	case ctx.GlobalBool(DevP2PFlag.Name):
+		urls = params.DevP2PBootnodes
+	case ctx.GlobalBool(IPFSP2PFlag.Name):
+		urls = params.IPFSBootnodes
+	case cfg.P2PBootnodes != nil:
+		return // already set, don't apply defaults.
+	default:
+		urls = params.MainP2PBootnodes
+	}
+
+	cfg.P2PBootnodes = make([]*discover.Node, 0, len(urls))
+	for _, url := range urls {
+		node, err := discover.ParseP2PNode(url)
+		if err != nil {
+			log.Error("Bootstrap P2P URL invalid", "pnode", url, "e", err)
+			continue
+		}
+		cfg.P2PBootnodes = append(cfg.P2PBootnodes, node)
+	}
+	log.Info("setP2PBootnodes: done", "P2PBootnodes", len(cfg.P2PBootnodes))
+}
+
 // setListenAddress creates a TCP listening address string from set command
 // line flags.
 func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
 	if ctx.GlobalIsSet(ListenPortFlag.Name) {
 		cfg.ListenAddr = fmt.Sprintf(":%d", ctx.GlobalInt(ListenPortFlag.Name))
+	}
+}
+
+// setListenAddress creates a TCP listening address string from set command
+// line flags.
+func setP2PListenAddress(ctx *cli.Context, cfg *p2p.Config) {
+	if ctx.GlobalIsSet(P2PListenPortFlag.Name) {
+		cfg.P2PListenAddr = fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", ctx.GlobalInt(P2PListenPortFlag.Name))
 	}
 }
 
@@ -343,6 +381,8 @@ func setP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setNAT(ctx, cfg)
 	setListenAddress(ctx, cfg)
 	setBootstrapNodes(ctx, cfg)
+	setP2PListenAddress(ctx, cfg)
+	setP2PBootnodes(ctx, cfg)
 
 	if ctx.GlobalIsSet(MaxPeersFlag.Name) {
 		cfg.MaxPeers = ctx.GlobalInt(MaxPeersFlag.Name)

@@ -143,7 +143,7 @@ func TestFriend3DeleteArticle(t *testing.T) {
 	friend1_8 := dataGetFriendList1_8.Result[0]
 	assert.Equal(types.StatusAlive, friend1_8.Status)
 	//assert.Equal(me0_1.ID, friend1_8.FriendID)
-	assert.Equal(friend0_8.ID, friend1_8.ID)
+	//assert.Equal(friend0_8.ID, friend1_8.ID)
 	friend1_8_1 := dataGetFriendList1_8.Result[1]
 	assert.Equal(types.StatusAlive, friend1_8_1.Status)
 	//assert.Equal(me2_1.ID, friend1_8_1.FriendID)

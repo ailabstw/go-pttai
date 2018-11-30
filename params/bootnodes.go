@@ -22,6 +22,22 @@ var MainnetBootnodes = []string{}
 
 // TestnetBootnodes are the pnode URLs of the P2P bootstrap nodes running on the
 // test network.
-var TestnetBootnodes = []string{
-	"pnode://6c537f268ca2c77d4e8783f110ae9404eb937b6b81106f053c95aca37eccf80b7e2d4a0032e5a1e921ea4a18e7feb1dc75f5b42d7337f954f3e268a4bc17d5fa@172.104.122.208:9487",
+var TestnetBootnodes = []string{}
+
+var MainP2PBootnodes = []string{}
+
+var TestP2PBootnodes = []string{
+	"pnode://16Uiu2HAm2iXrcfxL5mG3EKQ2Hn7gFEPRiAG98FEjpcqHW6GZAJEn@172.104.122.208:9487",
+}
+
+var IPFSBootnodes = []string{
+	"pnode://QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ@104.131.131.82:4001",
+	"pnode://QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM@104.236.179.241:4001",
+	"pnode://QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64@104.236.76.40:4001",
+	"pnode://QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu@128.199.219.111:4001",
+	"pnode://QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd@178.62.158.247:4001",
+}
+
+var DevP2PBootnodes = []string{
+	"pnode://16Uiu2HAmJjpTxFgUu4WT57D1jK1HpQbtrNzZwJVHEewpv2wTCUqJ@10.1.1.27:9487",
 }

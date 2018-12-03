@@ -229,7 +229,7 @@ type ProtocolManager interface {
 
 	RegisterPeer(peer *PttPeer, peerType PeerType) error
 	RegisterPendingPeer(peer *PttPeer) error
-	UnregisterPeer(peer *PttPeer, isResetPeerType bool, isForceNotReset bool, isPttLocked bool) error
+	UnregisterPeer(peer *PttPeer, isForceReset bool, isForceNotReset bool, isPttLocked bool) error
 
 	GetPeerType(peer *PttPeer) PeerType
 

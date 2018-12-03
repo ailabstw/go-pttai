@@ -23,7 +23,7 @@ import (
 
 // p2p
 const (
-	SleepTimeSecondAnnounceP2P = 30
+	SleepTimeSecondAnnounceP2P = 120
 	TimeoutSecondAnnounceP2P   = 10
 
 	TimeoutSecondResolveP2P = 10

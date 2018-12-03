@@ -30,10 +30,12 @@ func (pm *BaseProtocolManager) ForceCreateObject(
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
+	setLogDB func(oplog *BaseOplog),
+	broadcastLogs func(oplogs []*BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
-	return pm.createObjectCore(data, createOp, true, newObj, newOplogWithTS, increate, broadcastLog, postcreate)
+	return pm.createObjectCore(data, createOp, true, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
 }
 
 func (pm *BaseProtocolManager) CreateObject(
@@ -43,10 +45,12 @@ func (pm *BaseProtocolManager) CreateObject(
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
+	setLogDB func(oplog *BaseOplog),
+	broadcastLogs func(oplogs []*BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
-	return pm.createObjectCore(data, createOp, false, newObj, newOplogWithTS, increate, broadcastLog, postcreate)
+	return pm.createObjectCore(data, createOp, false, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
 }
 
 func (pm *BaseProtocolManager) createObjectCore(
@@ -58,6 +62,8 @@ func (pm *BaseProtocolManager) createObjectCore(
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
+	setLogDB func(oplog *BaseOplog),
+	broadcastLogs func(oplogs []*BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
@@ -133,7 +139,17 @@ func (pm *BaseProtocolManager) createObjectCore(
 
 	log.Debug("CreateObject: to broadcastLog", "obj", obj.GetID(), "oplog", oplog.ID)
 
-	broadcastLog(oplog)
+	pendingLogs, _, err := pm.GetPendingOplogs(setLogDB, nil, true)
+	if err != nil {
+		log.Warn("CreateObject: unable to GetPendingOplogs", "e", err)
+		return nil, err
+	}
+
+	broadcastLogs(pendingLogs)
+
+	if oplog.MasterLogID != nil {
+		broadcastLog(oplog)
+	}
 
 	return obj, nil
 }

@@ -38,19 +38,6 @@ func (pm *ProtocolManager) CreateFriendOplog(objID *types.PttID, ts types.Timest
 	return oplog, nil
 }
 
-func (pm *ProtocolManager) GetPendingFriendOplogs() ([]*FriendOplog, []*FriendOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetFriendDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	opKeyLogs := OplogsToFriendOplogs(oplogs)
-
-	failedFriendLogs := OplogsToFriendOplogs(failedLogs)
-
-	return opKeyLogs, failedFriendLogs, nil
-}
-
 /**********
  * BroadcastFriendOplog
  **********/

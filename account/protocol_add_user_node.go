@@ -38,8 +38,19 @@ func (pm *ProtocolManager) AddUserNode(nodeID *discover.NodeID) error {
 
 	log.Debug("AddUserNode: to CreateObject", "entity", pm.Entity().GetID())
 	_, err := pm.CreateObject(
-		data, UserOpTypeAddUserNode,
-		pm.NewUserNode, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, pm.postcreateUserNode)
+		data,
+		UserOpTypeAddUserNode,
+
+		pm.NewUserNode,
+		pm.NewUserOplogWithTS,
+		nil,
+
+		pm.SetUserDB,
+		pm.broadcastUserOplogsCore,
+		pm.broadcastUserOplogCore,
+
+		pm.postcreateUserNode,
+	)
 	log.Debug("AddUserNode: after CreateObject", "entity", pm.Entity().GetID(), "nodeID", nodeID, "e", err)
 	if err != nil {
 		return err

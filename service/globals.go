@@ -35,6 +35,8 @@ var (
 		MaxRandomPeers:    50,
 
 		NodeType: NodeTypeDesktop,
+
+		ExpireOplogSeconds: 30,
 	}
 )
 
@@ -235,7 +237,7 @@ var (
 )
 
 // oplog
-const (
+var (
 	ExpireOplogSeconds = 300 // expire oplog circulation as 5 minutes for now.
 )
 

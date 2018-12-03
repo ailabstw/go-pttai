@@ -32,13 +32,18 @@ func (pm *BaseProtocolManager) SyncPendingOplog(
 	handleFailedOplog func(oplog *BaseOplog) error,
 	syncMsg OpType,
 ) error {
-	oplogs, failedOplogs, err := pm.GetPendingOplogs(setDB)
+
+	oplogs, failedOplogs, err := pm.GetPendingOplogs(setDB, peer, false)
 	if err != nil {
 		return nil
 	}
 
 	err = HandleFailedOplogs(failedOplogs, setDB, handleFailedOplog)
 	if err != nil {
+		return nil
+	}
+
+	if peer == nil {
 		return nil
 	}
 

@@ -29,7 +29,20 @@ func (pm *ProtocolManager) CreateUserName(name []byte) error {
 		return types.ErrInvalidID
 	}
 
-	_, err := pm.CreateObject(nil, UserOpTypeCreateUserName, pm.NewUserName, pm.NewUserOplogWithTS, nil, pm.broadcastUserOplogCore, nil)
+	_, err := pm.CreateObject(
+		nil,
+		UserOpTypeCreateUserName,
+
+		pm.NewUserName,
+		pm.NewUserOplogWithTS,
+		nil,
+
+		pm.SetUserDB,
+		pm.broadcastUserOplogsCore,
+		pm.broadcastUserOplogCore,
+
+		nil,
+	)
 	if err != nil {
 		return err
 	}

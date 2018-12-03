@@ -296,6 +296,7 @@ func (pm *ProtocolManager) Stop() error {
 
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 	if peer == nil {
+		pm.SyncPendingMeOplog(peer)
 		return nil
 	}
 

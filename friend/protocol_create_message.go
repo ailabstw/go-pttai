@@ -40,7 +40,20 @@ func (pm *ProtocolManager) CreateMessage(msg [][]byte, mediaIDs []*types.PttID) 
 		MediaIDs: mediaIDs,
 	}
 
-	theMessage, err := pm.CreateObject(data, FriendOpTypeCreateMessage, pm.NewMessage, pm.NewFriendOplogWithTS, pm.increateMessage, pm.broadcastFriendOplogCore, pm.postcreateMessage)
+	theMessage, err := pm.CreateObject(
+		data,
+		FriendOpTypeCreateMessage,
+
+		pm.NewMessage,
+		pm.NewFriendOplogWithTS,
+		pm.increateMessage,
+
+		pm.SetFriendDB,
+		pm.broadcastFriendOplogsCore,
+		pm.broadcastFriendOplogCore,
+
+		pm.postcreateMessage,
+	)
 	if err != nil {
 		return nil, err
 	}

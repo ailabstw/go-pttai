@@ -42,7 +42,7 @@ func (pm *BaseProtocolManager) SyncPendingOplogAck(
 		return err
 	}
 
-	oplogs, failedOplogs, err := pm.GetPendingOplogs(setDB)
+	oplogs, failedOplogs, err := pm.GetPendingOplogs(setDB, peer, false)
 	if err != nil {
 		return nil
 	}

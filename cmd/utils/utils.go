@@ -138,6 +138,17 @@ func SetFriendConfig(ctx *cli.Context, cfg *friend.Config, cfgNode *node.Config)
 	// datadir
 	log.Debug("SetFriendConfig: to set DataDir", "cfgNode.DataDIR", cfgNode.DataDir)
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "friend")
+
+	if ctx.GlobalIsSet(FriendMaxSyncRandomSecondsFlag.Name) {
+		cfg.MaxSyncRandomSeconds = ctx.GlobalInt(FriendMaxSyncRandomSecondsFlag.Name)
+	}
+
+	if ctx.GlobalIsSet(FriendMinSyncRandomSecondsFlag.Name) {
+		cfg.MinSyncRandomSeconds = ctx.GlobalInt(FriendMinSyncRandomSecondsFlag.Name)
+	}
+
+	friend.MaxSyncRandomSeconds = cfg.MaxSyncRandomSeconds
+	friend.MinSyncRandomSeconds = cfg.MinSyncRandomSeconds
 }
 
 // SetPttConfig applies ptt-related command line flags to the config.
@@ -157,6 +168,16 @@ func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config
 	default:
 		cfg.NodeType = pkgservice.NodeTypeDesktop
 	}
+
+	// expire oplog seconds
+	if ctx.GlobalIsSet(ServiceExpireOplogSecondsFlag.Name) {
+		cfg.ExpireOplogSeconds = ctx.GlobalInt(ServiceExpireOplogSecondsFlag.Name)
+	}
+
+	pkgservice.ExpireOplogSeconds = cfg.ExpireOplogSeconds
+
+	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds)
+
 }
 
 // MakeDataDir retrieves the currently requested data directory, terminating

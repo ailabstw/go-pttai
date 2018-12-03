@@ -333,7 +333,7 @@ func (pm *BaseProtocolManager) defaultInternalSign(oplog *BaseOplog) (bool, erro
 	return true, nil
 }
 
-func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([]*BaseOplog, []*BaseOplog, error) {
+func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog), peer *PttPeer, isGetAll bool) ([]*BaseOplog, []*BaseOplog, error) {
 
 	oplog := &BaseOplog{}
 	setDB(oplog)
@@ -342,7 +342,7 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([
 	if err != nil {
 		return nil, nil, err
 	}
-	expireTime.Ts -= ExpireOplogSeconds
+	expireTime.Ts -= int64(ExpireOplogSeconds)
 
 	pendingLogs, err := GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusPending, false)
 	if err != nil {
@@ -354,6 +354,13 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([
 		return nil, nil, err
 	}
 
+	isMyPeer := false
+	isMasterPeer := false
+	if peer != nil {
+		isMyPeer = peer.PeerType == PeerTypeMe
+		isMasterPeer = pm.IsMaster(peer.UserID, false)
+	}
+
 	lenLogs := len(pendingLogs) + len(internalPendingLogs)
 	logs := make([]*BaseOplog, 0, lenLogs)
 	failedLogs := make([]*BaseOplog, 0, lenLogs)
@@ -361,7 +368,7 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([
 	for _, log := range pendingLogs {
 		if log.CreateTS.IsLess(expireTime) {
 			failedLogs = append(failedLogs, log)
-		} else {
+		} else if isMasterPeer || isGetAll {
 			logs = append(logs, log)
 		}
 	}
@@ -369,7 +376,7 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog)) ([
 	for _, log := range internalPendingLogs {
 		if log.CreateTS.IsLess(expireTime) {
 			failedLogs = append(failedLogs, log)
-		} else {
+		} else if isMyPeer || isGetAll {
 			logs = append(logs, log)
 		}
 	}

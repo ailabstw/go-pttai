@@ -627,8 +627,9 @@ func (o *BaseOplog) MasterSign(id *types.PttID, keyInfo *KeyInfo) error {
 
 	// check expire
 	expireTS := ts
-	expireTS.Ts -= ExpireOplogSeconds
+	expireTS.Ts -= int64(ExpireOplogSeconds)
 	if o.CreateTS.IsLess(expireTS) {
+		log.Error("MasterSign: createTS is less than expireTS", "CreateTS", o.CreateTS, "expireTS", expireTS)
 		return ErrInvalidOplog
 	}
 
@@ -703,7 +704,7 @@ func (o *BaseOplog) InternalSign(id *types.PttID, keyInfo *KeyInfo) error {
 
 	// check expire
 	expireTS := ts
-	expireTS.Ts -= ExpireOplogSeconds
+	expireTS.Ts -= int64(ExpireOplogSeconds)
 	if o.CreateTS.IsLess(expireTS) {
 		log.Error("InternalSign: createTS is less than expireTS", "CreateTS", o.CreateTS, "expireTS", expireTS)
 		return ErrInvalidOplog

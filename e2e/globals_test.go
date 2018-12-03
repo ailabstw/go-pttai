@@ -55,6 +55,8 @@ var (
 
 	TimeSleepRestart = 15 * time.Second
 	TimeSleepDefault = 8 * time.Second
+
+	ServiceExpireOplog = "300"
 )
 
 type RBody struct {
@@ -73,9 +75,9 @@ type MyError struct {
 	Msg  string `json:"message"`
 }
 
-func GetResponseBody(r *RBody) func(res *http.Response, req *http.Request) error {
+func GetResponseBody(r *RBody, t *testing.T) func(res *http.Response, req *http.Request) error {
 	return func(res *http.Response, req *http.Request) error {
-		body, err := readBody(res)
+		body, err := readBody(res, t)
 		if err != nil {
 			return err
 		}
@@ -89,18 +91,60 @@ func GetResponseBody(r *RBody) func(res *http.Response, req *http.Request) error
 func ParseBody(b []byte, t *testing.T, data interface{}, isList bool) {
 	err := json.Unmarshal(b, data)
 	if err != nil && !isList {
-		t.Logf("unable to parse: e: %v", err)
+		t.Logf("unable to parse: b: %v e: %v", b, err)
 	}
 }
 
-func readBody(res *http.Response) ([]byte, error) {
+func readBody(res *http.Response, t *testing.T) ([]byte, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
+		t.Logf("[ERROR] Unable to read body: e: %v", err)
 		return []byte{}, err
 	}
 	// Re-fill body reader stream after reading it
 	res.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	return body, err
+}
+
+func startNode(t *testing.T, idx int) {
+	if Ctxs[idx] != nil && Cancels[idx] != nil {
+		Cancels[idx]()
+		Ctxs[idx] = nil
+		Cancels[idx] = nil
+	}
+
+	dir := fmt.Sprintf("./test.out/.test%d", idx)
+	rpcport := fmt.Sprintf("%d", 9450+idx)
+	p2pport := fmt.Sprintf("%d", 9500+idx)
+	port := fmt.Sprintf("%d", 9600+idx)
+
+	Ctxs[idx], Cancels[idx] = context.WithTimeout(context.Background(), TimeoutSeconds)
+	Nodes[idx] = exec.CommandContext(
+		Ctxs[idx],
+		"../build/bin/gptt",
+		"--exthttpaddr", "http://localhost:9776",
+		"--verbosity", "4",
+		"--datadir", dir,
+		"--rpcaddr", "127.0.0.1",
+		"--rpcport", rpcport,
+		"--port", port,
+		"--p2pport", p2pport,
+		"--p2pbootnodes", "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489",
+		"--ipcdisable",
+		"--friendmaxsync", "7",
+		"--friendminsync", "5",
+		"--serviceexpireoplog", ServiceExpireOplog,
+	)
+	filename := fmt.Sprintf("./test.out/log.err.%d.txt", idx)
+	stderrs[idx], _ = os.Create(filename)
+	Nodes[idx].Stderr = stderrs[idx]
+	err := Nodes[idx].Start()
+	if err != nil {
+		t.Errorf("unable to start node: i: %v e: %v", idx, err)
+	}
+
+	time.Sleep(5 * time.Second)
+
 }
 
 func setupTest(t *testing.T) {
@@ -127,42 +171,17 @@ func setupTest(t *testing.T) {
 	stderrs = make([]*os.File, NNodes)
 
 	for i := 0; i < NNodes; i++ {
-		dir := fmt.Sprintf("./test.out/.test%d", i)
-		rpcport := fmt.Sprintf("%d", 9450+i)
-		p2pport := fmt.Sprintf("%d", 9500+i)
-		port := fmt.Sprintf("%d", 9600+i)
-
-		Ctxs[i], Cancels[i] = context.WithTimeout(context.Background(), TimeoutSeconds)
-		Nodes[i] = exec.CommandContext(
-			Ctxs[i],
-			"../build/bin/gptt",
-			"--exthttpaddr", "http://localhost:9776",
-			"--verbosity", "4",
-			"--datadir", dir,
-			"--rpcaddr", "127.0.0.1",
-			"--rpcport", rpcport,
-			"--port", port,
-			"--p2pport", p2pport,
-			"--p2pbootnodes", "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489",
-			"--ipcdisable",
-		)
-		filename := fmt.Sprintf("./test.out/log.err.%d.txt", i)
-		stderrs[i], _ = os.Create(filename)
-		Nodes[i].Stderr = stderrs[i]
-		err := Nodes[i].Start()
-		if err != nil {
-			t.Errorf("unable to start node: i: %v e: %v", i, err)
-		}
+		startNode(t, i)
 	}
 
 	seconds := 0
 	switch {
 	case NNodes <= 3:
-		seconds = 20
+		seconds = 5
 	case NNodes == 4:
-		seconds = 20
+		seconds = 5
 	case NNodes == 5:
-		seconds = 20
+		seconds = 5
 	}
 
 	log.Debug("wait for node starting", "seconds", seconds)
@@ -194,7 +213,7 @@ func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testi
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
 		Expect(t).
-		AssertFunc(GetResponseBody(rbody)).
+		AssertFunc(GetResponseBody(rbody, t)).
 		Done()
 
 	ParseBody(rbody.Body, t, data, true)
@@ -224,7 +243,7 @@ func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
 		Expect(t).
-		AssertFunc(GetResponseBody(rbody)).
+		AssertFunc(GetResponseBody(rbody, t)).
 		Done()
 
 	var dataWrapper *DataWrapper
@@ -257,7 +276,7 @@ func testStringCore(c *baloo.Client, bodyString string, t *testing.T, isDebug bo
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
 		Expect(t).
-		AssertFunc(GetResponseBody(rbody)).
+		AssertFunc(GetResponseBody(rbody, t)).
 		Done()
 
 	ParseBody(rbody.Body, t, dataWrapper, false)
@@ -279,7 +298,7 @@ func testIntCore(c *baloo.Client, bodyString string, t *testing.T, isDebug bool)
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
 		Expect(t).
-		AssertFunc(GetResponseBody(rbody)).
+		AssertFunc(GetResponseBody(rbody, t)).
 		Done()
 
 	ParseBody(rbody.Body, t, dataWrapper, false)
@@ -298,7 +317,7 @@ func testBodyEqualCore(c *baloo.Client, bodyString string, resultString string, 
 		BodyString(bodyString).
 		SetHeader("Content-Type", "application/json").
 		Expect(t).
-		AssertFunc(GetResponseBody(rbody)).
+		AssertFunc(GetResponseBody(rbody, t)).
 		BodyEquals(resultString).
 		Done()
 

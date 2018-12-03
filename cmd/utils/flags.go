@@ -106,6 +106,12 @@ var (
 		Usage: "set as server mode",
 	}
 
+	// service settings
+	ServiceExpireOplogSecondsFlag = cli.IntFlag{
+		Name:  "serviceexpireoplog",
+		Usage: "expire oplog seconds",
+	}
+
 	// Content settings
 	ContentDataDirFlag = DirectoryFlag{
 		Name:  "contentdatadir",
@@ -117,6 +123,17 @@ var (
 		Name:  "contentkeystoredir",
 		Usage: "Keystore directory for content",
 		Value: DirectoryString{content.DefaultConfig.KeystoreDir},
+	}
+
+	// Friend settings
+	FriendMaxSyncRandomSecondsFlag = cli.IntFlag{
+		Name:  "friendmaxsync",
+		Usage: "max sync random seconds",
+	}
+
+	FriendMinSyncRandomSecondsFlag = cli.IntFlag{
+		Name:  "friendminsync",
+		Usage: "min sync random seconds",
 	}
 
 	// Performance tuning settings

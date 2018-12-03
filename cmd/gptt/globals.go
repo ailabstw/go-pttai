@@ -68,6 +68,17 @@ var (
 		utils.ContentKeystoreDirFlag,
 	}
 
+	// flags that configure content
+	friendFlags = []cli.Flag{
+		utils.FriendMaxSyncRandomSecondsFlag,
+		utils.FriendMinSyncRandomSecondsFlag,
+	}
+
+	// flags that configure content
+	serviceFlags = []cli.Flag{
+		utils.ServiceExpireOplogSecondsFlag,
+	}
+
 	// flags that configure http-server
 	httpFlags = []cli.Flag{
 		utils.HTTPAddrFlag,

@@ -34,7 +34,19 @@ func (pm *ProtocolManager) CreateTitle(title []byte) error {
 
 	data := &CreateTitle{Title: title}
 
-	_, err := pm.CreateObject(data, BoardOpTypeCreateTitle, pm.NewTitle, pm.NewBoardOplogWithTS, nil, pm.broadcastBoardOplogCore, nil)
+	_, err := pm.CreateObject(
+		data,
+		BoardOpTypeCreateTitle,
+
+		pm.NewTitle,
+		pm.NewBoardOplogWithTS,
+		nil,
+
+		pm.SetBoardDB,
+		pm.broadcastBoardOplogsCore,
+		pm.broadcastBoardOplogCore,
+		nil,
+	)
 	if err != nil {
 		return err
 	}

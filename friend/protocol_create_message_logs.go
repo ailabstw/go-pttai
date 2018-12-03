@@ -59,6 +59,8 @@ func (pm *ProtocolManager) handleFailedCreateMessageLog(oplog *pkgservice.BaseOp
 	obj := NewEmptyMessage()
 	pm.SetMessageDB(obj)
 
+	log.Debug("handleFailedCreateMessageLog: to HandleFailedCreateObjectLog")
+
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 

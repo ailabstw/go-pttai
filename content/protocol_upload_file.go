@@ -39,7 +39,20 @@ func (pm *ProtocolManager) UploadFile(filename []byte, theBytes []byte) (*pkgser
 		Bytes:    theBytes,
 	}
 
-	theMedia, err := pm.CreateObject(data, BoardOpTypeCreateMedia, pm.NewMedia, pm.NewBoardOplogWithTS, pm.increateFile, pm.broadcastBoardOplogCore, nil)
+	theMedia, err := pm.CreateObject(
+		data,
+		BoardOpTypeCreateMedia,
+
+		pm.NewMedia,
+		pm.NewBoardOplogWithTS,
+		pm.increateFile,
+
+		pm.SetBoardDB,
+		pm.broadcastBoardOplogsCore,
+		pm.broadcastBoardOplogCore,
+
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

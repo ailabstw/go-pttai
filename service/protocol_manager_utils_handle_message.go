@@ -114,13 +114,22 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	}
 
 	log.Debug("PMHandleMessageWrapper: to GetPeerType", "peer", peer, "entity", pm.Entity().GetID())
-
 	fitPeerType := pm.GetPeerType(peer)
-
 	log.Debug("PMHandleMessageWrapper: after GetPeerType", "peer", peer, "entity", pm.Entity().GetID(), "fitPeerType", fitPeerType)
 
+	var origPeer *PttPeer
 	if fitPeerType < PeerTypePending {
+		origPeer = pm.Peers().Peer(peer.GetID(), false)
+		if origPeer != nil {
+			pm.UnregisterPeer(peer, false, false, false)
+		}
 		return ErrInvalidEntity
+	}
+
+	origPeer = pm.Peers().GetPeerWithPeerType(peer.GetID(), fitPeerType, false)
+
+	if origPeer == nil {
+		pm.RegisterPeer(peer, fitPeerType)
 	}
 
 	return pm.HandleMessage(op, dataBytes, peer)

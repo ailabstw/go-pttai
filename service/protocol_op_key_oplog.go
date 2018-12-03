@@ -16,19 +16,6 @@
 
 package service
 
-func (pm *BaseProtocolManager) GetPendingOpKeyOplogs() ([]*OpKeyOplog, []*OpKeyOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetOpKeyDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	opKeyLogs := OplogsToOpKeyOplogs(oplogs)
-
-	failedOpKeyLogs := OplogsToOpKeyOplogs(failedLogs)
-
-	return opKeyLogs, failedOpKeyLogs, nil
-}
-
 /**********
  * BroadcastOpKeyOplog
  **********/

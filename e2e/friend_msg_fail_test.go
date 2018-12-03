@@ -31,9 +31,10 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestFriendMsg(t *testing.T) {
+func TestFriendMsgFail(t *testing.T) {
 	NNodes = 2
 	isDebug := true
+	ServiceExpireOplog = "5"
 
 	var bodyString string
 	var marshaled []byte
@@ -253,7 +254,7 @@ func TestFriendMsg(t *testing.T) {
 	assert.Equal(2, len(dataMemberList1_12_1.Result))
 	assert.Equal(dataMemberList0_12_1, dataMemberList1_12_1)
 
-	// 13. create-msg
+	// 35. friend-create-message
 	msg, _ := json.Marshal([]string{
 		base64.StdEncoding.EncodeToString([]byte("測試1")),
 		base64.StdEncoding.EncodeToString([]byte("測試2")),
@@ -279,7 +280,6 @@ func TestFriendMsg(t *testing.T) {
 		base64.StdEncoding.EncodeToString([]byte("測試22")),
 	})
 
-	// 35. friend-create-message
 	marshaled, _ = friend0_8.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_createMessage", "params": ["%v", %v, []]}`, string(marshaled), string(msg))
@@ -385,4 +385,79 @@ func TestFriendMsg(t *testing.T) {
 
 	assert.Equal(article0, dataGetMessageBlockList1_37.Result[0].Buf)
 	assert.Equal(article1, dataGetMessageBlockList1_37.Result[1].Buf)
+
+	// 39. ptt-shutdown
+	bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
+
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":true}`
+	testBodyEqualCore(t0, bodyString, resultString, t)
+
+	time.Sleep(5 * time.Second)
+
+	// 40. test-error
+	err0_40 := testError("http://127.0.0.1:9450")
+	assert.NotEqual(nil, err0_40)
+
+	// 40.1. ptt_countPeers. ensure connecting to each other.
+	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
+	resultString = `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":0}}`
+	testBodyEqualCore(t1, bodyString, resultString, t)
+
+	// 41. friend-create-message
+	t.Logf("41. friend-create-message")
+	msg41, _ := json.Marshal([]string{
+		base64.StdEncoding.EncodeToString([]byte("測試31")),
+		base64.StdEncoding.EncodeToString([]byte("測試32")),
+		base64.StdEncoding.EncodeToString([]byte("測試33")),
+		base64.StdEncoding.EncodeToString([]byte("測試34")),
+		base64.StdEncoding.EncodeToString([]byte("測試35")),
+		base64.StdEncoding.EncodeToString([]byte("測試36")),
+		base64.StdEncoding.EncodeToString([]byte("測試37")),
+		base64.StdEncoding.EncodeToString([]byte("測試38")),
+		base64.StdEncoding.EncodeToString([]byte("測試39")),
+		base64.StdEncoding.EncodeToString([]byte("測試40")),
+	})
+
+	marshaled, _ = friend0_8.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_createMessage", "params": ["%v", %v, []]}`, string(marshaled), string(msg41))
+	dataCreateMessage1_41 := &friend.BackendCreateMessage{}
+	testCore(t1, bodyString, dataCreateMessage1_41, t, isDebug)
+	assert.Equal(friend0_8.ID, dataCreateMessage1_41.FriendID)
+	assert.Equal(1, dataCreateMessage1_41.NBlock)
+
+	time.Sleep(15 * time.Second)
+
+	// 42. friend-get-message-list
+	t.Logf("42. friend-get-message-list")
+	marshaled, _ = friend0_8.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getMessageList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMessageList1_42 := &struct {
+		Result []*friend.BackendGetMessage `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMessageList1_42, t, isDebug)
+	assert.Equal(2, len(dataGetMessageList1_42.Result))
+
+	msg1_42 := dataGetMessageList1_42.Result[1]
+	assert.Equal(1, msg1_42.NBlock)
+	assert.Equal(types.StatusFailed, msg1_42.Status)
+
+	// 99. start-node
+	startNode(t, 0)
+
+	// wait 15 seconds
+
+	time.Sleep(15 * time.Second)
+
+	// 99.1. test-error
+	err0_99_1 := testError("http://127.0.0.1:9450")
+	assert.Equal(nil, err0_99_1)
+
+	// 99.2. ptt_countPeers. ensure connecting to each other.
+	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
+	resultString = `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":1,"E":0,"R":0}}`
+	testBodyEqualCore(t0, bodyString, resultString, t)
+	testBodyEqualCore(t1, bodyString, resultString, t)
+
 }

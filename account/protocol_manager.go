@@ -165,6 +165,9 @@ func (pm *ProtocolManager) Stop() error {
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 	log.Debug("Sync: start", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
 	if peer == nil {
+		pm.SyncPendingMasterOplog(peer)
+		pm.SyncPendingMemberOplog(peer)
+		pm.SyncPendingUserOplog(peer)
 		return nil
 	}
 

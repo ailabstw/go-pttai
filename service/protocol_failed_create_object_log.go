@@ -67,13 +67,20 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 		}
 	}
 
-	blockInfo := obj.GetBlockInfo()
-	err = pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, nil, oplog, true, nil)
-	if err != nil {
-		return err
+	// 5. not my object.
+	myID := pm.Ptt().GetMyEntity().GetID()
+	if !reflect.DeepEqual(myID, obj.GetCreatorID()) {
+		blockInfo := obj.GetBlockInfo()
+		err = pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, nil, oplog, true, nil)
+		if err != nil {
+			return err
+		}
+		obj.Delete(true)
+
+		return nil
 	}
 
-	// 5. obj-save
+	// 6. obj-save
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return err

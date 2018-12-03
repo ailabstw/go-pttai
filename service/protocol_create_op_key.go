@@ -109,8 +109,18 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 	// 2. create object
 	_, err := pm.CreateObject(
-		nil, OpKeyOpTypeCreateOpKey,
-		pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
+		nil,
+		OpKeyOpTypeCreateOpKey,
+		pm.NewOpKey,
+		pm.NewOpKeyOplogWithTS,
+		nil,
+
+		pm.SetOpKeyDB,
+		pm.broadcastOpKeyOplogsCore,
+		pm.broadcastOpKeyOplogCore,
+
+		pm.postcreateOpKey,
+	)
 	if err != nil {
 		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
 		return err
@@ -130,8 +140,18 @@ func (pm *BaseProtocolManager) ForceCreateOpKey() error {
 
 	// 2. create object
 	_, err := pm.ForceCreateObject(
-		nil, OpKeyOpTypeCreateOpKey,
-		pm.NewOpKey, pm.NewOpKeyOplogWithTS, nil, pm.broadcastOpKeyOplogCore, pm.postcreateOpKey)
+		nil,
+		OpKeyOpTypeCreateOpKey,
+		pm.NewOpKey,
+		pm.NewOpKeyOplogWithTS,
+		nil,
+
+		pm.SetOpKeyDB,
+		pm.broadcastOpKeyOplogsCore,
+		pm.broadcastOpKeyOplogCore,
+
+		pm.postcreateOpKey,
+	)
 	if err != nil {
 		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
 		return err

@@ -28,6 +28,9 @@ import (
 var (
 	DefaultConfig = Config{
 		DataDir: filepath.Join(node.DefaultDataDir(), "friend"),
+
+		MaxSyncRandomSeconds: 20,
+		MinSyncRandomSeconds: 10,
 	}
 )
 
@@ -88,7 +91,7 @@ const (
 )
 
 // sync
-const (
+var (
 	MaxSyncRandomSeconds = 20
 	MinSyncRandomSeconds = 10
 )

@@ -57,9 +57,6 @@ looping:
 			if err != nil {
 				break looping
 			}
-			if peer == nil {
-				continue
-			}
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)

@@ -45,7 +45,20 @@ func (pm *ProtocolManager) CreateArticle(title []byte, articleBytes [][]byte, me
 		MediaIDs: mediaIDs,
 	}
 
-	theArticle, err := pm.CreateObject(data, BoardOpTypeCreateArticle, pm.NewArticle, pm.NewBoardOplogWithTS, pm.increateArticle, pm.broadcastBoardOplogCore, pm.postcreateArticle)
+	theArticle, err := pm.CreateObject(
+		data,
+		BoardOpTypeCreateArticle,
+
+		pm.NewArticle,
+		pm.NewBoardOplogWithTS,
+		pm.increateArticle,
+
+		pm.SetBoardDB,
+		pm.broadcastBoardOplogsCore,
+		pm.broadcastBoardOplogCore,
+
+		pm.postcreateArticle,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -118,6 +118,26 @@ func (f *Friend) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgser
 		return err
 	}
 
+	// profile
+	accountSPM := service.(*Backend).accountBackend.SPM()
+	if f.ProfileID != nil {
+		profile := accountSPM.Entity(f.ProfileID)
+		if profile == nil {
+			return pkgservice.ErrInvalidEntity
+		}
+		f.Profile = profile.(*account.Profile)
+	}
+
+	// board
+	contentSPM := service.(*Backend).contentBackend.SPM()
+	if f.BoardID != nil {
+		board := contentSPM.Entity(f.BoardID)
+		if board == nil {
+			return pkgservice.ErrInvalidEntity
+		}
+		f.Board = board.(*content.Board)
+	}
+
 	return nil
 }
 

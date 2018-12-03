@@ -38,19 +38,6 @@ func (pm *ProtocolManager) CreateUserOplog(objID *types.PttID, ts types.Timestam
 	return oplog, nil
 }
 
-func (pm *ProtocolManager) GetPendingUserOplogs() ([]*UserOplog, []*UserOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetUserDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	typedLogs := OplogsToUserOplogs(oplogs)
-
-	failedUserLogs := OplogsToUserOplogs(failedLogs)
-
-	return typedLogs, failedUserLogs, nil
-}
-
 /**********
  * BroadcastUserOplog
  **********/

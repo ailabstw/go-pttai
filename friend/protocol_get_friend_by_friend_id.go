@@ -34,3 +34,19 @@ func (spm *ServiceProtocolManager) GetFriendByFriendID(friendID *types.PttID) (*
 
 	return f, nil
 }
+
+func (spm *ServiceProtocolManager) GetFriendEntityByFriendID(friendID *types.PttID) (*Friend, error) {
+	f := NewEmptyFriend()
+
+	err := f.GetByFriendID(friendID)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := spm.Entity(f.ID)
+	if entity == nil {
+		return nil, types.ErrInvalidID
+	}
+
+	return entity.(*Friend), nil
+}

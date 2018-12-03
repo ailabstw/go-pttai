@@ -42,19 +42,6 @@ func (pm *ProtocolManager) CreateMeOplog(objID *types.PttID, ts types.Timestamp,
 	return oplog, nil
 }
 
-func (pm *ProtocolManager) GetPendingMeOplogs() ([]*MeOplog, []*MeOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetMeDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	opKeyLogs := OplogsToMeOplogs(oplogs)
-
-	failedMeLogs := OplogsToMeOplogs(failedLogs)
-
-	return opKeyLogs, failedMeLogs, nil
-}
-
 /**********
  * BroadcastMeOplog
  **********/

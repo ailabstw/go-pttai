@@ -16,19 +16,6 @@
 
 package service
 
-func (pm *BaseProtocolManager) GetPendingMasterOplogs() ([]*MasterOplog, []*MasterOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetMasterDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	opKeyLogs := OplogsToMasterOplogs(oplogs)
-
-	failedMasterLogs := OplogsToMasterOplogs(failedLogs)
-
-	return opKeyLogs, failedMasterLogs, nil
-}
-
 /**********
  * BroadcastMasterOplog
  **********/

@@ -29,4 +29,6 @@ type Config struct {
 	GitCommit string
 
 	NodeType NodeType
+
+	ExpireOplogSeconds int
 }

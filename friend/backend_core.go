@@ -19,6 +19,7 @@ package friend
 import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -191,6 +192,7 @@ func (b *Backend) CreateMessage(entityIDBytes []byte, message [][]byte, mediaIDS
 	}
 
 	theMessage, err := pm.CreateMessage(message, mediaIDs)
+	log.Debug("CreateMessage: after CreateMessage", "e", err)
 	if err != nil {
 		return nil, err
 	}

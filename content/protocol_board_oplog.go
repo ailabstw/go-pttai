@@ -38,19 +38,6 @@ func (pm *ProtocolManager) CreateBoardOplog(objID *types.PttID, ts types.Timesta
 	return oplog, nil
 }
 
-func (pm *ProtocolManager) GetPendingBoardOplogs() ([]*BoardOplog, []*BoardOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetBoardDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	typedLogs := OplogsToBoardOplogs(oplogs)
-
-	failedBoardLogs := OplogsToBoardOplogs(failedLogs)
-
-	return typedLogs, failedBoardLogs, nil
-}
-
 /**********
  * BroadcastBoardOplog
  **********/

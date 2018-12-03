@@ -18,6 +18,9 @@ package friend
 
 type Config struct {
 	DataDir string
+
+	MaxSyncRandomSeconds int
+	MinSyncRandomSeconds int
 }
 
 func NewConfig() (*Config, error) {

@@ -16,19 +16,6 @@
 
 package service
 
-func (pm *BaseProtocolManager) GetPendingMemberOplogs() ([]*MemberOplog, []*MemberOplog, error) {
-	oplogs, failedLogs, err := pm.GetPendingOplogs(pm.SetMemberDB)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	opKeyLogs := OplogsToMemberOplogs(oplogs)
-
-	failedMemberLogs := OplogsToMemberOplogs(failedLogs)
-
-	return opKeyLogs, failedMemberLogs, nil
-}
-
 /**********
  * BroadcastMemberOplog
  **********/

@@ -36,7 +36,7 @@ var (
 
 		NodeType: NodeTypeDesktop,
 
-		ExpireOplogSeconds: 30,
+		ExpireOplogSeconds: 180,
 	}
 )
 

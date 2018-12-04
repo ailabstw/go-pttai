@@ -24,10 +24,9 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-/**********
- * Handle CreateObjectLog
- **********/
-
+/*
+HandleCreateObjectLog handles valid create-object log
+*/
 func (pm *BaseProtocolManager) HandleCreateObjectLog(
 	oplog *BaseOplog,
 	obj Object,
@@ -36,19 +35,18 @@ func (pm *BaseProtocolManager) HandleCreateObjectLog(
 
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
 	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
-	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 
 ) ([]*BaseOplog, error) {
 
-	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
+	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreate, updateCreateInfo)
 	return nil, err
 }
 
-/**********
- * Handle PendingCreateObjectLog
- **********/
-
+/*
+HandlePendingCreateObjectLog handles pending create-object log
+*/
 func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
 	oplog *BaseOplog,
 	obj Object,
@@ -57,11 +55,11 @@ func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
 
 	existsInInfo func(oplog *BaseOplog, info ProcessInfo) (bool, error),
 	newObjWithOplog func(oplog *BaseOplog, opData OpData) Object,
-	postcreateObject func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 	updateCreateInfo func(obj Object, oplog *BaseOplog, opData OpData, info ProcessInfo) error,
 ) (types.Bool, []*BaseOplog, error) {
 
-	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreateObject, updateCreateInfo)
+	err := pm.handleCreateObjectLogCore(oplog, obj, opData, info, existsInInfo, newObjWithOplog, postcreate, updateCreateInfo)
 	return oplog.IsSync, nil, err
 }
 
@@ -69,6 +67,14 @@ func (pm *BaseProtocolManager) HandlePendingCreateObjectLog(
 handleCreateObjectLogCore deals with create-object logs
 
 We need existsInInfo because the object may be already deleted by parent objects (comment vs article)
+
+	1. lock obj.
+	2. get the obj.
+	2.1. if the obj does not exist: do handleCreateObjectNewLog
+	3.0. handle failed-object with valid oplog.
+	3. check log-id
+	4. if same log-id: do handleCreateObjectSameLog
+	5. else: do handleCreateObjectDiffLog
 */
 func (pm *BaseProtocolManager) handleCreateObjectLogCore(
 	oplog *BaseOplog,
@@ -111,6 +117,14 @@ func (pm *BaseProtocolManager) handleCreateObjectLogCore(
 	// orig-obj exists
 	origObj := obj
 
+	// handle failed-object with valid oplog.
+	if origObj.GetStatus() == types.StatusFailed && oplog.MasterLogID != nil {
+		blockInfo := obj.GetBlockInfo()
+		pm.removeBlockAndMediaInfoByBlockInfo(blockInfo, nil, oplog, true, nil)
+		obj.Delete(true)
+		return pm.handleCreateObjectNewLog(oplog, opData, info, existsInInfo, newObjWithOplog, updateCreateInfo)
+	}
+
 	// newest-orig-log-id
 	newestLogID := origObj.GetUpdateLogID()
 	if newestLogID == nil {
@@ -129,6 +143,15 @@ func (pm *BaseProtocolManager) handleCreateObjectLogCore(
 	return pm.handleCreateObjectDiffLog(oplog, origObj, info)
 }
 
+/*
+handleCreateObjectNewLog handles create-object log while the object does not exist (possibly the new one, or already deleted).
+
+	1. check whether exists in info.
+	1.1. if exists in info: already deleted.
+	2. create object as InternalSync based on oplog.
+	3. save object.
+	4. update info.
+*/
 func (pm *BaseProtocolManager) handleCreateObjectNewLog(
 	oplog *BaseOplog,
 	opData OpData,
@@ -166,6 +189,14 @@ func (pm *BaseProtocolManager) handleCreateObjectNewLog(
 	return updateCreateInfo(obj, oplog, opData, info)
 }
 
+/*
+handleCreateObjectSameLog handles create-object log while the object is with same log-id.
+
+	1. if the orig-status is InternalSync (still pending to get the data): update the info to ask the data again.
+	2. check validity
+	3. if the orig-status is the same as oplog-status (already synced. but not valid yet (still need to update UT))
+	4. orig-status < oplog-status: update object and possibly do postcreate.
+*/
 func (pm *BaseProtocolManager) handleCreateObjectSameLog(
 	oplog *BaseOplog,
 	origObj Object,
@@ -216,6 +247,11 @@ func (pm *BaseProtocolManager) handleCreateObjectSameLog(
 	return pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreate)
 }
 
+/*
+handleCreateObjectSameLog handles create-object log while the object is with different log-id.
+
+	1. Just return ErrNewerOplog (failed oplog is already taken care of in handleCreateObjectLogCore)
+*/
 func (pm *BaseProtocolManager) handleCreateObjectDiffLog(
 	oplog *BaseOplog,
 	origObj Object,

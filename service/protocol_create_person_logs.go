@@ -33,16 +33,21 @@ func NewProcessPersonInfo() *ProcessPersonInfo {
 	}
 }
 
-/**********
- * Handle CreatePersonLog
- **********/
+/*
+HandleCreatePersonLog handles valid create-person log.
 
+	1. lock person
+	2. check whether the person exists. (should always be ErrNotFound)
+	3. new person.
+	4. set is-all-sync
+	5. save object with oplog.
+*/
 func (pm *BaseProtocolManager) HandleCreatePersonLog(
 	oplog *BaseOplog,
 	person Object,
 	opData OpData,
 
-	postcreatePerson func(obj Object, oplog *BaseOplog) error,
+	postcreate func(obj Object, oplog *BaseOplog) error,
 ) ([]*BaseOplog, error) {
 
 	personID := oplog.ObjID
@@ -57,6 +62,9 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 
 	// 2. get person (should never delete once stored)
 	err = person.GetByID(true)
+	if err == nil {
+		return nil, ErrNewerOplog
+	}
 	if err != leveldb.ErrNotFound {
 		return nil, err
 	}
@@ -64,26 +72,25 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 	// 3. new person
 	NewObjectWithOplog(person, oplog)
 
-	// 3.1. set is good
+	// 4. set is good
 	person.SetIsGood(true)
 	person.SetIsAllGood(true)
 
-	// 4. save object
-	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreatePerson)
+	// 5. save object
+	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreate)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. set oplog is-sync
+	// 6. set oplog is-sync
 	oplog.IsSync = true
 
 	return nil, nil
 }
 
-/**********
- * Handle PendingCreateObjectLog
- **********/
-
+/*
+HandlePendingCreateObjectLog handles pending create-person log (should never happen)
+*/
 func (pm *BaseProtocolManager) HandlePendingCreatePersonLog(
 	oplog *BaseOplog,
 	person Object,
@@ -94,15 +101,14 @@ func (pm *BaseProtocolManager) HandlePendingCreatePersonLog(
 	return false, nil, types.ErrNotImplemented
 }
 
-/**********
- * Handle Failed CreateObjectLog
- **********/
-
+/*
+HandleFailedCreatePersonLog handles failed create-person log (should never happen)
+*/
 func (pm *BaseProtocolManager) HandleFailedCreatePersonLog(
 	oplog *BaseOplog,
 	person Object,
 
-	postfailedCreatePerson func(obj Object, oplog *BaseOplog) error,
+	prefailed func(obj Object, oplog *BaseOplog) error,
 ) error {
 	return types.ErrNotImplemented
 }

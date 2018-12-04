@@ -23,10 +23,15 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-/**********
- * Set Newest CreateObjectLog
- **********/
+/*
+SetNewestCreateObjectLog sets newest create-object log.
 
+	1. lock.
+	2. get data.
+	3. cmp
+	3.1. obj.UpdateLogID exists.
+	3.2. cmp obj.LogID and oplog.ID
+*/
 func (pm *BaseProtocolManager) SetNewestCreateObjectLog(
 	oplog *BaseOplog,
 	obj Object,

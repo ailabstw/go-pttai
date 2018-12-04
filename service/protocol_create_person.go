@@ -20,6 +20,17 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
+/*
+CreatePerson creates person (master / member). To promote the framework, people are immediately set as valid (type as alive, oplog as valid) after CreatePerson.
+
+	1. new person
+	2. new oplog
+	3. set synced (is-all-good).
+	4. sign oplog
+	5. save object
+	6. oplog-save
+	7. broadcast-log
+*/
 func (pm *BaseProtocolManager) CreatePerson(
 	id *types.PttID,
 	createOp OpType,
@@ -32,56 +43,47 @@ func (pm *BaseProtocolManager) CreatePerson(
 
 ) (Object, *BaseOplog, error) {
 
-	// 2. new person
+	// 1. new person
 	person, opData, err := newPerson(id)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// 3. oplog
+	// 2. oplog
 	theOplog, err := newOplogWithTS(id, person.GetUpdateTS(), createOp, opData)
 	if err != nil {
 		return nil, nil, err
 	}
 	oplog := theOplog.GetBaseOplog()
 
-	// 4.1. set is good
+	// 3. set is good
 	person.SetIsGood(true)
 	person.SetIsAllGood(true)
 
-	// 5. sign oplog
+	// 4. sign oplog
 	masterLogID := pm.GetNewestMasterLogID()
 	if masterLogID == nil {
-		masterLogID = oplog.ID
+		pm.SetNewestMasterLogID(oplog.ID)
 	}
 
-	myEntity := pm.Ptt().GetMyEntity()
-	err = myEntity.Sign(oplog)
-	if err != nil {
-		return nil, nil, err
-	}
-	err = myEntity.MasterSign(oplog)
-	if err != nil {
-		return nil, nil, err
-	}
-	oplog.SetMasterLogID(masterLogID, 1)
-	oplog.Hash, err = oplog.SignsHash()
+	err = pm.ForceSignOplog(oplog)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// 6. save object
+	// 5. save object
 	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreatePerson)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// 7. oplog-save
+	// 6. oplog-save
 	err = oplog.Save(false)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// 7. broadcast log
 	broadcastLog(oplog)
 
 	return person, oplog, nil

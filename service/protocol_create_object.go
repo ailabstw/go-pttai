@@ -23,6 +23,9 @@ import (
 
 type CreateData interface{}
 
+/*
+ForceCreateObject creates the object and forcely makes the object as valid (oplog as valid-log, and the object as alive.)
+*/
 func (pm *BaseProtocolManager) ForceCreateObject(
 	data CreateData,
 	createOp OpType,
@@ -38,6 +41,9 @@ func (pm *BaseProtocolManager) ForceCreateObject(
 	return pm.createObjectCore(data, createOp, true, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
 }
 
+/*
+CreateObject creates the object. The status of the object may be internal-pending, pending, or alive.
+*/
 func (pm *BaseProtocolManager) CreateObject(
 	data CreateData,
 	createOp OpType,
@@ -53,6 +59,39 @@ func (pm *BaseProtocolManager) CreateObject(
 	return pm.createObjectCore(data, createOp, false, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
 }
 
+/*
+createObjectCore is the core for ForceCreateObject and CreateObject.
+
+	1. validate the entity status.
+	2. new-object.
+	3. new-oplog.
+
+	4. increate (extra-steps before oplog-sign).
+	4.1. set is synced.
+
+	5. sign oplog.
+	6. save object (and postcreate).
+
+	7. oplog-save.
+
+	8. broadcast logs.
+
+data: The necessary information to create the object.
+createOp: The corresponding Op.
+
+isForce: Is forcing the object as valid object (sign with MasterLogID) or not.
+
+newObj: function to new the object.
+newOplogWithTS: function to new the oplog, ts is based on the create-ts of the obj.
+
+increate: function (after newOplog) dealing with extra steps before oplog-signing.
+
+setLogDB: function setting the db of the log (for getting pending logs).
+broadcastLogs: function to broadcast (pending) Logs.
+broadcastLog: function to broadcast log.
+
+postcreate: function dealing with postcreate
+*/
 func (pm *BaseProtocolManager) createObjectCore(
 	data CreateData,
 	createOp OpType,
@@ -137,6 +176,7 @@ func (pm *BaseProtocolManager) createObjectCore(
 		return nil, err
 	}
 
+	// 8. broadcast logs.
 	log.Debug("CreateObject: to broadcastLog", "obj", obj.GetID(), "oplog", oplog.ID)
 
 	pendingLogs, _, err := pm.GetPendingOplogs(setLogDB, nil, true)
@@ -156,6 +196,13 @@ func (pm *BaseProtocolManager) createObjectCore(
 
 /*
 SaveNewObjectWithOplog saves New Object with Oplog.
+
+	1. check is-synced (set new status if the obj is all-synced)
+	2. obj-save.
+
+	3. check whether to do postcreate.
+
+	4. do postcreate.
 */
 func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 	obj Object,

@@ -194,6 +194,8 @@ type Server struct {
 	p2pctx    context.Context
 	p2pcancel context.CancelFunc
 	p2pKadDHT *dht.IpfsDHT
+
+	LastAnnounceP2PTS time.Time
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -455,6 +457,8 @@ func (srv *Server) AnnounceP2P() error {
 	if err != nil {
 		return err
 	}
+
+	srv.LastAnnounceP2PTS = time.Now()
 
 	return nil
 }

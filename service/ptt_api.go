@@ -115,3 +115,11 @@ func (api *PrivateAPI) SetLocale(locale Locale) (Locale, error) {
 func (api *PrivateAPI) GetLocale() (Locale, error) {
 	return CurrentLocale, nil
 }
+
+/**********
+ * P2P
+ **********/
+
+func (api *PrivateAPI) GetLastAnnounceP2PTS() (types.Timestamp, error) {
+	return api.p.GetLastAnnounceP2PTS()
+}

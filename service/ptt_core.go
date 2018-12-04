@@ -181,3 +181,7 @@ func (p *BasePtt) GetPttOplogSeen() (types.Timestamp, error) {
 
 	return ts, nil
 }
+
+func (p *BasePtt) GetLastAnnounceP2PTS() (types.Timestamp, error) {
+	return types.TimeToTimestamp(p.server.LastAnnounceP2PTS), nil
+}

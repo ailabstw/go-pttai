@@ -22,10 +22,16 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-/**********
- * Handle Failed CreateObjectLog
- **********/
+/*
+HandleFailedCreateObjectLog handles failed create-object log.
 
+	1. lock-obj.
+	2. get obj, and return if unable to get the obj (already deleted)
+	3. check validity.
+	4. prefailed
+	5. if not my object: remove blocks and the object.
+	6. if my object: only set the status as failed.
+*/
 func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 	oplog *BaseOplog,
 	obj Object,
@@ -59,7 +65,7 @@ func (pm *BaseProtocolManager) HandleFailedCreateObjectLog(
 		return nil
 	}
 
-	// 4. handle fail
+	// 4. prefailed
 	if prefailed != nil {
 		err = prefailed(obj, oplog)
 		if err != nil {

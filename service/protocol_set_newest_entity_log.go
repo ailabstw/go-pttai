@@ -22,10 +22,9 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-/**********
- * Set Newest Entity Log
- **********/
-
+/*
+SetNewestEntityLog sets the newest entity log. Because of the nature of entity log, we just need to compare whether the oplog.ID is the same as entity.LogID
+*/
 func (pm *BaseProtocolManager) SetNewestEntityLog(
 	oplog *BaseOplog,
 ) (types.Bool, error) {
@@ -35,10 +34,9 @@ func (pm *BaseProtocolManager) SetNewestEntityLog(
 	return !types.Bool(reflect.DeepEqual(oplog.ID, entity.GetLogID())), nil
 }
 
-/**********
- * Set Newest DeleteEntity Log
- **********/
-
+/*
+SetNewestDeleteEntityLog sets the newest delete entity log. Utilizing SetNewestEntityLog as the underlying mechanism.
+*/
 func (pm *BaseProtocolManager) SetNewestDeleteEntityLog(
 	oplog *BaseOplog,
 ) (types.Bool, error) {

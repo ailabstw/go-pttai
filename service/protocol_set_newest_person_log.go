@@ -22,10 +22,9 @@ import (
 	"reflect"
 )
 
-/**********
- * Set Newest PersonLog
- **********/
-
+/*
+SetNewestPersonLog sets the newest person log. Because of the nature of person log, we just need to compare whether the oplog.ID is the same as person.LogID.
+*/
 func (pm *BaseProtocolManager) SetNewestPersonLog(
 	oplog *BaseOplog,
 	person Object,
@@ -43,10 +42,9 @@ func (pm *BaseProtocolManager) SetNewestPersonLog(
 	return !types.Bool(reflect.DeepEqual(oplog.ID, person.GetLogID())), nil
 }
 
-/**********
- * Set Newest DeletePersonLog
- **********/
-
+/*
+SetNewestDeletePersonLog sets the newest delete person log. Utilizing SetNewestPersonLog as the underlying mechanism.
+*/
 func (pm *BaseProtocolManager) SetNewestDeletePersonLog(
 	oplog *BaseOplog,
 	person Object,
@@ -55,10 +53,9 @@ func (pm *BaseProtocolManager) SetNewestDeletePersonLog(
 	return pm.SetNewestPersonLog(oplog, person)
 }
 
-/**********
- * Set Newest TransferPersonLog
- **********/
-
+/*
+SetNewestTransferPersonLog sets the newest transfer person log. Utilizing SetNewestPersonLog as the underlying mechanism.
+*/
 func (pm *BaseProtocolManager) SetNewestTransferPersonLog(
 	oplog *BaseOplog,
 	obj Object,

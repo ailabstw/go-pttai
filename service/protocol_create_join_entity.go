@@ -21,6 +21,23 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
+/*
+CreateJoinEntity joins the entity and creates the corresponding information. Like CreateEntity, CreateJoinEntity is from SPM.
+
+	1. lock.
+	2. check is new.
+	3. set JoinTS
+	4. entity-save
+	5. entity-init.
+	6. master-log.
+	7. member-log.
+	7.1: register master again (to help ptt-layer determining the status of the peer).
+	8. oplog0.
+	9. op-key.
+	10. spm-registering.
+	11. register member.
+	12. me-oplog.
+*/
 func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	approveJoin *ApproveJoinEntity,
 	peer *PttPeer,
@@ -42,6 +59,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	service := spm.Service()
 	sspm := service.SPM()
 
+	// 1. lock.
 	if !isLocked {
 		err = sspm.Lock(entity.GetID())
 		if err != nil {
@@ -50,10 +68,9 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		defer sspm.Unlock(entity.GetID())
 	}
 
-	// entity
 	var ts types.Timestamp
 
-	// check is new
+	// 2. check is new
 	if isNew {
 		origEntity := spm.Entity(entity.GetID())
 		if origEntity != nil {
@@ -62,6 +79,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		}
 	}
 
+	// 3. set join-ts.
 	if meLog == nil {
 		ts, err = types.GetTimestamp()
 		if err != nil {
@@ -74,12 +92,14 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		entity.SetMeLogID(meLog.ID)
 	}
 
+	// 4. entity-save.
 	entity.SetSyncInfo(nil)
 	err = entity.Save(true)
 	if err != nil {
 		return nil, err
 	}
 
+	// 5. entity-init.
 	if isNew {
 		err = entity.Init(ptt, service, sspm)
 		if err != nil {
@@ -87,7 +107,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		}
 	}
 
-	// master-logs
+	// 6. master-logs
 	pm := entity.PM()
 	log.Debug("CreateJoinEntity: to HandleMasterOplogs", "entity", entity.GetID(), "masterLogs", len(masterLogs))
 	for _, masterLog := range masterLogs {
@@ -96,7 +116,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 
 	pm.HandleMasterOplogs(masterLogs, peer, false)
 
-	// member-logs
+	// 7. member-logs
 	log.Debug("CreateJoinEntity: to HandleMemberOplogs", "entity", entity.GetID(), "memberLogs", len(memberLogs))
 	for _, memberLog := range memberLogs {
 		log.Debug("CreateJoinEntity: to HandleMemberOplogs", "entity", entity.GetID(), "memberLog", memberLog.ObjID)
@@ -113,7 +133,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		pm.RegisterMaster(master, false, false)
 	}
 
-	// oplog0
+	// 8. oplog0
 	log.Debug("CreateJoinEntity: to SetLog0DB", "oplog0", oplog0)
 	pm.SetLog0DB(oplog0)
 	err = oplog0.Save(false)
@@ -121,7 +141,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 
-	// op-key
+	// 9. op-key
 	pm.SetOpKeyObjDB(opKey)
 	err = opKey.Save(false)
 	if err != nil {
@@ -138,7 +158,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 
-	// spm-register
+	// 10. spm-register
 	spm.RegisterEntity(entity.GetID(), entity)
 
 	entity.SetStatus(types.StatusAlive)
@@ -148,12 +168,12 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		entity.PrestartAndStart()
 	}
 
-	// register member
+	// 11. register member
 	if peer.PeerType != PeerTypeMe {
 		pm.RegisterPeer(peer, PeerTypeImportant)
 	}
 
-	// me-oplog
+	// 12. me-oplog
 	if meLog != nil {
 		return entity, nil
 	}

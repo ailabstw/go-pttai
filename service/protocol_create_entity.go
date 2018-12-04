@@ -21,6 +21,23 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
+/*
+CreateEntity creates the entity. CreateEntity is from SPM, while CreateObject and CreateMember is from PM.
+
+	1. new entity.
+	2. add master.
+	2.1. add member.
+	3. oplog.
+	4. increate.
+	5. force-sign oplog.
+	6. entity-save.
+	6.1. SPM register entity.
+	7. oplog-save.
+	8. post-save
+	8.1. create op-key.
+	8.2. prestart and start.
+	8.3. postcreate.
+*/
 func (spm *BaseServiceProtocolManager) CreateEntity(
 	data CreateData,
 	createOp OpType,
@@ -33,7 +50,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	postcreate func(entity Entity) error,
 ) (Entity, error) {
 
-	// 2. new entity
+	// 1. new entity
 	myID := spm.Ptt().GetMyEntity().GetID()
 
 	entity, opData, err := newEntity(data, spm.Ptt(), spm.Service())
@@ -50,14 +67,14 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 	entityID := entity.GetID()
 	ts := entity.GetUpdateTS()
 
-	// 2.1. master
+	// 2. master
 	_, _, err = pm.AddMaster(myID, true)
 	log.Debug("CreateEntity: after AddMaster", "e", err)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2.2. member
+	// 2.1. member
 	_, _, err = pm.AddMember(myID, true)
 	log.Debug("CreateEntity: after AddMember", "e", err)
 	if err != nil {
@@ -132,6 +149,9 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
  * PM functions. Requiring public funcions to let SPM able to access.
  **********/
 
+/*
+SaveNewEntityWithOplog sets and saves the status/UT of the newly created entity based on the oplog.
+*/
 func (pm *BaseProtocolManager) SaveNewEntityWithOplog(oplog *BaseOplog, isLocked bool, isForce bool) error {
 
 	entity := pm.Entity()
@@ -155,6 +175,9 @@ func (pm *BaseProtocolManager) SaveNewEntityWithOplog(oplog *BaseOplog, isLocked
 	return nil
 }
 
+/*
+MaybePostcreateEntity checks the whether to do postcreate and does postcreate of the entity.
+*/
 func (pm *BaseProtocolManager) MaybePostcreateEntity(
 	oplog *BaseOplog,
 

@@ -70,8 +70,9 @@ func (k *KeyInfo) Init(
 }
 
 func (k *KeyInfo) NewEmptyObj() Object {
-	obj := k.BaseObject.NewEmptyObj()
-	return &KeyInfo{BaseObject: obj}
+	newObj := NewEmptyOpKey()
+	newObj.CloneDB(k.BaseObject)
+	return newObj
 }
 
 func (k *KeyInfo) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {

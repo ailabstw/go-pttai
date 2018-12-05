@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -200,6 +201,7 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 	// media
 	createMediaIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateMediaInfo, BoardOpTypeCreateMedia)
 	createMediaBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.MediaBlockInfo, BoardOpTypeCreateMedia)
+	log.Debug("postprocessBoardOplogs: to Sync Media", "createMediaIDs", createMediaIDs, "createMediaBlockIDs", createMediaBlockIDs)
 	pm.SyncMedia(SyncCreateMediaMsg, createMediaIDs, peer)
 	pm.SyncBlock(SyncCreateMediaBlockMsg, createMediaBlockIDs, peer)
 

@@ -433,8 +433,7 @@ func (o *BaseObject) SetMediaDB() func(media *Media) {
 
 func (o *BaseObject) NewEmptyObj() *BaseObject {
 	newObj := &BaseObject{}
-	newObj.SetDB(o.db, o.dbLock, o.EntityID, o.fullDBPrefix, o.fullDBIdxPrefix, o.setBlockInfoDB, o.setMediaDB)
-
+	newObj.CloneDB(o)
 	return newObj
 }
 

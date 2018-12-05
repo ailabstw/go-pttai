@@ -45,11 +45,13 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 
 	data := &SyncBlock{}
 	err := json.Unmarshal(dataBytes, data)
+	log.Debug("HandleSyncBlock: after unmarshal", "e", err)
 	if err != nil {
 		return err
 	}
 
 	lenObjs := len(data.IDs)
+	log.Debug("HandleSyncBlock: after lenObjs", "lenObjs", lenObjs)
 	if lenObjs == 0 {
 		return nil
 	}
@@ -61,6 +63,7 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 	for _, syncBlockID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncBlockID.ObjID, false)
 		if err != nil {
+			log.Warn("HandleSyncCreateBlock: (in-for-loop): unable to GetNewObjByID", "objID", syncBlockID.ObjID, "e", err)
 			continue
 		}
 
@@ -69,12 +72,14 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 		}
 
 		blockInfo = newObj.GetBlockInfo()
+		log.Debug("HandleSyncCreateBlock: (in-for-loop): after GetBlockInfo", "blockInfo", blockInfo)
 		if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
 			continue
 		}
 		pm.SetBlockInfoDB(blockInfo, syncBlockID.ObjID)
 
 		newBlocks, err = GetBlockList(blockInfo, 0, false)
+		log.Debug("HandleSyncCreateBlock: (in-for-loop): after GetBlockList", "newBlocks", newBlocks, "e", err)
 		if err != nil {
 			continue
 		}

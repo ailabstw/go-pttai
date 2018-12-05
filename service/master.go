@@ -122,8 +122,9 @@ func (m *Master) Save(isLocked bool) error {
 }
 
 func (m *Master) NewEmptyObj() Object {
-	obj := m.BaseObject.NewEmptyObj()
-	return &Master{BaseObject: obj}
+	newObj := NewEmptyMaster()
+	newObj.CloneDB(m.BaseObject)
+	return newObj
 }
 
 func (m *Master) GetNewObjByID(id *types.PttID, isLocked bool) (Object, error) {

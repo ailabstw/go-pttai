@@ -209,3 +209,9 @@ var (
 		},
 	}
 )
+
+// browser
+
+const (
+	TimeSleepBrowser = 8
+)

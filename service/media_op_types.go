@@ -16,46 +16,12 @@
 
 package service
 
-import (
-	"github.com/ailabstw/go-pttai/common/types"
-)
+import "github.com/ailabstw/go-pttai/common/types"
 
-func (pm *BaseProtocolManager) BaseDeleteMedia(
-	id *types.PttID,
-	op OpType,
-
-	setLogDB func(oplog *BaseOplog),
-	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
-	broadcastLog func(oplog *BaseOplog) error,
-) error {
-
-	media := NewEmptyMedia()
-	pm.SetMediaDB(media)
-
-	opData := &OpDeleteMedia{}
-
-	return pm.DeleteObject(
-		id,
-		op,
-
-		media,
-		opData,
-
-		setLogDB,
-		newOplog,
-		nil,
-		pm.setPendingDeleteMediaSyncInfo,
-		broadcastLog,
-		nil,
-	)
+type OpCreateMedia struct {
+	BlockInfoID *types.PttID `json:"BID"`
+	Hashs       [][][]byte   `json:"H"`
+	NBlock      int          `json:"NB"`
 }
 
-func (pm *BaseProtocolManager) setPendingDeleteMediaSyncInfo(obj Object, status types.Status, oplog *BaseOplog) error {
-
-	syncInfo := &BaseSyncInfo{}
-	syncInfo.InitWithOplog(status, oplog)
-
-	obj.SetSyncInfo(syncInfo)
-
-	return nil
-}
+type OpDeleteMedia struct{}

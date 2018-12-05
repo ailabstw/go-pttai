@@ -179,8 +179,9 @@ func (m *Media) SetBlockDB(block *Block) {
 }
 
 func (m *Media) NewEmptyObj() Object {
-	return &Media{BaseObject: &BaseObject{EntityID: m.EntityID, db: m.db, dbLock: m.dbLock, fullDBPrefix: m.fullDBPrefix}}
-
+	newObj := NewEmptyMedia()
+	newObj.CloneDB(m.BaseObject)
+	return newObj
 }
 
 func (pm *BaseProtocolManager) SetMediaDB(media *Media) {

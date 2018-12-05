@@ -20,12 +20,6 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-type OpCreateMedia struct {
-	BlockInfoID *types.PttID `json:"bID"`
-	Hashs       [][][]byte   `json:"H"`
-	NBlock      int          `json:"NB"`
-}
-
 func (pm *BaseProtocolManager) HandleCreateMediaLogs(
 	oplog *BaseOplog,
 	info ProcessInfo,

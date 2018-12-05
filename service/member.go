@@ -117,8 +117,9 @@ func (m *Member) Save(isLocked bool) error {
 }
 
 func (m *Member) NewEmptyObj() Object {
-	obj := m.BaseObject.NewEmptyObj()
-	return &Member{BaseObject: obj}
+	newObj := NewEmptyMember()
+	newObj.CloneDB(m.BaseObject)
+	return newObj
 }
 
 func (pm *BaseProtocolManager) SetMemberObjDB(member *Member) {

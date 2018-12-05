@@ -61,6 +61,7 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 	for _, syncBlockID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncBlockID.ObjID, false)
 		if err != nil {
+			log.Warn("HandleSyncCreateBlock: (in-for-loop): unable to GetNewObjByID", "objID", syncBlockID.ObjID, "e", err)
 			continue
 		}
 
@@ -78,11 +79,8 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 		if err != nil {
 			continue
 		}
-		log.Debug("HandleSyncCreateBlock: (in-for-loop)", "blockInfo", blockInfo, "newBlocks", newBlocks)
 		blocks = append(blocks, newBlocks...)
 	}
-
-	log.Debug("HandleSyncCreateBlock: to syncBlockAck", "blocks", blocks)
 
 	return pm.SyncBlockAck(syncAckMsg, blocks, peer)
 }

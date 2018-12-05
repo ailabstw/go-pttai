@@ -16,8 +16,6 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/log"
-
 func (pm *BaseProtocolManager) SyncMedia(op OpType, syncIDs []*SyncID, peer *PttPeer) error {
 	return pm.SyncObject(op, syncIDs, peer)
 }
@@ -43,8 +41,6 @@ func (pm *BaseProtocolManager) HandleSyncMediaBlock(
 	obj := NewEmptyMedia()
 	pm.SetMediaDB(obj)
 
-	log.Debug("HandleSyncMediaBlock: to HandleSyncBlock")
-
 	return pm.HandleSyncBlock(dataBytes, peer, obj, ackMsg)
 }
 
@@ -59,8 +55,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateMediaBlockAck(
 
 	obj := NewEmptyMedia()
 	pm.SetMediaDB(obj)
-
-	log.Debug("HandleSyncCreateMediaBlockAck: to HandleSyncCreateBlockAck")
 
 	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, setLogDB, nil, broadcastLog)
 }

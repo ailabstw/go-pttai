@@ -154,14 +154,13 @@ func (pm *ProtocolManager) postcreateArticle(theObj pkgservice.Object, oplog *pk
 
 	entity := pm.Entity().(*Board)
 	entity.SaveArticleCreateTS(oplog.UpdateTS)
-	pm.SaveLastSeen(oplog.UpdateTS)
 
-	// ptt-oplog
 	if reflect.DeepEqual(article.CreatorID, myID) {
+		pm.SaveLastSeen(oplog.UpdateTS)
 		return nil
 	}
 
-	// I can get only mine and my friends' user name
+	// I can get only my name and my friends' user name
 	accountSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
 	_, err := accountSPM.GetUserNameByID(article.CreatorID)
 	if err != nil {

@@ -17,6 +17,8 @@
 package friend
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -135,7 +137,13 @@ func (pm *ProtocolManager) postcreateMessage(theObj pkgservice.Object, oplog *pk
 
 	entity := pm.Entity().(*Friend)
 	entity.SaveMessageCreateTS(oplog.UpdateTS)
-	pm.SaveLastSeen(oplog.UpdateTS)
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	creatorID := theObj.GetCreatorID()
+
+	if reflect.DeepEqual(myID, creatorID) {
+		pm.SaveLastSeen(oplog.UpdateTS)
+	}
 
 	return nil
 }

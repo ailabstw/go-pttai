@@ -98,7 +98,7 @@ func gptt(ctx *cli.Context) error {
 	// open-browser
 	if !ctx.GlobalIsSet(utils.ServerFlag.Name) && !ctx.GlobalIsSet(utils.ExternRPCPortFlag.Name) && !ctx.GlobalIsSet(utils.ExternHTTPAddrFlag.Name) {
 		go func() {
-			time.Sleep(5 * time.Second)
+			time.Sleep(TimeSleepBrowser * time.Second)
 			utils.OpenBrowser(cfg.Utils.HTTPAddr)
 		}()
 	}

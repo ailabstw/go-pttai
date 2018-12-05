@@ -621,6 +621,9 @@ func TestFriend3DeleteComment(t *testing.T) {
 	assert.Equal(dataCreateArticle0_35.ArticleID, dataCreateComment0_43.ArticleID)
 	assert.Equal(dataCreateArticle0_35.BoardID, dataCreateComment0_43.BoardID)
 
+	// wait 10 secs
+	time.Sleep(10 * time.Second)
+
 	// 44. content-create-comment
 	commentBytes0_44 := []byte("這是comment44")
 	commentStr = base64.StdEncoding.EncodeToString(commentBytes0_44)
@@ -634,6 +637,9 @@ func TestFriend3DeleteComment(t *testing.T) {
 	testCore(t0, bodyString, dataCreateComment0_44, t, isDebug)
 	assert.Equal(dataCreateArticle0_35.ArticleID, dataCreateComment0_44.ArticleID)
 	assert.Equal(dataCreateArticle0_35.BoardID, dataCreateComment0_44.BoardID)
+
+	// wait 10 secs
+	time.Sleep(10 * time.Second)
 
 	// 45. content-create-comment
 	commentBytes0_45 := []byte("這是comment45")

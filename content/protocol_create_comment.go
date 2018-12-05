@@ -163,12 +163,12 @@ func (pm *ProtocolManager) postcreateComment(theObj pkgservice.Object, oplog *pk
 	article.SetID(comment.ArticleID)
 
 	article.IncreaseComment(comment.ID, comment.CommentType, oplog.UpdateTS)
-	article.SaveLastSeen(oplog.UpdateTS)
 
 	// ptt-oplog
 	myID := pm.Ptt().GetMyEntity().GetID()
 
 	if reflect.DeepEqual(comment.CreatorID, myID) {
+		article.SaveLastSeen(oplog.UpdateTS)
 		return nil
 	}
 	if !reflect.DeepEqual(comment.ArticleCreatorID, myID) {

@@ -663,7 +663,18 @@ func (b *Backend) MarkBoardSeen(entityIDBytes []byte) (types.Timestamp, error) {
 
 func (b *Backend) MarkArticleSeen(entityIDBytes []byte, articleIDBytes []byte) (types.Timestamp, error) {
 
-	return types.ZeroTimestamp, types.ErrNotImplemented
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	articleID, err := types.UnmarshalTextPttID(articleIDBytes, false)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return pm.SaveArticleLastSeen(articleID, types.ZeroTimestamp)
 }
 
 func (b *Backend) SetTitle(entityIDBytes []byte, title []byte) (*BackendGetBoard, error) {

@@ -396,4 +396,62 @@ func TestArticleFriend2(t *testing.T) {
 	}{}
 	testListCore(t1, bodyString, dataGetArticleList1_49, t, isDebug)
 	assert.Equal(1, len(dataGetArticleList1_49.Result))
+
+	// 50. get-article-block
+	marshaledID, _ = board0_10_0.ID.MarshalText()
+	marshaledID2, _ = article0_36.ID.MarshalText()
+	marshaledID3, _ = article0_36.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_50 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_50, t, isDebug)
+	assert.Equal(3, len(dataGetArticleBlockList0_50.Result))
+
+	article0 = [][]byte{
+		[]byte("測試1"),
+	}
+
+	article1 = [][]byte{
+		[]byte("測試2"),
+		[]byte("測試3"),
+		[]byte("測試4"),
+		[]byte("測試5"),
+		[]byte("測試6"),
+		[]byte("測試7"),
+		[]byte("測試8"),
+		[]byte("測試9"),
+		[]byte("測試10"),
+		[]byte("測試11"),
+		[]byte("測試12"),
+		[]byte("測試13"),
+		[]byte("測試14"),
+		[]byte("測試15"),
+		[]byte("測試16"),
+		[]byte("測試17"),
+		[]byte("測試18"),
+		[]byte("測試19"),
+		[]byte("測試20"),
+		[]byte("測試21"),
+	}
+
+	article2 = [][]byte{
+		[]byte("測試22"),
+	}
+
+	assert.Equal(article0, dataGetArticleBlockList0_50.Result[0].Buf)
+	assert.Equal(article1, dataGetArticleBlockList0_50.Result[1].Buf)
+	assert.Equal(article2, dataGetArticleBlockList0_50.Result[2].Buf)
+
+	dataGetArticleBlockList1_50 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_50, t, isDebug)
+	assert.Equal(3, len(dataGetArticleBlockList1_50.Result))
+
+	assert.Equal(article0, dataGetArticleBlockList1_50.Result[0].Buf)
+	assert.Equal(article1, dataGetArticleBlockList1_50.Result[1].Buf)
+	assert.Equal(article2, dataGetArticleBlockList1_50.Result[2].Buf)
 }

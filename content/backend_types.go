@@ -181,14 +181,18 @@ func boardToBackendGetBoard(b *Board, myName string, theTitle *Title, myID *type
 	}
 
 	articleCreateTS := b.ArticleCreateTS
-	if articleCreateTS.IsLess(b.CreateTS) {
-		articleCreateTS = b.CreateTS
-	}
+	/*
+		if articleCreateTS.IsLess(b.CreateTS) {
+			articleCreateTS = b.CreateTS
+		}
+	*/
 
 	lastSeen := b.LastSeen
-	if lastSeen.IsLess(b.CreateTS) {
-		lastSeen = b.CreateTS
-	}
+	/*
+		if lastSeen.IsLess(b.CreateTS) {
+			lastSeen = b.CreateTS
+		}
+	*/
 
 	return &BackendGetBoard{
 		ID:              b.ID,
@@ -231,14 +235,18 @@ func articleToBackendGetArticle(a *Article) *BackendGetArticle {
 	}
 
 	commentCreateTS := a.CommentCreateTS
-	if commentCreateTS.IsLess(a.CreateTS) {
-		commentCreateTS = a.CreateTS
-	}
+	/*
+		if commentCreateTS.IsLess(a.CreateTS) {
+			commentCreateTS = a.CreateTS
+		}
+	*/
 
 	lastSeen := a.LastSeen
-	if lastSeen.IsLess(a.CreateTS) {
-		lastSeen = a.CreateTS
-	}
+	/*
+		if lastSeen.IsLess(a.CreateTS) {
+			lastSeen = a.CreateTS
+		}
+	*/
 
 	return &BackendGetArticle{
 		ID:              a.ID,

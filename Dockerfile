@@ -11,7 +11,9 @@ RUN cd /go/src/github.com/ailabstw/go-pttai && make gptt
 FROM alpine:3.8
 
 RUN apk add --no-cache ca-certificates
+RUN mkdir -p /root/.pttai
 COPY --from=builder /go/src/github.com/ailabstw/go-pttai/build/bin/gptt /usr/local/bin/
+COPY --from=builder /go/src/github.com/ailabstw/go-pttai/static /static
 
-EXPOSE 9774 14779 9487 9487/udp
-ENTRYPOINT ["gptt", "--rpcaddr", "0.0.0.0"]
+EXPOSE 9487 9487/udp
+ENTRYPOINT ["gptt", "--testnet", "--httpdir", "/static", "--httpaddr", "0.0.0.0:9774", "--rpcaddr", "0.0.0.0"]

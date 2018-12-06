@@ -26,6 +26,12 @@ Docker Environment
     ./scripts/docker_stop.sh
 
 
+Docker with customized storage
+-----
+
+    ./sciprts/docker_with_storage.sh -s [dir]
+
+
 Unit-Test
 -----
 

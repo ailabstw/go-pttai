@@ -14,7 +14,7 @@
     "appId": "ai.ptt.gptt",
     "productName": "Pttai",
     "extraResources": [
-      "./app/gptt.bin",
+      "./app/gptt",
       "./app/gptt.exe",
       "./app/static"
     ],

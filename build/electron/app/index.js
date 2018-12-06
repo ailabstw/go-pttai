@@ -1,12 +1,19 @@
-const { app, BrowserWindow, Menu } = require('electron')
-const path  = require('path')
+const { app,
+        Menu,
+        dialog,
+        ipcMain,
+        BrowserWindow } = require('electron')
+const { autoUpdater }   = require("electron-updater");
+const path              = require('path')
 
 let exec    = require('child_process').execFile;
 
 let gptt_node   = null
 let gptt_win    = null;
 let first_load  = true;
-let force_quit = false;
+let force_quit  = false;
+
+autoUpdater.autoDownload = false
 
 const template = [
   {
@@ -99,8 +106,9 @@ function createGptt() {
 
     open_window()
 
-    const menu = Menu.buildFromTemplate(template)
-    Menu.setApplicationMenu(menu)
+    setup_menu()
+
+    init_auto_updater()
 }
 
 function run_gptt_node () {
@@ -174,6 +182,15 @@ function open_window () {
     load_content()
 }
 
+function setup_menu() {
+    const menu = Menu.buildFromTemplate(template)
+    Menu.setApplicationMenu(menu)
+}
+
+function init_auto_updater() {
+  autoUpdater.checkForUpdates();
+}
+
 app.on('ready', createGptt)
 
 app.on('window-all-closed', () => {
@@ -187,6 +204,46 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  //open_window()
+  // open_window()
   gptt_win.show()
 })
+
+autoUpdater.on('error', (err) => console.log(err));
+autoUpdater.on('checking-for-update', () => console.log('autoUpdater: checking-for-update'));
+
+autoUpdater.on('update-not-available', () => console.log('autoUpdater: update-not-available'));
+autoUpdater.on('update-available', (info) => {
+
+  console.log('autoUpdater: update-available ', info)
+  let message = app.getName() + ' ' + info.version + ' is now available. Do you want it to be downloaded and installed?';
+  // if (releaseNotes) {
+  //   const splitNotes = releaseNotes.split(/[^\r]\n/);
+  //   message += '\n\nRelease notes:\n';
+  //   splitNotes.forEach(notes => {
+  //     message += notes + '\n\n';
+  //   });
+  // }
+
+  dialog.showMessageBox({
+    type: 'question',
+    buttons: ['Install and Relaunch', 'Later'],
+    defaultId: 0,
+    message: 'A new version of ' + app.getName() + ' is available',
+    detail: message
+  }, response => {
+    if (response === 0) {
+      setTimeout(() => {
+        console.log('autoUpdater: download-update')
+        autoUpdater.downloadUpdate()
+      }, 1);
+    }
+  });
+
+});
+
+// Ask the user if update is available
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+  console.log('autoUpdater: quit-and-install')
+  autoUpdater.quitAndInstall()
+  app.quit();
+});

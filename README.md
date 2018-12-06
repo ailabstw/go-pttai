@@ -37,6 +37,15 @@ Testing for specific dir:
     ./scripts/test.sh [dir]
     (ex: ./scripts/test.sh common)
 
+E2E-Test
+-----
+
+Testing for specific e2e-test
+
+    ./scripts/e2e.sh [any test in the e2e dir]
+
+ex: ./scripts/e2e.sh friend_basic runs TestFriendBasic
+
 
 Running Godoc
 -----
@@ -50,7 +59,7 @@ The code-structure is based on [go-ethereum](https://github.com/ethereum/go-ethe
 
     go get github.com/ailabstw/go-pttai; cd ${GOPATH}/src/github.com/ailabstw/go-pttai; ./scripts/init_cookiecutter.sh; source __/bin/activate
 
-    ./scripts/gptt-dev.sh
+    ./scripts/gptt-testnet.sh
 
 * follow gofmt / goimports
 * follow [gotests](https://github.com/cweill/gotests)

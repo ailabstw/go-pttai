@@ -106,10 +106,10 @@ function createGptt() {
 function run_gptt_node () {
     console.log("gptt node start");
     let filepath = null
-    let gpttFile = 'gptt.bin'
+    let gpttFile = 'gptt'
 
     if (process.platform === "darwin") {
-      gpttFile = 'gptt.bin'
+      gpttFile = 'gptt'
     } else if (process.platform === "win32") {
       gpttFile = 'gptt.exe'
     } else {
@@ -131,7 +131,7 @@ function run_gptt_node () {
 function load_content () {
 
     if (first_load) {
-        setTimeout(load_content, 5000);
+        setTimeout(load_content, 8000);
         let loadingUrl = require('url').format({
           protocol: 'file',
           slashes: true,

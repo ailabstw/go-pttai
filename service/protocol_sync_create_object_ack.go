@@ -32,13 +32,25 @@ func (pm *BaseProtocolManager) SyncObjectAck(objs []Object, syncAckMsg OpType, p
 		return nil
 	}
 
-	data := &SyncObjectAck{
-		Objs: objs,
-	}
+	pObjs := objs
+	var eachObjs []Object
+	lenEachObjs := 0
+	for len(pObjs) > 0 {
+		lenEachObjs = MaxSyncObjectAck
+		if lenEachObjs > len(pObjs) {
+			lenEachObjs = len(pObjs)
+		}
 
-	err := pm.SendDataToPeer(syncAckMsg, data, peer)
-	if err != nil {
-		return err
+		eachObjs, pObjs = pObjs[:lenEachObjs], pObjs[lenEachObjs:]
+
+		data := &SyncObjectAck{
+			Objs: eachObjs,
+		}
+
+		err := pm.SendDataToPeer(syncAckMsg, data, peer)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

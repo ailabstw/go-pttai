@@ -177,6 +177,11 @@ var (
 	DBOpKeyIdxOplogPrefix = []byte(".okig")
 )
 
+// object
+const (
+	MaxSyncObjectAck = 50
+)
+
 // block
 
 const (

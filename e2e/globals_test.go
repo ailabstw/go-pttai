@@ -117,6 +117,7 @@ func startNode(t *testing.T, idx int) {
 	rpcport := fmt.Sprintf("%d", 9450+idx)
 	p2pport := fmt.Sprintf("%d", 9500+idx)
 	port := fmt.Sprintf("%d", 9600+idx)
+	httpaddr := fmt.Sprintf("127.0.0.1:%d", 9700+idx)
 
 	Ctxs[idx], Cancels[idx] = context.WithTimeout(context.Background(), TimeoutSeconds)
 	Nodes[idx] = exec.CommandContext(
@@ -126,6 +127,7 @@ func startNode(t *testing.T, idx int) {
 		"--verbosity", "4",
 		"--datadir", dir,
 		"--rpcaddr", "127.0.0.1",
+		"--httpaddr", httpaddr,
 		"--rpcport", rpcport,
 		"--port", port,
 		"--p2pport", p2pport,

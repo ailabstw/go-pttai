@@ -180,6 +180,7 @@ var (
 // object
 const (
 	MaxSyncObjectAck = 50
+	MaxSyncBlock     = 50
 )
 
 // block

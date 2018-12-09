@@ -35,6 +35,7 @@ func (pm *BaseProtocolManager) SyncObjectAck(objs []Object, syncAckMsg OpType, p
 	pObjs := objs
 	var eachObjs []Object
 	lenEachObjs := 0
+	var data *SyncObjectAck
 	for len(pObjs) > 0 {
 		lenEachObjs = MaxSyncObjectAck
 		if lenEachObjs > len(pObjs) {
@@ -43,7 +44,7 @@ func (pm *BaseProtocolManager) SyncObjectAck(objs []Object, syncAckMsg OpType, p
 
 		eachObjs, pObjs = pObjs[:lenEachObjs], pObjs[lenEachObjs:]
 
-		data := &SyncObjectAck{
+		data = &SyncObjectAck{
 			Objs: eachObjs,
 		}
 

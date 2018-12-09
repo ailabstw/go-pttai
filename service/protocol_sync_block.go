@@ -33,7 +33,31 @@ func (pm *BaseProtocolManager) SyncBlock(op OpType, syncBlockIDs []*SyncBlockID,
 		return nil
 	}
 
-	return pm.SendDataToPeer(op, &SyncBlock{IDs: syncBlockIDs}, peer)
+	var err error
+
+	pSyncIDs := syncBlockIDs
+	var eachSyncIDs []*SyncBlockID
+	lenEachSyncIDs := 0
+	var data *SyncBlock
+	for len(pSyncIDs) > 0 {
+		lenEachSyncIDs = MaxSyncBlock
+		if lenEachSyncIDs > len(pSyncIDs) {
+			lenEachSyncIDs = len(pSyncIDs)
+		}
+
+		eachSyncIDs, pSyncIDs = pSyncIDs[:lenEachSyncIDs], pSyncIDs[lenEachSyncIDs:]
+
+		data = &SyncBlock{
+			IDs: eachSyncIDs,
+		}
+
+		err = pm.SendDataToPeer(op, data, peer)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (pm *BaseProtocolManager) HandleSyncBlock(
@@ -61,7 +85,6 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 	for _, syncBlockID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncBlockID.ObjID, false)
 		if err != nil {
-			log.Warn("HandleSyncCreateBlock: (in-for-loop): unable to GetNewObjByID", "objID", syncBlockID.ObjID, "e", err)
 			continue
 		}
 
@@ -79,6 +102,7 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 		if err != nil {
 			continue
 		}
+
 		blocks = append(blocks, newBlocks...)
 	}
 

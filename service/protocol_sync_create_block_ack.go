@@ -32,7 +32,30 @@ func (pm *BaseProtocolManager) SyncBlockAck(ackMsg OpType, blocks []*Block, peer
 		return nil
 	}
 
-	return pm.SendDataToPeer(ackMsg, &SyncBlockAck{Blocks: blocks}, peer)
+	var err error
+
+	pBlocks := blocks
+	var eachBlocks []*Block
+	lenEachBlocks := 0
+	var data *SyncBlockAck
+	for len(pBlocks) > 0 {
+		lenEachBlocks = MaxSyncBlock
+		if lenEachBlocks > len(pBlocks) {
+			lenEachBlocks = len(pBlocks)
+		}
+
+		eachBlocks, pBlocks = pBlocks[:lenEachBlocks], pBlocks[lenEachBlocks:]
+
+		data = &SyncBlockAck{
+			Blocks: eachBlocks,
+		}
+		err = pm.SendDataToPeer(ackMsg, data, peer)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (pm *BaseProtocolManager) HandleSyncCreateBlockAck(

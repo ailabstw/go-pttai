@@ -33,9 +33,27 @@ func (pm *BaseProtocolManager) SyncObject(op OpType, syncIDs []*SyncID, peer *Pt
 		return nil
 	}
 
-	err := pm.SendDataToPeer(op, &SyncObject{IDs: syncIDs}, peer)
-	if err != nil {
-		return err
+	pSyncIDs := syncIDs
+	var eachSyncIDs []*SyncID
+	lenEachSyncIDs := 0
+	var data *SyncObject
+	for len(pSyncIDs) > 0 {
+		lenEachSyncIDs = MaxSyncObjectAck
+		if lenEachSyncIDs > len(pSyncIDs) {
+			lenEachSyncIDs = len(pSyncIDs)
+		}
+
+		eachSyncIDs, pSyncIDs = pSyncIDs[:lenEachSyncIDs], pSyncIDs[lenEachSyncIDs:]
+
+		data = &SyncObject{
+			IDs: eachSyncIDs,
+		}
+
+		err := pm.SendDataToPeer(op, data, peer)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }

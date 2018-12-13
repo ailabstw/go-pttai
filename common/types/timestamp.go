@@ -84,6 +84,13 @@ func (t *Timestamp) Marshal() ([]byte, error) {
 	return theBytes, nil
 }
 
+func (t *Timestamp) NextHourTS() Timestamp {
+	nextHourTS := Timestamp{Ts: t.Ts, NanoTs: t.NanoTs}
+	nextHourTS.Ts += 3600
+
+	return nextHourTS
+}
+
 func UnmarshalTimestamp(theBytes []byte) (Timestamp, error) {
 	ts := binary.BigEndian.Uint64(theBytes[:8])
 	nanoTs := binary.BigEndian.Uint32(theBytes[8:])

@@ -29,6 +29,12 @@ type SyncOplog struct {
 	ToSyncNodes []*MerkleNode   `json:"LN"`
 }
 
+/*
+SyncOplog: I initiate sync-oplog.
+
+Expected merkle-tree-list length: 24 (hour) + 31 (day) + 12 (month) + n (year)
+(should be within the packet-limit)
+*/
 func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpType) error {
 	ptt := pm.Ptt()
 	myInfo := ptt.GetMyEntity()
@@ -69,6 +75,13 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 	return nil
 }
 
+/*
+HandleSyncOplog: I received sync-oplog. (MerkleTreeList should be within the packet-limit.)
+
+	1. get my merkle-tree-list.
+	2. validate merkle tree
+	3. SyncOplogAck
+*/
 func (pm *BaseProtocolManager) HandleSyncOplog(
 	dataBytes []byte,
 	peer *PttPeer,
@@ -104,17 +117,20 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 
 	log.Debug("HandleSyncOplog: to GetMerkleTreeList", "op", op, "myToSyncTime", myToSyncTime, "toSyncTime", toSyncTime, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
+	// get my merkle-tree-list.
 	myToSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
 	log.Debug("HandleSyncOplog: GetMerkleTreeList", "op", op, "err", err, "myToSyncNodes", len(myToSyncNodes), "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}
 
+	// 2. validate merkle tree
 	isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime)
 	log.Debug("HandleSyncOplog: after ValidateMerkleTree", "op", op, "isValid", isValid)
 	if !isValid {
 		return ErrInvalidOplog
 	}
 
+	// 3. SyncOplogAck
 	return pm.SyncOplogAck(toSyncTime, merkle, op, peer)
 }

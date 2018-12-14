@@ -34,12 +34,12 @@ func (pm *ProtocolManager) UpdateArticle(articleID *types.PttID, articleBytes []
 	origObj := NewEmptyArticle()
 	pm.SetArticleDB(origObj)
 
-	opData := &BoardOpUpdateTitle{}
+	opData := &BoardOpUpdateArticle{}
 
 	err := pm.UpdateObject(
 		articleID,
 		data,
-		BoardOpTypeUpdateTitle,
+		BoardOpTypeUpdateArticle,
 		origObj,
 		opData,
 

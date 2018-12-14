@@ -81,14 +81,20 @@ func (pm *ProtocolManager) syncArticleInfoFromOplog(oplog *pkgservice.BaseOplog,
 	return syncInfo, nil
 }
 
-func (pm *ProtocolManager) updateUpdateArticleInfo(obj pkgservice.Object, oplog *pkgservice.BaseOplog, opData pkgservice.OpData, origSyncInfo pkgservice.SyncInfo, theInfo pkgservice.ProcessInfo) error {
+func (pm *ProtocolManager) updateUpdateArticleInfo(obj pkgservice.Object, oplog *pkgservice.BaseOplog, theOpData pkgservice.OpData, origSyncInfo pkgservice.SyncInfo, theInfo pkgservice.ProcessInfo) error {
 
 	info, ok := theInfo.(*ProcessBoardInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
 
+	opData, ok := theOpData.(*BoardOpUpdateArticle)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
 	info.ArticleInfo[*oplog.ObjID] = oplog
+	info.ArticleBlockInfo[*opData.BlockInfoID] = oplog
 
 	return nil
 }

@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncBlock struct {
@@ -82,6 +81,7 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 
 	var blockInfo *BlockInfo
 	var newBlocks []*Block
+	var syncInfo SyncInfo
 	for _, syncBlockID := range data.IDs {
 		newObj, err := obj.GetNewObjByID(syncBlockID.ObjID, false)
 		if err != nil {
@@ -92,9 +92,13 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 			continue
 		}
 
+		syncInfo = obj.GetSyncInfo()
 		blockInfo = newObj.GetBlockInfo()
 		if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
-			continue
+			blockInfo = syncInfo.GetBlockInfo()
+			if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
+				continue
+			}
 		}
 		pm.SetBlockInfoDB(blockInfo, syncBlockID.ObjID)
 
@@ -184,7 +188,6 @@ func verifyBlocks(blocks []*Block, blockInfo *BlockInfo, creatorID *types.PttID)
 
 	for _, block := range blocks {
 		err = block.Verify(blockInfo.Hashs[block.BlockID][block.SubBlockID], creatorID)
-		log.Debug("verifyBlocks: after Verify", "blockID", block.BlockID, "subBlockID", block.SubBlockID, "e", err)
 		if err != nil {
 			return err
 		}

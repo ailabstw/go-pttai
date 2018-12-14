@@ -77,10 +77,15 @@ func (pm *ProtocolManager) updateSyncArticle(theToSyncInfo pkgservice.SyncInfo, 
 	}
 
 	// get block-info
+	origBlockInfo := toSyncInfo.GetBlockInfo()
+
 	blockInfo := fromObj.GetBlockInfo()
 	if blockInfo == nil {
 		return pkgservice.ErrInvalidData
 	}
+
+	blockInfo.IsGood = origBlockInfo.IsGood
+	blockInfo.IsAllGood = origBlockInfo.IsAllGood
 
 	toSyncInfo.SetBlockInfo(blockInfo)
 

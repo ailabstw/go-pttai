@@ -330,8 +330,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectNewLog(
 
 	status := oplog.ToStatus()
 
-	log.Debug("handleUpdateObjectNewLog: after check", "isAllGood", isAllGood, "oplogStatus", status)
-
 	if isAllGood && status == types.StatusAlive {
 		err = newSyncInfo.ToObject(obj)
 		if err != nil {
@@ -344,8 +342,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectNewLog(
 			return err
 		}
 
-		log.Debug("handleUpdateObjectNewLog: after saveUpdateObjectWithOplog", "obj.SyncInfo", obj.GetSyncInfo())
-
 		if postupdate == nil {
 			return nil
 		}
@@ -355,8 +351,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectNewLog(
 
 	// not synced yet.
 	obj.SetSyncInfo(newSyncInfo)
-
-	log.Debug("handleUpdateObjectNewLog: after setSyncInfo", "obj.SyncInfo", obj.GetSyncInfo())
 
 	err = obj.Save(true)
 	if err != nil {

@@ -17,7 +17,6 @@
 package content
 
 import (
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -54,8 +53,6 @@ func (pm *ProtocolManager) HandleSyncArticleBlock(dataBytes []byte, peer *pkgser
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 
-	log.Debug("HandleSyncArticleBlock: to HandleSyncBlock")
-
 	return pm.HandleSyncBlock(dataBytes, peer, obj, ackMsg)
 }
 
@@ -63,8 +60,6 @@ func (pm *ProtocolManager) HandleSyncCreateArticleBlockAck(dataBytes []byte, pee
 
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
-
-	log.Debug("HandleSyncCreateArticleBlockAck: to HandleSyncCreateBlockAck")
 
 	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, pm.postcreateArticle, pm.broadcastBoardOplogCore)
 }
@@ -74,5 +69,5 @@ func (pm *ProtocolManager) HandleSyncUpdateArticleBlockAck(dataBytes []byte, pee
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 
-	return pm.HandleSyncUpdateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, pm.postcreateArticle, pm.broadcastBoardOplogCore)
+	return pm.HandleSyncUpdateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, nil, pm.broadcastBoardOplogCore)
 }

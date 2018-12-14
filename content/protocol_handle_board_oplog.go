@@ -176,8 +176,9 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 	pm.SyncArticle(SyncCreateArticleMsg, createArticleIDs, peer)
 	pm.SyncBlock(SyncCreateArticleBlockMsg, createBlockIDs, peer)
 
-	updateArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateArticleInfo, BoardOpTypeUpdateArticle)
+	updateArticleIDs := pkgservice.ProcessInfoToSyncIDList(info.ArticleInfo, BoardOpTypeUpdateArticle)
 	updateBlockIDs := pkgservice.ProcessInfoToSyncBlockIDList(info.ArticleBlockInfo, BoardOpTypeUpdateArticle)
+
 	pm.SyncArticle(SyncUpdateArticleMsg, updateArticleIDs, peer)
 	pm.SyncBlock(SyncUpdateArticleBlockMsg, updateBlockIDs, peer)
 

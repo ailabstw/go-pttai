@@ -8,8 +8,11 @@
     "start": "npm install && cross-env NODE_ENV=dev electron ./app",
     "postinstall": "install-app-deps",
     "pack": "build --dir",
+    "pack-win": "build --dir --win",
     "dist": "./scripts/copy_gptt.sh && cross-env NODE_ENV=prod build",
-    "ship": "source deploy_token && ./scripts/copy_gptt.sh && cross-env NODE_ENV=prod build -p always"
+    "dist-win": ".\\scripts\\copy_gptt_windows.sh && build --win",
+    "ship": "source deploy_token && ./scripts/copy_gptt.sh && cross-env NODE_ENV=prod build -p always",
+    "ship-win": "set /p GH_TOKEN=<deploy_token.txt && .\\scripts\\copy_gptt_windows.sh && build -p always --win"
   },
   "repository": "https://github.com/ailabstw/go-pttai",
   "build": {

@@ -14,6 +14,7 @@ let first_load  = true;
 let force_quit  = false;
 
 autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = false
 
 const template = [
   {

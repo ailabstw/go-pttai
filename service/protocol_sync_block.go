@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncBlock struct {
@@ -92,11 +93,16 @@ func (pm *BaseProtocolManager) HandleSyncBlock(
 			continue
 		}
 
-		syncInfo = obj.GetSyncInfo()
+		syncInfo = newObj.GetSyncInfo()
 		blockInfo = newObj.GetBlockInfo()
+
 		if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
-			blockInfo = syncInfo.GetBlockInfo()
+			if syncInfo != nil {
+				blockInfo = syncInfo.GetBlockInfo()
+			}
+
 			if blockInfo == nil || !reflect.DeepEqual(blockInfo.ID, syncBlockID.ID) {
+				log.Warn("HandleSyncBlock: unable to get blockInfo", "objID", syncBlockID.ObjID, "blockID", syncBlockID.ID, "syncInfo", syncInfo, "blockInfo", blockInfo)
 				continue
 			}
 		}

@@ -31,6 +31,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
+	pkgservice "github.com/ailabstw/go-pttai/service"
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
@@ -51,7 +52,8 @@ var (
 
 	origHandler log.Handler
 
-	nilPttID *types.PttID
+	nilPttID    *types.PttID
+	nilSyncInfo *pkgservice.BaseSyncInfo
 
 	TimeSleepRestart = 15 * time.Second
 	TimeSleepDefault = 8 * time.Second

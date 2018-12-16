@@ -125,14 +125,11 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 	// already deleted
 	objStatus := origObj.GetStatus()
 
-	log.Debug("handleUpdateObjectCore: to check status", "objID", objID, "oplog", oplog.ID, "obj.status", objStatus)
-
 	if objStatus >= types.StatusDeleted {
 		return ErrNewerOplog
 	}
 
 	// prelog
-	log.Debug("handleUpdateObjectCore: to check pre-log-id", "objID", objID, "oplog", oplog.ID, "obj.logID", obj.GetLogID(), "oplog.PreLogID", oplog.PreLogID)
 	if !reflect.DeepEqual(origObj.GetLogID(), oplog.PreLogID) {
 		return ErrInvalidPreLog
 	}
@@ -149,12 +146,10 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 
 	// newer-oplog
 	// we want to have newer ts and return newer if we are diff logs.
-	log.Debug("handleUpdateObjectCore: to check newer-oplog", "objID", objID, "oplog", oplog.ID, "oplog.ts", oplog.UpdateTS, "obj.TS", origObj.GetUpdateTS())
 	if oplog.UpdateTS.IsLess(origObj.GetUpdateTS()) {
 		return ErrNewerOplog
 	}
 
-	log.Debug("handleUpdateObjectCore: to check newer-oplog", "oplog.IsNewer", oplog.IsNewer)
 	if oplog.IsNewer {
 		return ErrNewerOplog
 	}
@@ -167,7 +162,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 
 	// new sync info
 	newSyncInfo, err := syncInfoFromOplog(oplog, opData)
-	log.Debug("handleUpdateObjectCore: after newSyncInfoFromOplog", "newSyncInfo", newSyncInfo)
 	if err != nil {
 		return err
 	}
@@ -201,8 +195,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectCoreCore(
 
 ) error {
 
-	log.Debug("handleUpdateObjectCoreCore: start", "oplog.IsSync", oplog.IsSync)
-
 	removeSyncInfo, err := pm.handleUpdateObjectWithNewSyncInfo(origObj, newSyncInfo, oplog, info, isRetainValid, setLogDB, removeMediaInfoByBlockInfo, postupdate)
 	if err != nil {
 		return err
@@ -217,8 +209,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectCoreCore(
 	if err != nil {
 		return err
 	}
-
-	log.Debug("handleUpdateObjectCoreCore: done", "IsSync", oplog.IsSync, "status", oplog.ToStatus())
 
 	return nil
 }
@@ -245,7 +235,6 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 
 	syncInfo := obj.GetSyncInfo()
 	if syncInfo == nil {
-		log.Debug("handleUpdateObjectWithNewSyncInfo: to handle new log", "oplog", oplog.ID, "obj", obj.GetLogID(), "syncInfo", newSyncInfo)
 		err = pm.handleUpdateObjectNewLog(obj, newSyncInfo, oplog, postupdate)
 		return nil, err
 	}
@@ -254,20 +243,17 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 
 	// not replace
 	isReplaceSyncInfo := isReplaceOrigSyncInfo(syncInfo, status, oplog.UpdateTS, oplog.ID)
-	log.Debug("handleUpdateObjectWithNewSyncInfo: after isReplaceSyncInfo", "oplog", oplog.ID, "obj", obj.GetLogID(), "isReplaceSyncInfo", isReplaceSyncInfo)
 	if !isReplaceSyncInfo {
 		return nil, ErrNewerOplog
 	}
 
 	syncLogID := syncInfo.GetLogID()
 	if reflect.DeepEqual(syncLogID, oplog.ID) {
-		log.Debug("handleUpdateObjectWithNewSyncInfo: to updateSameLog", "oplog", oplog.ID, "obj", obj.GetLogID(), "syncInfo", newSyncInfo)
 		err = pm.handleUpdateObjectSameLog(obj, newSyncInfo, oplog, postupdate)
 		return nil, err
 	}
 
 	origSyncInfo := obj.GetSyncInfo()
-	log.Debug("handleUpdateObjectWithNewSyncInfo: to updateDiffLog", "oplog", oplog.ID, "obj", obj.GetLogID(), "syncInfo", newSyncInfo)
 	err = pm.handleUpdateObjectDiffLog(obj, syncInfo, newSyncInfo, oplog, info, isRetainValid, setLogDB, removeMediaInfoByBlockInfo, postupdate)
 
 	return origSyncInfo, err
@@ -350,6 +336,9 @@ func (pm *BaseProtocolManager) handleUpdateObjectNewLog(
 	}
 
 	// not synced yet.
+	if isAllGood {
+		newSyncInfo.SetStatus(status)
+	}
 	obj.SetSyncInfo(newSyncInfo)
 
 	err = obj.Save(true)
@@ -370,8 +359,6 @@ func isReplaceOrigSyncInfo(
 	if syncInfo == nil {
 		return true
 	}
-
-	log.Debug("isReplaceOrigSyncInfo: start", "syncInfo", syncInfo)
 
 	statusClass := types.StatusToStatusClass(status)
 	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())
@@ -430,8 +417,6 @@ func (pm *BaseProtocolManager) saveUpdateObjectWithOplog(
 	oplog.IsSync = true
 
 	err = obj.Save(true)
-
-	log.Debug("saveUpdateObjectWithOplog: after Save", "obj.SyncInfo", obj.GetSyncInfo())
 	if err != nil {
 		return err
 	}

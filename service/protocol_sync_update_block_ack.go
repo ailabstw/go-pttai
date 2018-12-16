@@ -154,5 +154,5 @@ func (pm *BaseProtocolManager) handleSyncUpdateBlockAck(
 		return err
 	}
 
-	return pm.syncUpdateAckSaveOplog(oplog, origObj, broadcastLog, postupdate)
+	return pm.syncUpdateAckSaveOplog(oplog, syncInfo, origObj, broadcastLog, postupdate)
 }

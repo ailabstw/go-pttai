@@ -67,33 +67,26 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObjectAck(
 
 	origObj.SetID(objID)
 	err = origObj.GetByID(true)
-	log.Debug("HandleSyncUpdateObjectAck: after GetByID", "logID", logID, "objID", objID, "e", err)
 	if err != nil {
 		return err
 	}
 
 	// validate
 	if oplog.IsSync { // already synced
-		log.Debug("HandleSyncUpdateObjectAck: already synced", "logID", logID, "objID", objID)
 		return nil
 	}
 
-	log.Debug("HandleSyncUpdateObjectAck: to check SyncInfo", "logID", logID, "objID", objID)
-
 	syncInfo := origObj.GetSyncInfo()
 	if syncInfo == nil || !reflect.DeepEqual(syncInfo.GetLogID(), logID) {
-		log.Debug("HandleSyncUpdateObjectAck: syncInfo: newerOplog", "logID", logID, "objID", objID, "syncInfo", syncInfo)
 		return ErrNewerOplog
 	}
 
 	if syncInfo.GetIsGood() {
-		log.Debug("HandleSyncUpdateObjectAck: syncInfo is already good", "logID", logID, "objID", objID)
 		return nil
 	}
 
 	if updateSyncInfo != nil {
 		err = updateSyncInfo(syncInfo, obj, oplog)
-		log.Debug("HandleSyncUpdateObjectAck: after updateSyncInfo", "logID", logID, "objID", objID, "e", err)
 		if err != nil {
 			return err
 		}
@@ -101,27 +94,30 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObjectAck(
 	syncInfo.SetIsGood(true)
 
 	err = pm.handleUpdateObjectSameLog(origObj, syncInfo, oplog, postupdate)
-	log.Debug("HandleSyncUpdateObjectAck: after handleUpdateObjectSameLog", "logID", logID, "objID", objID, "e", err)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("HandleSyncUpdateObjectAck: to syncUpdateAckSaveOplog", "logID", logID, "objID", objID)
-	err = pm.syncUpdateAckSaveOplog(oplog, origObj, broadcastLog, postupdate)
-	log.Debug("HandleSyncUpdateObjectAck: after syncUpdateAckSaveOplog", "obj.SyncInfo", origObj.GetSyncInfo())
+	err = pm.syncUpdateAckSaveOplog(oplog, syncInfo, origObj, broadcastLog, postupdate)
 
 	return err
 }
 
 func (pm *BaseProtocolManager) syncUpdateAckSaveOplog(
 	oplog *BaseOplog,
+	syncInfo SyncInfo,
 	obj Object,
 
 	broadcastLog func(oplog *BaseOplog) error,
 	postupdate func(obj Object, oplog *BaseOplog) error,
 ) error {
+
 	// oplog-save
-	if obj.GetIsAllGood() {
+	if syncInfo == nil {
+		return nil
+	}
+
+	if syncInfo.GetIsAllGood() {
 		pm.SetOplogIsSync(oplog, true, broadcastLog)
 	}
 
@@ -130,22 +126,11 @@ func (pm *BaseProtocolManager) syncUpdateAckSaveOplog(
 		return err
 	}
 
-	syncInfo := obj.GetSyncInfo()
-
-	log.Debug("syncUpdateAckSaveOplog: to check", "oplog", oplog.ID, "objID", obj.GetID(), "syncInfo", syncInfo, "oplog.Status", oplog.ToStatus())
-
-	if syncInfo == nil {
-		return nil
-	}
-
 	if oplog.ToStatus() < types.StatusAlive {
 		return nil
 	}
 
-	log.Debug("syncUpdateAckSaveOplog: to handleUpdateObjectSameLog", "logID", oplog.ID, "objID", obj.GetID())
-
 	err = pm.handleUpdateObjectSameLog(obj, syncInfo, oplog, postupdate)
-	log.Debug("syncUpdateAckSaveOplog: after handleUpdateObjectSameLog", "obj.SyncInfo", obj.GetSyncInfo())
 
 	return err
 }

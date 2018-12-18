@@ -60,10 +60,6 @@ var (
 		Name:  "keystore",
 		Usage: "Directory for the keystore (default = inside the datadir)",
 	}
-	TestnetFlag = cli.BoolFlag{
-		Name:  "testnet",
-		Usage: "Test network: pre-configured Ptt.ai test network",
-	}
 	TestP2PFlag = cli.BoolFlag{
 		Name:  "testp2p",
 		Usage: "Test p2p-network: pre-configured Ptt.ai test p2p-network",

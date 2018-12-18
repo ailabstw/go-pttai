@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -250,20 +251,31 @@ func (b *BlockInfo) GetIsAllGood() bool {
 }
 
 func (b *BlockInfo) ResetIsGood() {
-	b.IsGood = nil
-	b.IsAllGood = false
+	b.InitIsGood()
 }
 
 func (b *BlockInfo) GetIsGood(blockID uint32, subBlockID uint8) types.Bool {
-	if b.IsGood == nil {
-		return false
-	}
-
 	if blockID >= uint32(b.NBlock) {
+		log.Error("GetIsGood: invalid blockID!", "blockInfoID", b.ID, "objID", b.objID, "blockID", blockID, "b.NBlock", b.NBlock)
 		return false
 	}
 
 	if subBlockID >= NSubBlock {
+		log.Error("GetIsGood: invalid subBlockID!", "blockInfoID", b.ID, "objID", b.objID, "subBlockID", subBlockID)
+		return false
+	}
+
+	if b.IsGood == nil {
+		log.Error("GetIsGood: b.IsGood is not init yet!", "blockInfoID", b.ID, "objID", b.objID, "b.NBlock", b.NBlock)
+		b.InitIsGood()
+		return false
+	}
+
+	if len(b.IsGood) < b.NBlock {
+		log.Error("GetIsGood: b.IsGood and b.NBlock are not aligned!", "blockInfoID", b.ID, "objID", b.objID, "b.IsGood", len(b.IsGood), "b.NBlock", b.NBlock)
+
+		b.InitIsGood()
+
 		return false
 	}
 

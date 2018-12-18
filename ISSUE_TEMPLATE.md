@@ -22,6 +22,8 @@ This is where you get to tell us what went wrong or what feature you need. When 
 
 When reporting a bug, please try to include:
 
+* Which net you were in (testp2p, devp2p, ipfsp2p, etc.)?
+* What exact command that you executed?
 * What you were doing when you experienced the bug.
 * Any error messages you saw, *where* you saw them, and what you believe may have caused them (if you have any ideas).
 * When possible, steps to reliably produce the bug.

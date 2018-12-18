@@ -93,8 +93,6 @@ var (
 		utils.DataDirFlag,
 		utils.KeyStoreDirFlag,
 
-		utils.TestnetFlag,
-
 		utils.TestP2PFlag,
 		utils.IPFSP2PFlag,
 		utils.DevP2PFlag,

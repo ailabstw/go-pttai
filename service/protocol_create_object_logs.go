@@ -212,6 +212,8 @@ func (pm *BaseProtocolManager) handleCreateObjectSameLog(
 
 	origStatus := origObj.GetStatus()
 
+	log.Debug("handleCreateObjectSameLog: start", "origStatus", origStatus)
+
 	if origStatus == types.StatusInternalSync {
 		// still in sync, requesting again.
 		if !oplog.IsNewer {

@@ -16,7 +16,9 @@
 
 package account
 
-import pkgservice "github.com/ailabstw/go-pttai/service"
+import (
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 func (pm *ProtocolManager) SyncUserName(op pkgservice.OpType, syncIDs []*pkgservice.SyncID, peer *pkgservice.PttPeer) error {
 	return pm.SyncObject(op, syncIDs, peer)

@@ -85,7 +85,7 @@ func gptt(ctx *cli.Context) error {
 
 	// http-server
 
-	httpServer, err := ptthttp.NewServer(cfg.Utils.HTTPDir, cfg.Utils.HTTPAddr, cfg.Node.HTTPPort, cfg.Utils.ExternHTTPAddr, cfg.Node.ExternHTTPPort, n)
+	httpServer, err := ptthttp.NewServer(cfg.Utils.HTTPDir, cfg.Utils.HTTPAddr, cfg.Node.HTTPPort, cfg.Utils.ExternHTTPAddr, cfg.Node.ExternHTTPAddr, n)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func gptt(ctx *cli.Context) error {
 	go setSignal(n, httpServer)
 
 	// open-browser
-	if !ctx.GlobalIsSet(utils.ServerFlag.Name) && !ctx.GlobalIsSet(utils.ExternRPCPortFlag.Name) && !ctx.GlobalIsSet(utils.ExternHTTPAddrFlag.Name) {
+	if !ctx.GlobalIsSet(utils.ServerFlag.Name) && !ctx.GlobalIsSet(utils.ExternRPCAddrFlag.Name) && !ctx.GlobalIsSet(utils.ExternHTTPAddrFlag.Name) {
 		go func() {
 			time.Sleep(TimeSleepBrowser * time.Second)
 			utils.OpenBrowser(cfg.Utils.HTTPAddr)

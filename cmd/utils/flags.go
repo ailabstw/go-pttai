@@ -221,9 +221,9 @@ var (
 		Usage: "HTTP-RPC server listening port",
 		Value: node.DefaultHTTPPort,
 	}
-	ExternRPCPortFlag = cli.IntFlag{
-		Name:  "extrpcport",
-		Usage: "HTTP-RPC server listening port",
+	ExternRPCAddrFlag = cli.StringFlag{
+		Name:  "extrpcaddr",
+		Usage: "External HTTP-RPC server listening addr",
 	}
 	RPCCORSDomainFlag = cli.StringFlag{
 		Name:  "rpccorsdomain",

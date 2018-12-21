@@ -25,7 +25,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/ailabstw/go-pttai/content"
@@ -76,10 +75,9 @@ func (d MyDir) Open(name string) (http.File, error) {
 	return f, nil
 }
 
-func NewServer(dir string, addr string, rpcPort int, extAddr string, extPort int, node *node.Node) (*Server, error) {
-	rpcPortStr := strconv.Itoa(extPort)
+func NewServer(dir string, addr string, rpcPort int, extAddr string, extRPCAddrStr string, node *node.Node) (*Server, error) {
 	extHTTPAddr = []byte(extAddr)
-	extRPCPort = []byte("localhost:" + rpcPortStr)
+	extRPCAddr = []byte(extRPCAddrStr)
 
 	rpcServer, err := node.RPCHandler()
 	if err != nil {
@@ -366,7 +364,9 @@ func (s *Server) jsHandler(w http.ResponseWriter, r *http.Request, dir string) {
 		return
 	}
 
-	newData := reHTTPAddr.ReplaceAll(reRPCPort.ReplaceAll(data, extRPCPort), extHTTPAddr)
+	log.Debug("jsHandler: to replace", "extRPCAddr", extRPCAddr, "extHTTPAddr", extHTTPAddr)
+
+	newData := reHTTPAddr.ReplaceAll(reRPCPort.ReplaceAll(data, extRPCAddr), extHTTPAddr)
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Write(newData)
 }

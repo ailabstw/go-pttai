@@ -27,11 +27,11 @@ const (
 var (
 	reRPCPort   *regexp.Regexp
 	reHTTPAddr  *regexp.Regexp
-	extRPCPort  []byte
+	extRPCAddr  []byte
 	extHTTPAddr []byte
 )
 
 func init() {
-	reRPCPort, _ = regexp.Compile("localhost:14779")
-	reHTTPAddr, _ = regexp.Compile("localhost:9774")
+	reRPCPort, _ = regexp.Compile("http://localhost:14779")
+	reHTTPAddr, _ = regexp.Compile("http://localhost:9774")
 }

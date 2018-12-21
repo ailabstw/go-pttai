@@ -142,7 +142,7 @@ var (
 		utils.RPCPortFlag,
 		utils.RPCCORSDomainFlag,
 		utils.RPCVirtualHostsFlag,
-		utils.ExternRPCPortFlag,
+		utils.ExternRPCAddrFlag,
 
 		utils.RPCApiFlag,
 

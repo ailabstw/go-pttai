@@ -29,7 +29,7 @@ Docker Environment
 Docker with customized storage / ports
 -----
 
-    ./sciprts/docker_with_storage.sh -p [http-port in local-machine] -a [api-port in local-machine] -q [p2p-port in local-machine] -e [optional external http/https addr] -b [optional external api addr] -s [dir]
+    ./scripts/docker_with_storage.sh -p [http-port in local-machine] -a [api-port in local-machine] -q [p2p-port in local-machine] -e [optional external http/https addr] -b [optional external api addr] -s [dir]
 
 
 Unit-Test

@@ -26,10 +26,10 @@ Docker Environment
     ./scripts/docker_stop.sh
 
 
-Docker with customized storage
+Docker with customized storage / ports
 -----
 
-    ./sciprts/docker_with_storage.sh -s [dir]
+    ./sciprts/docker_with_storage.sh -p [http-port in local-machine] -a [api-port in local-machine] -q [p2p-port in local-machine] -e [optional external http/https addr] -b [optional external api addr] -s [dir]
 
 
 Unit-Test

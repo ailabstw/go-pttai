@@ -20,6 +20,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -332,10 +333,10 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 		cfg.HTTPVirtualHosts = splitAndTrim(ctx.GlobalString(RPCVirtualHostsFlag.Name))
 	}
 
-	if ctx.GlobalIsSet(ExternRPCPortFlag.Name) {
-		cfg.ExternHTTPPort = ctx.GlobalInt(ExternRPCPortFlag.Name)
+	if ctx.GlobalIsSet(ExternRPCAddrFlag.Name) {
+		cfg.ExternHTTPAddr = ctx.GlobalString(ExternRPCAddrFlag.Name)
 	} else {
-		cfg.ExternHTTPPort = cfg.HTTPPort
+		cfg.ExternHTTPAddr = "http://" + cfg.HTTPHost + ":" + strconv.Itoa(cfg.HTTPPort)
 	}
 }
 

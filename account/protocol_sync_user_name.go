@@ -17,7 +17,6 @@
 package account
 
 import (
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -30,8 +29,6 @@ func (pm *ProtocolManager) HandleSyncCreateUserName(dataBytes []byte, peer *pkgs
 	obj := NewEmptyUserName()
 	pm.SetUserNameDB(obj)
 
-	log.Debug("HandleSyncCreateUserName: to handle SyncCreateObject")
-
 	return pm.HandleSyncCreateObject(dataBytes, peer, obj, syncAckMsg)
 }
 
@@ -39,8 +36,6 @@ func (pm *ProtocolManager) HandleSyncUpdateUserName(dataBytes []byte, peer *pkgs
 
 	obj := NewEmptyUserName()
 	pm.SetUserNameDB(obj)
-
-	log.Debug("HandleSyncUpdateUserName: to handle SyncUpdateObject")
 
 	return pm.HandleSyncUpdateObject(dataBytes, peer, obj, syncAckMsg)
 }

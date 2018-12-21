@@ -20,7 +20,6 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
 type SyncObjectAck struct {
@@ -82,7 +81,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	setLogDB(oplog)
 
 	err := oplog.Lock()
-	log.Debug("HandleSyncCreateObjAck: after oplog lock", "logID", logID, "e", err)
 	if err != nil {
 		return err
 	}
@@ -90,7 +88,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	// the temporal-oplog may be already deleted.
 	err = oplog.Get(obj.GetLogID(), true)
-	log.Debug("HandleSyncCreateObjAck: after get oplog", "e", err)
 	if err != nil {
 		return nil
 	}
@@ -104,7 +101,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	origObj.SetID(objID)
 	err = origObj.GetByID(true)
-	log.Debug("HandleSyncCreateObjAck: after get origObj", "e", err, "isSync", oplog.IsSync)
 	if err != nil {
 		return err
 	}
@@ -113,8 +109,6 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	if oplog.IsSync { // already synced
 		return nil
 	}
-
-	log.Debug("HandleSyncCreateObjAck: to check isGood", "objID", objID, "entity", pm.Entity().GetID(), "isGood", origObj.GetIsGood())
 
 	if origObj.GetIsGood() {
 		return nil
@@ -130,17 +124,12 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		}
 		origObj.SetIsGood(true)
 		isAllGood := origObj.CheckIsAllGood()
-
-		log.Debug("HandleSyncCreateObjAck: after check isAllGood", "objID", objID, "entity", pm.Entity().GetID(), "isAllGood", isAllGood)
-
 		if !isAllGood {
 			return origObj.Save(true)
 		}
 
 		// The oplog may be synced after saveNewObjectWithOplog.
 		err = pm.saveNewObjectWithOplog(origObj, oplog, true, false, postcreate)
-		log.Debug("HandleSyncCreateObjAck: after saveNewObjectWithOplog", "objID", objID, "entity", pm.Entity().GetID(), "e", err)
-
 		if err != nil {
 			return err
 		}
@@ -172,8 +161,6 @@ func (pm *BaseProtocolManager) syncCreateAckSaveOplog(
 	if !oplog.IsSync {
 		return nil
 	}
-
-	log.Debug("syncCreateAckSaveOplog: to check status", "obj.Status", obj.GetStatus(), "oplog.Status", oplog.ToStatus(), "obj", obj.GetID())
 
 	if obj.GetStatus() == types.StatusAlive {
 		return nil

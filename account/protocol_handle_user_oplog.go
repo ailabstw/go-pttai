@@ -18,7 +18,6 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -81,8 +80,6 @@ func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, pr
 		return false, nil, pkgservice.ErrInvalidData
 	}
 
-	log.Debug("processPendingUserLog: to process", "op", oplog.Op)
-
 	switch oplog.Op {
 	case UserOpTypeCreateUserName:
 		isToSign, origLogs, err = pm.handlePendingCreateUserNameLogs(oplog, info)
@@ -122,8 +119,6 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 
 	updateUserNameIDs := pkgservice.ProcessInfoToSyncIDList(info.UserNameInfo, UserOpTypeUpdateUserName)
 
-	log.Debug("postprocessUserOplogs: userName", "createUserName", createUserNameIDs, "updateUserName", updateUserNameIDs)
-
 	pm.SyncUserName(SyncCreateUserNameMsg, createUserNameIDs, peer)
 	pm.SyncUserName(SyncUpdateUserNameMsg, updateUserNameIDs, peer)
 
@@ -136,7 +131,6 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 	pm.SyncUserImg(SyncUpdateUserImgMsg, updateUserImgIDs, peer)
 
 	// broadcast
-	log.Debug("postprocessUserOplogs: to broadcast", "logs", toBroadcastLogs)
 	pm.broadcastUserOplogsCore(toBroadcastLogs)
 
 	return
@@ -202,7 +196,6 @@ func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (e
 
 func (pm *ProtocolManager) postsyncUserOplogs(peer *pkgservice.PttPeer) (err error) {
 	err = pm.SyncPendingUserOplog(peer)
-	log.Debug("postsyncUserOplogs: after SyncPendingUserOplog", "e", err)
 
 	return
 }

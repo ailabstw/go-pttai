@@ -18,7 +18,6 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -27,8 +26,6 @@ func (pm *ProtocolManager) handleUpdateUserNameLogs(oplog *pkgservice.BaseOplog,
 	pm.SetUserNameDB(obj)
 
 	opData := &UserOpUpdateUserName{}
-
-	log.Debug("handleUpdateUserNameLogs: to HandleUpdateObjectLog")
 
 	return pm.HandleUpdateObjectLog(
 		oplog, opData, obj, info,

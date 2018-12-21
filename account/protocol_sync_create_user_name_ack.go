@@ -19,7 +19,6 @@ package account
 import (
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -34,8 +33,6 @@ func (pm *ProtocolManager) HandleSyncCreateUserNameAck(dataBytes []byte, peer *p
 	if err != nil {
 		return err
 	}
-
-	log.Debug("HandleSyncCreateUserNameAck: start", "objs", data.Objs)
 
 	if len(data.Objs) == 0 {
 		return nil

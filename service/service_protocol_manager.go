@@ -59,19 +59,6 @@ type ServiceProtocolManager interface {
 	RUnlock(id *types.PttID) error
 
 	NewEmptyEntity() Entity
-
-	/*
-		CreateJoinEntity(
-			approveJoin *ApproveJoinEntity,
-			peer *PttPeer,
-
-			meLog *BaseOplog,
-			isStart bool,
-			isNew bool,
-			isForceNotBroadcast bool,
-			isLocked bool,
-		) (Entity, error)
-	*/
 }
 
 type BaseServiceProtocolManager struct {

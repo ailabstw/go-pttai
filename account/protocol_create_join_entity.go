@@ -87,7 +87,18 @@ func (pm *ProtocolManager) createJoinEntityUserName(userName *UserName) error {
 		}
 	}
 
-	userName.Status = types.StatusInternalSync
+	if userName.UpdateLogID == nil {
+		userName.Status = types.StatusInternalSync
+		userName.IsGood = false
+		userName.IsAllGood = false
+	} else {
+		syncInfo := NewEmptySyncUserNameInfo()
+		syncInfo.LogID = userName.UpdateLogID
+		syncInfo.Name = userName.Name
+		syncInfo.Status = types.StatusInternalSync
+		userName.SetSyncInfo(syncInfo)
+		userName.UpdateLogID = nil
+	}
 
 	userName.Save(true)
 
@@ -114,7 +125,21 @@ func (pm *ProtocolManager) createJoinEntityUserImg(userImg *UserImg) error {
 		}
 	}
 
-	userImg.Status = types.StatusInternalSync
+	if userImg.UpdateLogID == nil {
+		userImg.Status = types.StatusInternalSync
+		userImg.IsGood = false
+		userImg.IsAllGood = false
+	} else {
+		syncInfo := NewEmptySyncUserImgInfo()
+		syncInfo.LogID = userImg.UpdateLogID
+		syncInfo.ImgType = userImg.ImgType
+		syncInfo.Width = userImg.Width
+		syncInfo.Height = userImg.Height
+		syncInfo.Str = userImg.Str
+		syncInfo.Status = types.StatusInternalSync
+		userImg.SetSyncInfo(syncInfo)
+		userImg.UpdateLogID = nil
+	}
 
 	userImg.Save(true)
 

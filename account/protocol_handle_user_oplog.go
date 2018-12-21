@@ -122,6 +122,8 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 
 	updateUserNameIDs := pkgservice.ProcessInfoToSyncIDList(info.UserNameInfo, UserOpTypeUpdateUserName)
 
+	log.Debug("postprocessUserOplogs: userName", "createUserName", createUserNameIDs, "updateUserName", updateUserNameIDs)
+
 	pm.SyncUserName(SyncCreateUserNameMsg, createUserNameIDs, peer)
 	pm.SyncUserName(SyncUpdateUserNameMsg, updateUserNameIDs, peer)
 

@@ -82,6 +82,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	setLogDB(oplog)
 
 	err := oplog.Lock()
+	log.Debug("HandleSyncCreateObjAck: after oplog lock", "logID", logID, "e", err)
 	if err != nil {
 		return err
 	}
@@ -89,6 +90,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	// the temporal-oplog may be already deleted.
 	err = oplog.Get(obj.GetLogID(), true)
+	log.Debug("HandleSyncCreateObjAck: after get oplog", "e", err)
 	if err != nil {
 		return nil
 	}
@@ -102,6 +104,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	origObj.SetID(objID)
 	err = origObj.GetByID(true)
+	log.Debug("HandleSyncCreateObjAck: after get origObj", "e", err, "isSync", oplog.IsSync)
 	if err != nil {
 		return err
 	}

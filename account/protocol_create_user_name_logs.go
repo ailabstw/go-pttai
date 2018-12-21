@@ -18,6 +18,7 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -27,6 +28,8 @@ func (pm *ProtocolManager) handleCreateUserNameLogs(oplog *pkgservice.BaseOplog,
 	pm.SetUserNameDB(obj)
 
 	opData := &UserOpCreateUserName{}
+
+	log.Debug("handleCreateUserNameLogs: to HandleCreateObjectLog")
 
 	return pm.HandleCreateObjectLog(
 		oplog, obj, opData, info,

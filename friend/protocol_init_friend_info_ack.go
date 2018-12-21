@@ -33,7 +33,7 @@ func NewEmptyApproveJoinFriend() *pkgservice.ApproveJoinEntity {
 
 type InitFriendInfoAck struct {
 	FriendData  *pkgservice.ApproveJoinEntity `json:"F"`
-	ProfileData *pkgservice.ApproveJoinEntity `json:"P"`
+	ProfileData *account.ApproveJoinEntity    `json:"P"`
 	BoardData   *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
@@ -86,7 +86,7 @@ func (pm *ProtocolManager) InitFriendInfoAckCore(peer *pkgservice.PttPeer) (*Ini
 	if err != nil {
 		return nil, err
 	}
-	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
+	profileData, ok := theProfileData.(*account.ApproveJoinEntity)
 	if !ok {
 		return nil, pkgservice.ErrInvalidData
 	}
@@ -139,7 +139,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 	profileData, friendData, boardData := initFriendInfoAck.ProfileData, initFriendInfoAck.FriendData, initFriendInfoAck.BoardData
 
 	f := pm.Entity().(*Friend)
-	spm := f.Service().SPM()
+	spm := f.Service().SPM().(*ServiceProtocolManager)
 
 	// validate
 	if peer.PeerType != pkgservice.PeerTypeMe && !reflect.DeepEqual(f.FriendID, peer.UserID) {

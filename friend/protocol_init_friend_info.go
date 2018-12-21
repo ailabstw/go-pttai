@@ -28,7 +28,7 @@ import (
 )
 
 type InitFriendInfo struct {
-	ProfileData *pkgservice.ApproveJoinEntity `json:"P"`
+	ProfileData *account.ApproveJoinEntity    `json:"P"`
 	BoardData   *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
@@ -46,7 +46,7 @@ func (pm *ProtocolManager) InitFriendInfo(peer *pkgservice.PttPeer) error {
 	if err != nil {
 		return err
 	}
-	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
+	profileData, ok := theProfileData.(*account.ApproveJoinEntity)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}

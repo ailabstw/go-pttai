@@ -16,8 +16,55 @@
 
 package account
 
-import pkgservice "github.com/ailabstw/go-pttai/service"
+import (
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
-func NewEmptyApproveJoinProfile() *pkgservice.ApproveJoinEntity {
-	return &pkgservice.ApproveJoinEntity{Entity: NewEmptyProfile()}
+func NewEmptyApproveJoinProfile() *ApproveJoinEntity {
+	return &ApproveJoinEntity{
+		ApproveJoinEntity: &pkgservice.ApproveJoinEntity{
+			Entity: NewEmptyProfile(),
+		},
+		UserName: NewEmptyUserName(),
+		UserImg:  NewEmptyUserImg(),
+	}
+}
+
+type ApproveJoinEntity struct {
+	*pkgservice.ApproveJoinEntity `json:"b"`
+	UserName                      *UserName `json:"n"`
+	UserImg                       *UserImg  `json:"i"`
+}
+
+func (pm *ProtocolManager) ApproveJoin(
+	joinEntity *pkgservice.JoinEntity,
+	keyInfo *pkgservice.KeyInfo,
+	peer *pkgservice.PttPeer,
+) (*pkgservice.KeyInfo, interface{}, error) {
+
+	keyInfo, approveJoinEntity, err := pm.BaseProtocolManager.ApproveJoin(joinEntity, keyInfo, peer)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	userID := pm.Entity().GetCreatorID()
+	spm := pm.Entity().Service().SPM().(*ServiceProtocolManager)
+
+	userName, err := spm.GetUserNameByID(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	userImg, err := spm.GetUserImgByID(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	data := &ApproveJoinEntity{
+		ApproveJoinEntity: approveJoinEntity.(*pkgservice.ApproveJoinEntity),
+		UserName:          userName,
+		UserImg:           userImg,
+	}
+
+	return keyInfo, data, nil
 }

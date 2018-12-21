@@ -60,16 +60,18 @@ type ServiceProtocolManager interface {
 
 	NewEmptyEntity() Entity
 
-	CreateJoinEntity(
-		approveJoin *ApproveJoinEntity,
-		peer *PttPeer,
+	/*
+		CreateJoinEntity(
+			approveJoin *ApproveJoinEntity,
+			peer *PttPeer,
 
-		meLog *BaseOplog,
-		isStart bool,
-		isNew bool,
-		isForceNotBroadcast bool,
-		isLocked bool,
-	) (Entity, error)
+			meLog *BaseOplog,
+			isStart bool,
+			isNew bool,
+			isForceNotBroadcast bool,
+			isLocked bool,
+		) (Entity, error)
+	*/
 }
 
 type BaseServiceProtocolManager struct {

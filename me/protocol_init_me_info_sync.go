@@ -33,7 +33,7 @@ type InitMeInfoSync struct {
 	KeyBytes     []byte                        `json:"K"`
 	PostfixBytes []byte                        `json:"P"`
 	Oplog0       *pkgservice.BaseOplog         `json:"O"`
-	ProfileData  *pkgservice.ApproveJoinEntity `json:"p"`
+	ProfileData  *account.ApproveJoinEntity    `json:"p"`
 	BoardData    *pkgservice.ApproveJoinEntity `json:"b"`
 }
 
@@ -69,7 +69,7 @@ func (pm *ProtocolManager) InitMeInfoSync(peer *pkgservice.PttPeer) error {
 	if err != nil {
 		return err
 	}
-	profileData, ok := theProfileData.(*pkgservice.ApproveJoinEntity)
+	profileData, ok := theProfileData.(*account.ApproveJoinEntity)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}

@@ -111,6 +111,9 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	}
 
 	if origObj.GetIsGood() {
+		if origObj.GetIsAllGood() {
+			return pm.syncCreateAckSaveOplog(oplog, origObj, broadcastLog, postcreate)
+		}
 		return nil
 	}
 

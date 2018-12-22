@@ -76,6 +76,12 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObjectAck(
 		return nil
 	}
 
+	// obj already all synced
+	origUpdateLogID := origObj.GetUpdateLogID()
+	if reflect.DeepEqual(origUpdateLogID, logID) {
+		return ErrNewerOplog
+	}
+
 	syncInfo := origObj.GetSyncInfo()
 	if syncInfo == nil || !reflect.DeepEqual(syncInfo.GetLogID(), logID) {
 		return ErrNewerOplog

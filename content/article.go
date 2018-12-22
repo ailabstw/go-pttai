@@ -26,12 +26,35 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+type SyncArticleInfo struct {
+	*pkgservice.BaseSyncInfo `json:"b"`
+
+	Title []byte `json:"T,omitempty"`
+}
+
+func NewEmptySyncArticleInfo() *SyncArticleInfo {
+	return &SyncArticleInfo{BaseSyncInfo: &pkgservice.BaseSyncInfo{}}
+}
+
+func (s *SyncArticleInfo) ToObject(theObj pkgservice.Object) error {
+	obj, ok := theObj.(*Article)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	s.BaseSyncInfo.ToObject(obj)
+
+	obj.Title = s.Title
+
+	return nil
+}
+
 type Article struct {
 	*pkgservice.BaseObject `json:"b"`
 
 	UpdateTS types.Timestamp `json:"UT"`
 
-	SyncInfo *pkgservice.BaseSyncInfo `json:"s,omitempty"`
+	SyncInfo *SyncArticleInfo `json:"s,omitempty"`
 
 	Title []byte `json:"T,omitempty"`
 
@@ -235,7 +258,7 @@ func (a *Article) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
 		return nil
 	}
 
-	syncInfo, ok := theSyncInfo.(*pkgservice.BaseSyncInfo)
+	syncInfo, ok := theSyncInfo.(*SyncArticleInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}

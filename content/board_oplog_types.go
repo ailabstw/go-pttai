@@ -83,6 +83,8 @@ type BoardOpUpdateArticle struct {
 	NBlock      int          `json:"NB"`
 
 	MediaIDs []*types.PttID `json:"ms,omitempty"`
+
+	TitleHash []byte `json:"th"`
 }
 
 type BoardOpDeleteArticle struct {

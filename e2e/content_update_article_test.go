@@ -359,6 +359,7 @@ func TestContentUpdateArticle(t *testing.T) {
 	assert.Equal(1, len(dataGetArticleList0_40.Result))
 	article0_40 := dataGetArticleList0_40.Result[0]
 	assert.Equal(dataUpdateArticle0_39.ContentBlockID, article0_40.ContentBlockID)
+	assert.Equal(title0_35, article0_40.Title)
 
 	// 41. get-article-block
 	marshaledID2, _ = article0_40.ID.MarshalText()

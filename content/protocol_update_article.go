@@ -57,7 +57,12 @@ func (pm *ProtocolManager) UpdateArticle(articleID *types.PttID, articleBytes []
 	return origObj, nil
 }
 
-func (pm *ProtocolManager) inupdateArticle(obj pkgservice.Object, theData pkgservice.UpdateData, oplog *pkgservice.BaseOplog, theOpData pkgservice.OpData) (pkgservice.SyncInfo, error) {
+func (pm *ProtocolManager) inupdateArticle(theObj pkgservice.Object, theData pkgservice.UpdateData, oplog *pkgservice.BaseOplog, theOpData pkgservice.OpData) (pkgservice.SyncInfo, error) {
+
+	obj, ok := theObj.(*Article)
+	if !ok {
+		return nil, pkgservice.ErrInvalidData
+	}
 
 	data, ok := theData.(*UpdateArticle)
 	if !ok {
@@ -88,10 +93,14 @@ func (pm *ProtocolManager) inupdateArticle(obj pkgservice.Object, theData pkgser
 	opData.Hashs = blockHashs
 	opData.MediaIDs = data.MediaIDs
 
+	opData.TitleHash = types.Hash(obj.Title)
+
 	// sync-info
-	syncInfo := &pkgservice.BaseSyncInfo{}
+	syncInfo := NewEmptySyncArticleInfo()
 	syncInfo.InitWithOplog(oplog.ToStatus(), oplog)
 	syncInfo.SetBlockInfo(blockInfo)
+
+	syncInfo.Title = obj.Title
 
 	return syncInfo, nil
 }

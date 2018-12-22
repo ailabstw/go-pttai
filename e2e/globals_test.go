@@ -52,8 +52,9 @@ var (
 
 	origHandler log.Handler
 
-	nilPttID    *types.PttID
-	nilSyncInfo *pkgservice.BaseSyncInfo
+	nilPttID           *types.PttID
+	nilSyncInfo        *pkgservice.BaseSyncInfo
+	nilSyncArticleInfo *content.SyncArticleInfo
 
 	TimeSleepRestart = 15 * time.Second
 	TimeSleepDefault = 8 * time.Second

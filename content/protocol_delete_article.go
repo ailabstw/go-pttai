@@ -47,7 +47,7 @@ func (pm *ProtocolManager) DeleteArticle(id *types.PttID) error {
 
 func (pm *ProtocolManager) setPendingDeleteArticleSyncInfo(obj pkgservice.Object, status types.Status, oplog *pkgservice.BaseOplog) error {
 
-	syncInfo := &pkgservice.BaseSyncInfo{}
+	syncInfo := NewEmptySyncArticleInfo()
 	syncInfo.InitWithOplog(status, oplog)
 
 	obj.SetSyncInfo(syncInfo)

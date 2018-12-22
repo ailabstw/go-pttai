@@ -67,7 +67,7 @@ func (pm *ProtocolManager) syncArticleInfoFromOplog(oplog *pkgservice.BaseOplog,
 		return nil, pkgservice.ErrInvalidData
 	}
 
-	syncInfo := &pkgservice.BaseSyncInfo{}
+	syncInfo := NewEmptySyncArticleInfo()
 	syncInfo.InitWithOplog(types.StatusInternalSync, oplog)
 
 	blockInfo, err := pkgservice.NewBlockInfo(opData.BlockInfoID, opData.Hashs, opData.MediaIDs, oplog.CreatorID)

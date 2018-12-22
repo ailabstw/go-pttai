@@ -59,7 +59,7 @@ func SetUtilsConfig(ctx *cli.Context, cfg *Config) {
 	case ctx.GlobalIsSet(ExternHTTPAddrFlag.Name):
 		cfg.ExternHTTPAddr = ctx.GlobalString(ExternHTTPAddrFlag.Name)
 	default:
-		cfg.ExternHTTPAddr = cfg.HTTPAddr
+		cfg.ExternHTTPAddr = "http://" + cfg.HTTPAddr
 	}
 
 }

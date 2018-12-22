@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"reflect"
 
+	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -51,7 +52,7 @@ func (pm *ProtocolManager) HandleSyncUpdateArticleAck(dataBytes []byte, peer *pk
 }
 
 func (pm *ProtocolManager) updateSyncArticle(theToSyncInfo pkgservice.SyncInfo, theFromObj pkgservice.Object, oplog *pkgservice.BaseOplog) error {
-	toSyncInfo, ok := theToSyncInfo.(*pkgservice.BaseSyncInfo)
+	toSyncInfo, ok := theToSyncInfo.(*SyncArticleInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
@@ -66,6 +67,12 @@ func (pm *ProtocolManager) updateSyncArticle(theToSyncInfo pkgservice.SyncInfo, 
 	err := oplog.GetData(opData)
 	if err != nil {
 		return err
+	}
+
+	// validate title
+	titleHash := types.Hash(fromObj.Title)
+	if !reflect.DeepEqual(titleHash, opData.TitleHash) {
+		return pkgservice.ErrInvalidObject
 	}
 
 	// logID
@@ -88,6 +95,9 @@ func (pm *ProtocolManager) updateSyncArticle(theToSyncInfo pkgservice.SyncInfo, 
 	blockInfo.IsAllGood = origBlockInfo.IsAllGood
 
 	toSyncInfo.SetBlockInfo(blockInfo)
+
+	// title
+	toSyncInfo.Title = fromObj.Title
 
 	return nil
 }

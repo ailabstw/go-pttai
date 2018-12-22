@@ -377,7 +377,7 @@ func TestFriendUpdateArticle3(t *testing.T) {
 
 	marshaledID, _ = board1_16_2.ID.MarshalText()
 
-	title1_35 := []byte("標題1")
+	title1_35 := []byte("標題1_35")
 	marshaledStr = base64.StdEncoding.EncodeToString(title1_35)
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createArticle", "params": ["%v", "%v", %v, []]}`, string(marshaledID), marshaledStr, string(article))
@@ -620,15 +620,17 @@ func TestFriendUpdateArticle3(t *testing.T) {
 	testCore(t0, bodyString, dataGetArticle0_50, t, isDebug)
 	assert.Equal(article1_36.ID, dataGetArticle0_50.ID)
 	syncInfo0_50 := dataGetArticle0_50.SyncInfo
-	assert.Equal(nilSyncInfo, syncInfo0_50)
+	assert.Equal(nilSyncArticleInfo, syncInfo0_50)
 	assert.Equal(types.StatusAlive, dataGetArticle0_50.GetStatus())
+	assert.Equal(title1_35, dataGetArticle0_50.Title)
 
 	dataGetArticle1_50 := &content.Article{}
 	testCore(t1, bodyString, dataGetArticle1_50, t, isDebug)
 	assert.Equal(article1_36.ID, dataGetArticle1_50.ID)
 	syncInfo1_50 := dataGetArticle1_50.SyncInfo
-	assert.Equal(nilSyncInfo, syncInfo1_50)
+	assert.Equal(nilSyncArticleInfo, syncInfo1_50)
 	assert.Equal(types.StatusAlive, dataGetArticle1_50.GetStatus())
+	assert.Equal(title1_35, dataGetArticle1_50.Title)
 
 	// 51. get-article-block
 	marshaledID, _ = board1_16_2.ID.MarshalText()

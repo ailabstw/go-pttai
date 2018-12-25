@@ -77,6 +77,11 @@ var (
 		Usage: "Custom user name",
 	}
 
+	LogFilenameFlag = cli.StringFlag{
+		Name:  "log",
+		Usage: "log filename",
+	}
+
 	// My settings
 	MyDataDirFlag = DirectoryFlag{
 		Name:  "mydatadir",

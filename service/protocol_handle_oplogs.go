@@ -38,6 +38,7 @@ func HandleOplogs(
 	peer *PttPeer,
 	isUpdateSyncTime bool,
 
+	pm ProtocolManager,
 	info ProcessInfo,
 	merkle *Merkle,
 
@@ -52,7 +53,7 @@ func HandleOplogs(
 		return nil
 	}
 
-	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, merkle, peer)
+	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, pm, merkle, peer)
 	if err != nil {
 		return err
 	}
@@ -200,7 +201,7 @@ func HandlePendingOplogs(
 	}
 
 	log.Debug("HandlePendingOplogs: to preprocessOplogs", "e", err, "oplogs", oplogs)
-	oplogs, err = preprocessOplogs(oplogs, setDB, false, nil, peer)
+	oplogs, err = preprocessOplogs(oplogs, setDB, false, pm, nil, peer)
 	log.Debug("HandlePendingOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs)
 	if err != nil {
 		return err
@@ -378,6 +379,8 @@ func preprocessOplogs(
 	oplogs []*BaseOplog,
 	setDB func(oplog *BaseOplog),
 	isUpdateSyncTime bool,
+
+	pm ProtocolManager,
 	merkle *Merkle,
 	peer *PttPeer,
 ) ([]*BaseOplog, error) {
@@ -398,7 +401,7 @@ func preprocessOplogs(
 	}
 	expireTS.Ts -= OffsetMerkleSyncTime
 
-	log.Debug("preprocessOplogs: start", "oplogs", oplogs, "expireTS", expireTS, "merkle", merkle)
+	log.Debug("preprocessOplogs: start", "oplogs", oplogs, "expireTS", expireTS)
 
 	// expire-ts: start-idx
 	startIdx := len(oplogs)
@@ -410,7 +413,7 @@ func preprocessOplogs(
 	}
 	if startIdx != 0 {
 		expiredLog := oplogs[0]
-		log.Warn("preprocessOplogs: received expired oplogs", "expiredLog", expiredLog.ID, "expiredTS", expiredLog.UpdateTS, "expireTS", expireTS, "peer", peer)
+		log.Warn("preprocessOplogs: received expired oplogs", "e", pm.Entity().GetID(), "expiredLog", expiredLog.ID, "expiredTS", expiredLog.UpdateTS, "expireTS", expireTS, "peer", peer)
 		oplogs = oplogs[startIdx:]
 	}
 

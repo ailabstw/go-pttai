@@ -79,7 +79,7 @@ func (pm *ProtocolManager) HandleBoardOplogs(oplogs []*pkgservice.BaseOplog, pee
 	info := NewProcessBoardInfo()
 	merkle := pm.boardOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, info, merkle, pm.SetBoardDB, pm.processBoardLog, pm.postprocessBoardOplogs)
+	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetBoardDB, pm.processBoardLog, pm.postprocessBoardOplogs)
 }
 
 func (pm *ProtocolManager) HandlePendingBoardOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {

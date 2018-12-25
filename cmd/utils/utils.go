@@ -19,6 +19,8 @@ package utils
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"io/ioutil"
+	golog "log"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -29,6 +31,7 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/friend"
+	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/metrics"
@@ -39,9 +42,26 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/nat"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ailabstw/go-pttai/params"
+	"github.com/ailabstw/go-pttai/raft"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	logging "github.com/whyrusleeping/go-logging"
 	cli "gopkg.in/urfave/cli.v1"
 )
+
+func SetLogging(ctx *cli.Context) {
+	logging.SetLevel(logging.DEBUG, "swarm2")
+
+	if ctx.GlobalIsSet(debug.VerbosityFlag.Name) {
+		log.LogLevel = log.Lvl(ctx.GlobalInt(debug.VerbosityFlag.Name))
+	}
+
+	if ctx.GlobalIsSet(LogFilenameFlag.Name) {
+		log.LogFilename = ctx.GlobalString(LogFilenameFlag.Name)
+		logging.SetLevel(logging.CRITICAL, "swarm2")
+		raft.SetLogger(&raft.DefaultLogger{Logger: golog.New(ioutil.Discard, "", 0)})
+	}
+
+}
 
 // SetContentConfig applies node-related command line flags to the config.
 func SetUtilsConfig(ctx *cli.Context, cfg *Config) {

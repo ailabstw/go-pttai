@@ -253,9 +253,7 @@ func (p *PttID) Clone() *PttID {
 	return p2
 }
 
-/*
 func (p *PttID) String() string {
 	str, _ := p.MarshalText()
 	return string(str)
 }
-*/

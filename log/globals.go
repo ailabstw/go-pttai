@@ -14,23 +14,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package account
+package log
 
-import (
-	"github.com/ailabstw/go-pttai/common/types"
+import "os"
+
+const ()
+
+var (
+	LogFilename = ""
+	MaxLogCount = 10000
+	logCount    = 10000
+
+	LogLevel Lvl = LvlInfo
+
+	logF *os.File
+
+	myFileHandler *closingHandler
 )
 
-func (spm *ServiceProtocolManager) GetUserNameByID(id *types.PttID) (*UserName, error) {
-	if id == nil {
-		return nil, types.ErrInvalidID
-	}
-	u := NewEmptyUserName()
-	spm.SetUserNameDB(u)
-	u.SetID(id)
-	err := u.Get(true)
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+func init() {
 }

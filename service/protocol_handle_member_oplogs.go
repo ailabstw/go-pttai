@@ -76,7 +76,7 @@ func (pm *BaseProtocolManager) HandleMemberOplogs(oplogs []*BaseOplog, peer *Ptt
 
 	info := NewProcessPersonInfo()
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, info, pm.memberMerkle, pm.SetMemberDB, pm.processMemberLog, pm.postprocessMemberOplogs)
+	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, pm.memberMerkle, pm.SetMemberDB, pm.processMemberLog, pm.postprocessMemberOplogs)
 }
 
 func (pm *BaseProtocolManager) HandlePendingMemberOplogs(oplogs []*BaseOplog, peer *PttPeer) error {

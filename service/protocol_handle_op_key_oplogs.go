@@ -56,7 +56,7 @@ func (pm *BaseProtocolManager) HandleOpKeyOplogs(oplogs []*BaseOplog, peer *PttP
 
 	info := NewProcessOpKeyInfo()
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, info, nil, pm.SetOpKeyDB, pm.processOpKeyLog, pm.postprocessOpKeyOplogs)
+	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, nil, pm.SetOpKeyDB, pm.processOpKeyLog, pm.postprocessOpKeyOplogs)
 }
 
 func (pm *BaseProtocolManager) HandlePendingOpKeyOplogs(oplogs []*BaseOplog, peer *PttPeer) error {

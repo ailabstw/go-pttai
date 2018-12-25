@@ -84,14 +84,14 @@ func (pm *BaseProtocolManager) HandleMasterOplogs(oplogs []*BaseOplog, peer *Ptt
 
 	log.Debug("HandleMasterOplogs: to HandleOplogs", "masterMerkler", pm.masterMerkle, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, info, pm.masterMerkle, pm.SetMasterDB, pm.processMasterLog, pm.postprocessMasterOplogs)
+	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, pm.masterMerkle, pm.SetMasterDB, pm.processMasterLog, pm.postprocessMasterOplogs)
 }
 
 func (pm *BaseProtocolManager) HandlePendingMasterOplogs(oplogs []*BaseOplog, peer *PttPeer) error {
 
 	info := NewProcessPersonInfo()
 
-	oplogs, err := preprocessOplogs(oplogs, pm.SetMasterDB, false, nil, peer)
+	oplogs, err := preprocessOplogs(oplogs, pm.SetMasterDB, false, pm, nil, peer)
 	if err != nil {
 		return err
 	}

@@ -79,7 +79,7 @@ func (pm *ProtocolManager) HandleMeOplogs(oplogs []*pkgservice.BaseOplog, peer *
 	info := NewProcessMeInfo()
 	merkle := pm.meOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, info, merkle, pm.SetMeDB, pm.processMeLog, pm.postprocessMeOplogs)
+	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetMeDB, pm.processMeLog, pm.postprocessMeOplogs)
 }
 
 func (pm *ProtocolManager) HandlePendingMeOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {

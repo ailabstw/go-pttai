@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/go-stack/stack"
@@ -124,11 +125,13 @@ type Logger interface {
 }
 
 type logger struct {
-	ctx []interface{}
-	h   *swapHandler
+	ctx  []interface{}
+	h    *swapHandler
+	lock sync.Mutex
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}, skip int) {
+	l.rotate()
 	l.h.Log(&Record{
 		Time: time.Now(),
 		Lvl:  lvl,
@@ -143,8 +146,47 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}, skip int) {
 	})
 }
 
+func (l *logger) rotate() {
+	if LogFilename == "" {
+		return
+	}
+
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	if logCount >= MaxLogCount {
+
+		println("rotate: reached logCount:", logCount)
+
+		os.Rename(LogFilename, LogFilename+".1")
+
+		f, err := FileHandler(LogFilename, TerminalFormat(true))
+		if err != nil {
+			println("rotate: unable to new FileHandler: e:", err)
+			return
+		}
+		f2 := LvlFilterHandler(LogLevel, f)
+
+		l.SetHandler(f2)
+
+		if myFileHandler != nil {
+			println("rotate: to close origHandler")
+			myFileHandler.Close()
+		}
+
+		theFileHandler, ok := f.(closingHandler)
+		if ok {
+			myFileHandler = &theFileHandler
+		}
+
+		logCount = 0
+	}
+
+	logCount++
+}
+
 func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
+	child := &logger{ctx: newContext(l.ctx, ctx), h: new(swapHandler)}
 	child.SetHandler(l.h)
 	return child
 }

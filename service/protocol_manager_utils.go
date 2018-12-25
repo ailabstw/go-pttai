@@ -201,9 +201,7 @@ func (pm *BaseProtocolManager) SendDataToPeerWithCode(code CodeType, op OpType, 
 		Peer: peer,
 	}
 
-	log.Debug("SendDataToPeerWithCode: to eventMux.Post", "Code", code, "Op", op)
-	err := pm.eventMux.Post(ev)
-	log.Debug("SendDataToPeerWithCode: after eventMux.Post", "Code", code, "Op", op, "e", err)
+	pm.eventMux.Post(ev)
 
 	return nil
 }
@@ -218,7 +216,6 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCodeLoop() {
 			log.Error("sendDataToPeerWithCodeLoop: unable to get event", "data", obj.Data)
 			continue
 		}
-		log.Debug("sendDataToPeerWithCode: to sendDataToPeerWithCode", "code", ev.Code, "op", ev.Op, "peer", ev.Peer.GetID())
 
 		err = pm.sendDataToPeerWithCode(ev.Code, ev.Op, ev.Data, ev.Peer)
 		if err != nil {
@@ -239,7 +236,6 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 	}
 
 	opKeyInfo, err := pm.GetOldestOpKey(false)
-	log.Debug("sendDataToPeerWithCode: after get opKey", "opKey", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "e", err)
 	if err != nil {
 		return err
 	}
@@ -258,7 +254,6 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 	pttData.Node = peer.GetID()[:]
 
 	err = peer.SendData(pttData)
-	log.Debug("SendDataToPeerWithCode: after SendData", "code", code, "peer", peer.PeerType, "e", err)
 	if err != nil {
 		return ErrNotSent
 	}

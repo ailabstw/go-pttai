@@ -111,6 +111,8 @@ var (
 		utils.MetricsInfluxDBUsernameFlag,
 		utils.MetricsInfluxDBPasswordFlag,
 		utils.MetricsInfluxDBHostTagFlag,
+
+		utils.LogFilenameFlag,
 	}
 
 	// flags that configure p2p-network

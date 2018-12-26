@@ -91,9 +91,6 @@ func gptt(ctx *cli.Context) error {
 
 	httpServer.Start()
 
-	// set-signal
-	go setSignal(n, httpServer)
-
 	// open-browser
 	if !ctx.GlobalIsSet(utils.ServerFlag.Name) && !ctx.GlobalIsSet(utils.ExternRPCAddrFlag.Name) && !ctx.GlobalIsSet(utils.ExternHTTPAddrFlag.Name) {
 		go func() {
@@ -101,6 +98,9 @@ func gptt(ctx *cli.Context) error {
 			utils.OpenBrowser(cfg.Utils.HTTPAddr)
 		}()
 	}
+
+	// set-signal
+	go setSignal(n, httpServer)
 
 	// wait-node
 	if err := WaitNode(n, httpServer); err != nil {

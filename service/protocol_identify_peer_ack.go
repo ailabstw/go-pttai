@@ -34,7 +34,9 @@ type IdentifyPeerAck struct {
 }
 
 /*
-IdentifyPeerAck acks IdentifyPeer
+IdentifyPeerAck acks IdentifyPeer. We need to pass to ptt to hide the sign-key of myEntity.
+
+
 	1. return my data
 	2. if we do not know the peer, do identify peer process.
 */
@@ -83,37 +85,6 @@ func (pm *BaseProtocolManager) HandleIdentifyPeerAck(dataBytes []byte, peer *Ptt
  **********/
 
 /*
-IdentifyPeerWithMyIDAck
-*/
-func (p *BasePtt) IdentifyPeerWithMyIDAck(challenge *types.Salt, peer *PttPeer) error {
-	ackData, err := p.IdentifyPeerAck(challenge, peer)
-	if err != nil {
-		return err
-	}
-
-	return p.SendDataToPeer(CodeTypeIdentifyPeerWithMyIDAck, ackData, peer)
-}
-
-/*
-HandleIdentifyPeerWithMyIDAck
-*/
-func (p *BasePtt) HandleIdentifyPeerWithMyIDAck(dataBytes []byte, peer *PttPeer) error {
-	if p.myEntity == nil {
-		return ErrInvalidEntity
-	}
-
-	myID := p.myEntity.GetID()
-
-	data := &IdentifyPeerAck{}
-	err := json.Unmarshal(dataBytes, data)
-	if err != nil {
-		return err
-	}
-
-	return p.HandleIdentifyPeerAck(myID, data, peer)
-}
-
-/*
 IdentifyPeerAck
 */
 func (p *BasePtt) IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*IdentifyPeerAck, error) {
@@ -148,7 +119,6 @@ func (p *BasePtt) IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*Identi
 /*
 HandleIdentifyPeerAck
 */
-
 func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error {
 
 	if !reflect.DeepEqual(peer.IDChallenge[:], data.AckChallenge[:types.SizeSalt]) {

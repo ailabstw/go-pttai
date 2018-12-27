@@ -217,6 +217,9 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 	// master-oplog and my-node
 	oplog, err := pm.publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts, raftID, nodeID, weight, ent, fromID)
 	log.Debug("publishEntriesAddNode: after SetMyNode", "e", err)
+	if err == pkgservice.ErrOplogAlreadyExists {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -262,6 +265,15 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 func (pm *ProtocolManager) publishEntriesAddNodeCreateMasterOplogAndSetMyNode(ts types.Timestamp, raftID uint64, nodeID *discover.NodeID, weight uint32, ent *pb.Entry, fromID *types.PttID) (*MasterOplog, error) {
 
 	myInfo := pm.Entity().(*MyInfo)
+
+	id := raftIdxToMasterOplogID(ent.Index, myInfo.GetID())
+
+	baseOplog := &pkgservice.BaseOplog{}
+	pm.SetMasterDB(baseOplog)
+	err := baseOplog.Get(id, false)
+	if err == nil {
+		return nil, pkgservice.ErrOplogAlreadyExists
+	}
 
 	// lock
 	pm.lockMyNodes.Lock()
@@ -347,10 +359,14 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 		return ErrInvalidEntry
 	}
 
-	masters, totalWeight, myNode, err := pm.publishEntriesRemoveNodeDealWithMyNodes(raftID, nodeID)
+	masters, totalWeight, myNode, err := pm.publishEntriesRemoveNodeDealWithMyNodes(raftID, nodeID, ent)
+	if err == pkgservice.ErrOplogAlreadyExists {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
+
 	pm.totalWeight = totalWeight
 
 	opData := &MasterOpRevokeMaster{
@@ -390,7 +406,18 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 	return pm.HandleRevokeOtherNode(oplog, myNode, fromID)
 }
 
-func (pm *ProtocolManager) publishEntriesRemoveNodeDealWithMyNodes(raftID uint64, nodeID *discover.NodeID) (map[discover.NodeID]uint32, uint32, *MyNode, error) {
+func (pm *ProtocolManager) publishEntriesRemoveNodeDealWithMyNodes(raftID uint64, nodeID *discover.NodeID, ent *pb.Entry) (map[discover.NodeID]uint32, uint32, *MyNode, error) {
+
+	myInfo := pm.Entity().(*MyInfo)
+
+	id := raftIdxToMasterOplogID(ent.Index, myInfo.GetID())
+
+	baseOplog := &pkgservice.BaseOplog{}
+	pm.SetMasterDB(baseOplog)
+	err := baseOplog.Get(id, false)
+	if err == nil {
+		return nil, 0, nil, pkgservice.ErrOplogAlreadyExists
+	}
 
 	pm.lockMyNodes.Lock()
 	defer pm.lockMyNodes.Unlock()
@@ -400,7 +427,6 @@ func (pm *ProtocolManager) publishEntriesRemoveNodeDealWithMyNodes(raftID uint64
 		return nil, 0, nil, ErrInvalidNode
 	}
 
-	myInfo := pm.Entity().(*MyInfo)
 	nodeSignID, err := setNodeSignID(nodeID, myInfo.ID)
 	if err != nil {
 		return nil, 0, nil, ErrInvalidNode

@@ -208,6 +208,7 @@ loop:
 	for {
 		select {
 		case _, ok := <-ptt.NotifyNodeRestart().GetChan():
+			log.Debug("WaitNode: NotifyNodeRestart: start")
 			if !ok {
 				break loop
 			}
@@ -218,12 +219,16 @@ loop:
 			}
 			server.SetRPCServer(n)
 			server.Start()
+			ptt = n.Services()[reflect.TypeOf(&pkgservice.BasePtt{})].(*pkgservice.BasePtt)
+			log.Debug("WaitNode: NotifyNodeRestart: done")
 		case _, ok := <-ptt.NotifyNodeStop().GetChan():
+			log.Debug("WaitNode: NotifyNodeStop: start")
 			if !ok {
 				break loop
 			}
 			server.Stop()
 			n.Stop(false, false)
+			log.Debug("WaitNode: NotifyNodeStop: done")
 			break loop
 		case err, ok := <-ptt.ErrChan().GetChan():
 			if !ok {
@@ -232,10 +237,12 @@ loop:
 			log.Error("Received err from ptt", "e", err)
 			break loop
 		case err, ok := <-n.StopChan:
+			log.Debug("WaitNode: StopChan: start")
 			if ok && err != nil {
 				log.Error("Wait", "e", err)
 				return err
 			}
+			log.Debug("WaitNode: StopChan: done")
 			break loop
 		}
 	}

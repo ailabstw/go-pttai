@@ -23,6 +23,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/me"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -30,13 +31,12 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceSleepDevice(t *testing.T) {
+func TestMultiDeviceSyncAfterDeviceSleep(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
 	var bodyString string
-	//var marshaled []byte
-	//var reponseErr *MyError
+	var marshaled []byte
 	assert := assert.New(t)
 
 	setupTest(t)
@@ -55,9 +55,9 @@ func TestMultiDeviceSleepDevice(t *testing.T) {
 	me1_1 := &me.BackendMyInfo{}
 	testCore(t1, bodyString, me1_1, t, isDebug)
 	assert.Equal(types.StatusAlive, me1_1.Status)
-	//nodeID1_1 := me1_1.NodeID
-	//pubKey1_1, _ := nodeID1_1.Pubkey()
-	//nodeAddr1_1 := crypto.PubkeyToAddress(*pubKey1_1)
+	nodeID1_1 := me1_1.NodeID
+	pubKey1_1, _ := nodeID1_1.Pubkey()
+	nodeAddr1_1 := crypto.PubkeyToAddress(*pubKey1_1)
 
 	// 2. getRawMe
 	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
@@ -122,29 +122,6 @@ func TestMultiDeviceSleepDevice(t *testing.T) {
 	err0_5_2 := testError("http://127.0.0.1:9450")
 	assert.NotEqual(nil, err0_5_2)
 
-	// 5.3 join-me when peer is off
-	// log.Debug("5.3 join-me when peer is off")
-
-	// bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_4, myKey0_3)
-
-	// dataJoinMe0_5_3 := &pkgservice.BackendJoinRequest{}
-	// _, reponseErr = testCore(t0, bodyString, dataJoinMe0_5_3, t, true)
-
-	// assert.NotEqual(nil, reponseErr)
-
-	// 5.4 me_GetMyNodes
-	bodyString = `{"id": "testID", "method": "me_getMyNodes", "params": []}`
-	dataGetMyNodes1_5_4 := &struct {
-		Result []*me.MyNode `json:"result"`
-	}{}
-	testListCore(t1, bodyString, dataGetMyNodes1_5_4, t, isDebug)
-	assert.Equal(1, len(dataGetMyNodes1_5_4.Result))
-
-	// 8.3 ptt_countPeers. ensure connecting to each other.
-	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
-	resultString = `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":0}}`
-	testBodyEqualCore(t1, bodyString, resultString, t)
-
 	// 8.4 start-node
 	startNode(t, 0)
 
@@ -163,10 +140,6 @@ func TestMultiDeviceSleepDevice(t *testing.T) {
 	assert.Equal(types.StatusAlive, me0_8_5_1.Status)
 	assert.Equal(me0_1.ID, me0_8_5_1.ID)
 	assert.Equal(me0_1.NodeID, me0_8_5_1.NodeID)
-
-	//nodeID1_1 := me1_8_5_1.NodeID
-	//pubKey1_1, _ := nodeID1_1.Pubkey()
-	//nodeAddr1_1 := crypto.PubkeyToAddress(*pubKey1_1)
 
 	// 8.5.2 getRawMe
 	bodyString = `{"id": "testID", "method": "me_getRawMe", "params": [""]}`
@@ -187,10 +160,20 @@ func TestMultiDeviceSleepDevice(t *testing.T) {
 	assert.Equal(me1_8_5_2.ID, me1_8_5_2.OwnerIDs[0])
 	assert.Equal(true, me1_8_5_2.IsOwner(me1_8_5_2.ID))
 
+	// 8.5.3 show-my-key
+	bodyString = `{"id": "testID", "method": "me_showMyKey", "params": []}`
+
+	var myKey0_8_5_3 string
+
+	testCore(t0, bodyString, &myKey0_8_5_3, t, isDebug)
+	if isDebug {
+		t.Logf("myKey0_3: %v\n", myKey0_8_5_3)
+	}
+
 	// 8.6 join-me
 	log.Debug("7.5 join-me")
 
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_4, myKey0_3)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_4, myKey0_8_5_3)
 
 	dataJoinMe0_8_6 := &pkgservice.BackendJoinRequest{}
 	testCore(t0, bodyString, dataJoinMe0_8_6, t, true)
@@ -291,53 +274,53 @@ func TestMultiDeviceSleepDevice(t *testing.T) {
 	assert.Equal(dataMasterOplogs0_9, dataMasterOplogs1_9)
 
 	// 9.1. getRawMe
-	// marshaled, _ = me0_2.ID.MarshalText()
-	// bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
+	marshaled, _ = me0_2.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_getRawMe", "params": ["%v"]}`, string(marshaled))
 
-	// me0_9_1 := &me.MyInfo{}
-	// testCore(t0, bodyString, me0_9_1, t, isDebug)
-	// assert.Equal(types.StatusMigrated, me0_9_1.Status)
-	// assert.Equal(2, len(me0_9_1.OwnerIDs))
-	// assert.Equal(true, me0_9_1.IsOwner(me1_2.ID))
-	// assert.Equal(true, me0_9_1.IsOwner(me0_2.ID))
+	me0_9_1 := &me.MyInfo{}
+	testCore(t0, bodyString, me0_9_1, t, isDebug)
+	assert.Equal(types.StatusMigrated, me0_9_1.Status)
+	assert.Equal(2, len(me0_9_1.OwnerIDs))
+	assert.Equal(true, me0_9_1.IsOwner(me1_2.ID))
+	assert.Equal(true, me0_9_1.IsOwner(me0_2.ID))
 
 	// 9.2. MeOplog
-	// bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`
+	bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`
 
-	// dataMeOplogs0_9_2 := &struct {
-	// 	Result []*me.MeOplog `json:"result"`
-	// }{}
-	// testListCore(t0, bodyString, dataMeOplogs0_9_2, t, isDebug)
-	// assert.Equal(1, len(dataMeOplogs0_9_2.Result))
-	// meOplog0_9_2 := dataMeOplogs0_9_2.Result[0]
-	// assert.Equal(me1_2.ID, meOplog0_9_2.CreatorID)
-	// assert.Equal(me1_2.ID, meOplog0_9_2.ObjID)
-	// assert.Equal(me.MeOpTypeCreateMe, meOplog0_9_2.Op)
-	// assert.Equal(nilPttID, meOplog0_9_2.PreLogID)
-	// assert.Equal(types.Bool(true), meOplog0_9_2.IsSync)
-	// assert.Equal(masterOplog1_9.ID, meOplog0_9_2.MasterLogID)
-	// assert.Equal(me1_2.LogID, meOplog0_9_2.ID)
-	// masterSign0_9_2 := meOplog0_9_2.MasterSigns[0]
-	// assert.Equal(nodeAddr1_1[:], masterSign0_9_2.ID[:common.AddressLength])
-	// assert.Equal(me1_2.ID[:common.AddressLength], masterSign0_9_2.ID[common.AddressLength:])
-	// assert.Equal(me0_8_7.LogID, meOplog0_9_2.ID)
+	dataMeOplogs0_9_2 := &struct {
+		Result []*me.MeOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataMeOplogs0_9_2, t, isDebug)
+	assert.Equal(1, len(dataMeOplogs0_9_2.Result))
+	meOplog0_9_2 := dataMeOplogs0_9_2.Result[0]
+	assert.Equal(me1_2.ID, meOplog0_9_2.CreatorID)
+	assert.Equal(me1_2.ID, meOplog0_9_2.ObjID)
+	assert.Equal(me.MeOpTypeCreateMe, meOplog0_9_2.Op)
+	assert.Equal(nilPttID, meOplog0_9_2.PreLogID)
+	assert.Equal(types.Bool(true), meOplog0_9_2.IsSync)
+	assert.Equal(masterOplog1_9.ID, meOplog0_9_2.MasterLogID)
+	assert.Equal(me1_2.LogID, meOplog0_9_2.ID)
+	masterSign0_9_2 := meOplog0_9_2.MasterSigns[0]
+	assert.Equal(nodeAddr1_1[:], masterSign0_9_2.ID[:common.AddressLength])
+	assert.Equal(me1_2.ID[:common.AddressLength], masterSign0_9_2.ID[common.AddressLength:])
+	assert.Equal(me0_8_7.LogID, meOplog0_9_2.ID)
 
-	// dataMeOplogs1_9_2 := &struct {
-	// 	Result []*me.MeOplog `json:"result"`
-	// }{}
-	// testListCore(t1, bodyString, dataMeOplogs1_9_2, t, isDebug)
-	// assert.Equal(1, len(dataMeOplogs1_9_2.Result))
-	// meOplog1_9_2 := dataMeOplogs1_9_2.Result[0]
-	// assert.Equal(me1_2.ID, meOplog1_9_2.CreatorID)
-	// assert.Equal(me1_2.ID, meOplog1_9_2.ObjID)
-	// assert.Equal(me.MeOpTypeCreateMe, meOplog1_9_2.Op)
-	// assert.Equal(nilPttID, meOplog1_9_2.PreLogID)
-	// assert.Equal(types.Bool(true), meOplog1_9_2.IsSync)
-	// assert.Equal(masterOplog1_9.ID, meOplog1_9_2.MasterLogID)
-	// assert.Equal(me1_2.LogID, meOplog1_9_2.ID)
-	// masterSign1_9_2 := meOplog1_9_2.MasterSigns[0]
-	// assert.Equal(nodeAddr1_1[:], masterSign1_9_2.ID[:common.AddressLength])
-	// assert.Equal(me1_2.ID[:common.AddressLength], masterSign1_9_2.ID[common.AddressLength:])
-	// assert.Equal(meOplog0_9_2, meOplog1_9_2)
-	// assert.Equal(me1_8_7.LogID, meOplog1_9_2.ID)
+	dataMeOplogs1_9_2 := &struct {
+		Result []*me.MeOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataMeOplogs1_9_2, t, isDebug)
+	assert.Equal(1, len(dataMeOplogs1_9_2.Result))
+	meOplog1_9_2 := dataMeOplogs1_9_2.Result[0]
+	assert.Equal(me1_2.ID, meOplog1_9_2.CreatorID)
+	assert.Equal(me1_2.ID, meOplog1_9_2.ObjID)
+	assert.Equal(me.MeOpTypeCreateMe, meOplog1_9_2.Op)
+	assert.Equal(nilPttID, meOplog1_9_2.PreLogID)
+	assert.Equal(types.Bool(true), meOplog1_9_2.IsSync)
+	assert.Equal(masterOplog1_9.ID, meOplog1_9_2.MasterLogID)
+	assert.Equal(me1_2.LogID, meOplog1_9_2.ID)
+	masterSign1_9_2 := meOplog1_9_2.MasterSigns[0]
+	assert.Equal(nodeAddr1_1[:], masterSign1_9_2.ID[:common.AddressLength])
+	assert.Equal(me1_2.ID[:common.AddressLength], masterSign1_9_2.ID[common.AddressLength:])
+	assert.Equal(meOplog0_9_2, meOplog1_9_2)
+	assert.Equal(me1_8_7.LogID, meOplog1_9_2.ID)
 }

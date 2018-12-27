@@ -19,6 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -31,7 +32,9 @@ func (p *BasePtt) GetGitCommit() (string, error) {
 }
 
 func (p *BasePtt) Shutdown() (bool, error) {
+	log.Debug("Shutdown: start")
 	p.notifyNodeStop.PassChan(struct{}{})
+	log.Debug("Shutdown: done")
 	return true, nil
 }
 

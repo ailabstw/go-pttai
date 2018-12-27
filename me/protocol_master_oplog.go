@@ -54,3 +54,12 @@ func (pm *ProtocolManager) CreateMasterOplog(raftIdx uint64, ts types.Timestamp,
 
 	return oplog, nil
 }
+
+func raftIdxToMasterOplogID(raftIdx uint64, myID *types.PttID) *types.PttID {
+	id := &types.PttID{}
+	copy(id[:OffsetMasterOplogRaftIdx], MasterIDZeros)
+	binary.BigEndian.PutUint64(id[OffsetMasterOplogRaftIdx:], raftIdx)
+	copy(id[common.AddressLength:], myID[:common.AddressLength])
+
+	return id
+}

@@ -31,7 +31,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceBasic(t *testing.T) {
+func TestMultiDeviceBasicBasic(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
@@ -181,6 +181,7 @@ func TestMultiDeviceBasic(t *testing.T) {
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
 
 	// 9. MasterOplog
+	t.Logf("getMyMasterOplogList")
 	bodyString = `{"id": "testID", "method": "me_getMyMasterOplogList", "params": ["", "", 0, 2]}`
 
 	dataMasterOplogs0_9 := &struct {

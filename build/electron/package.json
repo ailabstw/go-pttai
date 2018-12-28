@@ -2,7 +2,7 @@
   "name": "ptt.ai",
   "description": "ptt.ai electron packaging",
   "author": "Yi-Sheng Hsieh <sammui@ailabs.tw>",
-  "version": "0.1.2-beta",
+  "version": "0.1.1",
   "main": "./app/index.js",
   "scripts": {
     "start": "npm install && cross-env NODE_ENV=dev electron ./app",
@@ -10,9 +10,9 @@
     "pack": "build --dir",
     "pack-win": "build --dir --win",
     "dist": "./scripts/copy_gptt.sh && cross-env NODE_ENV=prod build",
-    "dist-win": ".\\scripts\\copy_gptt_windows.sh && build --win",
+    "dist-win": "./scripts/copy_gptt_windows.sh && build --win",
     "ship": "source deploy_token && ./scripts/copy_gptt.sh && cross-env NODE_ENV=prod build -p always",
-    "ship-win": "set /p GH_TOKEN=<deploy_token.txt && .\\scripts\\copy_gptt_windows.sh && build -p always --win"
+    "ship-win": "source deploy_token && ./scripts/copy_gptt_windows.sh && build -p always --win"
   },
   "repository": "https://github.com/ailabstw/go-pttai",
   "build": {
@@ -49,7 +49,8 @@
     }
   },
   "dependencies": {
-    "electron-updater": "^4.0.5"
+    "electron-updater": "^4.0.5",
+    "shelljs": "^0.8.3"
   },
   "devDependencies": {
     "cross-env": "^5.2.0",

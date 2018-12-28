@@ -171,13 +171,13 @@ func SetFriendConfig(ctx *cli.Context, cfg *friend.Config, cfgNode *node.Config)
 }
 
 // SetPttConfig applies ptt-related command line flags to the config.
-func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config, gitCommit string) {
-	log.Debug("SetPttConfig: start", "cfg", cfg, "cfgNode", cfgNode, "cfgNode.DataDir", cfgNode.DataDir)
+func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config, gitCommit string, version string) {
+	log.Debug("SetPttConfig: start", "cfg", cfg, "cfgNode", cfgNode, "cfgNode.DataDir", cfgNode.DataDir, "params.Version", params.Version)
 
 	// data-dir
 	cfg.DataDir = filepath.Join(cfgNode.DataDir, "ptt")
 
-	cfg.Version = params.Version
+	cfg.Version = version
 	cfg.GitCommit = gitCommit
 
 	// node-type

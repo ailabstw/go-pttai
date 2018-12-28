@@ -78,6 +78,7 @@ type Entity interface {
 
 	GetOwnerIDs() []*types.PttID
 	AddOwnerID(id *types.PttID)
+	ResetOwnerIDs()
 	RemoveOwnerID(id *types.PttID)
 	IsOwner(id *types.PttID) bool
 
@@ -259,6 +260,10 @@ func (e *BaseEntity) SetStatus(status types.Status) {
 
 func (e *BaseEntity) GetOwnerIDs() []*types.PttID {
 	return e.OwnerIDs
+}
+
+func (e *BaseEntity) ResetOwnerIDs() {
+	e.OwnerIDs = make([]*types.PttID, 0)
 }
 
 func (e *BaseEntity) AddOwnerID(id *types.PttID) {

@@ -31,6 +31,7 @@ func (spm *ServiceProtocolManager) CreateJoinEntity(
 	isForceNotBroadcast bool,
 
 	isLocked bool,
+	isResetOwnerID bool,
 ) (pkgservice.Entity, error) {
 
 	entity, err := spm.BaseServiceProtocolManager.CreateJoinEntity(
@@ -44,6 +45,7 @@ func (spm *ServiceProtocolManager) CreateJoinEntity(
 		isForceNotBroadcast,
 
 		isLocked,
+		isResetOwnerID,
 	)
 	if err != nil {
 		return nil, err

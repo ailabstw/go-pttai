@@ -49,6 +49,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	isForceNotBroadcast bool,
 
 	isLocked bool,
+	isResetOwnerID bool,
 ) (Entity, error) {
 
 	var err error
@@ -58,6 +59,8 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	ptt := spm.Ptt()
 	service := spm.Service()
 	sspm := service.SPM()
+
+	myID := ptt.GetMyEntity().GetID()
 
 	// 1. lock.
 	if !isLocked {
@@ -158,22 +161,30 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 
-	// 10. spm-register
+	// 10. reset owner-id
+	if isResetOwnerID {
+		entity.ResetOwnerIDs()
+		entity.AddOwnerID(myID)
+	}
+
+	// 11. spm-register
 	spm.RegisterEntity(entity.GetID(), entity)
 
+	// 12. entity save
 	entity.SetStatus(types.StatusAlive)
 	entity.Save(true)
 
+	// 13. entity start
 	if isStart {
 		entity.PrestartAndStart()
 	}
 
-	// 11. register member
+	// 14. register member
 	if peer.PeerType != PeerTypeMe {
 		pm.RegisterPeer(peer, PeerTypeImportant)
 	}
 
-	// 12. me-oplog
+	// 15. me-oplog
 	if meLog != nil {
 		return entity, nil
 	}

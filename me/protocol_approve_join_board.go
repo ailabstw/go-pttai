@@ -39,7 +39,7 @@ func (pm *ProtocolManager) HandleApproveJoinBoard(dataBytes []byte, joinRequest 
 	// board
 	contentService := pm.Entity().Service().(*Backend).contentBackend
 	contentSPM := contentService.SPM().(*content.ServiceProtocolManager)
-	_, err = contentSPM.CreateJoinEntity(boardData, peer, nil, true, true, false, false)
+	_, err = contentSPM.CreateJoinEntity(boardData, peer, nil, true, true, false, false, true)
 	if err != nil {
 		return err
 	}

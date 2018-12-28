@@ -78,12 +78,12 @@ func (b *BaseServiceProtocolManager) StartEntities() error {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
-	log.Info("StartEntities", "entities", b.entities)
+	log.Info("StartEntities", "service", b.Service().Name(), "entities", b.entities)
+
+	var err error
 	for _, entity := range b.entities {
-		err := entity.Start()
-		if err != nil {
-			return err
-		}
+		err = entity.Start()
+		log.Info("StartEntities: (in-for-loop): after Start", "service", b.Service().Name(), "entity", entity.GetID(), "e", err)
 	}
 
 	return nil

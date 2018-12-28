@@ -159,7 +159,7 @@ func (pm *ProtocolManager) handleInternalSyncBoardAckNew(
 	peer *pkgservice.PttPeer,
 ) error {
 
-	_, err := spm.CreateJoinEntity(data, peer, oplog, true, true, true, true)
+	_, err := spm.CreateJoinEntity(data, peer, oplog, true, true, true, true, false)
 	log.Debug("HandleInternalSyncBoardAckNew: after CreateJoinEntity", "e", err)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (pm *ProtocolManager) handleInternalSyncBoardAckDiffLog(
 	peer *pkgservice.PttPeer,
 ) error {
 
-	_, err := spm.CreateJoinEntity(data, peer, oplog, false, false, true, true)
+	_, err := spm.CreateJoinEntity(data, peer, oplog, false, false, true, true, false)
 	log.Debug("HandleInternalSyncBoardAckDiffLog: after CreateJoinEntity", "e", err)
 	if err != nil {
 		return err

@@ -711,7 +711,7 @@ func (pm *BaseProtocolManager) Prestart() error {
 func (pm *BaseProtocolManager) Start() error {
 	pm.isStart = true
 
-	log.Debug("Start: to master merkle-tree", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Info("Start: to master merkle-tree", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	syncWG := pm.SyncWG()
 	syncWG.Add(1)
@@ -729,17 +729,26 @@ func (pm *BaseProtocolManager) Start() error {
 	myID := pm.Ptt().GetMyEntity().GetID()
 	// check owner
 	entity := pm.Entity()
+
+	var err error
 	if !entity.IsOwner(myID) {
-		log.Debug("Start: I am not the owner", "myID", myID, "entityID", entity.GetID())
-		owners := pm.Entity().GetOwnerIDs()
+		owners := entity.GetOwnerIDs()
+		log.Warn("Start: I am not the owner", "myID", myID, "entityID", entity.GetID(), "owners", owners)
 		for _, ownerID := range owners {
 			if !reflect.DeepEqual(myID, ownerID) {
-				log.Debug("Start: to TransferMember", "ownerID", ownerID, "myID", myID)
-				return pm.TransferMember(ownerID, myID)
+				log.Debug("Start: to TransferMember", "entity", entity.GetID(), "ownerID", ownerID, "myID", myID)
+				err = pm.TransferMember(ownerID, myID)
+				if err == nil {
+					break
+				}
 			}
 		}
-
-		return types.ErrInvalidID
+		if err != nil {
+			log.Warn("Start: I am still not the owner, resetting as new me", "entity", entity.GetID(), "e", err)
+			entity.ResetOwnerIDs()
+			entity.AddOwnerID(myID)
+			return entity.Save(false)
+		}
 	}
 
 	return nil

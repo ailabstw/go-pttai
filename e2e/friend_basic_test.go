@@ -21,7 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/me"
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -126,6 +128,7 @@ func TestFriendBasic(t *testing.T) {
 	testCore(t0, bodyString, friend0_9, t, isDebug)
 	assert.Equal(friend0_8.ID, friend0_9.ID)
 	assert.Equal(me1_1.ID, friend0_9.FriendID)
+	assert.Equal(me0_1.ID, friend0_9.OwnerIDs[0])
 
 	friend1_9 := &friend.Friend{}
 	testCore(t1, bodyString, friend1_9, t, isDebug)
@@ -133,6 +136,63 @@ func TestFriendBasic(t *testing.T) {
 	assert.Equal(friend0_9.Friend0ID, friend1_9.Friend0ID)
 	assert.Equal(friend0_9.Friend1ID, friend1_9.Friend1ID)
 	assert.Equal(me0_1.ID, friend1_9.FriendID)
+	assert.Equal(me1_1.ID, friend1_9.OwnerIDs[0])
+
+	// 9.1. get-raw-board
+	marshaled, _ = me0_3.BoardID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
+
+	board0_9_1 := &content.Board{}
+	testCore(t0, bodyString, board0_9_1, t, isDebug)
+	assert.Equal(me0_1.ID, board0_9_1.CreatorID)
+	assert.Equal(me0_1.ID, board0_9_1.OwnerIDs[0])
+
+	board1_9_1 := &content.Board{}
+	testCore(t1, bodyString, board1_9_1, t, isDebug)
+	assert.Equal(me0_1.ID, board1_9_1.CreatorID)
+	assert.Equal(me1_1.ID, board1_9_1.OwnerIDs[0])
+
+	// 9.2. get-raw-board
+	marshaled, _ = me1_3.BoardID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
+
+	board0_9_2 := &content.Board{}
+	testCore(t0, bodyString, board0_9_2, t, isDebug)
+	assert.Equal(me1_1.ID, board0_9_2.CreatorID)
+	assert.Equal(me0_1.ID, board0_9_2.OwnerIDs[0])
+
+	board1_9_2 := &content.Board{}
+	testCore(t1, bodyString, board1_9_2, t, isDebug)
+	assert.Equal(me1_1.ID, board1_9_2.CreatorID)
+	assert.Equal(me1_1.ID, board1_9_2.OwnerIDs[0])
+
+	// 9.3. get-raw-account
+	marshaled, _ = me0_3.ProfileID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile0_9_3 := &account.Profile{}
+	testCore(t0, bodyString, profile0_9_3, t, isDebug)
+	assert.Equal(me0_1.ID, profile0_9_3.CreatorID)
+	assert.Equal(me0_1.ID, profile0_9_3.OwnerIDs[0])
+
+	profile1_9_3 := &account.Profile{}
+	testCore(t1, bodyString, profile1_9_3, t, isDebug)
+	assert.Equal(me0_1.ID, profile1_9_3.CreatorID)
+	assert.Equal(me1_1.ID, profile1_9_3.OwnerIDs[0])
+
+	// 9.4. get-raw-account
+	marshaled, _ = me1_3.ProfileID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile0_9_4 := &account.Profile{}
+	testCore(t0, bodyString, profile0_9_4, t, isDebug)
+	assert.Equal(me1_1.ID, profile0_9_4.CreatorID)
+	assert.Equal(me0_1.ID, profile0_9_4.OwnerIDs[0])
+
+	profile1_9_4 := &account.Profile{}
+	testCore(t1, bodyString, profile1_9_4, t, isDebug)
+	assert.Equal(me1_1.ID, profile1_9_4.CreatorID)
+	assert.Equal(me1_1.ID, profile1_9_4.OwnerIDs[0])
 
 	// 10. master-oplog
 	marshaled, _ = friend0_8.ID.MarshalText()

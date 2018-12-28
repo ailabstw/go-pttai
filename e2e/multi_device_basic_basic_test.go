@@ -21,8 +21,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/me"
@@ -179,6 +181,52 @@ func TestMultiDeviceBasicBasic(t *testing.T) {
 	assert.Equal(1, len(me1_8_1.OwnerIDs))
 	assert.Equal(me1_3.ID, me1_8_1.OwnerIDs[0])
 	assert.Equal(true, me1_8_1.IsOwner(me1_3.ID))
+
+	// 8.2. get-raw-board
+	marshaled, _ = me0_3.BoardID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
+
+	board0_8_2 := &content.Board{}
+	testCore(t0, bodyString, board0_8_2, t, isDebug)
+	assert.Equal(me0_1.ID, board0_8_2.CreatorID)
+	assert.Equal(me1_1.ID, board0_8_2.OwnerIDs[0])
+
+	// 8.3. get-raw-board
+	marshaled, _ = me1_3.BoardID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
+
+	board0_8_3 := &content.Board{}
+	testCore(t0, bodyString, board0_8_3, t, isDebug)
+	assert.Equal(me1_1.ID, board0_8_3.CreatorID)
+	assert.Equal(me1_1.ID, board0_8_3.OwnerIDs[0])
+
+	board1_8_3 := &content.Board{}
+	testCore(t1, bodyString, board1_8_3, t, isDebug)
+	assert.Equal(me1_1.ID, board1_8_3.CreatorID)
+	assert.Equal(me1_1.ID, board1_8_3.OwnerIDs[0])
+
+	// 8.4. get-raw-account
+	marshaled, _ = me0_3.ProfileID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile0_8_4 := &account.Profile{}
+	testCore(t0, bodyString, profile0_8_4, t, isDebug)
+	assert.Equal(me0_1.ID, profile0_8_4.CreatorID)
+	assert.Equal(me1_1.ID, profile0_8_4.OwnerIDs[0])
+
+	// 8.5. get-raw-account
+	marshaled, _ = me1_3.ProfileID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
+
+	profile0_8_5 := &account.Profile{}
+	testCore(t0, bodyString, profile0_8_5, t, isDebug)
+	assert.Equal(me1_1.ID, profile0_8_5.CreatorID)
+	assert.Equal(me1_1.ID, profile0_8_5.OwnerIDs[0])
+
+	profile1_8_5 := &account.Profile{}
+	testCore(t1, bodyString, profile1_8_5, t, isDebug)
+	assert.Equal(me1_1.ID, profile1_8_5.CreatorID)
+	assert.Equal(me1_1.ID, profile1_8_5.OwnerIDs[0])
 
 	// 9. MasterOplog
 	t.Logf("getMyMasterOplogList")

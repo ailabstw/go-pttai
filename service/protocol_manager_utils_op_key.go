@@ -67,6 +67,7 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 	}
 	defer iter.Release()
 
+	// XXX hack for skip expire-op-key
 	/*
 		expireTS, err := pm.getExpireOpKeyTS()
 		if err != nil {
@@ -93,6 +94,7 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 
 		pm.SetOpKeyObjDB(keyInfo)
 
+		// XXX hack for skip expire-op-key
 		/*
 			if keyInfo.UpdateTS.IsLess(expireTS) {
 				log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
@@ -274,10 +276,15 @@ func (pm *BaseProtocolManager) ExpireOpKeyInfo(keyInfo *KeyInfo, isLocked bool) 
 		defer pm.lockOpKeyInfo.Unlock()
 	}
 
-	return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
+	// XXX hack for skip expire-op-key
+	return nil
+
+	// return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
 }
 
 func (pm *BaseProtocolManager) RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error {
+
+	// XXX hack for skip expire-op-key
 
 	return nil
 
@@ -349,9 +356,12 @@ func (pm *BaseProtocolManager) removeOpKeyOplog(logID *types.PttID, isLocked boo
 }
 
 func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
-	if keyInfo.UpdateTS.IsLess(expireRenewTS) {
-		return
-	}
+	// XXX hack for skipping newest-op-key
+	/*
+		if keyInfo.UpdateTS.IsLess(expireRenewTS) {
+			return
+		}
+	*/
 
 	if pm.oldestOpKeyInfo == nil || keyInfo.UpdateTS.IsLess(pm.oldestOpKeyInfo.UpdateTS) {
 		pm.oldestOpKeyInfo = keyInfo
@@ -361,10 +371,13 @@ func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRene
 }
 
 func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
-	if keyInfo.UpdateTS.IsLess(expireRenewTS) {
-		log.Warn("checkNewestOpKeyInfo: key expired renew ts", "key", keyInfo.UpdateTS, "expireTS", expireRenewTS)
-		return
-	}
+	// XXX hack for skipping newest-op-key
+	/*
+		if keyInfo.UpdateTS.IsLess(expireRenewTS) {
+			log.Warn("checkNewestOpKeyInfo: key expired renew ts", "key", keyInfo.UpdateTS, "expireTS", expireRenewTS)
+			return
+		}
+	*/
 
 	if pm.newestOpKeyInfo == nil || pm.newestOpKeyInfo.UpdateTS.IsLess(keyInfo.UpdateTS) {
 		pm.newestOpKeyInfo = keyInfo

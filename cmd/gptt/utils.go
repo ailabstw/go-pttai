@@ -22,13 +22,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ailabstw/go-pttai/params"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 func version(ctx *cli.Context) error {
 	fmt.Println(strings.Title(clientIdentifier))
-	fmt.Println("Version:", params.Version)
+	fmt.Println("Version:", theVersion)
 	if gitCommit != "" {
 		fmt.Println("Git Commit:", gitCommit)
 	}

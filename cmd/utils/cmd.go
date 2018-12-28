@@ -37,7 +37,7 @@ const (
 )
 
 // NewApp creates an app with sane defaults.
-func NewApp(gitCommit, usage string) *cli.App {
+func NewApp(gitCommit, version, usage string) *cli.App {
 	rand.Seed(time.Now().UnixNano())
 
 	app := cli.NewApp()
@@ -45,7 +45,8 @@ func NewApp(gitCommit, usage string) *cli.App {
 	app.Author = ""
 	//app.Authors = nil
 	app.Email = ""
-	app.Version = params.Version
+	app.Version = version
+	params.TheVersion = version
 	if len(gitCommit) >= 8 {
 		app.Version += "-" + gitCommit[:8]
 	}

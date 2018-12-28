@@ -33,8 +33,10 @@
 package build
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -57,6 +59,7 @@ type Environment struct {
 	Buildnum            string
 	IsPullRequest       bool
 	IsCronJob           bool
+	Version             string
 }
 
 func (env Environment) String() string {
@@ -116,6 +119,9 @@ func LocalEnv() Environment {
 	if info, err := os.Stat(".git/objects"); err == nil && info.IsDir() && env.Tag == "" {
 		env.Tag = firstLine(RunGit("tag", "-l", "--points-at", "HEAD"))
 	}
+
+	env.Version = readVersion()
+
 	return env
 }
 
@@ -146,4 +152,24 @@ func applyEnvFlags(env Environment) Environment {
 		env.IsCronJob = true
 	}
 	return env
+}
+
+func readVersion() string {
+	f, err := os.Open("build/electron/package.json")
+	if err != nil {
+		println("readVersion: unable to read file: e", err)
+		return ""
+	}
+	defer f.Close()
+
+	theBytes, _ := ioutil.ReadAll(f)
+
+	data := make(map[string]interface{})
+	err = json.Unmarshal(theBytes, &data)
+	if err != nil {
+		println("readVersion: unable to Unmarshal: e", err.Error())
+		return ""
+	}
+
+	return data["version"].(string)
 }

@@ -61,7 +61,7 @@ func gptt(ctx *cli.Context) error {
 
 	utils.SetFriendConfig(ctx, cfg.Friend, cfg.Node)
 
-	utils.SetPttConfig(ctx, cfg.Ptt, cfg.Node, gitCommit)
+	utils.SetPttConfig(ctx, cfg.Ptt, cfg.Node, gitCommit, theVersion)
 
 	// Setup metrics
 	utils.SetupMetrics(ctx)

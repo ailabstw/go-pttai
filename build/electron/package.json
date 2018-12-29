@@ -49,8 +49,7 @@
     }
   },
   "dependencies": {
-    "electron-updater": "^4.0.5",
-    "shelljs": "^0.8.3"
+    "electron-updater": "^4.0.5"
   },
   "devDependencies": {
     "cross-env": "^5.2.0",

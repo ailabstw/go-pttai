@@ -3,9 +3,10 @@ const { app,
         dialog,
         ipcMain,
         BrowserWindow } = require('electron')
-const { autoUpdater }   = require('electron-updater');
+const { autoUpdater }   = require('electron-updater')
 const path              = require('path')
-const shell             = require('shelljs')
+const spawn             = require('child_process').spawn
+
 
 let gptt_node   = null
 let gptt_win    = null;
@@ -133,13 +134,18 @@ function run_gptt_node () {
     const tmpLog = path.join(filepath, 'log.tmp.txt')
     const errLog = path.join(filepath, 'log.err.txt')
 
-    const gpttCmd = `${path.join(filepath, gpttFile)} --httpdir ${path.join(filepath, 'static')} --server --testp2p --log ${tmpLog} 2> ${errLog}`
+    //const gpttCmd = `${path.join(filepath, gpttFile)} --httpdir ${path.join(filepath, 'static')} --server --testp2p --log ${tmpLog} 2> ${errLog}`
+    const proc = `${path.join(filepath, gpttFile)}`
 
-    gptt_node = shell.exec(gpttCmd, function(code, stdout, stderr) {
-      console.log('Exit code:', code);
-      console.log('Program output:', stdout);
-      console.log('Program stderr:', stderr);
-    });
+    const args = [
+      '--httpdir', path.join(filepath, 'static'),
+      '--server',
+      '--testp2p',
+      '--log', tmpLog,
+      '2>', errLog
+    ]
+
+    gptt_node = require('child_process').spawn(proc, args, {setsid:true});
 }
 
 function load_content () {

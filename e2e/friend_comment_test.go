@@ -100,8 +100,8 @@ func TestFriendComment(t *testing.T) {
 	assert.Equal(me1_1.NodeID, dataJoinFriend0_7.NodeID)
 
 	// wait 10
-	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(10 * time.Second)
+	t.Logf("wait 20 seconds for hand-shaking")
+	time.Sleep(20 * time.Second)
 
 	// 8. get-friend-list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendList", "params": ["", 0]}`)
@@ -288,7 +288,7 @@ func TestFriendComment(t *testing.T) {
 	t.Logf("15. join-board: rbody: %v", rbody)
 
 	// wait 10 secs
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	// 16. get board list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)
@@ -638,4 +638,92 @@ func TestFriendComment(t *testing.T) {
 	}{}
 	testListCore(t1, bodyString, dataPttOplogList1_46, t, isDebug)
 	assert.Equal(2, len(dataPttOplogList1_46.Result))
+
+	// 49. update-article
+	article48, _ := json.Marshal([]string{
+		base64.StdEncoding.EncodeToString([]byte("測試61")),
+		base64.StdEncoding.EncodeToString([]byte("測試62")),
+		base64.StdEncoding.EncodeToString([]byte("測試63")),
+		base64.StdEncoding.EncodeToString([]byte("測試64")),
+		base64.StdEncoding.EncodeToString([]byte("測試65")),
+		base64.StdEncoding.EncodeToString([]byte("測試66")),
+		base64.StdEncoding.EncodeToString([]byte("測試67")),
+		base64.StdEncoding.EncodeToString([]byte("測試68")),
+		base64.StdEncoding.EncodeToString([]byte("測試69")),
+	})
+
+	marshaledID, _ = board1_16_2.ID.MarshalText()
+	marshaledID2, _ = article0_45_1.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_updateArticle", "params": ["%v", "%v", %v, []]}`, string(marshaledID), string(marshaledID2), string(article48))
+	dataUpdateArticle1_48 := &content.BackendUpdateArticle{}
+	testCore(t1, bodyString, dataUpdateArticle1_48, t, isDebug)
+	assert.Equal(board1_16_2.ID, dataUpdateArticle1_48.BoardID)
+	assert.Equal(article0_45_1.ID, dataUpdateArticle1_48.ArticleID)
+	assert.Equal(2, dataUpdateArticle1_48.NBlock)
+
+	// wait 10 seconds
+	time.Sleep(10 * time.Second)
+
+	// 49. content-get-article-list
+	marshaledID, _ = board1_16_2.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+
+	dataGetArticleList0_49 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleList0_49, t, isDebug)
+	assert.Equal(2, len(dataGetArticleList0_49.Result))
+	article0_49_1 := dataGetArticleList0_49.Result[1]
+	assert.Equal(types.StatusAlive, article0_49_1.Status)
+
+	dataGetArticleList1_49 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleList1_49, t, isDebug)
+	assert.Equal(2, len(dataGetArticleList1_49.Result))
+	article1_49_1 := dataGetArticleList1_49.Result[1]
+	assert.Equal(types.StatusAlive, article1_49_1.Status)
+
+	// 50. get-article-block
+	marshaledID, _ = board1_16_2.ID.MarshalText()
+	marshaledID2, _ = article0_49_1.ID.MarshalText()
+	marshaledID3, _ = article0_49_1.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_50 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_50, t, isDebug)
+	assert.Equal(2, len(dataGetArticleBlockList0_50.Result))
+
+	dataGetArticleBlockList1_50 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_50, t, isDebug)
+	assert.Equal(2, len(dataGetArticleBlockList1_50.Result))
+
+	article50_0 := [][]byte{
+		[]byte("測試61"),
+	}
+
+	article50_1 := [][]byte{
+		[]byte("測試62"),
+		[]byte("測試63"),
+		[]byte("測試64"),
+		[]byte("測試65"),
+		[]byte("測試66"),
+		[]byte("測試67"),
+		[]byte("測試68"),
+		[]byte("測試69"),
+	}
+
+	assert.Equal(article50_0, dataGetArticleBlockList0_50.Result[0].Buf)
+	assert.Equal(article50_1, dataGetArticleBlockList0_50.Result[1].Buf)
+
+	assert.Equal(article50_0, dataGetArticleBlockList1_50.Result[0].Buf)
+	assert.Equal(article50_1, dataGetArticleBlockList1_50.Result[1].Buf)
+
 }

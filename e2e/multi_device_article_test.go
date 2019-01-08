@@ -431,6 +431,94 @@ func TestMultiDeviceArticle(t *testing.T) {
 	assert.Equal(article1, dataGetArticleBlockList1_37.Result[1].Buf)
 	assert.Equal(article2, dataGetArticleBlockList1_37.Result[2].Buf)
 
+	// 39. content-create-comment
+	comment := []byte("這是comment")
+	commentStr := base64.StdEncoding.EncodeToString(comment)
+
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	marshaledID2, _ = article0_36.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createComment", "params": ["%v", "%v", 0, "%v", ""]}`, string(marshaledID), string(marshaledID2), commentStr)
+	t.Logf("39. content_createComment: bodyString: %v", bodyString)
+	dataCreateComment0_39 := &content.BackendCreateComment{}
+	testCore(t0, bodyString, dataCreateComment0_39, t, isDebug)
+	assert.Equal(dataCreateArticle0_35.ArticleID, dataCreateComment0_39.ArticleID)
+	assert.Equal(dataCreateArticle0_35.BoardID, dataCreateComment0_39.BoardID)
+
+	// wait 10 seconds
+	time.Sleep(10 * time.Second)
+
+	// 40. get-article-block
+	marshaledID2, _ = article0_36.ID.MarshalText()
+	marshaledID3, _ = article0_36.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_40 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_40, t, isDebug)
+	assert.Equal(4, len(dataGetArticleBlockList0_40.Result))
+	articleBlock0_40 := dataGetArticleBlockList0_40.Result[3]
+	assert.Equal(types.StatusAlive, articleBlock0_40.Status)
+	assert.Equal(content.ContentTypeComment, articleBlock0_40.ContentType)
+	assert.Equal(content.CommentTypePush, articleBlock0_40.CommentType)
+	assert.Equal([][]byte{comment}, articleBlock0_40.Buf)
+
+	dataGetArticleBlockList1_40 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_40, t, isDebug)
+	assert.Equal(4, len(dataGetArticleBlockList1_40.Result))
+	articleBlock1_40 := dataGetArticleBlockList1_40.Result[3]
+	assert.Equal(types.StatusAlive, articleBlock1_40.Status)
+	assert.Equal(content.ContentTypeComment, articleBlock1_40.ContentType)
+	assert.Equal(content.CommentTypePush, articleBlock1_40.CommentType)
+	assert.Equal([][]byte{comment}, articleBlock1_40.Buf)
+
+	// 48. content-delete-comment
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	marshaledID2, _ = article0_36.ID.MarshalText()
+	marshaledID3, _ = articleBlock0_40.RefID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_deleteComment", "params": ["%v", "%v", "%v"]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+	t.Logf("45. content_createComment: bodyString: %v", bodyString)
+	dataDeleteComment0_48 := &content.BackendDeleteComment{}
+	testCore(t0, bodyString, dataDeleteComment0_48, t, isDebug)
+
+	// wait 10 seconds
+	time.Sleep(10 * time.Second)
+
+	// 49. get-article-block
+	marshaledID2, _ = article0_36.ID.MarshalText()
+	marshaledID3, _ = article0_36.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_49 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_49, t, isDebug)
+	assert.Equal(4, len(dataGetArticleBlockList0_49.Result))
+
+	articleBlock0_49 := dataGetArticleBlockList0_49.Result[3]
+	assert.Equal(types.StatusDeleted, articleBlock0_49.Status)
+	assert.Equal(content.ContentTypeComment, articleBlock0_49.ContentType)
+	assert.Equal(content.CommentTypePush, articleBlock0_49.CommentType)
+	assert.Equal(content.DefaultDeletedComment, articleBlock0_49.Buf)
+
+	dataGetArticleBlockList1_49 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_49, t, isDebug)
+	assert.Equal(4, len(dataGetArticleBlockList1_49.Result))
+
+	articleBlock1_49 := dataGetArticleBlockList1_49.Result[3]
+	assert.Equal(types.StatusDeleted, articleBlock1_49.Status)
+	assert.Equal(content.ContentTypeComment, articleBlock1_49.ContentType)
+	assert.Equal(content.CommentTypePush, articleBlock1_49.CommentType)
+	assert.Equal(content.DefaultDeletedComment, articleBlock1_49.Buf)
+
 	// 49. update-article
 	article48, _ := json.Marshal([]string{
 		base64.StdEncoding.EncodeToString([]byte("測試61")),
@@ -489,13 +577,13 @@ func TestMultiDeviceArticle(t *testing.T) {
 		Result []*content.ArticleBlock `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetArticleBlockList0_50, t, isDebug)
-	assert.Equal(2, len(dataGetArticleBlockList0_50.Result))
+	assert.Equal(3, len(dataGetArticleBlockList0_50.Result))
 
 	dataGetArticleBlockList1_50 := &struct {
 		Result []*content.ArticleBlock `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetArticleBlockList1_50, t, isDebug)
-	assert.Equal(2, len(dataGetArticleBlockList1_50.Result))
+	assert.Equal(3, len(dataGetArticleBlockList1_50.Result))
 
 	article50_0 := [][]byte{
 		[]byte("測試61"),
@@ -518,4 +606,58 @@ func TestMultiDeviceArticle(t *testing.T) {
 	assert.Equal(article50_0, dataGetArticleBlockList1_50.Result[0].Buf)
 	assert.Equal(article50_1, dataGetArticleBlockList1_50.Result[1].Buf)
 
+	// 51. content-delete-article
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	marshaledID2, _ = article0_36.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_deleteArticle", "params": ["%v", "%v"]}`, string(marshaledID), string(marshaledID2))
+	dataDeleteArticle0_51 := &content.BackendDeleteArticle{}
+	testCore(t0, bodyString, dataDeleteArticle0_51, t, isDebug)
+
+	// wait 10 seconds
+	time.Sleep(10 * time.Second)
+
+	// 52. get-article-block
+	marshaledID2, _ = article0_36.ID.MarshalText()
+	marshaledID3, _ = article0_36.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_52 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_52, t, isDebug)
+	assert.Equal(0, len(dataGetArticleBlockList0_52.Result))
+
+	dataGetArticleBlockList1_52 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_52, t, isDebug)
+	assert.Equal(0, len(dataGetArticleBlockList1_52.Result))
+
+	// 53. content-get-article-list
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+	dataGetArticleList0_53 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleList0_53, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList0_53.Result))
+	article0_53 := dataGetArticleList0_53.Result[0]
+
+	assert.Equal(0, article0_53.NPush)
+	assert.Equal(0, article0_53.NBoo)
+	assert.Equal(types.StatusDeleted, article0_53.Status)
+
+	dataGetArticleList1_53 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleList1_53, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList1_53.Result))
+	article1_53 := dataGetArticleList1_53.Result[0]
+
+	assert.Equal(0, article1_53.NPush)
+	assert.Equal(0, article1_53.NBoo)
+	assert.Equal(types.StatusDeleted, article1_53.Status)
 }

@@ -17,6 +17,8 @@
 package e2e
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -39,8 +41,8 @@ func TestMultiDeviceSyncFriend(t *testing.T) {
 	var bodyString string
 	var marshaled []byte
 	//var marshaledID []byte
-	//var marshaledID2 []byte
-	//var marshaledID3 []byte
+	var marshaledID2 []byte
+	var marshaledID3 []byte
 	//var marshaledStr string
 	assert := assert.New(t)
 
@@ -140,7 +142,7 @@ func TestMultiDeviceSyncFriend(t *testing.T) {
 	testListCore(t0, bodyString, dataGetJoinKeys0_6_1, t, isDebug)
 	assert.Equal(1, len(dataGetJoinKeys0_6_1.Result))
 
-	// 7. join-me
+	// 7. join-me t0 signed-in as t1
 	log.Debug("7. join-me")
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinMe", "params": ["%v", "%v", false]}`, meURL1_5, myKey0_4)
@@ -303,7 +305,7 @@ func TestMultiDeviceSyncFriend(t *testing.T) {
 	testCore(t1, bodyString, dataShowURL1_10, t, isDebug)
 	url1_10 := dataShowURL1_10.URL
 
-	// 11. join-friend
+	// 11. join-friend t2 add t1(t0) as friend
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinFriend", "params": ["%v"]}`, url1_10)
 
 	dataJoinFriend2_11 := &pkgservice.BackendJoinRequest{}
@@ -336,6 +338,164 @@ func TestMultiDeviceSyncFriend(t *testing.T) {
 	friend1_12 := dataGetFriendList1_12.Result[0]
 	assert.Equal(types.StatusAlive, friend1_12.Status)
 	assert.Equal(me2_1.ID, friend1_12.FriendID)
-	//assert.Equal(friend0_12.ID, friend1_12.ID)
+	assert.Equal(friend0_12.ID, friend1_12.ID)
 
+	dataGetFriendList2_12 := &struct {
+		Result []*friend.BackendGetFriend `json:"result"`
+	}{}
+	testListCore(t2, bodyString, dataGetFriendList2_12, t, isDebug)
+	assert.Equal(1, len(dataGetFriendList2_12.Result))
+	friend2_12 := dataGetFriendList2_12.Result[0]
+	assert.Equal(types.StatusAlive, friend2_12.Status)
+	assert.Equal(me1_1.ID, friend2_12.FriendID)
+	assert.Equal(friend0_12.ID, friend2_12.ID)
+
+	// 13. create-msg
+	msg, _ := json.Marshal([]string{
+		base64.StdEncoding.EncodeToString([]byte("測試1")),
+		base64.StdEncoding.EncodeToString([]byte("測試2")),
+		base64.StdEncoding.EncodeToString([]byte("測試3")),
+		base64.StdEncoding.EncodeToString([]byte("測試4")),
+		base64.StdEncoding.EncodeToString([]byte("測試5")),
+		base64.StdEncoding.EncodeToString([]byte("測試6")),
+		base64.StdEncoding.EncodeToString([]byte("測試7")),
+		base64.StdEncoding.EncodeToString([]byte("測試8")),
+		base64.StdEncoding.EncodeToString([]byte("測試9")),
+		base64.StdEncoding.EncodeToString([]byte("測試10")),
+		base64.StdEncoding.EncodeToString([]byte("測試11")),
+		base64.StdEncoding.EncodeToString([]byte("測試12")),
+		base64.StdEncoding.EncodeToString([]byte("測試13")),
+		base64.StdEncoding.EncodeToString([]byte("測試14")),
+		base64.StdEncoding.EncodeToString([]byte("測試15")),
+		base64.StdEncoding.EncodeToString([]byte("測試16")),
+		base64.StdEncoding.EncodeToString([]byte("測試17")),
+		base64.StdEncoding.EncodeToString([]byte("測試18")),
+		base64.StdEncoding.EncodeToString([]byte("測試19")),
+		base64.StdEncoding.EncodeToString([]byte("測試20")),
+		base64.StdEncoding.EncodeToString([]byte("測試21")),
+		base64.StdEncoding.EncodeToString([]byte("測試22")),
+	})
+
+	// 35. friend-create-message
+	marshaled, _ = friend0_12.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_createMessage", "params": ["%v", %v, []]}`, string(marshaled), string(msg))
+	dataCreateMessage0_35 := &friend.BackendCreateMessage{}
+	testCore(t0, bodyString, dataCreateMessage0_35, t, isDebug)
+	assert.Equal(friend0_12.ID, dataCreateMessage0_35.FriendID)
+	assert.Equal(2, dataCreateMessage0_35.NBlock)
+
+	time.Sleep(20 * time.Second)
+
+	// 36. friend-get-message-list
+	marshaled, _ = friend0_12.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getMessageList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetMessageList0_36 := &struct {
+		Result []*friend.BackendGetMessage `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMessageList0_36, t, isDebug)
+	assert.Equal(1, len(dataGetMessageList0_36.Result))
+	message0_36 := dataGetMessageList0_36.Result[0]
+
+	dataGetMessageList1_36 := &struct {
+		Result []*friend.BackendGetMessage `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMessageList1_36, t, isDebug)
+	assert.Equal(1, len(dataGetMessageList1_36.Result))
+
+	marshaled, _ = friend0_12.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getMessageList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+
+	dataGetMessageList2_36 := &struct {
+		Result []*friend.BackendGetMessage `json:"result"`
+	}{}
+	testListCore(t2, bodyString, dataGetMessageList2_36, t, isDebug)
+	assert.Equal(1, len(dataGetMessageList2_36.Result))
+	// 37. get friend-oplog list
+	marshaled, _ = friend0_12.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendOplogList", "params": ["%v", "", 10, 2]}`, string(marshaled))
+
+	dataFriendOplog0_37 := &struct {
+		Result []*friend.FriendOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataFriendOplog0_37, t, isDebug)
+	assert.Equal(2, len(dataFriendOplog0_37.Result))
+	friendOplog0_37_0 := dataFriendOplog0_37.Result[0]
+	assert.Equal(types.StatusAlive, friendOplog0_37_0.ToStatus())
+	assert.Equal(friend.FriendOpTypeCreateFriend, friendOplog0_37_0.Op)
+	friendOplog0_37_1 := dataFriendOplog0_37.Result[1]
+	assert.Equal(types.StatusAlive, friendOplog0_37_1.ToStatus())
+	assert.Equal(friend.FriendOpTypeCreateMessage, friendOplog0_37_1.Op)
+
+	dataFriendOplog1_37 := &struct {
+		Result []*friend.FriendOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataFriendOplog1_37, t, isDebug)
+	assert.Equal(2, len(dataFriendOplog1_37.Result))
+
+	assert.Equal(dataFriendOplog0_37, dataFriendOplog1_37)
+
+	// // 38. get-message-block
+	marshaledID2, _ = message0_36.ID.MarshalText()
+	marshaledID3, _ = message0_36.BlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getMessageBlockList", "params": ["%v", "%v", "%v", 0, 0, 10]}`, string(marshaled), string(marshaledID2), string(marshaledID3))
+
+	dataGetMessageBlockList0_37 := &struct {
+		Result []*friend.BackendMessageBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetMessageBlockList0_37, t, isDebug)
+	assert.Equal(2, len(dataGetMessageBlockList0_37.Result))
+
+	article0 := [][]byte{
+		[]byte("測試1"),
+		[]byte("測試2"),
+		[]byte("測試3"),
+		[]byte("測試4"),
+		[]byte("測試5"),
+		[]byte("測試6"),
+		[]byte("測試7"),
+		[]byte("測試8"),
+		[]byte("測試9"),
+		[]byte("測試10"),
+		[]byte("測試11"),
+		[]byte("測試12"),
+		[]byte("測試13"),
+		[]byte("測試14"),
+		[]byte("測試15"),
+		[]byte("測試16"),
+		[]byte("測試17"),
+		[]byte("測試18"),
+		[]byte("測試19"),
+		[]byte("測試20"),
+	}
+
+	article1 := [][]byte{
+		[]byte("測試21"),
+		[]byte("測試22"),
+	}
+
+	assert.Equal(article0, dataGetMessageBlockList0_37.Result[0].Buf)
+	assert.Equal(article1, dataGetMessageBlockList0_37.Result[1].Buf)
+
+	dataGetMessageBlockList1_37 := &struct {
+		Result []*friend.BackendMessageBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetMessageBlockList1_37, t, isDebug)
+	assert.Equal(2, len(dataGetMessageBlockList1_37.Result))
+
+	assert.Equal(article0, dataGetMessageBlockList1_37.Result[0].Buf)
+	assert.Equal(article1, dataGetMessageBlockList1_37.Result[1].Buf)
+
+	dataGetMessageBlockList2_37 := &struct {
+		Result []*friend.BackendMessageBlock `json:"result"`
+	}{}
+	testListCore(t2, bodyString, dataGetMessageBlockList2_37, t, isDebug)
+	assert.Equal(2, len(dataGetMessageBlockList2_37.Result))
+
+	assert.Equal(article0, dataGetMessageBlockList2_37.Result[0].Buf)
+	assert.Equal(article1, dataGetMessageBlockList2_37.Result[1].Buf)
 }

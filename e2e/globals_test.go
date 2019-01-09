@@ -48,7 +48,7 @@ var (
 	stderrs []*os.File           = nil
 
 	NNodes         = 5
-	TimeoutSeconds = 120 * time.Second
+	TimeoutSeconds = 240 * time.Second
 
 	origHandler log.Handler
 

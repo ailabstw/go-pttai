@@ -31,4 +31,6 @@ type Config struct {
 	NodeType NodeType
 
 	ExpireOplogSeconds int
+
+	IsE2E bool
 }

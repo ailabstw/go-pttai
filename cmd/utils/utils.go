@@ -192,8 +192,13 @@ func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config
 	if ctx.GlobalIsSet(ServiceExpireOplogSecondsFlag.Name) {
 		cfg.ExpireOplogSeconds = ctx.GlobalInt(ServiceExpireOplogSecondsFlag.Name)
 	}
-
 	pkgservice.ExpireOplogSeconds = cfg.ExpireOplogSeconds
+
+	// e2e
+	if ctx.GlobalIsSet(E2EFlag.Name) {
+		cfg.IsE2E = ctx.GlobalBool(E2EFlag.Name)
+	}
+	pkgservice.IsE2E = cfg.IsE2E
 
 	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds)
 

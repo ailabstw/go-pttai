@@ -139,6 +139,7 @@ func startNode(t *testing.T, idx int) {
 		"--friendmaxsync", "7",
 		"--friendminsync", "5",
 		"--serviceexpireoplog", ServiceExpireOplog,
+		"--e2e",
 	)
 	filename := fmt.Sprintf("./test.out/log.err.%d.txt", idx)
 	stderrs[idx], _ = os.Create(filename)

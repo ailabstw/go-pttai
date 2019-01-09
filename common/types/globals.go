@@ -76,4 +76,6 @@ var (
 	myAlphabet = base58.BitcoinAlphabet
 
 	NIterLock = 100
+
+	OffsetSecond int64 = 0
 )

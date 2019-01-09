@@ -97,6 +97,8 @@ var (
 		utils.IPFSP2PFlag,
 		utils.DevP2PFlag,
 
+		utils.E2EFlag,
+
 		utils.IdentityFlag,
 
 		utils.CacheFlag,

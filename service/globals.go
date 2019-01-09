@@ -37,6 +37,7 @@ var (
 		NodeType: NodeTypeDesktop,
 
 		ExpireOplogSeconds: 180,
+		IsE2E:              false,
 	}
 )
 
@@ -280,6 +281,11 @@ var (
 var (
 	DefaultLocale Locale = LocaleTW
 	CurrentLocale Locale = DefaultLocale
+)
+
+// misc
+var (
+	IsE2E = false
 )
 
 func InitService(dataDir string) error {

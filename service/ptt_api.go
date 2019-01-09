@@ -123,3 +123,24 @@ func (api *PrivateAPI) GetLocale() (Locale, error) {
 func (api *PrivateAPI) GetLastAnnounceP2PTS() (types.Timestamp, error) {
 	return api.p.GetLastAnnounceP2PTS()
 }
+
+/**********
+ * Offset Second
+ **********/
+
+func (api *PrivateAPI) GetOffsetSecond() (int64, error) {
+	return types.OffsetSecond, nil
+}
+
+func (api *PrivateAPI) SetOffsetSecond(sec int64) (bool, error) {
+	if !IsE2E {
+		return false, nil
+	}
+
+	types.OffsetSecond = sec
+	return true, nil
+}
+
+func (api *PrivateAPI) GetTimestamp() (types.Timestamp, error) {
+	return types.GetTimestamp()
+}

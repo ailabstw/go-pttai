@@ -72,6 +72,12 @@ var (
 		Name:  "devp2p",
 		Usage: "Dev p2p-network: pre-configured Ptt.ai dev p2p-network",
 	}
+
+	E2EFlag = cli.BoolFlag{
+		Name:  "e2e",
+		Usage: "e2e environment",
+	}
+
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",
 		Usage: "Custom user name",

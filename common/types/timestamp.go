@@ -35,7 +35,7 @@ var GetTimestamp = func() (Timestamp, error) {
 }
 
 func TimeToTimestamp(t time.Time) Timestamp {
-	return Timestamp{int64(t.Unix()), uint32(t.Nanosecond())}
+	return Timestamp{int64(t.Unix() + OffsetSecond), uint32(t.Nanosecond())}
 }
 
 func (t *Timestamp) ToMilli() Timestamp {

@@ -35,6 +35,8 @@ func (pm *ProtocolManager) DeleteArticle(id *types.PttID) error {
 		article,
 		opData,
 
+		pm.boardOplogMerkle,
+
 		pm.SetBoardDB,
 		pm.NewBoardOplog,
 		nil,

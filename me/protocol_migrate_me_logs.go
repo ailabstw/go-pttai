@@ -32,6 +32,8 @@ func (pm *ProtocolManager) handleMigrateMeLog(oplog *pkgservice.BaseOplog, info 
 		opData,
 		types.StatusMigrated,
 
+		pm.meOplogMerkle,
+
 		pm.SetMeDB,
 		pm.postdeleteMigrateMe,
 		pm.updateDeleteMeInfo,
@@ -56,6 +58,8 @@ func (pm *ProtocolManager) handlePendingMigrateMeLog(oplog *pkgservice.BaseOplog
 		MeOpTypeMigrateMe,
 		opData,
 
+		pm.meOplogMerkle,
+
 		pm.SetMeDB,
 		pm.setPendingDeleteMeSyncInfo,
 		pm.updateDeleteMeInfo,
@@ -70,6 +74,12 @@ func (pm *ProtocolManager) setNewestMigrateMeLog(oplog *pkgservice.BaseOplog) (t
 func (pm *ProtocolManager) handleFailedMigrateMeLog(oplog *pkgservice.BaseOplog) error {
 
 	return pm.HandleFailedDeleteEntityLog(oplog)
+
+}
+
+func (pm *ProtocolManager) handleFailedValidMigrateMeLog(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) error {
+
+	return pm.HandleFailedValidDeleteEntityLog(oplog)
 
 }
 

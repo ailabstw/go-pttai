@@ -45,7 +45,14 @@ func (pm *ProtocolManager) HandleSyncUpdateArticleAck(dataBytes []byte, peer *pk
 			peer,
 
 			origObj,
-			pm.SetBoardDB, pm.updateSyncArticle, nil, pm.broadcastBoardOplogCore)
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.updateSyncArticle,
+			nil,
+			pm.broadcastBoardOplogCore,
+		)
 	}
 
 	return nil

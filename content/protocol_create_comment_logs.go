@@ -61,6 +61,14 @@ func (pm *ProtocolManager) handleFailedCreateCommentLog(oplog *pkgservice.BaseOp
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateCommentLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyComment()
+	pm.SetCommentDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

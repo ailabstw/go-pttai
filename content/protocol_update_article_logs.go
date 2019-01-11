@@ -28,8 +28,19 @@ func (pm *ProtocolManager) handleUpdateArticleLogs(oplog *pkgservice.BaseOplog, 
 	opData := &BoardOpUpdateArticle{}
 
 	return pm.HandleUpdateObjectLog(
-		oplog, opData, obj, info,
-		pm.syncArticleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateArticleInfo)
+		oplog,
+		opData,
+
+		obj,
+		info,
+		pm.boardOplogMerkle,
+
+		pm.syncArticleInfoFromOplog,
+		pm.SetBoardDB,
+		nil,
+		nil,
+		pm.updateUpdateArticleInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingUpdateArticleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -38,7 +49,20 @@ func (pm *ProtocolManager) handlePendingUpdateArticleLogs(oplog *pkgservice.Base
 
 	opData := &BoardOpUpdateArticle{}
 
-	return pm.HandlePendingUpdateObjectLog(oplog, opData, obj, info, pm.syncArticleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateArticleInfo)
+	return pm.HandlePendingUpdateObjectLog(
+		oplog,
+		opData,
+
+		obj,
+		info,
+		pm.boardOplogMerkle,
+
+		pm.syncArticleInfoFromOplog,
+		pm.SetBoardDB,
+		nil,
+		nil,
+		pm.updateUpdateArticleInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestUpdateArticleLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -54,6 +78,14 @@ func (pm *ProtocolManager) handleFailedUpdateArticleLog(oplog *pkgservice.BaseOp
 	pm.SetArticleDB(obj)
 
 	return pm.HandleFailedUpdateObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidUpdateArticleLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.HandleFailedValidUpdateObjectLog(oplog, obj, info, pm.updateUpdateArticleInfo)
 }
 
 /**********

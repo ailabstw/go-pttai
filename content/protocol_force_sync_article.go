@@ -14,4 +14,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package content
+
+import (
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
+
+/**********
+ * Force Sync Article
+ **********/
+
+func (pm *ProtocolManager) ForceSyncArticle(syncIDs []*pkgservice.ForceSyncID, peer *pkgservice.PttPeer) error {
+
+	return pm.ForceSyncObject(syncIDs, peer, ForceSyncArticleMsg)
+}
+
+func (pm *ProtocolManager) HandleForceSyncArticle(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.HandleForceSyncObject(dataBytes, peer, obj, ForceSyncArticleAckMsg)
+}

@@ -22,7 +22,18 @@ import (
 )
 
 func (spm *ServiceProtocolManager) CreateProfile() (*Profile, error) {
-	entity, err := spm.CreateEntity(nil, UserOpTypeCreateProfile, spm.NewProfile, spm.NewUserOplogWithTS, nil, nil)
+	entity, err := spm.CreateEntity(
+		nil,
+		UserOpTypeCreateProfile,
+
+		spm.NewProfile,
+		spm.NewUserOplogWithTS,
+
+		nil,
+
+		nil,
+	)
+
 	if err != nil {
 		return nil, err
 	}

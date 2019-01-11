@@ -30,7 +30,16 @@ func (pm *BaseProtocolManager) handleTransferMemberLog(oplog *BaseOplog, info *P
 
 	opData := &PersonOpTransferPerson{}
 
-	return pm.HandleTransferPersonLog(oplog, person, opData, pm.SetMemberDB, pm.posttransferMember)
+	return pm.HandleTransferPersonLog(
+		oplog,
+		person,
+		opData,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+		pm.posttransferMember,
+	)
 }
 
 /*
@@ -108,7 +117,15 @@ func (pm *BaseProtocolManager) handlePendingTransferMemberLog(oplog *BaseOplog, 
 
 	opData := &PersonOpTransferPerson{}
 
-	return pm.HandlePendingTransferPersonLog(oplog, person, opData, pm.SetMemberDB)
+	return pm.HandlePendingTransferPersonLog(
+		oplog,
+		person,
+		opData,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+	)
 }
 
 func (pm *BaseProtocolManager) setNewestTransferMemberLog(oplog *BaseOplog) (types.Bool, error) {
@@ -124,6 +141,16 @@ func (pm *BaseProtocolManager) handleFailedTransferMemberLog(oplog *BaseOplog) e
 	pm.SetMemberObjDB(obj)
 
 	pm.HandleFailedTransferPersonLog(oplog, obj)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) handleFailedValidTransferMemberLog(oplog *BaseOplog) error {
+
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
+
+	pm.HandleFailedValidTransferPersonLog(oplog, obj)
 
 	return nil
 }

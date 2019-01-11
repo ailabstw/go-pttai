@@ -28,8 +28,24 @@ func (pm *ProtocolManager) handleUpdateUserNameLogs(oplog *pkgservice.BaseOplog,
 	opData := &UserOpUpdateUserName{}
 
 	return pm.HandleUpdateObjectLog(
-		oplog, opData, obj, info,
-		pm.syncUserNameInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserNameInfo)
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncUserNameInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+
+		pm.updateUpdateUserNameInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingUpdateUserNameLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -38,7 +54,25 @@ func (pm *ProtocolManager) handlePendingUpdateUserNameLogs(oplog *pkgservice.Bas
 
 	opData := &UserOpUpdateUserName{}
 
-	return pm.HandlePendingUpdateObjectLog(oplog, opData, obj, info, pm.syncUserNameInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserNameInfo)
+	return pm.HandlePendingUpdateObjectLog(
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncUserNameInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+
+		pm.updateUpdateUserNameInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestUpdateUserNameLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -54,6 +88,14 @@ func (pm *ProtocolManager) handleFailedUpdateUserNameLog(oplog *pkgservice.BaseO
 	pm.SetUserNameDB(obj)
 
 	return pm.HandleFailedUpdateObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidUpdateUserNameLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserName()
+	pm.SetUserNameDB(obj)
+
+	return pm.HandleFailedValidUpdateObjectLog(oplog, obj, info, pm.updateUpdateUserNameInfo)
 }
 
 /**********

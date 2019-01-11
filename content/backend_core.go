@@ -501,6 +501,16 @@ func (b *Backend) GetBoardOplogMerkleNodeList(entityIDBytes []byte, level pkgser
 	return results, nil
 }
 
+func (b *Backend) GetBoardOplogMerkle(entityIDBytes []byte) (*pkgservice.BackendMerkle, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pkgservice.MerkleToBackendMerkle(pm.boardOplogMerkle), nil
+}
+
 func (b *Backend) UploadFile(entityIDBytes []byte, filename []byte, bytes []byte) (*BackendUploadFile, error) {
 
 	thePM, err := b.EntityIDToPM(entityIDBytes)

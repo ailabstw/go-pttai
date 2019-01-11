@@ -24,6 +24,8 @@ func (pm *BaseProtocolManager) BaseHandleDeleteMediaLogs(
 	oplog *BaseOplog,
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 
@@ -37,8 +39,11 @@ func (pm *BaseProtocolManager) BaseHandleDeleteMediaLogs(
 	return pm.HandleDeleteObjectLog(
 		oplog,
 		info,
+
 		obj,
 		opData,
+
+		merkle,
 
 		setLogDB,
 		nil,
@@ -50,6 +55,8 @@ func (pm *BaseProtocolManager) BaseHandleDeleteMediaLogs(
 func (pm *BaseProtocolManager) BaseHandlePendingDeleteMediaLogs(
 	oplog *BaseOplog,
 	info ProcessInfo,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
@@ -64,8 +71,11 @@ func (pm *BaseProtocolManager) BaseHandlePendingDeleteMediaLogs(
 	return pm.HandlePendingDeleteObjectLog(
 		oplog,
 		info,
+
 		obj,
 		opData,
+
+		merkle,
 
 		setLogDB,
 		nil,
@@ -88,4 +98,17 @@ func (pm *BaseProtocolManager) HandleFailedDeleteMediaLog(oplog *BaseOplog) erro
 	pm.SetMediaDB(obj)
 
 	return pm.HandleFailedDeleteObjectLog(oplog, obj)
+}
+
+func (pm *BaseProtocolManager) BaseHandleFailedValidDeleteMediaLog(
+	oplog *BaseOplog,
+	info ProcessInfo,
+
+	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
+) error {
+
+	obj := NewEmptyMedia()
+	pm.SetMediaDB(obj)
+
+	return pm.HandleFailedValidDeleteObjectLog(oplog, obj, info, updateDeleteInfo)
 }

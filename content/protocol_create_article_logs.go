@@ -64,6 +64,14 @@ func (pm *ProtocolManager) handleFailedCreateArticleLog(oplog *pkgservice.BaseOp
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateArticleLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

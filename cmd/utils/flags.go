@@ -83,6 +83,11 @@ var (
 		Usage: "Private api as public api",
 	}
 
+	OffsetSecondFlag = cli.Int64Flag{
+		Name:  "offset-second",
+		Usage: "offset second",
+	}
+
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",
 		Usage: "Custom user name",

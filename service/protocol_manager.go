@@ -80,7 +80,7 @@ type ProtocolManager interface {
 	SignOplog(oplog *BaseOplog) error
 	ForceSignOplog(oplog *BaseOplog) error
 
-	IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error)
+	IntegrateOplog(oplog *BaseOplog, isLocked bool, merkle *Merkle) (bool, error)
 	InternalSign(oplog *BaseOplog) (bool, error)
 
 	// peers
@@ -115,6 +115,7 @@ type ProtocolManager interface {
 	HandleAddPendingMasterOplogs(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplogAck(dataBytes []byte, peer *PttPeer) error
@@ -140,6 +141,7 @@ type ProtocolManager interface {
 	HandleAddPendingMemberOplogs(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplogAck(dataBytes []byte, peer *PttPeer) error
@@ -156,6 +158,7 @@ type ProtocolManager interface {
 
 	// log0
 	SetLog0DB(oplog *BaseOplog)
+	Log0Merkle() *Merkle
 
 	// join
 	GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error)
@@ -248,6 +251,7 @@ type ProtocolManager interface {
 	// sync
 	ForceSyncCycle() time.Duration
 
+	ForceSync() chan struct{}
 	QuitSync() chan struct{}
 
 	SyncWG() *sync.WaitGroup
@@ -355,8 +359,9 @@ type BaseProtocolManager struct {
 	isValidOplog          func(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error
 
-	oplog0    *BaseOplog
-	setLog0DB func(oplog *BaseOplog)
+	oplog0     *BaseOplog
+	log0Merkle *Merkle
+	setLog0DB  func(oplog *BaseOplog)
 
 	// peer
 	peers       *PttPeerSet
@@ -370,8 +375,9 @@ type BaseProtocolManager struct {
 	maxSyncRandomSeconds int
 	minSyncRandomSeconds int
 
-	quitSync chan struct{}
-	syncWG   sync.WaitGroup
+	forceSync chan struct{}
+	quitSync  chan struct{}
+	syncWG    sync.WaitGroup
 
 	postsyncMemberOplog func(peer *PttPeer) error
 
@@ -409,6 +415,8 @@ func NewBaseProtocolManager(
 	minSyncRandomSeconds int,
 
 	maxMasters int,
+
+	log0Merkle *Merkle,
 
 	internalSign func(oplog *BaseOplog) (bool, error),
 	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool),
@@ -534,7 +542,8 @@ func NewBaseProtocolManager(
 		isValidOplog:          isValidOplog,
 		validateIntegrateSign: validateIntegrateSign,
 
-		setLog0DB: setLog0DB,
+		log0Merkle: log0Merkle,
+		setLog0DB:  setLog0DB,
 
 		// peers
 		newPeerCh: make(chan *PttPeer),
@@ -550,7 +559,8 @@ func NewBaseProtocolManager(
 		maxSyncRandomSeconds: maxSyncRandomSeconds,
 		minSyncRandomSeconds: minSyncRandomSeconds,
 
-		quitSync: make(chan struct{}),
+		forceSync: make(chan struct{}),
+		quitSync:  make(chan struct{}),
 
 		postsyncMemberOplog: postsyncMemberOplog,
 
@@ -820,6 +830,10 @@ func (pm *BaseProtocolManager) SetOplog0(oplog *BaseOplog) {
 
 func (pm *BaseProtocolManager) SetLog0DB(oplog *BaseOplog) {
 	pm.setLog0DB(oplog)
+}
+
+func (pm *BaseProtocolManager) Log0Merkle() *Merkle {
+	return pm.log0Merkle
 }
 
 func (pm *BaseProtocolManager) IsStart() bool {

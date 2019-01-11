@@ -113,6 +113,28 @@ func (pm *BaseProtocolManager) HandleFailedMasterOplog(oplog *BaseOplog) error {
 	return err
 }
 
+func (pm *BaseProtocolManager) HandleFailedValidMasterOplog(oplog *BaseOplog, processInfo ProcessInfo) error {
+	var err error
+
+	switch oplog.Op {
+	case MasterOpTypeAddMaster:
+		err = pm.handleFailedValidAddMasterLog(oplog)
+	case MasterOpTypeTransferMaster:
+		err = pm.handleFailedValidTransferMasterLog(oplog)
+	}
+
+	return err
+}
+
+/**********
+ * Postprocess Failed Valid Oplog
+ **********/
+
+func (pm *BaseProtocolManager) postprocessFailedValidMasterOplogs(processInfo ProcessInfo, peer *PttPeer) error {
+
+	return nil
+}
+
 /**********
  * Postsync Oplog
  **********/

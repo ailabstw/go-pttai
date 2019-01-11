@@ -30,6 +30,8 @@ func (pm *BaseProtocolManager) ForceCreateObject(
 	data CreateData,
 	createOp OpType,
 
+	merkle *Merkle,
+
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
@@ -38,7 +40,21 @@ func (pm *BaseProtocolManager) ForceCreateObject(
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
-	return pm.createObjectCore(data, createOp, true, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
+	return pm.createObjectCore(
+		data,
+		createOp,
+		true,
+
+		merkle,
+
+		newObj,
+		newOplogWithTS,
+		increate,
+		setLogDB,
+		broadcastLogs,
+		broadcastLog,
+		postcreate,
+	)
 }
 
 /*
@@ -48,15 +64,33 @@ func (pm *BaseProtocolManager) CreateObject(
 	data CreateData,
 	createOp OpType,
 
+	merkle *Merkle,
+
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
+
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
 	setLogDB func(oplog *BaseOplog),
 	broadcastLogs func(oplogs []*BaseOplog) error,
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
-	return pm.createObjectCore(data, createOp, false, newObj, newOplogWithTS, increate, setLogDB, broadcastLogs, broadcastLog, postcreate)
+
+	return pm.createObjectCore(
+		data,
+		createOp,
+		false,
+
+		merkle,
+
+		newObj,
+		newOplogWithTS,
+		increate,
+		setLogDB,
+		broadcastLogs,
+		broadcastLog,
+		postcreate,
+	)
 }
 
 /*
@@ -98,6 +132,8 @@ func (pm *BaseProtocolManager) createObjectCore(
 
 	isForce bool,
 
+	merkle *Merkle,
+
 	newObj func(data CreateData) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	increate func(obj Object, data CreateData, oplog *BaseOplog, opData OpData) error,
@@ -106,6 +142,7 @@ func (pm *BaseProtocolManager) createObjectCore(
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
+
 	entity := pm.Entity()
 
 	// 1. validate
@@ -170,7 +207,7 @@ func (pm *BaseProtocolManager) createObjectCore(
 	}
 
 	// 7. oplog-save
-	err = oplog.Save(false)
+	err = oplog.Save(false, merkle)
 	if err != nil {
 		log.Warn("CreateObject: unable to save oplog", "e", err)
 		return nil, err
@@ -230,11 +267,9 @@ func (pm *BaseProtocolManager) saveNewObjectWithOplog(
 		SetNewObjectWithOplog(obj, oplog)
 		oplog.IsSync = true
 	}
-	log.Debug("saveNewObjectWithOplog: after isAllGood", "isAllGood", isAllGood, "obj", obj, "oplog", oplog.ID, "obj.status", obj.GetStatus(), "isForceNot", isForceNot)
 
 	// save
 	err = obj.Save(true)
-	log.Debug("saveNewObjectWithOplog: after Save", "e", err)
 	if err != nil {
 		return err
 	}

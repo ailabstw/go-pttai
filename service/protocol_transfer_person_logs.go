@@ -36,6 +36,8 @@ func (pm *BaseProtocolManager) HandleTransferPersonLog(
 	origPerson Object,
 	opData *PersonOpTransferPerson,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	posttransfer func(fromID *types.PttID, toID *types.PttID, person Object, oplog *BaseOplog, opData OpData) error,
 
@@ -73,7 +75,16 @@ func (pm *BaseProtocolManager) HandleTransferPersonLog(
 	}
 
 	// 4. core
-	err = pm.handleTransferPersonLogCore(oplog, origPerson, opData, setLogDB, posttransfer)
+	err = pm.handleTransferPersonLogCore(
+		oplog,
+		origPerson,
+		opData,
+
+		merkle,
+
+		setLogDB,
+		posttransfer,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +96,8 @@ func (pm *BaseProtocolManager) handleTransferPersonLogCore(
 	oplog *BaseOplog,
 	origPerson Object,
 	opData *PersonOpTransferPerson,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 	posttransfer func(fromID *types.PttID, toID *types.PttID, person Object, oplog *BaseOplog, opData OpData) error,
@@ -108,7 +121,18 @@ func (pm *BaseProtocolManager) handleTransferPersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(
+			origSyncInfo,
+
+			nil,
+			oplog,
+			true,
+
+			merkle,
+
+			nil,
+			setLogDB,
+		)
 		if err != nil {
 			return err
 		}
@@ -137,6 +161,8 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 	oplog *BaseOplog,
 	origPerson Object,
 	opData *PersonOpTransferPerson,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -168,7 +194,15 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 	}
 
 	// 4. core
-	err = pm.handlePendingTransferPersonLogCore(oplog, origPerson, opData, setLogDB)
+	err = pm.handlePendingTransferPersonLogCore(
+		oplog,
+		origPerson,
+		opData,
+
+		merkle,
+
+		setLogDB,
+	)
 	if err != nil {
 		return false, nil, err
 	}
@@ -182,8 +216,9 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 	origObj Object,
 	opData OpData,
 
-	setLogDB func(oplog *BaseOplog),
+	merkle *Merkle,
 
+	setLogDB func(oplog *BaseOplog),
 ) error {
 
 	var err error
@@ -203,7 +238,18 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				nil,
+				oplog,
+				false,
+
+				merkle,
+
+				nil,
+				setLogDB,
+			)
 		}
 		origObj.SetSyncInfo(nil)
 	}

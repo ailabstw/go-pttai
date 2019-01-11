@@ -28,8 +28,20 @@ func (pm *ProtocolManager) handleUpdateTitleLogs(oplog *pkgservice.BaseOplog, in
 	opData := &BoardOpUpdateTitle{}
 
 	return pm.HandleUpdateObjectLog(
-		oplog, opData, obj, info,
-		pm.syncTitleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateTitleInfo)
+		oplog,
+		opData,
+
+		obj,
+		info,
+
+		pm.boardOplogMerkle,
+
+		pm.syncTitleInfoFromOplog,
+		pm.SetBoardDB,
+		nil,
+		nil,
+		pm.updateUpdateTitleInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingUpdateTitleLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -38,7 +50,20 @@ func (pm *ProtocolManager) handlePendingUpdateTitleLogs(oplog *pkgservice.BaseOp
 
 	opData := &BoardOpUpdateTitle{}
 
-	return pm.HandlePendingUpdateObjectLog(oplog, opData, obj, info, pm.syncTitleInfoFromOplog, pm.SetBoardDB, nil, nil, pm.updateUpdateTitleInfo)
+	return pm.HandlePendingUpdateObjectLog(
+		oplog,
+		opData,
+
+		obj,
+		info,
+		pm.boardOplogMerkle,
+
+		pm.syncTitleInfoFromOplog,
+		pm.SetBoardDB,
+		nil,
+		nil,
+		pm.updateUpdateTitleInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestUpdateTitleLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -54,6 +79,14 @@ func (pm *ProtocolManager) handleFailedUpdateTitleLog(oplog *pkgservice.BaseOplo
 	pm.SetTitleDB(obj)
 
 	return pm.HandleFailedUpdateObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidUpdateTitleLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyTitle()
+	pm.SetTitleDB(obj)
+
+	return pm.HandleFailedValidUpdateObjectLog(oplog, obj, info, pm.updateUpdateTitleInfo)
 }
 
 /**********

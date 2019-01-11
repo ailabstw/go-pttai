@@ -43,6 +43,8 @@ func (pm *ProtocolManager) UpdateArticle(articleID *types.PttID, articleBytes []
 		origObj,
 		opData,
 
+		pm.boardOplogMerkle,
+
 		pm.SetBoardDB,
 		pm.NewBoardOplog,
 		pm.inupdateArticle,

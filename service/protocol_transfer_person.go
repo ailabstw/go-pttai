@@ -41,6 +41,8 @@ func (pm *BaseProtocolManager) TransferPerson(
 	origPerson Object,
 	opData *PersonOpTransferPerson,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	signOplog func(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error,
@@ -103,16 +105,33 @@ func (pm *BaseProtocolManager) TransferPerson(
 	log.Debug("TransferPerson: to TransferPersonLogCore", "oplogStatus", oplogStatus)
 
 	if oplogStatus == types.StatusTransferred {
-		err = pm.handleTransferPersonLogCore(oplog, origPerson, opData, setLogDB, posttransfer)
+		err = pm.handleTransferPersonLogCore(
+			oplog,
+			origPerson,
+			opData,
+
+			merkle,
+
+			setLogDB,
+			posttransfer,
+		)
 	} else {
-		err = pm.handlePendingTransferPersonLogCore(oplog, origPerson, opData, setLogDB)
+		err = pm.handlePendingTransferPersonLogCore(
+			oplog,
+			origPerson,
+			opData,
+
+			merkle,
+
+			setLogDB,
+		)
 	}
 	if err != nil {
 		return err
 	}
 
 	// 6. oplog
-	err = oplog.Save(true)
+	err = oplog.Save(true, merkle)
 	if err != nil {
 		return err
 	}

@@ -134,7 +134,7 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 	myNode.Save()
 
 	// meOplog save
-	meOplog.Save(false)
+	meOplog.Save(false, pm.meOplogMerkle)
 
 	// op-key
 	if len(pm.OpKeys()) == 0 {
@@ -151,8 +151,6 @@ func (pm *ProtocolManager) CreateFullMe(oplog *MasterOplog) error {
 			return err
 		}
 	}
-
-	log.Debug("CreateFullMe: done")
 
 	return nil
 }

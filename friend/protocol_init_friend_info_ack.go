@@ -201,7 +201,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 	if err != nil {
 		return err
 	}
-	err = pttOplog.Save(false)
+	err = pttOplog.Save(false, nil)
 	if err != nil {
 		return err
 	}

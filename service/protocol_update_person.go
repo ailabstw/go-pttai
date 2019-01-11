@@ -29,6 +29,8 @@ func (pm *BaseProtocolManager) UpdatePerson(
 
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
@@ -69,16 +71,34 @@ func (pm *BaseProtocolManager) UpdatePerson(
 	oplogStatus := oplog.ToStatus()
 
 	if oplogStatus == types.StatusAlive {
-		err = pm.handleUpdatePersonLogCore(oplog, origPerson, opData, setLogDB, postupdate)
+		err = pm.handleUpdatePersonLogCore(
+			oplog,
+			origPerson,
+			opData,
+
+			merkle,
+
+			setLogDB,
+			postupdate,
+		)
 	} else {
-		err = pm.handlePendingUpdatePersonLogCore(oplog, origPerson, opData, setLogDB)
+		err = pm.handlePendingUpdatePersonLogCore(
+			oplog,
+
+			origPerson,
+			opData,
+
+			merkle,
+
+			setLogDB,
+		)
 	}
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// oplog save
-	err = oplog.Save(false)
+	err = oplog.Save(false, merkle)
 	if err != nil {
 		return nil, nil, err
 	}

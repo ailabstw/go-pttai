@@ -27,7 +27,19 @@ func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *Pro
 
 	opData := &MemberOpDeleteMember{}
 
-	toBroadcastLogs, err := pm.HandleDeletePersonLog(oplog, obj, opData, types.StatusDeleted, pm.SetMemberDB, pm.postdeleteMember)
+	toBroadcastLogs, err := pm.HandleDeletePersonLog(
+		oplog,
+		obj,
+		opData,
+
+		types.StatusDeleted,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+
+		pm.postdeleteMember,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +54,19 @@ func (pm *BaseProtocolManager) handlePendingDeleteMemberLog(oplog *BaseOplog, in
 
 	opData := &MemberOpDeleteMember{}
 
-	return pm.HandlePendingDeletePersonLog(oplog, info, obj, opData, types.StatusInternalDeleted, types.StatusPendingDeleted, pm.SetMemberDB)
+	return pm.HandlePendingDeletePersonLog(
+		oplog,
+		info,
+		obj,
+		opData,
+
+		types.StatusInternalDeleted,
+		types.StatusPendingDeleted,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+	)
 }
 
 func (pm *BaseProtocolManager) setNewestDeleteMemberLog(oplog *BaseOplog) (types.Bool, error) {
@@ -57,4 +81,11 @@ func (pm *BaseProtocolManager) handleFailedDeleteMemberLog(oplog *BaseOplog) err
 	pm.SetMemberObjDB(obj)
 
 	return pm.HandleFailedDeletePersonLog(oplog, obj)
+}
+
+func (pm *BaseProtocolManager) handleFailedValidDeleteMemberLog(oplog *BaseOplog) error {
+	obj := NewEmptyMember()
+	pm.SetMemberObjDB(obj)
+
+	return pm.HandleFailedValidDeletePersonLog(oplog, obj)
 }

@@ -67,6 +67,9 @@ const (
 	AddPendingFriendOplogsMsg
 
 	SyncFriendOplogMsg
+	ForceSyncFriendOplogMsg
+	ForceSyncFriendOplogAckMsg
+	InvalidSyncFriendOplogMsg
 	SyncFriendOplogAckMsg
 	SyncFriendOplogNewOplogsMsg
 	SyncFriendOplogNewOplogsAckMsg

@@ -25,9 +25,22 @@ func (pm *ProtocolManager) DeleteBoard() error {
 	opData := &BoardOpDeleteBoard{}
 
 	err := pm.DeleteEntity(
-		BoardOpTypeDeleteBoard, opData,
-		types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted,
-		pm.NewBoardOplog, pm.setPendingDeleteBoardSyncInfo, pm.broadcastBoardOplogCore, pm.postdeleteBoard)
+		BoardOpTypeDeleteBoard,
+		opData,
+
+		types.StatusInternalDeleted,
+		types.StatusPendingDeleted,
+		types.StatusDeleted,
+
+		pm.boardOplogMerkle,
+
+		pm.NewBoardOplog,
+
+		pm.setPendingDeleteBoardSyncInfo,
+
+		pm.broadcastBoardOplogCore,
+		pm.postdeleteBoard,
+	)
 
 	return err
 }

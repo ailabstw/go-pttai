@@ -28,6 +28,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/fdlimit"
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/friend"
@@ -206,7 +207,12 @@ func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config
 	}
 	pkgservice.IsPrivateAsPublic = cfg.IsPrivateAsPublic
 
-	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds, "IsE2E", pkgservice.IsE2E, "IsPrivateAsPublic", pkgservice.IsPrivateAsPublic)
+	// offset second
+	if ctx.GlobalIsSet(OffsetSecondFlag.Name) {
+		types.OffsetSecond = ctx.GlobalInt64(OffsetSecondFlag.Name)
+	}
+
+	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds, "IsE2E", pkgservice.IsE2E, "IsPrivateAsPublic", pkgservice.IsPrivateAsPublic, "OffsetSecond", types.OffsetSecond)
 
 }
 

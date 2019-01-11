@@ -43,6 +43,8 @@ func (pm *ProtocolManager) UploadFile(filename []byte, theBytes []byte) (*pkgser
 		data,
 		BoardOpTypeCreateMedia,
 
+		pm.boardOplogMerkle,
+
 		pm.NewMedia,
 		pm.NewBoardOplogWithTS,
 		pm.increateFile,

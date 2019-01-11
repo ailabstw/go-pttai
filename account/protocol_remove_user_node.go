@@ -53,6 +53,8 @@ func (pm *ProtocolManager) RemoveUserNode(nodeID *discover.NodeID) error {
 		origObj,
 		opData,
 
+		pm.userOplogMerkle,
+
 		pm.SetUserDB,
 
 		pm.NewUserOplog,

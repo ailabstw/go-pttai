@@ -31,8 +31,23 @@ func (pm *ProtocolManager) handleUpdateUserImgLogs(oplog *pkgservice.BaseOplog, 
 	log.Debug("handleUpdateUserImgLogs: start", "oplog", oplog.ID, "objID", oplog.ObjID)
 
 	return pm.HandleUpdateObjectLog(
-		oplog, opData, obj, info,
-		pm.syncUserImgInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserImgInfo)
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncUserImgInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+		pm.updateUpdateUserImgInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingUpdateUserImgLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -43,7 +58,25 @@ func (pm *ProtocolManager) handlePendingUpdateUserImgLogs(oplog *pkgservice.Base
 
 	opData := &UserOpUpdateUserImg{}
 
-	return pm.HandlePendingUpdateObjectLog(oplog, opData, obj, info, pm.syncUserImgInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateUserImgInfo)
+	return pm.HandlePendingUpdateObjectLog(
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncUserImgInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+
+		pm.updateUpdateUserImgInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestUpdateUserImgLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -59,6 +92,14 @@ func (pm *ProtocolManager) handleFailedUpdateUserImgLog(oplog *pkgservice.BaseOp
 	pm.SetUserImgDB(obj)
 
 	return pm.HandleFailedUpdateObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidUpdateUserImgLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserImg()
+	pm.SetUserImgDB(obj)
+
+	return pm.HandleFailedValidUpdateObjectLog(oplog, obj, info, pm.updateUpdateUserImgInfo)
 }
 
 /**********

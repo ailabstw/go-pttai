@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"testing"
 	"time"
 
@@ -109,7 +110,7 @@ func readBody(res *http.Response, t *testing.T) ([]byte, error) {
 	return body, err
 }
 
-func startNode(t *testing.T, idx int) {
+func startNode(t *testing.T, idx int, offsetSecond int64) {
 	if Ctxs[idx] != nil && Cancels[idx] != nil {
 		Cancels[idx]()
 		Ctxs[idx] = nil
@@ -139,6 +140,7 @@ func startNode(t *testing.T, idx int) {
 		"--friendmaxsync", "7",
 		"--friendminsync", "5",
 		"--serviceexpireoplog", ServiceExpireOplog,
+		"--offset-second", strconv.FormatInt(offsetSecond, 10),
 		"--e2e",
 	)
 	filename := fmt.Sprintf("./test.out/log.err.%d.txt", idx)
@@ -177,7 +179,7 @@ func setupTest(t *testing.T) {
 	stderrs = make([]*os.File, NNodes)
 
 	for i := 0; i < NNodes; i++ {
-		startNode(t, i)
+		startNode(t, i, 0)
 	}
 
 	seconds := 0

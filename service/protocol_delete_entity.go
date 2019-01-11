@@ -28,6 +28,8 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	pendingStatus types.Status,
 	status types.Status,
 
+	merkle *Merkle,
+
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 
 	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
@@ -105,7 +107,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 	}
 
 	// 6. oplog
-	err = oplog.Save(true)
+	err = oplog.Save(true, merkle)
 	if err != nil {
 		return err
 	}

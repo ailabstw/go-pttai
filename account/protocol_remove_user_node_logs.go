@@ -34,6 +34,8 @@ func (pm *ProtocolManager) handleRemoveUserNodeLog(oplog *pkgservice.BaseOplog, 
 		obj,
 		opData,
 
+		pm.userOplogMerkle,
+
 		pm.SetUserDB,
 
 		nil,
@@ -61,6 +63,8 @@ func (pm *ProtocolManager) handlePendingRemoveUserNodeLog(oplog *pkgservice.Base
 		obj,
 		opData,
 
+		pm.userOplogMerkle,
+
 		pm.SetUserDB,
 
 		nil,
@@ -81,6 +85,13 @@ func (pm *ProtocolManager) handleFailedRemoveUserNodeLog(oplog *pkgservice.BaseO
 	pm.SetUserNodeDB(obj)
 
 	return pm.HandleFailedDeleteObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidRemoveUserNodeLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+	obj := NewEmptyUserNode()
+	pm.SetUserNodeDB(obj)
+
+	return pm.HandleFailedValidDeleteObjectLog(oplog, obj, info, pm.updateDeleteUserNodeInfo)
 }
 
 func (pm *ProtocolManager) updateDeleteUserNodeInfo(theUserNode pkgservice.Object, oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) error {

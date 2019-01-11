@@ -44,9 +44,21 @@ func (pm *ProtocolManager) UpdateTitle(title []byte) error {
 	log.Debug("UpdateTitle: to UpdateObject")
 
 	err := pm.UpdateObject(
-		entityID, data, BoardOpTypeUpdateTitle, origObj, opData,
+		entityID,
+		data,
+		BoardOpTypeUpdateTitle,
+		origObj,
+		opData,
 
-		pm.SetBoardDB, pm.NewBoardOplog, pm.inupdateTitle, nil, pm.broadcastBoardOplogCore, nil)
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.NewBoardOplog,
+		pm.inupdateTitle,
+		nil,
+		pm.broadcastBoardOplogCore,
+		nil,
+	)
 	if err != nil {
 		return err
 	}

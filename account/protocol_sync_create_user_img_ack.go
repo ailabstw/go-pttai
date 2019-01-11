@@ -40,8 +40,18 @@ func (pm *ProtocolManager) HandleSyncCreateUserImgAck(dataBytes []byte, peer *pk
 		pm.SetUserImgDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetUserDB, nil, nil, pm.broadcastUserOplogCore)
+			obj,
+			peer,
+
+			origObj,
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			nil,
+			nil,
+			pm.broadcastUserOplogCore,
+		)
 	}
 
 	return nil

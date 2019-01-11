@@ -26,6 +26,8 @@ func (pm *BaseProtocolManager) HandleSyncCreateMediaAck(
 	dataBytes []byte,
 	peer *PttPeer,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	broadcastLog func(oplog *BaseOplog) error,
 
@@ -45,9 +47,12 @@ func (pm *BaseProtocolManager) HandleSyncCreateMediaAck(
 		pm.HandleSyncCreateObjectAck(
 			obj,
 			peer,
-			origObj,
-			setLogDB,
 
+			origObj,
+
+			merkle,
+
+			setLogDB,
 			pm.updateSyncCreateMedia,
 			nil,
 			broadcastLog,

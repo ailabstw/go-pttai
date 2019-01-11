@@ -32,7 +32,7 @@ import (
 
 type Oplog interface {
 	GetBaseOplog() *BaseOplog
-	Save(isLocked bool) error
+	Save(isLocked bool, merkle *Merkle) error
 	Delete(isLocked bool) error
 
 	SetPreLogID(logID *types.PttID)
@@ -200,7 +200,7 @@ func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
 	return nil
 }
 
-func (o *BaseOplog) Save(isLocked bool) error {
+func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -215,10 +215,28 @@ func (o *BaseOplog) Save(isLocked bool) error {
 	}
 
 	log.Debug("Oplog.Save: to ForcePutAll", "idxKey", idxKey, "key", kvs[0].K)
-	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
+	origKeys, err := o.db.ForcePutAll(idxKey, idx, kvs)
 	if err != nil {
 		return err
 	}
+
+	if merkle == nil {
+		return nil
+	}
+
+	log.Debug("Oplog.Save: to keyToUpdateTS", "origKeys", origKeys)
+
+	if origKeys == nil {
+		merkle.SetUpdateTS(o.UpdateTS)
+		return nil
+	}
+
+	origUpdateTS, err := o.keyToUpdateTS(origKeys[0])
+	if err != nil {
+		return err
+	}
+
+	merkle.SetUpdateTS2(o.UpdateTS, origUpdateTS)
 
 	return nil
 }
@@ -505,6 +523,18 @@ func (o *BaseOplog) MarshalKey(prefix []byte) ([]byte, error) {
 	}
 
 	return common.Concat([][]byte{prefix, o.dbPrefixID[:], marshaledTS[:], o.ID[:], opBytes})
+}
+
+func (o *BaseOplog) keyToUpdateTS(theBytes []byte) (types.Timestamp, error) {
+	offsetTS := pttdb.SizeDBKeyPrefix + types.SizePttID
+	endOffsetTS := offsetTS + types.SizeTimestamp
+
+	ts, err := types.UnmarshalTimestamp(theBytes[offsetTS:endOffsetTS])
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return ts, nil
 }
 
 func (o *BaseOplog) Marshal() ([]byte, error) {

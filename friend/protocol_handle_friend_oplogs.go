@@ -43,19 +43,96 @@ func (pm *ProtocolManager) HandleAddPendingFriendOplogs(dataBytes []byte, peer *
  **********/
 
 func (pm *ProtocolManager) HandleSyncFriendOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.friendOplogMerkle, SyncFriendOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.friendOplogMerkle,
+
+		ForceSyncFriendOplogMsg,
+		ForceSyncFriendOplogAckMsg,
+		InvalidSyncFriendOplogMsg,
+		SyncFriendOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncFriendOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.friendOplogMerkle,
+		ForceSyncFriendOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncFriendOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	info := NewProcessFriendInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.friendOplogMerkle,
+		info,
+
+		pm.SetFriendDB,
+		pm.HandleFailedValidFriendOplog,
+		pm.SetNewestFriendOplog,
+		pm.postprocessFailedValidFriendOplogs,
+
+		SyncFriendOplogNewOplogsMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleSyncFriendOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.friendOplogMerkle,
+		ForceSyncFriendOplogMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncFriendOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.friendOplogMerkle, pm.SetFriendDB, pm.SetNewestFriendOplog, pm.postsyncFriendOplogs, SyncFriendOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.friendOplogMerkle,
+		pm.SetFriendDB,
+		pm.SetNewestFriendOplog,
+		pm.postsyncFriendOplogs,
+
+		SyncFriendOplogNewOplogsMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewFriendOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetFriendDB, pm.HandleFriendOplogs, pm.SetNewestFriendOplog, SyncFriendOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetFriendDB,
+		pm.HandleFriendOplogs,
+		pm.SetNewestFriendOplog,
+
+		SyncFriendOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewFriendOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetFriendDB, pm.HandleFriendOplogs, pm.postsyncFriendOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetFriendDB,
+		pm.HandleFriendOplogs,
+		pm.postsyncFriendOplogs,
+	)
 }
 
 /**********
@@ -63,11 +140,25 @@ func (pm *ProtocolManager) HandleSyncNewFriendOplogAck(dataBytes []byte, peer *p
  **********/
 
 func (pm *ProtocolManager) HandleSyncPendingFriendOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingFriendOplogs, pm.SetFriendDB, pm.HandleFailedFriendOplog, SyncPendingFriendOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingFriendOplogs,
+		pm.SetFriendDB,
+		pm.HandleFailedFriendOplog,
+
+		SyncPendingFriendOplogAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncPendingFriendOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingFriendOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingFriendOplogs,
+	)
 }
 
 /**********
@@ -77,15 +168,38 @@ func (pm *ProtocolManager) HandleSyncPendingFriendOplogAck(dataBytes []byte, pee
 func (pm *ProtocolManager) HandleFriendOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isUpdateSyncTime bool) error {
 
 	info := NewProcessFriendInfo()
-	merkle := pm.friendOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetFriendDB, pm.processFriendLog, pm.postprocessFriendOplogs)
+	return pkgservice.HandleOplogs(
+		oplogs,
+		peer,
+
+		isUpdateSyncTime,
+		pm,
+		info,
+		pm.friendOplogMerkle,
+
+		pm.SetFriendDB,
+		pm.processFriendLog,
+		pm.postprocessFriendOplogs,
+	)
 }
 
 func (pm *ProtocolManager) HandlePendingFriendOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
 
 	info := NewProcessFriendInfo()
 
-	return pkgservice.HandlePendingOplogs(oplogs, peer, pm, info, pm.SetFriendDB, pm.processPendingFriendLog, pm.processFriendLog, pm.postprocessFriendOplogs)
+	return pkgservice.HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+
+		pm.friendOplogMerkle,
+
+		pm.SetFriendDB,
+		pm.processPendingFriendLog,
+		pm.processFriendLog,
+		pm.postprocessFriendOplogs,
+	)
 }

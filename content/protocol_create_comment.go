@@ -48,6 +48,8 @@ func (pm *ProtocolManager) CreateComment(articleID *types.PttID, commentType Com
 		data,
 		BoardOpTypeCreateComment,
 
+		pm.boardOplogMerkle,
+
 		pm.NewComment,
 		pm.NewBoardOplogWithTS,
 		pm.increateComment,
@@ -185,7 +187,7 @@ func (pm *ProtocolManager) postcreateComment(theObj pkgservice.Object, oplog *pk
 		return err
 	}
 
-	err = pttOplog.Save(false)
+	err = pttOplog.Save(false, nil)
 	if err != nil {
 		return err
 	}

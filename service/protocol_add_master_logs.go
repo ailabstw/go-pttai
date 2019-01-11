@@ -28,9 +28,24 @@ func (pm *BaseProtocolManager) handleAddMasterLog(oplog *BaseOplog, info *Proces
 	opData := &MasterOpCreateMaster{}
 
 	if oplog.PreLogID == nil {
-		return pm.HandleCreatePersonLog(oplog, person, opData, pm.postaddMaster)
+		return pm.HandleCreatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.postaddMaster,
+		)
 	} else {
-		return pm.HandleUpdatePersonLog(oplog, person, opData, pm.SetMasterDB, pm.postaddMaster)
+		return pm.HandleUpdatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.MasterMerkle(),
+
+			pm.SetMasterDB,
+			pm.postaddMaster,
+		)
 
 	}
 }
@@ -43,9 +58,21 @@ func (pm *BaseProtocolManager) handlePendingAddMasterLog(oplog *BaseOplog, info 
 	opData := &MasterOpCreateMaster{}
 
 	if oplog.PreLogID == nil {
-		return pm.HandlePendingCreatePersonLog(oplog, person, opData)
+		return pm.HandlePendingCreatePersonLog(
+			oplog,
+			person,
+			opData,
+		)
 	} else {
-		return pm.HandlePendingUpdatePersonLog(oplog, person, opData, pm.SetMasterDB)
+		return pm.HandlePendingUpdatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.MasterMerkle(),
+
+			pm.SetMasterDB,
+		)
 	}
 }
 
@@ -66,6 +93,18 @@ func (pm *BaseProtocolManager) handleFailedAddMasterLog(oplog *BaseOplog) error 
 		return pm.HandleFailedCreatePersonLog(oplog, person, nil)
 	} else {
 		return pm.HandleFailedUpdatePersonLog(oplog, person)
+	}
+}
+
+func (pm *BaseProtocolManager) handleFailedValidAddMasterLog(oplog *BaseOplog) error {
+
+	person := NewEmptyMaster()
+	pm.SetMasterObjDB(person)
+
+	if oplog.PreLogID == nil {
+		return pm.HandleFailedValidCreatePersonLog(oplog, person, nil)
+	} else {
+		return pm.HandleFailedValidUpdatePersonLog(oplog, person)
 	}
 }
 

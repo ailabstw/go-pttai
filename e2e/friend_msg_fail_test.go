@@ -444,7 +444,7 @@ func TestFriendMsgFail(t *testing.T) {
 	assert.Equal(types.StatusFailed, msg1_42.Status)
 
 	// 99. start-node
-	startNode(t, 0)
+	startNode(t, 0, 0)
 
 	// wait 15 seconds
 

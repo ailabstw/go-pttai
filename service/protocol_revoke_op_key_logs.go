@@ -31,6 +31,8 @@ func (pm *BaseProtocolManager) handleRevokeOpKeyLog(oplog *BaseOplog, info *Proc
 		opKey,
 		nil,
 
+		nil,
+
 		pm.SetOpKeyDB,
 
 		nil,
@@ -54,6 +56,8 @@ func (pm *BaseProtocolManager) handlePendingRevokeOpKeyLog(oplog *BaseOplog, inf
 		info,
 
 		opKey,
+		nil,
+
 		nil,
 
 		pm.SetOpKeyDB,

@@ -41,19 +41,98 @@ func (pm *BaseProtocolManager) HandleAddPendingMemberOplogs(dataBytes []byte, pe
  **********/
 
 func (pm *BaseProtocolManager) HandleSyncMemberOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.MemberMerkle(), SyncMemberOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.MemberMerkle(),
+
+		ForceSyncMemberOplogMsg,
+		ForceSyncMasterOplogAckMsg,
+		InvalidSyncMemberOplogMsg,
+		SyncMemberOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMemberOplog(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.MemberMerkle(),
+		ForceSyncMemberOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error {
+
+	info := NewProcessPersonInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.MemberMerkle(),
+		info,
+
+		pm.SetMemberDB,
+		pm.HandleFailedValidMemberOplog,
+		pm.SetNewestMemberOplog,
+		pm.postprocessFailedValidMemberOplogs,
+
+		SyncMemberOplogNewOplogsMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleSyncMemberOplogInvalidAck(dataBytes []byte, peer *PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.MemberMerkle(),
+		ForceSyncMemberOplogMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.MemberMerkle(), pm.SetMemberDB, pm.SetNewestMemberOplog, pm.postsyncMemberOplogs, SyncMemberOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+		pm.SetNewestMemberOplog,
+		pm.postsyncMemberOplogs,
+
+		SyncMemberOplogNewOplogsMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetMemberDB, pm.HandleMemberOplogs, pm.SetNewestMemberOplog, SyncMemberOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetMemberDB,
+		pm.HandleMemberOplogs,
+		pm.SetNewestMemberOplog,
+
+		SyncMemberOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncNewMemberOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetMemberDB, pm.HandleMemberOplogs, pm.postsyncMemberOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetMemberDB,
+		pm.HandleMemberOplogs,
+
+		pm.postsyncMemberOplogs,
+	)
 }
 
 /**********
@@ -61,11 +140,25 @@ func (pm *BaseProtocolManager) HandleSyncNewMemberOplogAck(dataBytes []byte, pee
  **********/
 
 func (pm *BaseProtocolManager) HandleSyncPendingMemberOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingMemberOplogs, pm.SetMemberDB, pm.HandleFailedMemberOplog, SyncPendingMemberOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMemberOplogs,
+		pm.SetMemberDB,
+		pm.HandleFailedMemberOplog,
+
+		SyncPendingMemberOplogAckMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncPendingMemberOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingMemberOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMemberOplogs,
+	)
 }
 
 /**********
@@ -76,13 +169,38 @@ func (pm *BaseProtocolManager) HandleMemberOplogs(oplogs []*BaseOplog, peer *Ptt
 
 	info := NewProcessPersonInfo()
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, pm.memberMerkle, pm.SetMemberDB, pm.processMemberLog, pm.postprocessMemberOplogs)
+	return HandleOplogs(
+		oplogs,
+		peer,
+
+		isUpdateSyncTime,
+		pm,
+		info,
+
+		pm.memberMerkle,
+
+		pm.SetMemberDB,
+		pm.processMemberLog,
+		pm.postprocessMemberOplogs,
+	)
 }
 
 func (pm *BaseProtocolManager) HandlePendingMemberOplogs(oplogs []*BaseOplog, peer *PttPeer) error {
 
 	info := NewProcessPersonInfo()
 
-	return HandlePendingOplogs(oplogs, peer, pm, info, pm.SetMemberDB, pm.processPendingMemberLog, pm.processMemberLog, pm.postprocessMemberOplogs)
+	return HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+		pm.processPendingMemberLog,
+		pm.processMemberLog,
+		pm.postprocessMemberOplogs,
+	)
 }

@@ -139,7 +139,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	// 8. oplog0
 	log.Debug("CreateJoinEntity: to SetLog0DB", "oplog0", oplog0)
 	pm.SetLog0DB(oplog0)
-	err = oplog0.Save(false)
+	err = oplog0.Save(false, pm.Log0Merkle())
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 	pm.SetOpKeyDB(opKeyLog)
-	err = opKeyLog.Save(false)
+	err = opKeyLog.Save(false, nil)
 	if err != nil {
 		return nil, err
 	}

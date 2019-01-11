@@ -18,7 +18,6 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -47,19 +46,97 @@ func (pm *BaseProtocolManager) HandleAddPendingMasterOplogs(dataBytes []byte, pe
  **********/
 
 func (pm *BaseProtocolManager) HandleSyncMasterOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.MasterMerkle(), SyncMasterOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.MasterMerkle(),
+
+		ForceSyncMasterOplogMsg,
+		ForceSyncMasterOplogAckMsg,
+		InvalidSyncMasterOplogMsg,
+		SyncMasterOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplog(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.MasterMerkle(),
+		ForceSyncMasterOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error {
+
+	info := NewProcessPersonInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.MasterMerkle(),
+		info,
+
+		pm.SetMasterDB,
+		pm.HandleFailedValidMasterOplog,
+		pm.SetNewestMasterOplog,
+		pm.postprocessFailedValidMasterOplogs,
+
+		SyncMasterOplogNewOplogsMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.MasterMerkle(),
+		ForceSyncMasterOplogMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.MasterMerkle(), pm.SetMasterDB, pm.SetNewestMasterOplog, pm.postsyncMasterOplogs, SyncMasterOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.MasterMerkle(),
+
+		pm.SetMasterDB,
+		pm.SetNewestMasterOplog,
+		pm.postsyncMasterOplogs,
+
+		SyncMasterOplogNewOplogsMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetMasterDB, pm.HandleMasterOplogs, pm.SetNewestMasterOplog, SyncMasterOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetMasterDB,
+		pm.HandleMasterOplogs,
+		pm.SetNewestMasterOplog,
+
+		SyncMasterOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncNewMasterOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetMasterDB, pm.HandleMasterOplogs, pm.postsyncMasterOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetMasterDB,
+		pm.HandleMasterOplogs,
+		pm.postsyncMasterOplogs,
+	)
 }
 
 /**********
@@ -67,11 +144,25 @@ func (pm *BaseProtocolManager) HandleSyncNewMasterOplogAck(dataBytes []byte, pee
  **********/
 
 func (pm *BaseProtocolManager) HandleSyncPendingMasterOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingMasterOplogs, pm.SetMasterDB, pm.HandleFailedMasterOplog, SyncPendingMasterOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMasterOplogs,
+		pm.SetMasterDB,
+		pm.HandleFailedMasterOplog,
+
+		SyncPendingMasterOplogAckMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncPendingMasterOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingMasterOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMasterOplogs,
+	)
 }
 
 /**********
@@ -82,9 +173,22 @@ func (pm *BaseProtocolManager) HandleMasterOplogs(oplogs []*BaseOplog, peer *Ptt
 
 	info := NewProcessPersonInfo()
 
-	log.Debug("HandleMasterOplogs: to HandleOplogs", "masterMerkler", pm.masterMerkle, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	return HandleOplogs(
+		oplogs,
+		peer,
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, pm.masterMerkle, pm.SetMasterDB, pm.processMasterLog, pm.postprocessMasterOplogs)
+		isUpdateSyncTime,
+
+		pm,
+		info,
+
+		pm.masterMerkle,
+
+		pm.SetMasterDB,
+		pm.processMasterLog,
+		pm.postprocessMasterOplogs,
+	)
+
 }
 
 func (pm *BaseProtocolManager) HandlePendingMasterOplogs(oplogs []*BaseOplog, peer *PttPeer) error {
@@ -96,7 +200,15 @@ func (pm *BaseProtocolManager) HandlePendingMasterOplogs(oplogs []*BaseOplog, pe
 		return err
 	}
 
-	return pm.handlePendingMasterOplogs(oplogs, peer, info, pm.processPendingMasterLog, pm.processMasterLog)
+	return pm.handlePendingMasterOplogs(
+		oplogs,
+		peer,
+
+		info,
+
+		pm.processPendingMasterLog,
+		pm.processMasterLog,
+	)
 
 }
 
@@ -162,16 +274,18 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 	}
 	defer oplog.Unlock()
 
+	merkle := pm.MasterMerkle()
+
 	// integrate
 	// after integrate-me-oplog: oplog saved if orig exists and not new-signed.
-	isNewSign, err := pm.IntegrateOplog(oplog, true)
+	isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
 	if err != nil {
 		return false, nil, err
 	}
 
 	if oplog.IsSync {
 		if isNewSign {
-			err = oplog.Save(true)
+			err = oplog.Save(true, merkle)
 			if err != nil {
 				return false, nil, err
 			}

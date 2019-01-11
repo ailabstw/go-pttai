@@ -17,6 +17,7 @@
 package e2e
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 	"time"
@@ -30,12 +31,14 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestFriendBoard(t *testing.T) {
+func TestFriendJoinBoardBasic(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
 	var bodyString string
 	var marshaled []byte
+	//var marshaledID []byte
+	var marshaledStr string
 	assert := assert.New(t)
 
 	setupTest(t)
@@ -250,35 +253,91 @@ func TestFriendBoard(t *testing.T) {
 	assert.Equal(2, len(dataMemberList1_12_1.Result))
 	assert.Equal(dataMemberList0_12_1, dataMemberList1_12_1)
 
-	// 13. get board list
+	// 13. create-board
+	title := []byte("標題1")
+	marshaledStr = base64.StdEncoding.EncodeToString(title)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createBoard", "params": ["%v", true]}`, marshaledStr)
+
+	dataCreateBoard0_13 := &content.BackendCreateBoard{}
+
+	testCore(t0, bodyString, dataCreateBoard0_13, t, isDebug)
+	assert.Equal(pkgservice.EntityTypePrivate, dataCreateBoard0_13.BoardType)
+	assert.Equal(title, dataCreateBoard0_13.Title)
+	assert.Equal(types.StatusAlive, dataCreateBoard0_13.Status)
+	assert.Equal(me0_1.ID, dataCreateBoard0_13.CreatorID)
+	assert.Equal(me0_1.ID, dataCreateBoard0_13.UpdaterID)
+
+	// 14. show-board-url
+	marshaled, _ = dataCreateBoard0_13.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_showBoardURL", "params": ["%v"]}`, string(marshaled))
+
+	dataShowBoardURL0_13 := &pkgservice.BackendJoinURL{}
+	testCore(t0, bodyString, dataShowBoardURL0_13, t, isDebug)
+	url0_13 := dataShowBoardURL0_13.URL
+
+	// 15. join-board
+	t.Logf("15. join-board")
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinBoard", "params": ["%v"]}`, url0_13)
+
+	dataJoinBoard1_15 := &pkgservice.BackendJoinRequest{}
+	rbody, _ := testCore(t1, bodyString, dataJoinBoard1_15, t, isDebug)
+	t.Logf("15. join-board: rbody: %v", rbody)
+
+	// wait 10 secs
+	time.Sleep(10 * time.Second)
+
+	// 16. get board list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)
 
-	dataBoardList0_13 := &struct {
+	dataBoardList0_16 := &struct {
 		Result []*content.BackendGetBoard `json:"result"`
 	}{}
 
-	testListCore(t0, bodyString, dataBoardList0_13, t, isDebug)
-	assert.Equal(2, len(dataBoardList0_13.Result))
-	board0_13_0 := dataBoardList0_13.Result[0]
-	assert.Equal(me0_3.BoardID, board0_13_0.ID)
-	assert.Equal(types.StatusAlive, board0_13_0.Status)
+	testListCore(t0, bodyString, dataBoardList0_16, t, isDebug)
+	assert.Equal(3, len(dataBoardList0_16.Result))
 
-	board0_13_1 := dataBoardList0_13.Result[1]
-	assert.Equal(me1_3.BoardID, board0_13_1.ID)
-	assert.Equal(types.StatusAlive, board0_13_1.Status)
-
-	// t1
-	dataBoardList1_13 := &struct {
+	dataBoardList1_16 := &struct {
 		Result []*content.BackendGetBoard `json:"result"`
 	}{}
 
-	testListCore(t1, bodyString, dataBoardList1_13, t, isDebug)
-	assert.Equal(2, len(dataBoardList1_13.Result))
-	board1_13_0 := dataBoardList1_13.Result[0]
-	assert.Equal(me1_3.BoardID, board1_13_0.ID)
-	assert.Equal(types.StatusAlive, board1_13_0.Status)
+	testListCore(t1, bodyString, dataBoardList1_16, t, isDebug)
+	assert.Equal(3, len(dataBoardList1_16.Result))
+	dataBoard1_16_0 := dataBoardList1_16.Result[0]
+	dataBoard1_16_1 := dataBoardList1_16.Result[1]
+	dataBoard1_16_2 := dataBoardList1_16.Result[2]
 
-	board1_13_1 := dataBoardList1_13.Result[1]
-	assert.Equal(me0_3.BoardID, board1_13_1.ID)
-	assert.Equal(types.StatusAlive, board1_13_1.Status)
+	assert.Equal(types.StatusAlive, dataBoard1_16_0.Status)
+	assert.Equal(types.StatusAlive, dataBoard1_16_1.Status)
+	assert.Equal(types.StatusAlive, dataBoard1_16_2.Status)
+
+	// 17. get board list
+	marshaled, _ = dataBoard1_16_0.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
+
+	count0_17, _ := testIntCore(t0, bodyString, t, isDebug)
+	assert.Equal(1, count0_17)
+
+	count1_17, _ := testIntCore(t1, bodyString, t, isDebug)
+	assert.Equal(1, count1_17)
+
+	// 17.1. get board list
+	marshaled, _ = dataBoard1_16_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
+
+	count0_17_1, _ := testIntCore(t0, bodyString, t, isDebug)
+	assert.Equal(1, count0_17_1)
+
+	count1_17_1, _ := testIntCore(t1, bodyString, t, isDebug)
+	assert.Equal(1, count1_17_1)
+
+	// 17.2. get board list
+	marshaled, _ = dataBoard1_16_2.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
+
+	count0_17_2, _ := testIntCore(t0, bodyString, t, isDebug)
+	assert.Equal(1, count0_17_2)
+
+	count1_17_2, _ := testIntCore(t1, bodyString, t, isDebug)
+	assert.Equal(1, count1_17_2)
 }

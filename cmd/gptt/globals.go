@@ -99,6 +99,7 @@ var (
 
 		utils.E2EFlag,
 		utils.PrivateAsPublicFlag,
+		utils.OffsetSecondFlag,
 
 		utils.IdentityFlag,
 

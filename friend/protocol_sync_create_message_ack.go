@@ -40,8 +40,17 @@ func (pm *ProtocolManager) HandleSyncCreateMessageAck(dataBytes []byte, peer *pk
 		pm.SetMessageDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetFriendDB, pm.updateSyncCreateMessage, pm.postcreateMessage, pm.broadcastFriendOplogCore)
+			obj,
+			peer,
+			origObj,
+
+			pm.friendOplogMerkle,
+
+			pm.SetFriendDB,
+			pm.updateSyncCreateMessage,
+			pm.postcreateMessage,
+			pm.broadcastFriendOplogCore,
+		)
 	}
 
 	return nil

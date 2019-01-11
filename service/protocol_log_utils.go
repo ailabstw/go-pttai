@@ -28,13 +28,25 @@ func (pm *BaseProtocolManager) removeBlockAndMediaInfoBySyncInfo(
 	oplog *BaseOplog,
 	isRetainValid bool,
 
+	merkle *Merkle,
+
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 	setLogDB func(oplog *BaseOplog),
 ) error {
 
 	// remove oplog
 	syncLogID := syncInfo.GetLogID()
-	_, err := pm.removeNonSyncOplog(setLogDB, syncLogID, isRetainValid, oplog.UpdateTS, false)
+	_, err := pm.removeNonSyncOplog(
+		setLogDB,
+		syncLogID,
+
+		isRetainValid,
+		oplog.UpdateTS,
+
+		false,
+
+		merkle,
+	)
 	log.Debug("removeBlockAndMediaInfoBySyncInfo: after removeNonSyncOplog", "e", err)
 	if err != nil {
 		return err
@@ -98,6 +110,8 @@ func (pm *BaseProtocolManager) removeNonSyncOplog(
 	newUpdateTS types.Timestamp,
 
 	isLocked bool,
+
+	merkle *Merkle,
 ) (*BaseOplog, error) {
 
 	oplog := &BaseOplog{}
@@ -124,7 +138,7 @@ func (pm *BaseProtocolManager) removeNonSyncOplog(
 
 	if isRetainValid && status == types.StatusAlive && oplog.UpdateTS.IsLess(newUpdateTS) {
 		oplog.IsSync = true
-		err = oplog.Save(true)
+		err = oplog.Save(true, merkle)
 		return oplog, nil
 	}
 

@@ -38,10 +38,21 @@ func (pm *BaseProtocolManager) AddMaster(id *types.PttID, isForce bool) (*Master
 
 	data := &MasterOpCreateMaster{}
 	person, oplog, err := pm.AddPerson(
-		id, MasterOpTypeAddMaster, isForce,
-		origMaster, data,
-		pm.NewMaster, pm.NewMasterOplogWithTS, pm.broadcastMasterOplogCore, pm.postaddMaster,
-		pm.SetMasterDB, pm.NewMasterOplog,
+		id,
+		MasterOpTypeAddMaster,
+		isForce,
+
+		origMaster,
+		data,
+
+		pm.MasterMerkle(),
+
+		pm.NewMaster,
+		pm.NewMasterOplogWithTS,
+		pm.broadcastMasterOplogCore,
+		pm.postaddMaster,
+		pm.SetMasterDB,
+		pm.NewMasterOplog,
 	)
 	if err != nil {
 		return nil, nil, err

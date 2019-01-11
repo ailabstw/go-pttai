@@ -49,6 +49,8 @@ func (pm *ProtocolManager) CreateArticle(title []byte, articleBytes [][]byte, me
 		data,
 		BoardOpTypeCreateArticle,
 
+		pm.boardOplogMerkle,
+
 		pm.NewArticle,
 		pm.NewBoardOplogWithTS,
 		pm.increateArticle,
@@ -177,7 +179,7 @@ func (pm *ProtocolManager) postcreateArticle(theObj pkgservice.Object, oplog *pk
 		return err
 	}
 
-	err = pttOplog.Save(false)
+	err = pttOplog.Save(false, nil)
 	if err != nil {
 		return err
 	}

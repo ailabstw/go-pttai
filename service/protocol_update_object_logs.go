@@ -36,6 +36,8 @@ func (pm *BaseProtocolManager) HandleUpdateObjectLog(
 
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	syncInfoFromOplog func(oplog *BaseOplog, opData OpData) (SyncInfo, error),
 
 	setLogDB func(oplog *BaseOplog),
@@ -47,7 +49,25 @@ func (pm *BaseProtocolManager) HandleUpdateObjectLog(
 
 ) ([]*BaseOplog, error) {
 
-	err := pm.handleUpdateObjectCore(oplog, opData, obj, info, true, syncInfoFromOplog, setLogDB, removeMediaInfoByBlockInfo, postupdate, updateUpdateInfo)
+	err := pm.handleUpdateObjectCore(
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		true,
+
+		merkle,
+
+		syncInfoFromOplog,
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postupdate,
+		updateUpdateInfo,
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +83,8 @@ func (pm *BaseProtocolManager) HandlePendingUpdateObjectLog(
 
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	syncInfoFromOplog func(oplog *BaseOplog, opData OpData) (SyncInfo, error),
 
 	setLogDB func(oplog *BaseOplog),
@@ -74,7 +96,24 @@ func (pm *BaseProtocolManager) HandlePendingUpdateObjectLog(
 
 ) (types.Bool, []*BaseOplog, error) {
 
-	err := pm.handleUpdateObjectCore(oplog, opData, obj, info, false, syncInfoFromOplog, setLogDB, removeMediaInfoByBlockInfo, postUpdate, updateUpdateInfo)
+	err := pm.handleUpdateObjectCore(
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		false,
+
+		merkle,
+
+		syncInfoFromOplog,
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postUpdate,
+		updateUpdateInfo,
+	)
 	if err != nil {
 		return false, nil, err
 	}
@@ -91,6 +130,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 	info ProcessInfo,
 
 	isRetainValid bool,
+
+	merkle *Merkle,
 
 	syncInfoFromOplog func(oplog *BaseOplog, opData OpData) (SyncInfo, error),
 
@@ -167,7 +208,24 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 	}
 	newSyncInfo.SetStatus(types.StatusInternalSync)
 
-	return pm.handleUpdateObjectCoreCore(oplog, opData, origObj, newSyncInfo, info, isRetainValid, setLogDB, removeMediaInfoByBlockInfo, postupdate, updateUpdateInfo)
+	return pm.handleUpdateObjectCoreCore(
+		oplog,
+		opData,
+
+		origObj,
+		newSyncInfo,
+
+		info,
+
+		isRetainValid,
+
+		merkle,
+
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postupdate,
+		updateUpdateInfo,
+	)
 }
 
 /*
@@ -186,6 +244,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectCoreCore(
 
 	isRetainValid bool,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 
@@ -195,7 +255,23 @@ func (pm *BaseProtocolManager) handleUpdateObjectCoreCore(
 
 ) error {
 
-	removeSyncInfo, err := pm.handleUpdateObjectWithNewSyncInfo(origObj, newSyncInfo, oplog, info, isRetainValid, setLogDB, removeMediaInfoByBlockInfo, postupdate)
+	removeSyncInfo, err := pm.handleUpdateObjectWithNewSyncInfo(
+		origObj,
+		newSyncInfo,
+
+		oplog,
+
+		info,
+
+		isRetainValid,
+
+		merkle,
+
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postupdate,
+	)
+
 	if err != nil {
 		return err
 	}
@@ -222,6 +298,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 	info ProcessInfo,
 
 	isRetainValid bool,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
@@ -254,7 +332,23 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 	}
 
 	origSyncInfo := obj.GetSyncInfo()
-	err = pm.handleUpdateObjectDiffLog(obj, syncInfo, newSyncInfo, oplog, info, isRetainValid, setLogDB, removeMediaInfoByBlockInfo, postupdate)
+	err = pm.handleUpdateObjectDiffLog(
+		obj,
+		syncInfo,
+		newSyncInfo,
+
+		oplog,
+
+		info,
+
+		isRetainValid,
+
+		merkle,
+
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postupdate,
+	)
 
 	return origSyncInfo, err
 }
@@ -285,13 +379,26 @@ func (pm *BaseProtocolManager) handleUpdateObjectDiffLog(
 
 	isRetainValid bool,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
 
 	postupdate func(obj Object, oplog *BaseOplog) error,
 
 ) error {
-	err := pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, isRetainValid, removeMediaInfoByBlockInfo, setLogDB)
+	err := pm.removeBlockAndMediaInfoBySyncInfo(
+		origSyncInfo,
+
+		info,
+		oplog,
+		isRetainValid,
+
+		merkle,
+
+		removeMediaInfoByBlockInfo,
+		setLogDB,
+	)
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,14 @@ func (pm *ProtocolManager) HandleSyncUpdateTitleAck(dataBytes []byte, peer *pkgs
 			peer,
 
 			origObj,
-			pm.SetBoardDB, pm.updateSyncTitle, nil, pm.broadcastBoardOplogCore)
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.updateSyncTitle,
+			nil,
+			pm.broadcastBoardOplogCore,
+		)
 	}
 
 	return nil

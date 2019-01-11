@@ -111,6 +111,9 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 	_, err := pm.CreateObject(
 		nil,
 		OpKeyOpTypeCreateOpKey,
+
+		nil,
+
 		pm.NewOpKey,
 		pm.NewOpKeyOplogWithTS,
 		nil,
@@ -142,6 +145,9 @@ func (pm *BaseProtocolManager) ForceCreateOpKey() error {
 	_, err := pm.ForceCreateObject(
 		nil,
 		OpKeyOpTypeCreateOpKey,
+
+		nil,
+
 		pm.NewOpKey,
 		pm.NewOpKeyOplogWithTS,
 		nil,

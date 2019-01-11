@@ -35,6 +35,8 @@ func (pm *ProtocolManager) DeleteComment(id *types.PttID) error {
 		comment,
 		opData,
 
+		pm.boardOplogMerkle,
+
 		pm.SetBoardDB,
 		pm.NewBoardOplog,
 		nil,

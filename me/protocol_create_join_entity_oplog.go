@@ -60,7 +60,7 @@ func (m *MyInfo) CreateJoinEntityOplog(entity pkgservice.Entity) error {
 
 	oplog.IsSync = true
 
-	err = oplog.Save(false)
+	err = oplog.Save(false, pm.meOplogMerkle)
 	if err != nil {
 		return err
 	}

@@ -24,6 +24,8 @@ func (pm *BaseProtocolManager) BaseDeleteMedia(
 	id *types.PttID,
 	op OpType,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
@@ -41,6 +43,8 @@ func (pm *BaseProtocolManager) BaseDeleteMedia(
 		media,
 		opData,
 
+		merkle,
+
 		setLogDB,
 		newOplog,
 		nil,
@@ -50,7 +54,11 @@ func (pm *BaseProtocolManager) BaseDeleteMedia(
 	)
 }
 
-func (pm *BaseProtocolManager) setPendingDeleteMediaSyncInfo(obj Object, status types.Status, oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) setPendingDeleteMediaSyncInfo(
+	obj Object,
+	status types.Status,
+	oplog *BaseOplog,
+) error {
 
 	syncInfo := &BaseSyncInfo{}
 	syncInfo.InitWithOplog(status, oplog)

@@ -384,7 +384,12 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog), pe
 	return logs, failedLogs, nil
 }
 
-func (pm *BaseProtocolManager) IntegrateOplog(oplog *BaseOplog, isLocked bool) (bool, error) {
+func (pm *BaseProtocolManager) IntegrateOplog(
+	oplog *BaseOplog,
+	isLocked bool,
+
+	merkle *Merkle,
+) (bool, error) {
 	if !isLocked {
 		err := oplog.Lock()
 		if err != nil {
@@ -406,7 +411,7 @@ func (pm *BaseProtocolManager) IntegrateOplog(oplog *BaseOplog, isLocked bool) (
 		return false, err
 	}
 
-	err = oplog.Save(true)
+	err = oplog.Save(true, merkle)
 	if err != nil {
 		return false, err
 	}

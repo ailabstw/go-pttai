@@ -143,6 +143,10 @@ func (api *PrivateAPI) GetRawTitle(entityID string) (*Title, error) {
 	return api.b.GetRawTitle([]byte(entityID))
 }
 
+func (api *PrivateAPI) ForceSync(entityID string) (bool, error) {
+	return api.b.ForceSync([]byte(entityID))
+}
+
 type PublicAPI struct {
 	b *Backend
 }
@@ -245,6 +249,10 @@ func (api *PrivateAPI) GetPendingBoardOplogInternalList(entityID string, logID s
 
 func (api *PrivateAPI) GetBoardOplogMerkleNodeList(entityID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
 	return api.b.GetBoardOplogMerkleNodeList([]byte(entityID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+}
+
+func (api *PrivateAPI) GetBoardOplogMerkle(entityID string) (*pkgservice.BackendMerkle, error) {
+	return api.b.GetBoardOplogMerkle([]byte(entityID))
 }
 
 func (api *PrivateAPI) UploadFile(entityID string, filename string, bytes []byte) (*BackendUploadFile, error) {

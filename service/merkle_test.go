@@ -29,8 +29,10 @@ func TestMerkle_SaveMerkleTree(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
-	tDefaultOplog.Save(true)
-	tDefaultOplog2.Save(true)
+	tDefaultMerkle.ResetUpdateTS()
+
+	tDefaultOplog.Save(true, tDefaultMerkle)
+	tDefaultOplog2.Save(true, tDefaultMerkle)
 
 	// define test-structure
 	type fields struct {
@@ -75,8 +77,9 @@ func TestMerkle_GetMerkleTreeList(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
-	tDefaultOplog.Save(true)
-	tDefaultOplog2.Save(true)
+	tDefaultMerkle.ResetUpdateTS()
+	tDefaultOplog.Save(true, tDefaultMerkle)
+	tDefaultOplog2.Save(true, tDefaultMerkle)
 	tDefaultMerkle.SaveMerkleTree(types.Timestamp{Ts: 1234567890, NanoTs: 0})
 
 	// define test-structure

@@ -40,8 +40,17 @@ func (pm *ProtocolManager) HandleSyncCreateCommentAck(dataBytes []byte, peer *pk
 		pm.SetCommentDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetBoardDB, pm.updateSyncCreateComment, pm.postcreateComment, pm.broadcastBoardOplogCore)
+			obj,
+			peer,
+			origObj,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.updateSyncCreateComment,
+			pm.postcreateComment,
+			pm.broadcastBoardOplogCore,
+		)
 	}
 
 	return nil

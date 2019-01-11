@@ -45,7 +45,15 @@ func (pm *ProtocolManager) HandleSyncUpdateUserNameAck(dataBytes []byte, peer *p
 			peer,
 
 			origObj,
-			pm.SetUserDB, pm.updateSyncUserName, nil, pm.broadcastUserOplogCore)
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			pm.updateSyncUserName,
+
+			nil,
+			pm.broadcastUserOplogCore,
+		)
 	}
 
 	return nil

@@ -43,19 +43,97 @@ func (pm *ProtocolManager) HandleAddPendingUserOplogs(dataBytes []byte, peer *pk
  **********/
 
 func (pm *ProtocolManager) HandleSyncUserOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.userOplogMerkle, SyncUserOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.userOplogMerkle,
+
+		ForceSyncUserOplogMsg,
+		ForceSyncUserOplogAckMsg,
+		InvalidSyncUserOplogMsg,
+		SyncUserOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncUserOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.userOplogMerkle,
+		ForceSyncUserOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncUserOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	info := NewProcessUserInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.userOplogMerkle,
+		info,
+
+		pm.SetUserDB,
+		pm.HandleFailedValidUserOplog,
+		pm.SetNewestUserOplog,
+		pm.postprocessFailedValidUserOplogs,
+
+		SyncUserOplogNewOplogsMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleSyncUserOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.userOplogMerkle,
+		ForceSyncUserOplogMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncUserOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.userOplogMerkle, pm.SetUserDB, pm.SetNewestUserOplog, pm.postsyncUserOplogs, SyncUserOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.userOplogMerkle,
+
+		pm.SetUserDB,
+		pm.SetNewestUserOplog,
+		pm.postsyncUserOplogs,
+
+		SyncUserOplogNewOplogsMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewUserOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetUserDB, pm.HandleUserOplogs, pm.SetNewestUserOplog, SyncUserOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetUserDB,
+		pm.HandleUserOplogs,
+		pm.SetNewestUserOplog,
+
+		SyncUserOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewUserOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetUserDB, pm.HandleUserOplogs, pm.postsyncUserOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetUserDB,
+		pm.HandleUserOplogs,
+		pm.postsyncUserOplogs,
+	)
 }
 
 /**********
@@ -63,11 +141,25 @@ func (pm *ProtocolManager) HandleSyncNewUserOplogAck(dataBytes []byte, peer *pkg
  **********/
 
 func (pm *ProtocolManager) HandleSyncPendingUserOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingUserOplogs, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingUserOplogs,
+		pm.SetUserDB,
+		pm.HandleFailedUserOplog,
+
+		SyncPendingUserOplogAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncPendingUserOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingUserOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingUserOplogs,
+	)
 }
 
 /**********
@@ -79,13 +171,37 @@ func (pm *ProtocolManager) HandleUserOplogs(oplogs []*pkgservice.BaseOplog, peer
 	info := NewProcessUserInfo()
 	merkle := pm.userOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetUserDB, pm.processUserLog, pm.postprocessUserOplogs)
+	return pkgservice.HandleOplogs(
+		oplogs,
+		peer,
+
+		isUpdateSyncTime,
+		pm,
+		info,
+		merkle,
+
+		pm.SetUserDB,
+		pm.processUserLog,
+		pm.postprocessUserOplogs,
+	)
 }
 
 func (pm *ProtocolManager) HandlePendingUserOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
 
 	info := NewProcessUserInfo()
 
-	return pkgservice.HandlePendingOplogs(oplogs, peer, pm, info, pm.SetUserDB, pm.processPendingUserLog, pm.processUserLog, pm.postprocessUserOplogs)
+	return pkgservice.HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.SetUserDB,
+		pm.processPendingUserLog,
+		pm.processUserLog,
+		pm.postprocessUserOplogs,
+	)
 }

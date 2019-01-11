@@ -59,6 +59,14 @@ func (pm *ProtocolManager) handleFailedCreateUserNameLog(oplog *pkgservice.BaseO
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateUserNameLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserName()
+	pm.SetUserNameDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

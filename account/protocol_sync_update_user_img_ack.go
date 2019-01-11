@@ -46,7 +46,14 @@ func (pm *ProtocolManager) HandleSyncUpdateUserImgAck(dataBytes []byte, peer *pk
 			peer,
 
 			origObj,
-			pm.SetUserDB, pm.updateSyncUserImg, nil, pm.broadcastUserOplogCore)
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			pm.updateSyncUserImg,
+			nil,
+			pm.broadcastUserOplogCore,
+		)
 
 		log.Debug("HandleSyncUpdateUserImgAck: after HandleSyncUpdateObjectAck", "obj.SyncInfo", obj.SyncInfo)
 	}

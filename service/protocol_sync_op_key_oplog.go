@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -33,7 +34,9 @@ type SyncOpKeyOplog struct {
 
 func (pm *BaseProtocolManager) SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) error {
 	oplogs, failedOplogs, err := pm.getOpKeyOplogs()
+	log.Debug("SyncOpKeyOplog: after getOpKeyOplogs", "oplogs", oplogs, "failedOplogs", failedOplogs, "e", err, "entity", pm.Entity().GetID())
 	err = HandleFailedOplogs(failedOplogs, pm.SetOpKeyDB, pm.HandleFailedOpKeyOplog)
+	log.Debug("SyncOpKeyOplog: after HandleFailedOplogs", "e", err, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}
@@ -47,6 +50,7 @@ func (pm *BaseProtocolManager) SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) err
 	}
 
 	err = pm.SendDataToPeer(syncMsg, data, peer)
+	log.Debug("SyncOpKeyOplogs: after send data", "e", err, "entity", pm.Entity().GetID())
 
 	return nil
 }

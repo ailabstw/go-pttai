@@ -28,7 +28,16 @@ func (pm *BaseProtocolManager) handleTransferMasterLog(oplog *BaseOplog, info *P
 
 	opData := &PersonOpTransferPerson{}
 
-	return pm.HandleTransferPersonLog(oplog, person, opData, pm.SetMasterDB, pm.posttransferMaster)
+	return pm.HandleTransferPersonLog(
+		oplog,
+		person,
+		opData,
+
+		pm.MasterMerkle(),
+
+		pm.SetMasterDB,
+		pm.posttransferMaster,
+	)
 }
 
 func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *types.PttID, theMaster Object, oplog *BaseOplog, opData OpData) error {
@@ -101,7 +110,15 @@ func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, 
 
 	opData := &PersonOpTransferPerson{}
 
-	return pm.HandlePendingTransferPersonLog(oplog, person, opData, pm.SetMasterDB)
+	return pm.HandlePendingTransferPersonLog(
+		oplog,
+		person,
+		opData,
+
+		pm.MasterMerkle(),
+
+		pm.SetMasterDB,
+	)
 }
 
 func (pm *BaseProtocolManager) setNewestTransferMasterLog(oplog *BaseOplog) (types.Bool, error) {
@@ -117,6 +134,16 @@ func (pm *BaseProtocolManager) handleFailedTransferMasterLog(oplog *BaseOplog) e
 	pm.SetMasterObjDB(obj)
 
 	pm.HandleFailedTransferPersonLog(oplog, obj)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) handleFailedValidTransferMasterLog(oplog *BaseOplog) error {
+
+	obj := NewEmptyMaster()
+	pm.SetMasterObjDB(obj)
+
+	pm.HandleFailedValidTransferPersonLog(oplog, obj)
 
 	return nil
 }

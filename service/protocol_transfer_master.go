@@ -40,9 +40,12 @@ func (pm *BaseProtocolManager) TransferMaster(id *types.PttID) error {
 	err := pm.TransferPerson(
 		myID,
 		id,
+
 		MasterOpTypeTransferMaster,
 		origPerson,
 		data,
+
+		pm.MasterMerkle(),
 
 		pm.SetMasterDB, pm.NewMasterOplog, pm.signMasterOplog, pm.setTransferMasterWithOplog, pm.broadcastMasterOplogCore, pm.posttransferMaster)
 	if err != nil {

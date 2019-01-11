@@ -32,6 +32,8 @@ func (pm *BaseProtocolManager) DeletePerson(
 	pendingStatus types.Status,
 	status types.Status,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
@@ -88,19 +90,46 @@ func (pm *BaseProtocolManager) DeletePerson(
 	}
 
 	// 5. update obj
-	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), internalPendingStatus, pendingStatus, status)
+	oplogStatus := types.StatusToDeleteStatus(
+		oplog.ToStatus(),
+		internalPendingStatus,
+		pendingStatus,
+		status,
+	)
 
 	if oplogStatus >= types.StatusDeleted {
-		err = pm.handleDeletePersonLogCore(oplog, origPerson, opData, oplogStatus, setLogDB, postdelete)
+		err = pm.handleDeletePersonLogCore(
+			oplog,
+			origPerson,
+			opData,
+
+			oplogStatus,
+
+			merkle,
+
+			setLogDB,
+			postdelete,
+		)
 	} else {
-		err = pm.handlePendingDeletePersonLogCore(oplog, origPerson, opData, internalPendingStatus, pendingStatus, setLogDB)
+		err = pm.handlePendingDeletePersonLogCore(
+			oplog,
+			origPerson,
+			opData,
+
+			internalPendingStatus,
+			pendingStatus,
+
+			merkle,
+
+			setLogDB,
+		)
 	}
 	if err != nil {
 		return err
 	}
 
 	// 6. oplog
-	err = oplog.Save(true)
+	err = oplog.Save(true, merkle)
 	if err != nil {
 		return err
 	}

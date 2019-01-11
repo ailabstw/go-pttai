@@ -29,6 +29,8 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObjectAck(
 
 	origObj Object,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	updateSyncInfo func(toSyncInfo SyncInfo, fromObj Object, oplog *BaseOplog) error,
 
@@ -104,7 +106,16 @@ func (pm *BaseProtocolManager) HandleSyncUpdateObjectAck(
 		return err
 	}
 
-	err = pm.syncUpdateAckSaveOplog(oplog, syncInfo, origObj, broadcastLog, postupdate)
+	err = pm.syncUpdateAckSaveOplog(
+		oplog,
+		syncInfo,
+		origObj,
+
+		merkle,
+
+		broadcastLog,
+		postupdate,
+	)
 
 	return err
 }
@@ -113,6 +124,8 @@ func (pm *BaseProtocolManager) syncUpdateAckSaveOplog(
 	oplog *BaseOplog,
 	syncInfo SyncInfo,
 	obj Object,
+
+	merkle *Merkle,
 
 	broadcastLog func(oplog *BaseOplog) error,
 	postupdate func(obj Object, oplog *BaseOplog) error,
@@ -127,7 +140,7 @@ func (pm *BaseProtocolManager) syncUpdateAckSaveOplog(
 		pm.SetOplogIsSync(oplog, true, broadcastLog)
 	}
 
-	err := oplog.Save(true)
+	err := oplog.Save(true, merkle)
 	if err != nil {
 		return err
 	}

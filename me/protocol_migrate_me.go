@@ -28,9 +28,19 @@ func (pm *ProtocolManager) MigrateMe(newMyInfo *MyInfo) error {
 	opData := &MeOpMigrateMe{ID: newMyInfo.ID}
 
 	return pm.DeleteEntity(
-		MeOpTypeMigrateMe, opData,
-		types.StatusInternalDeleted, types.StatusPendingMigrate, types.StatusMigrated,
-		pm.NewMeOplog, pm.setPendingDeleteMeSyncInfo, pm.broadcastMeOplogCore, pm.postdeleteMigrateMe)
+		MeOpTypeMigrateMe,
+		opData,
+		types.StatusInternalDeleted,
+		types.StatusPendingMigrate,
+		types.StatusMigrated,
+
+		pm.meOplogMerkle,
+
+		pm.NewMeOplog,
+		pm.setPendingDeleteMeSyncInfo,
+		pm.broadcastMeOplogCore,
+		pm.postdeleteMigrateMe,
+	)
 }
 
 /*

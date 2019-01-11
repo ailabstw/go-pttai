@@ -53,6 +53,9 @@ const (
 	AddPendingMeOplogsMsg
 
 	SyncMeOplogMsg // 47
+	ForceSyncMeOplogMsg
+	ForceSyncMeOplogAckMsg
+	InvalidSyncMeOplogMsg
 	SyncMeOplogAckMsg
 	SyncMeOplogNewOplogsMsg
 	SyncMeOplogNewOplogsAckMsg

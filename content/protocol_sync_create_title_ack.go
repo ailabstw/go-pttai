@@ -19,7 +19,6 @@ package content
 import (
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -35,8 +34,6 @@ func (pm *ProtocolManager) HandleSyncCreateTitleAck(dataBytes []byte, peer *pkgs
 		return err
 	}
 
-	log.Debug("HandleSyncCreateTitleAck: start", "objs", data.Objs)
-
 	if len(data.Objs) == 0 {
 		return nil
 	}
@@ -47,8 +44,17 @@ func (pm *ProtocolManager) HandleSyncCreateTitleAck(dataBytes []byte, peer *pkgs
 		pm.SetTitleDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetBoardDB, pm.updateSyncCreateTitle, nil, pm.broadcastBoardOplogCore)
+			obj,
+			peer,
+			origObj,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.updateSyncCreateTitle,
+			nil,
+			pm.broadcastBoardOplogCore,
+		)
 	}
 
 	return nil
@@ -64,8 +70,6 @@ func (pm *ProtocolManager) updateSyncCreateTitle(theToObj pkgservice.Object, the
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
-
-	log.Debug("updateSyncCreateTitle: start")
 
 	toObj.Title = fromObj.Title
 

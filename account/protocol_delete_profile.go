@@ -28,18 +28,29 @@ func (pm *ProtocolManager) DeleteProfile() error {
 	log.Debug("DeleteProfile: start")
 
 	err := pm.DeleteEntity(
-		UserOpTypeDeleteProfile, opData,
-		types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted,
-		pm.NewUserOplog, pm.setPendingDeleteAccountSyncInfo, pm.broadcastUserOplogCore, pm.postdeleteProfile)
+		UserOpTypeDeleteProfile,
+		opData,
 
-	log.Debug("DeleteProfile: after DeleteEntity", "e", err)
+		types.StatusInternalDeleted,
+		types.StatusPendingDeleted,
+		types.StatusDeleted,
+
+		pm.userOplogMerkle,
+
+		pm.NewUserOplog,
+
+		pm.setPendingDeleteAccountSyncInfo,
+
+		pm.broadcastUserOplogCore,
+		pm.postdeleteProfile,
+	)
+
 	return err
 }
 
 func (pm *ProtocolManager) postdeleteProfile(theOpData pkgservice.OpData, isForce bool) error {
-	myID := pm.Ptt().GetMyEntity().GetID()
 
-	log.Debug("postdeleteProfile: start", "isForce", isForce)
+	myID := pm.Ptt().GetMyEntity().GetID()
 
 	if !isForce && pm.IsMaster(myID, false) {
 		return nil

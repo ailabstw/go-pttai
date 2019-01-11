@@ -40,8 +40,17 @@ func (pm *ProtocolManager) HandleSyncCreateArticleAck(dataBytes []byte, peer *pk
 		pm.SetArticleDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetBoardDB, pm.updateSyncCreateArticle, pm.postcreateArticle, pm.broadcastBoardOplogCore)
+			obj,
+			peer,
+			origObj,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.updateSyncCreateArticle,
+			pm.postcreateArticle,
+			pm.broadcastBoardOplogCore,
+		)
 	}
 
 	return nil

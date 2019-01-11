@@ -33,4 +33,6 @@ type Config struct {
 	ExpireOplogSeconds int
 
 	IsE2E bool
+
+	IsPrivateAsPublic bool
 }

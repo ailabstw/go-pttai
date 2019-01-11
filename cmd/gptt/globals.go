@@ -98,6 +98,7 @@ var (
 		utils.DevP2PFlag,
 
 		utils.E2EFlag,
+		utils.PrivateAsPublicFlag,
 
 		utils.IdentityFlag,
 

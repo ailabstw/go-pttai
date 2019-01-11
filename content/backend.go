@@ -75,6 +75,7 @@ func (b *Backend) APIs() []rpc.API {
 			Namespace: "content",
 			Version:   "1.0",
 			Service:   NewPrivateAPI(b),
+			Public:    pkgservice.IsPrivateAsPublic,
 		},
 		{
 			Namespace: "content",

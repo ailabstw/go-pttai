@@ -37,7 +37,10 @@ var (
 		NodeType: NodeTypeDesktop,
 
 		ExpireOplogSeconds: 180,
-		IsE2E:              false,
+
+		IsE2E: false,
+
+		IsPrivateAsPublic: false,
 	}
 )
 
@@ -286,6 +289,8 @@ var (
 // misc
 var (
 	IsE2E = false
+
+	IsPrivateAsPublic = false
 )
 
 func InitService(dataDir string) error {

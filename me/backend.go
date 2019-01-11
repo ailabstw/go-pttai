@@ -99,11 +99,13 @@ func (b *Backend) APIs() []rpc.API {
 			Namespace: "me",
 			Version:   "1.0",
 			Service:   NewPrivateAPI(b),
+			Public:    pkgservice.IsPrivateAsPublic,
 		},
 		{
 			Namespace: "me",
 			Version:   "1.0",
 			Service:   NewPublicAPI(b),
+			Public:    true,
 		},
 	}
 }

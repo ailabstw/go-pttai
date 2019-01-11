@@ -78,6 +78,11 @@ var (
 		Usage: "e2e environment",
 	}
 
+	PrivateAsPublicFlag = cli.BoolFlag{
+		Name:  "private-as-public",
+		Usage: "Private api as public api",
+	}
+
 	IdentityFlag = cli.StringFlag{
 		Name:  "username",
 		Usage: "Custom user name",

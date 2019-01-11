@@ -98,6 +98,8 @@ func (p *BasePtt) PttAPIs() []rpc.API {
 			Namespace: "ptt",
 			Version:   "1.0",
 			Service:   NewPrivateAPI(p),
+
+			Public: IsPrivateAsPublic,
 		},
 	}
 }

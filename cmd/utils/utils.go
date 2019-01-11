@@ -200,7 +200,13 @@ func SetPttConfig(ctx *cli.Context, cfg *pkgservice.Config, cfgNode *node.Config
 	}
 	pkgservice.IsE2E = cfg.IsE2E
 
-	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds)
+	// private as public
+	if ctx.GlobalIsSet(PrivateAsPublicFlag.Name) {
+		cfg.IsPrivateAsPublic = ctx.GlobalBool(PrivateAsPublicFlag.Name)
+	}
+	pkgservice.IsPrivateAsPublic = cfg.IsPrivateAsPublic
+
+	log.Debug("SetPttConfig: to return", "ExpireOplogSeconds", pkgservice.ExpireOplogSeconds, "IsE2E", pkgservice.IsE2E, "IsPrivateAsPublic", pkgservice.IsPrivateAsPublic)
 
 }
 

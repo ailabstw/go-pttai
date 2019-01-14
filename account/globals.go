@@ -63,6 +63,12 @@ const (
 
 	SyncUpdateUserImgMsg // 60
 	SyncUpdateUserImgAckMsg
+
+	SyncCreateNameCardMsg
+	SyncCreateNameCardAckMsg
+
+	SyncUpdateNameCardMsg // 56
+	SyncUpdateNameCardAckMsg
 )
 
 // user-profile
@@ -90,6 +96,8 @@ var (
 	DBUserNameIdxPrefix = []byte(".umix")
 	DBUserImgPrefix     = []byte(".uidb")
 	DBUserImgIdxPrefix  = []byte(".uiix")
+	DBNameCardPrefix    = []byte(".ncdb")
+	DBNameCardIdxPrefix = []byte(".ncix")
 
 	DBUserNodePrefix     = []byte(".undb")
 	DBUserNodeIdxPrefix  = []byte(".unix")

@@ -322,9 +322,9 @@ func TestMultiDevice3RevokeNode(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_15, t, isDebug)
-	assert.Equal(7, len(dataGetUserOplogList0_15.Result))
+	assert.Equal(8, len(dataGetUserOplogList0_15.Result))
 	//assert.Equal(dataGetUserOplogList0_9_4_1.Result, dataGetUserOplogList0_15.Result[:5])
-	userOplog0_15 := dataGetUserOplogList0_15.Result[6]
+	userOplog0_15 := dataGetUserOplogList0_15.Result[7]
 	assert.Equal(types.StatusAlive, userOplog0_15.ToStatus())
 	assert.Equal(account.UserOpTypeRemoveUserNode, userOplog0_15.Op)
 
@@ -334,9 +334,9 @@ func TestMultiDevice3RevokeNode(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList2_15, t, isDebug)
-	assert.Equal(7, len(dataGetUserOplogList2_15.Result))
+	assert.Equal(8, len(dataGetUserOplogList2_15.Result))
 	//assert.Equal(dataGetUserOplogList0_9_4_1.Result, dataGetUserOplogList2_15.Result[:5])
-	userOplog2_15 := dataGetUserOplogList2_15.Result[6]
+	userOplog2_15 := dataGetUserOplogList2_15.Result[7]
 	assert.Equal(types.StatusAlive, userOplog2_15.ToStatus())
 	assert.Equal(account.UserOpTypeRemoveUserNode, userOplog2_15.Op)
 }

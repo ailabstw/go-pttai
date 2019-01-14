@@ -27,6 +27,7 @@ func NewEmptyApproveJoinProfile() *ApproveJoinEntity {
 		},
 		UserName: NewEmptyUserName(),
 		UserImg:  NewEmptyUserImg(),
+		NameCard: NewEmptyNameCard(),
 	}
 }
 
@@ -34,6 +35,7 @@ type ApproveJoinEntity struct {
 	*pkgservice.ApproveJoinEntity `json:"b"`
 	UserName                      *UserName `json:"n"`
 	UserImg                       *UserImg  `json:"i"`
+	NameCard                      *NameCard `json:"c"`
 }
 
 func (pm *ProtocolManager) ApproveJoin(
@@ -60,10 +62,16 @@ func (pm *ProtocolManager) ApproveJoin(
 		return nil, nil, err
 	}
 
+	nameCard, err := spm.GetNameCardByID(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	data := &ApproveJoinEntity{
 		ApproveJoinEntity: approveJoinEntity.(*pkgservice.ApproveJoinEntity),
 		UserName:          userName,
 		UserImg:           userImg,
+		NameCard:          nameCard,
 	}
 
 	return keyInfo, data, nil

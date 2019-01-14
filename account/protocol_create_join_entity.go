@@ -65,6 +65,12 @@ func (spm *ServiceProtocolManager) CreateJoinEntity(
 		return nil, err
 	}
 
+	// name card
+	err = pm.createJoinEntityNameCard(approveJoin.NameCard)
+	if err != nil {
+		return nil, err
+	}
+
 	return entity, nil
 }
 
@@ -114,6 +120,31 @@ func (pm *ProtocolManager) createJoinEntityUserImg(userImg *UserImg) error {
 	}
 
 	userImg.Save(true)
+
+	return nil
+}
+
+func (pm *ProtocolManager) createJoinEntityNameCard(nameCard *NameCard) error {
+	pm.SetNameCardDB(nameCard)
+
+	err := nameCard.Lock()
+	if err != nil {
+		return err
+	}
+	defer nameCard.Unlock()
+
+	origNameCard := NewEmptyNameCard()
+	pm.SetNameCardDB(origNameCard)
+	origNameCard.SetID(nameCard.GetID())
+
+	err = origNameCard.GetByID(true)
+	if err == nil {
+		if nameCard.UpdateTS.IsLess(origNameCard.UpdateTS) {
+			return nil
+		}
+	}
+
+	nameCard.Save(true)
 
 	return nil
 }

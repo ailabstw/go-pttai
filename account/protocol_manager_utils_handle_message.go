@@ -69,6 +69,16 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case SyncUpdateUserImgAckMsg:
 		err = pm.HandleSyncUpdateUserImgAck(dataBytes, peer)
 
+	// name-card
+	case SyncCreateNameCardMsg:
+		err = pm.HandleSyncCreateNameCard(dataBytes, peer, SyncCreateNameCardAckMsg)
+	case SyncCreateNameCardAckMsg:
+		err = pm.HandleSyncCreateNameCardAck(dataBytes, peer)
+	case SyncUpdateNameCardMsg:
+		err = pm.HandleSyncUpdateNameCard(dataBytes, peer, SyncUpdateNameCardAckMsg)
+	case SyncUpdateNameCardAckMsg:
+		err = pm.HandleSyncUpdateNameCardAck(dataBytes, peer)
+
 	}
 	return nil
 }

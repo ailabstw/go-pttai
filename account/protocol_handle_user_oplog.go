@@ -28,6 +28,8 @@ type ProcessUserInfo struct {
 	UserImgInfo        map[types.PttID]*pkgservice.BaseOplog
 	CreateUserNodeInfo map[types.PttID]*pkgservice.BaseOplog
 	UserNodeInfo       map[types.PttID]*pkgservice.BaseOplog
+	CreateNameCardInfo map[types.PttID]*pkgservice.BaseOplog
+	NameCardInfo       map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessUserInfo() *ProcessUserInfo {
@@ -38,6 +40,8 @@ func NewProcessUserInfo() *ProcessUserInfo {
 		UserImgInfo:        make(map[types.PttID]*pkgservice.BaseOplog),
 		CreateUserNodeInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		UserNodeInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
+		CreateNameCardInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+		NameCardInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -66,6 +70,11 @@ func (pm *ProtocolManager) processUserLog(oplog *pkgservice.BaseOplog, processIn
 		origLogs, err = pm.handleAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 		origLogs, err = pm.handleRemoveUserNodeLog(oplog, info)
+
+	case UserOpTypeCreateNameCard:
+		origLogs, err = pm.handleCreateNameCardLogs(oplog, info)
+	case UserOpTypeUpdateNameCard:
+		origLogs, err = pm.handleUpdateNameCardLogs(oplog, info)
 	}
 	return
 }
@@ -95,6 +104,11 @@ func (pm *ProtocolManager) processPendingUserLog(oplog *pkgservice.BaseOplog, pr
 		isToSign, origLogs, err = pm.handlePendingAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 		isToSign, origLogs, err = pm.handlePendingRemoveUserNodeLog(oplog, info)
+
+	case UserOpTypeCreateNameCard:
+		isToSign, origLogs, err = pm.handlePendingCreateNameCardLogs(oplog, info)
+	case UserOpTypeUpdateNameCard:
+		isToSign, origLogs, err = pm.handlePendingUpdateNameCardLogs(oplog, info)
 	}
 	return
 }
@@ -130,6 +144,14 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 	pm.SyncUserImg(SyncCreateUserImgMsg, createUserImgIDs, peer)
 	pm.SyncUserImg(SyncUpdateUserImgMsg, updateUserImgIDs, peer)
 
+	// name card
+	createNameCardIDs := pkgservice.ProcessInfoToSyncIDList(info.CreateNameCardInfo, UserOpTypeCreateNameCard)
+
+	updateNameCardIDs := pkgservice.ProcessInfoToSyncIDList(info.NameCardInfo, UserOpTypeUpdateNameCard)
+
+	pm.SyncNameCard(SyncCreateNameCardMsg, createNameCardIDs, peer)
+	pm.SyncNameCard(SyncUpdateNameCardMsg, updateNameCardIDs, peer)
+
 	// broadcast
 	pm.broadcastUserOplogsCore(toBroadcastLogs)
 
@@ -158,6 +180,11 @@ func (pm *ProtocolManager) SetNewestUserOplog(oplog *pkgservice.BaseOplog) (err 
 		isNewer, err = pm.setNewestAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
 		isNewer, err = pm.setNewestRemoveUserNodeLog(oplog)
+
+	case UserOpTypeCreateNameCard:
+		isNewer, err = pm.setNewestCreateNameCardLog(oplog)
+	case UserOpTypeUpdateNameCard:
+		isNewer, err = pm.setNewestUpdateNameCardLog(oplog)
 	}
 
 	oplog.IsNewer = isNewer
@@ -185,6 +212,11 @@ func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (e
 		err = pm.handleFailedAddUserNodeLog(oplog)
 	case UserOpTypeRemoveUserNode:
 		err = pm.handleFailedRemoveUserNodeLog(oplog)
+
+	case UserOpTypeCreateNameCard:
+		err = pm.handleFailedCreateNameCardLog(oplog)
+	case UserOpTypeUpdateNameCard:
+		err = pm.handleFailedUpdateNameCardLog(oplog)
 	}
 
 	return

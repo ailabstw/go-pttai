@@ -160,11 +160,6 @@ func (pm *ProtocolManager) postcreateArticle(theObj pkgservice.Object, oplog *pk
 		return nil
 	}
 
-	// no ptt-oplog for personal-entity.
-	if entity.GetEntityType() == pkgservice.EntityTypePersonal {
-		return nil
-	}
-
 	// I can get only my name and my friends' user name
 	accountSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)
 	_, err := accountSPM.GetUserNameByID(article.CreatorID)

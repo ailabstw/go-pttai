@@ -40,6 +40,10 @@ func (api *PrivateAPI) SetMyName(name []byte) (*account.UserName, error) {
 	return api.b.SetMyName(name)
 }
 
+func (api *PrivateAPI) SetMyNameCard(nameCard []byte) (*account.NameCard, error) {
+	return api.b.SetMyNameCard(nameCard)
+}
+
 func (api *PrivateAPI) SetMyNodeName(nodeID string, name []byte) (*MyNode, error) {
 	return api.b.SetMyNodeName([]byte(nodeID), name)
 }

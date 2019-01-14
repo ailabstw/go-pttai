@@ -233,7 +233,7 @@ func TestAccountUserNode(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_14, t, isDebug)
-	assert.Equal(4, len(dataGetUserOplogList0_14.Result))
+	assert.Equal(5, len(dataGetUserOplogList0_14.Result))
 	userOplog0_14 := dataGetUserOplogList0_14.Result[0]
 	assert.Equal(account.UserOpTypeCreateProfile, userOplog0_14.Op)
 	masterSigns0_14 := userOplog0_14.MasterSigns
@@ -252,11 +252,11 @@ func TestAccountUserNode(t *testing.T) {
 	assert.Equal(1, len(masterSigns0_14_2))
 	assert.Equal(me0_3.ID, masterSigns0_14_2[0].ID)
 
-	userOplog0_14_3 := dataGetUserOplogList0_14.Result[3]
-	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_14_3.Op)
-	assert.Equal(userNode0_13.LogID, userOplog0_14_3.ID)
-	assert.Equal(userNode0_13.ID, userOplog0_14_3.ObjID)
-	masterSigns0_14_3 := userOplog0_14_3.MasterSigns
+	userOplog0_14_4 := dataGetUserOplogList0_14.Result[4]
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_14_4.Op)
+	assert.Equal(userNode0_13.LogID, userOplog0_14_4.ID)
+	assert.Equal(userNode0_13.ID, userOplog0_14_4.ObjID)
+	masterSigns0_14_3 := userOplog0_14_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_14_3))
 	assert.Equal(me0_3.ID, masterSigns0_14_3[0].ID)
 }

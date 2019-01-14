@@ -21,48 +21,51 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (spm *ServiceProtocolManager) CreateProfile() (*Profile, error) {
-	entity, err := spm.CreateEntity(nil, UserOpTypeCreateProfile, spm.NewProfile, spm.NewUserOplogWithTS, nil, nil)
+func (pm *ProtocolManager) CreateNameCard(nameCard []byte) error {
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+
+	if !pm.IsMaster(myID, false) {
+		return types.ErrInvalidID
+	}
+
+	_, err := pm.CreateObject(
+		nil,
+		UserOpTypeCreateNameCard,
+
+		pm.NewNameCard,
+		pm.NewUserOplogWithTS,
+		nil,
+
+		pm.SetUserDB,
+		pm.broadcastUserOplogsCore,
+		pm.broadcastUserOplogCore,
+
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	profile, ok := entity.(*Profile)
-	if !ok {
-		return nil, pkgservice.ErrInvalidEntity
-	}
-
-	pm := profile.PM().(*ProtocolManager)
-	err = pm.CreateUserName(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = pm.CreateUserImg()
-	if err != nil {
-		return nil, err
-	}
-
-	err = pm.CreateNameCard(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return profile, nil
+	return nil
 }
 
-func (spm *ServiceProtocolManager) NewProfile(data pkgservice.CreateData, ptt pkgservice.Ptt, service pkgservice.Service) (pkgservice.Entity, pkgservice.OpData, error) {
-	myID := spm.Ptt().GetMyEntity().GetID()
+func (pm *ProtocolManager) NewNameCard(theData pkgservice.CreateData) (pkgservice.Object, pkgservice.OpData, error) {
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	entityID := pm.Entity().GetID()
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	profile, err := NewProfile(myID, ts, ptt, service, spm, spm.GetDBLock())
+	opData := &UserOpCreateNameCard{}
+
+	nameCard, err := NewNameCard(ts, myID, entityID, nil, types.StatusInit, nil)
 	if err != nil {
 		return nil, nil, err
 	}
+	pm.SetNameCardDB(nameCard)
 
-	return profile, &UserOpCreateProfile{}, nil
+	return nameCard, opData, nil
 }

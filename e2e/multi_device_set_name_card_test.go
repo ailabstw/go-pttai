@@ -17,6 +17,7 @@
 package e2e
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 	"time"
@@ -32,7 +33,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceSetUserImg(t *testing.T) {
+func TestMultiDeviceSetNameCard(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
@@ -164,8 +165,8 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_3_4, t, isDebug)
 	assert.Equal(5, len(dataGetUserOplogList0_3_4.Result))
-	userOplog0_3_4 := dataGetUserOplogList0_3_4.Result[0]
-	masterSigns0_3_4 := userOplog0_3_4.MasterSigns
+	userOplog0_3_4_0 := dataGetUserOplogList0_3_4.Result[0]
+	masterSigns0_3_4 := userOplog0_3_4_0.MasterSigns
 	assert.Equal(1, len(masterSigns0_3_4))
 	assert.Equal(me0_3.ID, masterSigns0_3_4[0].ID)
 
@@ -176,8 +177,8 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	}{}
 	testListCore(t1, bodyString, dataGetUserOplogList1_3_4, t, isDebug)
 	assert.Equal(5, len(dataGetUserOplogList1_3_4.Result))
-	userOplog1_3_4 := dataGetUserOplogList1_3_4.Result[0]
-	masterSigns1_3_4 := userOplog1_3_4.MasterSigns
+	userOplog1_3_4_0 := dataGetUserOplogList1_3_4.Result[0]
+	masterSigns1_3_4 := userOplog1_3_4_0.MasterSigns
 	assert.Equal(1, len(masterSigns1_3_4))
 	assert.Equal(me1_3.ID, masterSigns1_3_4[0].ID)
 
@@ -475,6 +476,13 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_10_4_2.Op)
 
+	userOplog0_10_4_3 := dataGetUserOplogList0_10_4.Result[3]
+	masterSigns0_10_4_3 := userOplog0_10_4_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_4_3))
+	assert.Equal(me0_3.ID, masterSigns0_10_4_3[0].ID)
+	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_3.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateNameCard, userOplog0_10_4_3.Op)
+
 	userOplog0_10_4_4 := dataGetUserOplogList0_10_4.Result[4]
 	masterSigns0_10_4_4 := userOplog0_10_4_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4_4))
@@ -518,6 +526,13 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(me1_3.ID, masterSigns1_10_4_2[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog1_10_4_2.Op)
+
+	userOplog1_10_4_3 := dataGetUserOplogList1_10_4.Result[3]
+	masterSigns1_10_4_3 := userOplog1_10_4_3.MasterSigns
+	assert.Equal(1, len(masterSigns1_10_4_3))
+	assert.Equal(me1_3.ID, masterSigns1_10_4_3[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_3.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateNameCard, userOplog1_10_4_3.Op)
 
 	userOplog1_10_4_4 := dataGetUserOplogList1_10_4.Result[4]
 	masterSigns1_10_4_4 := userOplog1_10_4_4.MasterSigns
@@ -563,15 +578,22 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_10_4_1_2.Op)
 
+	userOplog0_10_4_1_3 := dataGetUserOplogList0_10_4_1.Result[3]
+	masterSigns0_10_4_1_3 := userOplog0_10_4_1_3.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_4_1_3))
+	assert.Equal(me1_3.ID, masterSigns0_10_4_1_3[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_3.MasterLogID)
+	assert.Equal(account.UserOpTypeCreateNameCard, userOplog0_10_4_1_3.Op)
+
 	userOplog0_10_4_1_4 := dataGetUserOplogList0_10_4_1.Result[4]
 	masterSigns0_10_4_1_4 := userOplog0_10_4_1_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4_1_4))
 	assert.Equal(me1_3.ID, masterSigns0_10_4_1_4[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_4.MasterLogID)
 	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_1_4.Op)
-	opData0_10_4_1_3 := &account.UserOpAddUserNode{}
-	userOplog0_10_4_1_4.GetData(opData0_10_4_1_3)
-	assert.Equal(me1_1.NodeID, opData0_10_4_1_3.NodeID)
+	opData0_10_4_1_4 := &account.UserOpAddUserNode{}
+	userOplog0_10_4_1_4.GetData(opData0_10_4_1_4)
+	assert.Equal(me1_1.NodeID, opData0_10_4_1_4.NodeID)
 
 	userOplog0_10_4_1_5 := dataGetUserOplogList0_10_4_1.Result[5]
 	masterSigns0_10_4_1_5 := userOplog0_10_4_1_5.MasterSigns
@@ -579,48 +601,78 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(me1_3.ID, masterSigns0_10_4_1_5[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_5.MasterLogID)
 	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_1_5.Op)
-	opData0_10_4_1_4 := &account.UserOpAddUserNode{}
-	userOplog0_10_4_1_5.GetData(opData0_10_4_1_4)
-	assert.Equal(me0_1.NodeID, opData0_10_4_1_4.NodeID)
+	opData0_10_4_1_5 := &account.UserOpAddUserNode{}
+	userOplog0_10_4_1_5.GetData(opData0_10_4_1_5)
+	assert.Equal(me0_1.NodeID, opData0_10_4_1_5.NodeID)
 
 	assert.Equal(dataGetUserOplogList1_10_4, dataGetUserOplogList0_10_4_1)
 
-	// 16. my_setMyImg
-	normalizedImgStr := "data:image/png;base64,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"
+	// 11. set user name
+	myName := base64.StdEncoding.EncodeToString([]byte("老蕭"))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_setMyNameCard", "params": ["%v"]}`, myName)
 
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_setMyImage", "params": ["%v"]}`, "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==")
-	t.Logf("setMyImage: bodyString: %v", bodyString)
-	dataSetMyImg0_16 := &account.UserImg{}
-	testCore(t0, bodyString, dataSetMyImg0_16, t, false)
-	assert.Equal(me1_1.ID, dataSetMyImg0_16.ID)
+	dataSetMyName0_11 := &account.NameCard{}
+	testCore(t0, bodyString, dataSetMyName0_11, t, isDebug)
+	assert.Equal(me1_1.ID, dataSetMyName0_11.ID)
 
 	t.Logf("wait 10 seconds for sync")
 	time.Sleep(10 * time.Second)
 
-	// 17. get user img
+	// 12. get user name
 	marshaled, _ = me1_1.ID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawUserImg", "params": ["%v"]}`, string(marshaled))
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawNameCard", "params": ["%v"]}`, string(marshaled))
 
-	dataGetUserImg0_17 := &account.UserImg{}
-	testCore(t0, bodyString, dataGetUserImg0_17, t, isDebug)
-	assert.Equal(me1_1.ID, dataGetUserImg0_17.ID)
-	assert.Equal(account.ImgTypePNG, dataGetUserImg0_17.ImgType)
-	assert.Equal(uint16(account.MaxProfileImgWidth), dataGetUserImg0_17.Width)
-	assert.Equal(uint16(account.MaxProfileImgHeight), dataGetUserImg0_17.Height)
-	assert.Equal(normalizedImgStr, dataGetUserImg0_17.Str)
-	assert.Equal(types.StatusAlive, dataGetUserImg0_17.Status)
+	dataGetNameCard0_12 := &account.NameCard{}
+	testCore(t0, bodyString, dataGetNameCard0_12, t, isDebug)
+	assert.Equal(me1_1.ID, dataGetNameCard0_12.ID)
+	assert.Equal([]byte("老蕭"), dataGetNameCard0_12.Card)
 
-	var nilSyncUserImgInfo *account.SyncUserImgInfo
-	assert.Equal(nilSyncUserImgInfo, dataGetUserImg0_17.SyncInfo)
+	dataGetNameCard1_12 := &account.NameCard{}
+	testCore(t1, bodyString, dataGetNameCard1_12, t, isDebug)
+	assert.Equal(me1_1.ID, dataGetNameCard1_12.ID)
+	assert.Equal([]byte("老蕭"), dataGetNameCard1_12.Card)
 
-	dataGetUserImg1_17 := &account.UserImg{}
-	testCore(t1, bodyString, dataGetUserImg1_17, t, isDebug)
-	assert.Equal(me1_1.ID, dataGetUserImg1_17.ID)
-	assert.Equal(account.ImgTypePNG, dataGetUserImg1_17.ImgType)
-	assert.Equal(uint16(account.MaxProfileImgWidth), dataGetUserImg1_17.Width)
-	assert.Equal(uint16(account.MaxProfileImgHeight), dataGetUserImg1_17.Height)
-	assert.Equal(normalizedImgStr, dataGetUserImg1_17.Str)
-	assert.Equal(types.StatusAlive, dataGetUserImg1_17.Status)
+	// 13. getUserOplogList
+	// t1
+	t.Logf("13 GetUserOplogList: t1")
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList1_13 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetUserOplogList1_13, t, isDebug)
+	assert.Equal(7, len(dataGetUserOplogList1_13.Result))
+	assert.Equal(dataGetUserOplogList1_10_4.Result, dataGetUserOplogList1_13.Result[:6])
 
-	assert.Equal(nilSyncUserImgInfo, dataGetUserImg1_17.SyncInfo)
+	userOplog1_13_6 := dataGetUserOplogList1_13.Result[6]
+	masterSigns1_13_6 := userOplog1_13_6.MasterSigns
+	assert.Equal(1, len(masterSigns1_13_6))
+	assert.Equal(me1_1.ID, masterSigns1_13_6[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog1_13_6.MasterLogID)
+	assert.Equal(account.UserOpTypeUpdateNameCard, userOplog1_13_6.Op)
+
+	// new t0 (should be the same as t1)
+	t.Logf("13 GetUserOplogList: new t0")
+	marshaled, _ = profile1_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getUserOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	dataGetUserOplogList0_13 := &struct {
+		Result []*account.UserOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetUserOplogList0_13, t, isDebug)
+	assert.Equal(7, len(dataGetUserOplogList0_13.Result))
+	assert.Equal(dataGetUserOplogList0_10_4_1.Result, dataGetUserOplogList0_13.Result[:6])
+
+	userOplog0_13_6 := dataGetUserOplogList0_13.Result[6]
+	masterSigns0_13_6 := userOplog0_13_6.MasterSigns
+	assert.Equal(1, len(masterSigns0_13_6))
+	assert.Equal(me1_1.ID, masterSigns0_13_6[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog0_13_6.MasterLogID)
+	assert.Equal(account.UserOpTypeUpdateNameCard, userOplog0_13_6.Op)
+	opData0_13_4 := &account.UserOpUpdateNameCard{}
+	userOplog0_13_6.GetData(opData0_13_4)
+	hash0_13_6 := types.Hash(dataGetNameCard0_12.Card)
+	assert.Equal(hash0_13_6, opData0_13_4.Hash)
+
+	assert.Equal(dataGetUserOplogList1_13, dataGetUserOplogList0_13)
+
 }

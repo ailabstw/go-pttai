@@ -16,46 +16,37 @@
 
 package account
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"encoding/json"
 
-type BackendUserName struct {
-	ID   *types.PttID
-	Name []byte `json:"N"`
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
+
+type SyncNameCardAck struct {
+	Objs []*NameCard `json:"o"`
 }
 
-func userNameToBackendUserName(u *UserName) *BackendUserName {
-	return &BackendUserName{
-		ID:   u.ID,
-		Name: u.Name,
+func (pm *ProtocolManager) HandleSyncCreateNameCardAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	data := &SyncNameCardAck{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
 	}
-}
 
-type BackendUserImg struct {
-	ID     *types.PttID
-	Type   ImgType `json:"T"`
-	Img    string  `json:"I"`
-	Width  uint16  `json:"W"`
-	Height uint16  `json:"H"`
-}
-
-func userImgToBackendUserImg(u *UserImg) *BackendUserImg {
-	return &BackendUserImg{
-		ID:     u.ID,
-		Type:   u.ImgType,
-		Img:    u.Str, //XXX TODO: ensure the img
-		Width:  u.Width,
-		Height: u.Height,
+	if len(data.Objs) == 0 {
+		return nil
 	}
-}
 
-type BackendNameCard struct {
-	ID   *types.PttID
-	Card []byte `json:"C"`
-}
+	origObj := NewEmptyNameCard()
+	pm.SetNameCardDB(origObj)
+	for _, obj := range data.Objs {
+		pm.SetNameCardDB(obj)
 
-func userNameToBackendNameCard(u *NameCard) *BackendNameCard {
-	return &BackendNameCard{
-		ID:   u.ID,
-		Card: u.Card,
+		pm.HandleSyncCreateObjectAck(
+			obj, peer, origObj,
+			pm.SetUserDB, nil, nil, pm.broadcastUserOplogCore)
 	}
+
+	return nil
 }

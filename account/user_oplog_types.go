@@ -37,6 +37,9 @@ const (
 	UserOpTypeCreateUserImg
 	UserOpTypeUpdateUserImg
 
+	UserOpTypeCreateNameCard
+	UserOpTypeUpdateNameCard
+
 	NUserOpType
 )
 
@@ -69,5 +72,12 @@ type UserOpCreateUserImg struct {
 }
 
 type UserOpUpdateUserImg struct {
+	Hash []byte `json:"H"`
+}
+
+type UserOpCreateNameCard struct {
+}
+
+type UserOpUpdateNameCard struct {
 	Hash []byte `json:"H"`
 }

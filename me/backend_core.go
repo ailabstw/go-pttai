@@ -38,6 +38,15 @@ func (b *Backend) SetMyName(name []byte) (*account.UserName, error) {
 	return myProfilePM.UpdateUserName(name)
 }
 
+func (b *Backend) SetMyNameCard(nameCard []byte) (*account.NameCard, error) {
+
+	myInfo := b.SPM().(*ServiceProtocolManager).MyInfo
+
+	myProfilePM := myInfo.Profile.PM().(*account.ProtocolManager)
+
+	return myProfilePM.UpdateNameCard(nameCard)
+}
+
 func (b *Backend) SetMyNodeName(nodeIDBytes []byte, name []byte) (*MyNode, error) {
 	return nil, types.ErrNotImplemented
 }

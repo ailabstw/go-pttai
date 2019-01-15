@@ -177,13 +177,20 @@ function open_window () {
         gptt_win.on('close', (e) => {
           e.preventDefault();
           gptt_win.hide();
+
+          if (process.platform !== "darwin") {
+            //spawn("taskkill", ["/PID", gptt_node.pid, "/F", "T"])
+            spawn("taskkill", ["/F", "/IM", "gptt.exe", "/T"])
+            spawn("taskkill", ["/F", "/IM", "Pttai.exe", "/T"])
+          }
         });
 
         app.on('before-quit', (e) => {
           // Handle menu-item or keyboard shortcut quit here
           gptt_win = null
-          if (process.platform === "win32") {
-            spawn("taskkill", ["/pid", gptt_node.pid, '/f', '/t']);
+          if (process.platform !== "darwin") {
+            spawn("taskkill", ["/F", "/IM", "gptt.exe", "/T"])
+            spawn("taskkill", ["/F", "/IM", "Pttai.exe", "/T"])
           } else {
             gptt_node.kill()
           }

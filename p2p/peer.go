@@ -205,17 +205,16 @@ loop:
 	for {
 		select {
 		case err = <-writeErr:
-			p.log.Debug("Peer.run: after write", "e", err)
 			// A write finished. Allow the next write to start if
 			// there was no error.
 			if err != nil {
+				p.log.Error("Peer.run: unable to write", "e", err, "p", p)
 				reason = DiscNetworkError
 				break loop
 			}
 			writeStart <- struct{}{}
-			p.log.Debug("Peer.run: after writeStart")
 		case err = <-readErr:
-			p.log.Debug("Peer.run: after read", "e", err)
+			p.log.Error("Peer.run: unable to read", "e", err, "p", p)
 			if r, ok := err.(DiscReason); ok {
 				remoteRequested = true
 				reason = r
@@ -224,11 +223,11 @@ loop:
 			}
 			break loop
 		case err = <-p.protoErr:
-			p.log.Debug("Peer.run: after proto", "e", err)
+			p.log.Error("Peer.run: unable to proto", "e", err, "p", p)
 			reason = discReasonForError(err)
 			break loop
 		case err = <-p.disc:
-			p.log.Debug("Peer.run: after disc", "e", err)
+			p.log.Error("Peer.run: unable to disc", "e", err, "p", p)
 			reason = discReasonForError(err)
 			break loop
 		}
@@ -409,15 +408,12 @@ func (rw *protoRW) WriteMsg(msg Msg) (err error) {
 	msg.Code += rw.offset
 	select {
 	case <-rw.wstart:
-		log.Debug("WriteMsg: to writeMsg")
 		err = rw.w.WriteMsg(msg)
-		log.Debug("WriteMsg: after writeMsg", "e", err)
 		// Report write status back to Peer.run. It will initiate
 		// shutdown if the error is non-nil and unblock the next write
 		// otherwise. The calling protocol code should exit for errors
 		// as well but we don't want to rely on that.
 		rw.werr <- err
-		log.Debug("WriteMsg: after werr")
 	case <-rw.closed:
 		err = fmt.Errorf("shutting down")
 	}

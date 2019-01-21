@@ -33,6 +33,8 @@ func (pm *ProtocolManager) CreateUserImg() error {
 		nil,
 		UserOpTypeCreateUserImg,
 
+		pm.userOplogMerkle,
+
 		pm.NewUserImg,
 		pm.NewUserOplogWithTS,
 		nil,

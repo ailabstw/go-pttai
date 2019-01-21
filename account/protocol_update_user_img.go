@@ -57,9 +57,26 @@ func (pm *ProtocolManager) UpdateUserImg(imgStr string) (*UserImg, error) {
 	opData := &UserOpUpdateUserImg{}
 
 	err = pm.UpdateObject(
-		myID, data, UserOpTypeUpdateUserImg, origObj, opData,
+		myID,
 
-		pm.SetUserDB, pm.NewUserOplog, pm.inupdateUserImg, nil, pm.broadcastUserOplogCore, nil)
+		data,
+		UserOpTypeUpdateUserImg,
+
+		origObj,
+
+		opData,
+
+		pm.userOplogMerkle,
+
+		pm.SetUserDB,
+		pm.NewUserOplog,
+		pm.inupdateUserImg,
+
+		nil,
+
+		pm.broadcastUserOplogCore,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,19 @@ func PMOplogMerkleTreeLoop(pm ProtocolManager, merkle *Merkle) error {
 	ticker := time.NewTicker(merkle.GenerateSeconds)
 	defer ticker.Stop()
 
+	// init
+	var ts types.Timestamp
+
+	merkle.LoadToUpdateTSs()
+	tsList, err := merkle.LoadUpdatingTSList()
+	log.Debug("PMOplogMerkleTreeLoop: after LoadUpdatingTSList", "tsList", tsList, "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	if err == nil {
+		for _, sec := range tsList {
+			ts.Ts = sec
+			merkle.SetUpdateTS(ts)
+		}
+	}
+
 	pmGenerateOplogMerkleTree(pm, merkle)
 
 loop:
@@ -68,13 +81,24 @@ func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 	}()
 
 	// save-merkle-tree
+	toUpdateTSList, err := merkle.GetAndResetToUpdateTSList()
+	if err != nil {
+		return err
+	}
 
-	ts := merkle.LastGenerateTS
-	for ; ts.IsLess(now); ts.Ts += 3600 {
-		err := merkle.SaveMerkleTree(ts)
+	log.Debug("pmGenerateOplogMerkleTree: to for-loop", "toUpdateTSList", toUpdateTSList, "entity", pm.Entity().GetID())
+
+	var ts types.Timestamp
+	for _, sec := range toUpdateTSList {
+		ts.Ts = sec
+		err = merkle.SaveMerkleTree(ts)
 		if err != nil {
 			break
 		}
+	}
+
+	if err == nil {
+		merkle.ResetUpdatingTSList()
 	}
 
 	log.Debug("pmGenerateOplogMerkleTree: done", "entity", pm.Entity().GetID())

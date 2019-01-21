@@ -30,6 +30,8 @@ func (pm *BaseProtocolManager) DeleteObject(
 	origObj Object,
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
@@ -103,16 +105,43 @@ func (pm *BaseProtocolManager) DeleteObject(
 	log.Debug("DeleteObject: to core", "oplogStatus", oplogStatus, "statusDelete", types.StatusDeleted)
 
 	if oplogStatus >= types.StatusDeleted {
-		err = pm.handleDeleteObjectLogCore(oplog, nil, origObj, opData, setLogDB, nil, postdelete, nil)
+		err = pm.handleDeleteObjectLogCore(
+			oplog,
+			nil,
+
+			origObj,
+			opData,
+
+			merkle,
+
+			setLogDB,
+			nil,
+			postdelete,
+			nil,
+		)
 	} else {
-		err = pm.handlePendingDeleteObjectLogCore(oplog, nil, origObj, opData, setLogDB, nil, setPendingDeleteSyncInfo, nil)
+		err = pm.handlePendingDeleteObjectLogCore(
+			oplog,
+			nil,
+
+			origObj,
+			opData,
+
+			merkle,
+
+			setLogDB,
+
+			nil,
+			setPendingDeleteSyncInfo,
+			nil,
+		)
 	}
 	if err != nil {
 		return err
 	}
 
 	// 6. oplog save
-	err = oplog.Save(false)
+	err = oplog.Save(false, merkle)
 	if err != nil {
 		return err
 	}

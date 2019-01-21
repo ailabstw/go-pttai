@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
@@ -250,5 +251,25 @@ func MerkleNodeToBackendMerkleNode(m *MerkleNode) *BackendMerkleNode {
 		UpdateTS:  m.UpdateTS,
 		NChildren: m.NChildren,
 		Key:       m.Key,
+	}
+}
+
+type BackendMerkle struct {
+	LastGenerateTS        types.Timestamp `json:"LG"`
+	BusyGenerateTS        types.Timestamp `json:"BG"`
+	LastSyncTS            types.Timestamp `json:"LS"`
+	LastFailSyncTS        types.Timestamp `json:"LF"`
+	GenerateSeconds       time.Duration   `json:"G"`
+	ExpireGenerateSeconds int64           `json:"E"`
+}
+
+func MerkleToBackendMerkle(m *Merkle) *BackendMerkle {
+	return &BackendMerkle{
+		LastGenerateTS:        m.LastGenerateTS,
+		BusyGenerateTS:        m.BusyGenerateTS,
+		LastSyncTS:            m.LastSyncTS,
+		LastFailSyncTS:        m.LastFailSyncTS,
+		GenerateSeconds:       m.GenerateSeconds,
+		ExpireGenerateSeconds: m.ExpireGenerateSeconds,
 	}
 }

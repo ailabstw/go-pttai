@@ -39,7 +39,7 @@ func TestPttPeers(t *testing.T) {
 
 	// 1. ptt_countPeers. ensure connecting to each other.
 	bodyString = `{"id": "testID", "method": "ptt_countPeers", "params": []}`
-	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":2}}`
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":{"M":0,"I":0,"E":0,"R":0}}`
 	testBodyEqualCore(t0, bodyString, resultString, t)
 	testBodyEqualCore(t1, bodyString, resultString, t)
 	testBodyEqualCore(t2, bodyString, resultString, t)

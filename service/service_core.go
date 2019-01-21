@@ -382,3 +382,14 @@ func (svc *BaseService) EntityIDToPM(entityIDBytes []byte) (ProtocolManager, err
 	}
 	return entity.PM(), nil
 }
+
+func (b *BaseService) ForceSync(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+
+	thePM.ForceSync() <- struct{}{}
+
+	return true, nil
+}

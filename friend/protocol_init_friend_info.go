@@ -174,7 +174,7 @@ func (pm *ProtocolManager) postcreateFriend(entity pkgservice.Entity) error {
 	if err != nil {
 		return err
 	}
-	err = oplog.Save(false)
+	err = oplog.Save(false, nil)
 	if err != nil {
 		return err
 	}

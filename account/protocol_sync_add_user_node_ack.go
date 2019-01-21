@@ -32,8 +32,18 @@ func (pm *ProtocolManager) HandleSyncAddUserNodeAck(objs []*UserNode, peer *pkgs
 		pm.SetUserNodeDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetUserDB, pm.updateCreateUserNode, pm.postcreateUserNode, pm.broadcastUserOplogCore)
+			obj,
+			peer,
+
+			origObj,
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			pm.updateCreateUserNode,
+			pm.postcreateUserNode,
+			pm.broadcastUserOplogCore,
+		)
 	}
 
 	return nil

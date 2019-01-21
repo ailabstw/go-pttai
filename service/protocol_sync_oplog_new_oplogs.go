@@ -34,13 +34,23 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 	myNewKeys [][]byte,
 	theirNewKeys [][]byte,
 	peer *PttPeer,
+
+	merkle *Merkle,
+	myLastNode *MerkleNode,
+
 	setDB func(oplog *BaseOplog),
 	setNewestOplog func(log *BaseOplog) error,
 	postsync func(peer *PttPeer) error,
+
 	newLogsMsg OpType,
+
 ) error {
 
 	if len(theirNewKeys) == 0 && len(myNewKeys) == 0 {
+		if myLastNode != nil {
+			merkle.SaveSyncTime(myLastNode.UpdateTS)
+		}
+
 		if postsync != nil {
 			return postsync(peer)
 		}

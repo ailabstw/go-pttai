@@ -39,30 +39,40 @@ looping:
 				break looping
 			}
 
-			log.Debug("PMSync: received NewPeerCh", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
-			log.Debug("PMSync: NewPeerCh: after Sync", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			if err != nil {
 				log.Error("unable to Sync after newPeer", "e", err, "peer", peer)
 			}
+		case <-pm.ForceSync():
+			log.Debug("PMSync: ForceSync: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			peer, err = pmSyncPeer(pm)
+			log.Debug("PMSync: ForceSync: after pmSyncPeer", "entity", pm.Entity(), "peer", peer, "e", err)
+			if err != nil {
+				break looping
+			}
+
+			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
+			log.Debug("PMSync: ForceSync: to Sync", "entity", pm.Entity(), "peer", peer)
+			err = pm.Sync(peer)
+			log.Debug("PMSync: ForceSync: after Sync", "entity", pm.Entity(), "peer", peer)
+			if err != nil {
+				log.Error("unable to Sync after forceSync", "e", err, "peer", peer)
+			}
+
 		case <-forceSyncTicker.C:
 			forceSyncTicker.Stop()
 			forceSyncTicker = time.NewTicker(pm.ForceSyncCycle())
 
 			peer, err = pmSyncPeer(pm)
-
-			log.Debug("PMSync: forceSync: after syncPeer", "peer", peer, "e", err, "entity", pm.Entity().GetID())
-
 			if err != nil {
 				break looping
 			}
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
-			log.Debug("PMSync: forceSync: after Sync", "peer", peer, "e", err, "entity", pm.Entity().GetID())
 			if err != nil {
-				log.Error("unable to Sync after forceSync", "e", err)
+				log.Error("unable to Sync after forceSyncTicker", "e", err, "peer", peer)
 			}
 		case <-pm.QuitSync():
 			log.Debug("PMSync: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
@@ -100,6 +110,10 @@ func (pm *BaseProtocolManager) ForceSyncCycle() time.Duration {
 
 func (pm *BaseProtocolManager) QuitSync() chan struct{} {
 	return pm.quitSync
+}
+
+func (pm *BaseProtocolManager) ForceSync() chan struct{} {
+	return pm.forceSync
 }
 
 func (pm *BaseProtocolManager) SyncWG() *sync.WaitGroup {

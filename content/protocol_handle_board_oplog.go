@@ -312,6 +312,81 @@ func (pm *ProtocolManager) HandleFailedBoardOplog(oplog *pkgservice.BaseOplog) (
 }
 
 /**********
+ * Handle Failed Valid Oplog
+ **********/
+
+func (pm *ProtocolManager) HandleFailedValidBoardOplog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (err error) {
+
+	info, ok := processInfo.(*ProcessBoardInfo)
+	if !ok {
+		err = pkgservice.ErrInvalidData
+	}
+
+	switch oplog.Op {
+	case BoardOpTypeDeleteBoard:
+	case BoardOpTypeMigrateBoard:
+
+	case BoardOpTypeCreateTitle:
+		err = pm.handleFailedValidCreateTitleLog(oplog, info)
+	case BoardOpTypeUpdateTitle:
+		err = pm.handleFailedValidUpdateTitleLog(oplog, info)
+
+	case BoardOpTypeCreateArticle:
+		err = pm.handleFailedValidCreateArticleLog(oplog, info)
+	case BoardOpTypeUpdateArticle:
+		err = pm.handleFailedValidUpdateArticleLog(oplog, info)
+	case BoardOpTypeDeleteArticle:
+		err = pm.handleFailedValidDeleteArticleLog(oplog, info)
+
+	case BoardOpTypeCreateMedia:
+		err = pm.HandleFailedValidCreateMediaLog(oplog, info)
+	case BoardOpTypeDeleteMedia:
+		err = pm.handleFailedValidDeleteMediaLog(oplog, info)
+
+	case BoardOpTypeCreateComment:
+		err = pm.handleFailedValidCreateCommentLog(oplog, info)
+	case BoardOpTypeDeleteComment:
+		err = pm.handleFailedValidDeleteCommentLog(oplog, info)
+
+	case BoardOpTypeCreateReply:
+	case BoardOpTypeUpdateReply:
+	case BoardOpTypeDeleteReply:
+	}
+
+	return
+}
+
+func (pm *ProtocolManager) postprocessFailedValidBoardOplogs(processInfo pkgservice.ProcessInfo, peer *pkgservice.PttPeer) error {
+
+	info, ok := processInfo.(*ProcessBoardInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	// title
+	titleIDs := pkgservice.ProcessInfoToForceSyncIDList(info.TitleInfo)
+
+	pm.ForceSyncTitle(titleIDs, peer)
+
+	// article
+	articleIDs := pkgservice.ProcessInfoToForceSyncIDList(info.ArticleInfo)
+
+	pm.ForceSyncArticle(articleIDs, peer)
+
+	// comment
+	commentIDs := pkgservice.ProcessInfoToForceSyncIDList(info.CommentInfo)
+
+	pm.ForceSyncComment(commentIDs, peer)
+
+	// media
+	mediaIDs := pkgservice.ProcessInfoToForceSyncIDList(info.MediaInfo)
+
+	pm.ForceSyncMedia(mediaIDs, peer, ForceSyncMediaMsg)
+
+	return nil
+}
+
+/**********
  * Postsync Oplog
  **********/
 

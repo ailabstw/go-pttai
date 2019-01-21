@@ -14,27 +14,51 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package e2e
+package service
 
 import (
-	"testing"
-	"time"
+	"encoding/json"
+
+	"github.com/ailabstw/go-pttai/common/types"
 )
 
-func TestMultiDeviceEmpty(t *testing.T) {
-	NNodes = 3
-	// isDebug := true
+type ForceSyncOplog struct {
+	FromTS types.Timestamp `json:"f"`
+	ToTS   types.Timestamp `json:"t"`
+}
 
-	//var err error
-	//var bodyString string
-	//var marshaledID []byte
-	//var dummyBool bool
-	//assert := assert.New(t)
+func (pm *BaseProtocolManager) ForceSyncOplog(
+	fromTS types.Timestamp,
+	toTS types.Timestamp,
 
-	setupTest(t)
-	defer teardownTest(t)
+	forceSyncOplogMsg OpType,
 
-	time.Sleep(TimeSleepRestart)
-	time.Sleep(TimeSleepRestart)
+	peer *PttPeer,
+) error {
 
+	data := &ForceSyncOplog{
+		FromTS: fromTS,
+		ToTS:   toTS,
+	}
+
+	pm.SendDataToPeer(forceSyncOplogMsg, data, peer)
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncOplog(
+	dataBytes []byte,
+	peer *PttPeer,
+
+	merkle *Merkle,
+	forceSyncOplogAckMsg OpType,
+) error {
+
+	data := &ForceSyncOplog{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	return pm.ForceSyncOplogAck(data.FromTS, data.ToTS, merkle, forceSyncOplogAckMsg, peer)
 }

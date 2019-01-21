@@ -142,14 +142,43 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 	}
 
 	b, err := pkgservice.NewBaseProtocolManager(
-		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, MaxMasters,
-		pm.InternalSignMyOplog, pm.IsValidMyOplog, pm.ValidateIntegrateSignMyOplog, pm.SetMeDB,
-		pm.IsMaster, pm.IsMember, pm.GetPeerType, pm.IsMyDevice, pm.IsImportantPeer, pm.IsMemberPeer, pm.IsPendingPeer,
+		ptt,
+
+		RenewOpKeySeconds,
+		ExpireOpKeySeconds,
+		MaxSyncRandomSeconds,
+		MinSyncRandomSeconds,
+
+		MaxMasters,
+
+		pm.meOplogMerkle, // log0Merkle
+
+		// sign
+		pm.InternalSignMyOplog,
+		pm.IsValidMyOplog,
+		pm.ValidateIntegrateSignMyOplog,
+
+		pm.SetMeDB, // setLog0DB
+
+		pm.IsMaster, // isMaster
+		pm.IsMember, // isMember
+
+		// peer-type
+		pm.GetPeerType,
+		pm.IsMyDevice,
+		pm.IsImportantPeer,
+		pm.IsMemberPeer,
+		pm.IsPendingPeer,
+
 		nil, // postsyncMemberOplog
 		nil, // leave
 		nil, // theDelete
 		nil, // postdelete
-		myInfo, dbMe)
+
+		myInfo, // entity
+
+		dbMe, // db
+	)
 	if err != nil {
 		return nil, err
 	}

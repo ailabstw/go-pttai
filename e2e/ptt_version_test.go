@@ -32,7 +32,7 @@ func TestPttVersion(t *testing.T) {
 	t0 := baloo.New("http://127.0.0.1:9450")
 
 	bodyString := `{"id": "testID", "method": "ptt_getVersion", "params": []}`
-	resultString := `{"jsonrpc":"2.0","id":"testID","result":"0.1.0-unstable"}`
+	resultString := `{"jsonrpc":"2.0","id":"testID","result":"0.1.1"}`
 
 	testBodyEqualCore(t0, bodyString, resultString, t)
 }

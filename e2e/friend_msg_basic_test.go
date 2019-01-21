@@ -31,7 +31,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestFriendMsg(t *testing.T) {
+func TestFriendMsgBasic(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 

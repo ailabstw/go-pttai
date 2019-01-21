@@ -18,7 +18,6 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -40,12 +39,29 @@ func (pm *ProtocolManager) UpdateUserName(name []byte) (*UserName, error) {
 
 	opData := &UserOpUpdateUserName{}
 
-	log.Debug("UpdateUserName: to update UserName", "myID", myID, "name", name)
-
 	err := pm.UpdateObject(
-		myID, data, UserOpTypeUpdateUserName, origObj, opData,
+		myID,
 
-		pm.SetUserDB, pm.NewUserOplog, pm.inupdateUserName, nil, pm.broadcastUserOplogCore, nil)
+		data,
+		UserOpTypeUpdateUserName,
+
+		origObj,
+
+		opData,
+
+		pm.userOplogMerkle,
+
+		pm.SetUserDB,
+
+		pm.NewUserOplog,
+
+		pm.inupdateUserName,
+
+		nil,
+
+		pm.broadcastUserOplogCore,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

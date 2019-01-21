@@ -16,7 +16,11 @@
 
 package service
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 /*
 HandleFailedBoardOplogUpdateArticle handles failed update-article-oplog
@@ -68,6 +72,67 @@ func (pm *BaseProtocolManager) HandleFailedUpdateObjectLog(
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+/*
+HandleFailedBoardOplogUpdateArticle handles failed update-article-oplog
+    1. get article
+    2. check validity
+    3. handle fails
+*/
+func (pm *BaseProtocolManager) HandleFailedValidUpdateObjectLog(
+	oplog *BaseOplog,
+	obj Object,
+
+	info ProcessInfo,
+
+	updateUpdateInfo func(obj Object, oplog *BaseOplog, opData OpData, origSyncInfo SyncInfo, info ProcessInfo) error,
+
+) error {
+
+	objID := oplog.ObjID
+	obj.SetID(objID)
+
+	// lock-obj
+	err := obj.Lock()
+	if err != nil {
+		return err
+	}
+	defer obj.Unlock()
+
+	err = obj.GetByID(true)
+	if err != nil {
+		// already deleted
+		return nil
+	}
+
+	// 3. check validity
+	objLogID := obj.GetLogID()
+	if obj.GetUpdateLogID() != nil || !reflect.DeepEqual(objLogID, oplog.ID) {
+		return nil
+	}
+
+	if oplog.UpdateTS.IsLess(obj.GetUpdateTS()) {
+		return nil
+	}
+
+	// 6. obj-save
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return err
+	}
+
+	SetFailedObjectWithOplog(obj, oplog, ts)
+
+	err = obj.Save(true)
+	if err != nil {
+		return err
+	}
+
+	// 7. update update info
+	updateUpdateInfo(obj, oplog, nil, nil, info)
 
 	return nil
 }

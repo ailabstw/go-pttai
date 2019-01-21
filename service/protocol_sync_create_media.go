@@ -16,6 +16,10 @@
 
 package service
 
+/**********
+ * Sync Media
+ **********/
+
 func (pm *BaseProtocolManager) SyncMedia(op OpType, syncIDs []*SyncID, peer *PttPeer) error {
 	return pm.SyncObject(op, syncIDs, peer)
 }
@@ -48,6 +52,8 @@ func (pm *BaseProtocolManager) HandleSyncCreateMediaBlockAck(
 	dataBytes []byte,
 	peer *PttPeer,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	broadcastLog func(oplog *BaseOplog) error,
 
@@ -56,5 +62,15 @@ func (pm *BaseProtocolManager) HandleSyncCreateMediaBlockAck(
 	obj := NewEmptyMedia()
 	pm.SetMediaDB(obj)
 
-	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, setLogDB, nil, broadcastLog)
+	return pm.HandleSyncCreateBlockAck(
+		dataBytes,
+		peer,
+		obj,
+
+		merkle,
+
+		setLogDB,
+		nil,
+		broadcastLog,
+	)
 }

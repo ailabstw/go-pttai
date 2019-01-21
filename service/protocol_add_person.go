@@ -36,6 +36,8 @@ func (pm *BaseProtocolManager) AddPerson(
 	origPerson Object, // for update
 	opData OpData, // for update
 
+	merkle *Merkle,
+
 	newPerson func(id *types.PttID) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
@@ -43,7 +45,6 @@ func (pm *BaseProtocolManager) AddPerson(
 
 	setLogDB func(oplog *BaseOplog), // for update
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error), // for update
-
 ) (Object, *BaseOplog, error) {
 
 	myID := pm.Ptt().GetMyEntity().GetID()
@@ -73,9 +74,19 @@ func (pm *BaseProtocolManager) AddPerson(
 	log.Debug("AddPerson: after get origPerson", "entity", entity.GetID(), "creatorID", entity.GetCreatorID(), "id", id, "e", err, "origPerson", origPerson)
 	if err == nil {
 		return pm.UpdatePerson(
-			id, addOp, isForce,
-			origPerson, opData,
-			setLogDB, newOplog, broadcastLog, postcreate,
+			id,
+			addOp,
+			isForce,
+
+			origPerson,
+			opData,
+
+			merkle,
+
+			setLogDB,
+			newOplog,
+			broadcastLog,
+			postcreate,
 		)
 	}
 	if err != leveldb.ErrNotFound {
@@ -83,7 +94,15 @@ func (pm *BaseProtocolManager) AddPerson(
 	}
 
 	return pm.CreatePerson(
-		id, addOp, isForce,
-		newPerson, newOplogWithTS, broadcastLog, postcreate,
+		id,
+		addOp,
+		isForce,
+
+		merkle,
+
+		newPerson,
+		newOplogWithTS,
+		broadcastLog,
+		postcreate,
 	)
 }

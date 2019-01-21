@@ -143,7 +143,7 @@ func (pm *ProtocolManager) HandleInternalSyncFriendAck(
 	}
 
 	oplog.IsSync = true
-	oplog.Save(true)
+	oplog.Save(true, pm.meOplogMerkle)
 	return nil
 }
 

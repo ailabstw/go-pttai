@@ -41,11 +41,24 @@ func (pm *BaseProtocolManager) HandleAddPendingOpKeyOplogs(dataBytes []byte, pee
  **********/
 
 func (pm *BaseProtocolManager) HandleSyncPendingOpKeyOplog(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingOpKeyOplogs, pm.SetOpKeyDB, pm.HandleFailedOpKeyOplog, SyncPendingOpKeyOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingOpKeyOplogs,
+		pm.SetOpKeyDB,
+		pm.HandleFailedOpKeyOplog,
+		SyncPendingOpKeyOplogAckMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) HandleSyncPendingOpKeyOplogAck(dataBytes []byte, peer *PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingOpKeyOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingOpKeyOplogs,
+	)
 }
 
 /**********
@@ -56,13 +69,36 @@ func (pm *BaseProtocolManager) HandleOpKeyOplogs(oplogs []*BaseOplog, peer *PttP
 
 	info := NewProcessOpKeyInfo()
 
-	return HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, nil, pm.SetOpKeyDB, pm.processOpKeyLog, pm.postprocessOpKeyOplogs)
+	return HandleOplogs(
+		oplogs,
+		peer,
+		isUpdateSyncTime,
+
+		pm,
+		info,
+		nil,
+
+		pm.SetOpKeyDB,
+		pm.processOpKeyLog,
+		pm.postprocessOpKeyOplogs,
+	)
 }
 
 func (pm *BaseProtocolManager) HandlePendingOpKeyOplogs(oplogs []*BaseOplog, peer *PttPeer) error {
 
 	info := NewProcessOpKeyInfo()
 
-	return HandlePendingOplogs(oplogs, peer, pm, info, pm.SetOpKeyDB, pm.processPendingOpKeyLog, pm.processOpKeyLog, pm.postprocessOpKeyOplogs)
+	return HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+		nil,
+
+		pm.SetOpKeyDB,
+		pm.processPendingOpKeyLog,
+		pm.processOpKeyLog,
+		pm.postprocessOpKeyOplogs,
+	)
 }

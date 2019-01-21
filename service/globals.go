@@ -98,6 +98,9 @@ const (
 	AddPendingOpKeyOplogsMsg
 
 	SyncOpKeyOplogMsg
+	ForceSyncOpKeyOplogMsg
+	ForceSyncOpKeyOplogAckMsg
+	InvalidSyncOpKeyOplogMsg
 	SyncOpKeyOplogAckMsg
 	SyncPendingOpKeyOplogMsg
 	SyncPendingOpKeyOplogAckMsg
@@ -113,6 +116,9 @@ const (
 	AddPendingMasterOplogsMsg
 
 	SyncMasterOplogMsg
+	ForceSyncMasterOplogMsg
+	ForceSyncMasterOplogAckMsg
+	InvalidSyncMasterOplogMsg
 	SyncMasterOplogAckMsg
 	SyncMasterOplogNewOplogsMsg
 	SyncMasterOplogNewOplogsAckMsg
@@ -128,6 +134,9 @@ const (
 	AddPendingMemberOplogsMsg
 
 	SyncMemberOplogMsg
+	ForceSyncMemberOplogMsg
+	ForceSyncMemberOplogAckMsg
+	InvalidSyncMemberOplogMsg
 	SyncMemberOplogAckMsg
 	SyncMemberOplogNewOplogsMsg
 	SyncMemberOplogNewOplogsAckMsg
@@ -267,6 +276,8 @@ var (
 	DBMerkleGenerateTimePrefix = []byte(".mtgt")
 	DBMerkleSyncTimePrefix     = []byte(".mtst")
 	DBMerkleFailSyncTimePrefix = []byte(".mtft")
+	DBMerkleToUpdatePostfix    = []byte("mt")
+	DBMerkleUpdatingPostfix    = []byte("mT")
 
 	OffsetMerkleSyncTime int64 = 3600 // validate until 2-hr ago, and sync with data starting 2-hr ago.
 

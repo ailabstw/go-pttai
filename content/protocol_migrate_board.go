@@ -25,9 +25,19 @@ func (pm *ProtocolManager) MigrateBoard(toID *types.PttID) error {
 	opData := &BoardOpMigrateBoard{ToID: toID}
 
 	err := pm.DeleteEntity(
-		BoardOpTypeMigrateBoard, opData,
-		types.StatusInternalMigrate, types.StatusPendingMigrate, types.StatusMigrated,
-		pm.NewBoardOplog, pm.setPendingDeleteBoardSyncInfo, pm.broadcastBoardOplogCore, pm.postmigrateBoard)
+		BoardOpTypeMigrateBoard,
+		opData,
+		types.StatusInternalMigrate,
+		types.StatusPendingMigrate,
+		types.StatusMigrated,
+
+		pm.boardOplogMerkle,
+
+		pm.NewBoardOplog,
+		pm.setPendingDeleteBoardSyncInfo,
+		pm.broadcastBoardOplogCore,
+		pm.postmigrateBoard,
+	)
 
 	return err
 }

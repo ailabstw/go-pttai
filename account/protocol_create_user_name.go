@@ -33,6 +33,8 @@ func (pm *ProtocolManager) CreateUserName(name []byte) error {
 		nil,
 		UserOpTypeCreateUserName,
 
+		pm.userOplogMerkle,
+
 		pm.NewUserName,
 		pm.NewUserOplogWithTS,
 		nil,

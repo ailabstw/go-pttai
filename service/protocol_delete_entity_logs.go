@@ -30,6 +30,8 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	opData OpData,
 	status types.Status,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	postdelete func(opData OpData, isForce bool) error,
 	updateDeleteInfo func(oplog *BaseOplog, info ProcessInfo) error,
@@ -73,7 +75,18 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 	if origSyncInfo != nil {
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, true, nil, setLogDB)
+			err = pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				info,
+				oplog,
+				true,
+
+				merkle,
+
+				nil,
+				setLogDB,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -117,6 +130,8 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 	op OpType,
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	setPendingDeleteSyncInfo func(entity Entity, status types.Status, oplog *BaseOplog) error,
 
@@ -125,7 +140,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 
 	entity := pm.Entity()
 
-	log.Debug("HandlePendingDeleteEntityLog: start", "e", pm.Entity().GetID())
+	log.Debug("HandlePendingDeleteEntityLog: start", "entity", pm.Entity().GetID())
 
 	// 1. lock obj
 	err := entity.Lock()
@@ -152,7 +167,18 @@ func (pm *BaseProtocolManager) HandlePendingDeleteEntityLog(
 				return false, nil, ErrNewerOplog
 			}
 
-			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				info,
+				oplog,
+				false,
+
+				merkle,
+
+				nil,
+				setLogDB,
+			)
 		}
 		entity.SetSyncInfo(nil)
 	}
@@ -205,4 +231,14 @@ func (pm *BaseProtocolManager) HandleFailedDeleteEntityLog(
 	}
 
 	return nil
+}
+
+/**********
+ * Handle Failed DeleteEntityLog
+ **********/
+
+func (pm *BaseProtocolManager) HandleFailedValidDeleteEntityLog(
+	oplog *BaseOplog,
+) error {
+	return types.ErrNotImplemented
 }

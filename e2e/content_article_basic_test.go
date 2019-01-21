@@ -33,7 +33,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestContentArticle(t *testing.T) {
+func TestContentArticleBasic(t *testing.T) {
 	NNodes = 1
 	isDebug := true
 

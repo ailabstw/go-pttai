@@ -43,19 +43,97 @@ func (pm *ProtocolManager) HandleAddPendingMeOplogs(dataBytes []byte, peer *pkgs
  **********/
 
 func (pm *ProtocolManager) HandleSyncMeOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.meOplogMerkle, SyncMeOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.meOplogMerkle,
+
+		ForceSyncMeOplogMsg,
+		ForceSyncMeOplogAckMsg,
+		InvalidSyncMeOplogMsg,
+		SyncMeOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncMeOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.meOplogMerkle,
+		ForceSyncMeOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncMeOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	info := NewProcessMeInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.meOplogMerkle,
+		info,
+
+		pm.SetMeDB,
+		pm.HandleFailedValidMeOplog,
+		pm.SetNewestMeOplog,
+		pm.postprocessFailedValidMeOplogs,
+
+		SyncMeOplogNewOplogsMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleSyncMeOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.meOplogMerkle,
+		ForceSyncMeOplogMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncMeOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.meOplogMerkle, pm.SetMeDB, pm.SetNewestMeOplog, pm.postsyncMeOplogs, SyncMeOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.meOplogMerkle,
+
+		pm.SetMeDB,
+		pm.SetNewestMeOplog,
+		pm.postsyncMeOplogs,
+
+		SyncMeOplogNewOplogsMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewMeOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetMeDB, pm.HandleMeOplogs, pm.SetNewestMeOplog, SyncMeOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetMeDB,
+		pm.HandleMeOplogs,
+		pm.SetNewestMeOplog,
+
+		SyncMeOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewMeOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetMeDB, pm.HandleMeOplogs, pm.postsyncMeOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetMeDB,
+		pm.HandleMeOplogs,
+		pm.postsyncMeOplogs,
+	)
 }
 
 /**********
@@ -63,11 +141,25 @@ func (pm *ProtocolManager) HandleSyncNewMeOplogAck(dataBytes []byte, peer *pkgse
  **********/
 
 func (pm *ProtocolManager) HandleSyncPendingMeOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingMeOplogs, pm.SetMeDB, pm.HandleFailedMeOplog, SyncPendingMeOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMeOplogs,
+		pm.SetMeDB,
+		pm.HandleFailedMeOplog,
+
+		SyncPendingMeOplogAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncPendingMeOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingMeOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingMeOplogs,
+	)
 }
 
 /**********
@@ -77,15 +169,37 @@ func (pm *ProtocolManager) HandleSyncPendingMeOplogAck(dataBytes []byte, peer *p
 func (pm *ProtocolManager) HandleMeOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isUpdateSyncTime bool) error {
 
 	info := NewProcessMeInfo()
-	merkle := pm.meOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetMeDB, pm.processMeLog, pm.postprocessMeOplogs)
+	return pkgservice.HandleOplogs(
+		oplogs,
+		peer,
+
+		isUpdateSyncTime,
+		pm,
+		info,
+		pm.meOplogMerkle,
+
+		pm.SetMeDB,
+		pm.processMeLog,
+		pm.postprocessMeOplogs,
+	)
 }
 
 func (pm *ProtocolManager) HandlePendingMeOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
 
 	info := NewProcessMeInfo()
 
-	return pkgservice.HandlePendingOplogs(oplogs, peer, pm, info, pm.SetMeDB, pm.processPendingMeLog, pm.processMeLog, pm.postprocessMeOplogs)
+	return pkgservice.HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+		pm.meOplogMerkle,
+
+		pm.SetMeDB,
+		pm.processPendingMeLog,
+		pm.processMeLog,
+		pm.postprocessMeOplogs,
+	)
 }

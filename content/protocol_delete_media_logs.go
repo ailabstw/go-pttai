@@ -22,16 +22,47 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) handleDeleteMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handleDeleteMediaLogs(
+	oplog *pkgservice.BaseOplog,
+	info *ProcessBoardInfo,
+) ([]*pkgservice.BaseOplog, error) {
 
-	return pm.BaseHandleDeleteMediaLogs(oplog, info, pm.SetBoardDB, pm.updateMediaDeleteInfo)
+	return pm.BaseHandleDeleteMediaLogs(
+		oplog,
+		info,
 
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.updateMediaDeleteInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingDeleteMediaLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
-	return pm.BaseHandlePendingDeleteMediaLogs(oplog, info, pm.SetBoardDB, pm.updateMediaDeleteInfo)
+	return pm.BaseHandlePendingDeleteMediaLogs(
+		oplog,
+		info,
 
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.updateMediaDeleteInfo,
+	)
+}
+
+func (pm *ProtocolManager) handleFailedValidDeleteMediaLog(
+	oplog *pkgservice.BaseOplog,
+	info *ProcessBoardInfo,
+
+) error {
+
+	return pm.BaseHandleFailedValidDeleteMediaLog(
+		oplog,
+		info,
+
+		pm.updateMediaDeleteInfo,
+	)
 }
 
 /**********

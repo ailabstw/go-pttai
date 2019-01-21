@@ -218,7 +218,7 @@ func TestContentArticleBlockList(t *testing.T) {
 
 	defaultTitle0_10_0 := content.DefaultTitleTW(me0_1.ID, me0_1.ID, "")
 	assert.Equal(defaultTitle0_10_0, board0_10_0.Title)
-	assert.Equal(board0_10_0.CreateTS, board0_10_0.ArticleCreateTS)
+	assert.Equal(types.ZeroTimestamp, board0_10_0.ArticleCreateTS)
 
 	// 10.1.
 	marshaledID, _ = board0_10_0.ID.MarshalText()
@@ -281,7 +281,7 @@ func TestContentArticleBlockList(t *testing.T) {
 
 	assert.Equal(0, article0_36.NPush)
 	assert.Equal(0, article0_36.NBoo)
-	assert.Equal(article0_36.CreateTS, article0_36.CommentCreateTS)
+	assert.Equal(types.ZeroTimestamp, article0_36.CommentCreateTS)
 
 	// 36.1 content-get-board
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)

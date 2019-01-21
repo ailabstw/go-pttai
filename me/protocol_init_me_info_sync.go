@@ -150,7 +150,7 @@ func (pm *ProtocolManager) HandleInitMeInfoSync(dataBytes []byte, peer *pkgservi
 	oplog0 := data.Oplog0
 	log.Debug("HandleInitMeInfoSync: oplog0", "oplog0", oplog0)
 	pm.SetMeDB(oplog0)
-	oplog0.Save(false)
+	oplog0.Save(false, pm.meOplogMerkle)
 
 	// profile
 	profileSPM := pm.Entity().Service().(*Backend).accountBackend.SPM().(*account.ServiceProtocolManager)

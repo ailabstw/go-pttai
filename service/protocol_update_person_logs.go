@@ -32,6 +32,8 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 	origPerson Object,
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	postupdate func(obj Object, oplog *BaseOplog) error,
 
@@ -72,7 +74,17 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 	}
 
 	// 4. core
-	err = pm.handleUpdatePersonLogCore(oplog, origPerson, opData, setLogDB, postupdate)
+	err = pm.handleUpdatePersonLogCore(
+		oplog,
+		origPerson,
+		opData,
+
+		merkle,
+
+		setLogDB,
+		postupdate,
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +97,8 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 	oplog *BaseOplog,
 	origPerson Object,
 	opData OpData,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 	postupdate func(obj Object, oplog *BaseOplog) error,
@@ -105,7 +119,18 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 
 	// 1.1. replace sync-info
 	if isReplaceSyncInfo {
-		err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, true, nil, setLogDB)
+		err = pm.removeBlockAndMediaInfoBySyncInfo(
+			origSyncInfo,
+
+			nil,
+			oplog,
+			true,
+
+			merkle,
+
+			nil,
+			setLogDB,
+		)
 		if err != nil {
 			return err
 		}
@@ -135,6 +160,8 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 	oplog *BaseOplog,
 	origPerson Object,
 	opData OpData,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -169,7 +196,17 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 	}
 
 	// 4. core
-	err = pm.handlePendingUpdatePersonLogCore(oplog, origPerson, opData, setLogDB)
+	err = pm.handlePendingUpdatePersonLogCore(
+		oplog,
+
+		origPerson,
+		opData,
+
+		merkle,
+
+		setLogDB,
+	)
+
 	if err != nil {
 		return false, nil, err
 	}
@@ -182,6 +219,8 @@ func (pm *BaseProtocolManager) handlePendingUpdatePersonLogCore(
 
 	origObj Object,
 	opData OpData,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -204,7 +243,18 @@ func (pm *BaseProtocolManager) handlePendingUpdatePersonLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, nil, oplog, false, nil, setLogDB)
+			pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				nil,
+				oplog,
+				false,
+
+				merkle,
+
+				nil,
+				setLogDB,
+			)
 		}
 		origObj.SetSyncInfo(nil)
 	}

@@ -147,6 +147,32 @@ func (pm *ProtocolManager) HandleFailedFriendOplog(oplog *pkgservice.BaseOplog) 
 }
 
 /**********
+ * Handle Failed Oplog
+ **********/
+
+func (pm *ProtocolManager) HandleFailedValidFriendOplog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (err error) {
+
+	info, ok := processInfo.(*ProcessFriendInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	switch oplog.Op {
+	case FriendOpTypeDeleteFriend:
+	case FriendOpTypeCreateMessage:
+		err = pm.handleFailedValidCreateMessageLog(oplog, info)
+	case FriendOpTypeCreateMedia:
+	}
+
+	return
+}
+
+func (pm *ProtocolManager) postprocessFailedValidFriendOplogs(processInfo pkgservice.ProcessInfo, peer *pkgservice.PttPeer) error {
+
+	return nil
+}
+
+/**********
  * Postsync Oplog
  **********/
 

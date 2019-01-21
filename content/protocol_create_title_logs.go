@@ -64,6 +64,14 @@ func (pm *ProtocolManager) handleFailedCreateTitleLog(oplog *pkgservice.BaseOplo
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateTitleLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyTitle()
+	pm.SetTitleDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

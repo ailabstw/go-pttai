@@ -43,19 +43,97 @@ func (pm *ProtocolManager) HandleAddPendingBoardOplogs(dataBytes []byte, peer *p
  **********/
 
 func (pm *ProtocolManager) HandleSyncBoardOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplog(dataBytes, peer, pm.boardOplogMerkle, SyncBoardOplogAckMsg)
+	return pm.HandleSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.boardOplogMerkle,
+
+		ForceSyncBoardOplogMsg,
+		ForceSyncBoardOplogAckMsg,
+		InvalidSyncBoardOplogMsg,
+		SyncBoardOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncBoardOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplog(
+		dataBytes,
+		peer,
+
+		pm.boardOplogMerkle,
+		ForceSyncBoardOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncBoardOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	info := NewProcessBoardInfo()
+
+	return pm.HandleForceSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.boardOplogMerkle,
+		info,
+
+		pm.SetBoardDB,
+		pm.HandleFailedValidBoardOplog,
+		pm.SetNewestBoardOplog,
+		pm.postprocessFailedValidBoardOplogs,
+
+		SyncBoardOplogNewOplogsMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleSyncBoardOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	return pm.HandleSyncOplogInvalidAck(
+		dataBytes,
+		peer,
+
+		pm.boardOplogMerkle,
+		ForceSyncBoardOplogMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncBoardOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogAck(dataBytes, peer, pm.boardOplogMerkle, pm.SetBoardDB, pm.SetNewestBoardOplog, pm.postsyncBoardOplogs, SyncBoardOplogNewOplogsMsg)
+	return pm.HandleSyncOplogAck(
+		dataBytes,
+		peer,
+
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.SetNewestBoardOplog,
+		pm.postsyncBoardOplogs,
+
+		SyncBoardOplogNewOplogsMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewBoardOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogs(dataBytes, peer, pm.SetBoardDB, pm.HandleBoardOplogs, pm.SetNewestBoardOplog, SyncBoardOplogNewOplogsAckMsg)
+	return pm.HandleSyncOplogNewOplogs(
+		dataBytes,
+		peer,
+
+		pm.SetBoardDB,
+		pm.HandleBoardOplogs,
+		pm.SetNewestBoardOplog,
+
+		SyncBoardOplogNewOplogsAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncNewBoardOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncOplogNewOplogsAck(dataBytes, peer, pm.SetBoardDB, pm.HandleBoardOplogs, pm.postsyncBoardOplogs)
+	return pm.HandleSyncOplogNewOplogsAck(
+		dataBytes,
+		peer,
+
+		pm.SetBoardDB,
+		pm.HandleBoardOplogs,
+		pm.postsyncBoardOplogs,
+	)
 }
 
 /**********
@@ -63,11 +141,25 @@ func (pm *ProtocolManager) HandleSyncNewBoardOplogAck(dataBytes []byte, peer *pk
  **********/
 
 func (pm *ProtocolManager) HandleSyncPendingBoardOplog(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplog(dataBytes, peer, pm.HandlePendingBoardOplogs, pm.SetBoardDB, pm.HandleFailedBoardOplog, SyncPendingBoardOplogAckMsg)
+	return pm.HandleSyncPendingOplog(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingBoardOplogs,
+		pm.SetBoardDB,
+		pm.HandleFailedBoardOplog,
+
+		SyncPendingBoardOplogAckMsg,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncPendingBoardOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
-	return pm.HandleSyncPendingOplogAck(dataBytes, peer, pm.HandlePendingBoardOplogs)
+	return pm.HandleSyncPendingOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandlePendingBoardOplogs,
+	)
 }
 
 /**********
@@ -77,15 +169,38 @@ func (pm *ProtocolManager) HandleSyncPendingBoardOplogAck(dataBytes []byte, peer
 func (pm *ProtocolManager) HandleBoardOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer, isUpdateSyncTime bool) error {
 
 	info := NewProcessBoardInfo()
-	merkle := pm.boardOplogMerkle
 
-	return pkgservice.HandleOplogs(oplogs, peer, isUpdateSyncTime, pm, info, merkle, pm.SetBoardDB, pm.processBoardLog, pm.postprocessBoardOplogs)
+	return pkgservice.HandleOplogs(
+		oplogs,
+		peer,
+
+		isUpdateSyncTime,
+		pm,
+		info,
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.processBoardLog,
+		pm.postprocessBoardOplogs,
+	)
 }
 
 func (pm *ProtocolManager) HandlePendingBoardOplogs(oplogs []*pkgservice.BaseOplog, peer *pkgservice.PttPeer) error {
 
 	info := NewProcessBoardInfo()
 
-	return pkgservice.HandlePendingOplogs(oplogs, peer, pm, info, pm.SetBoardDB, pm.processPendingBoardLog, pm.processBoardLog, pm.postprocessBoardOplogs)
+	return pkgservice.HandlePendingOplogs(
+		oplogs,
+		peer,
 
+		pm,
+		info,
+
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.processPendingBoardLog,
+		pm.processBoardLog,
+		pm.postprocessBoardOplogs,
+	)
 }

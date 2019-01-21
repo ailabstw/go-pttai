@@ -44,8 +44,18 @@ func (pm *ProtocolManager) HandleSyncCreateUserNameAck(dataBytes []byte, peer *p
 		pm.SetUserNameDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetUserDB, nil, nil, pm.broadcastUserOplogCore)
+			obj,
+			peer,
+
+			origObj,
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			nil,
+			nil,
+			pm.broadcastUserOplogCore,
+		)
 	}
 
 	return nil

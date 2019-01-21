@@ -42,6 +42,9 @@ const (
 	AddPendingUserOplogsMsg
 
 	SyncUserOplogMsg
+	ForceSyncUserOplogMsg
+	ForceSyncUserOplogAckMsg
+	InvalidSyncUserOplogMsg
 	SyncUserOplogAckMsg
 	SyncUserOplogNewOplogsMsg
 	SyncUserOplogNewOplogsAckMsg
@@ -49,26 +52,42 @@ const (
 	SyncPendingUserOplogMsg // 50
 	SyncPendingUserOplogAckMsg
 
+	// user-node
 	SyncAddUserNodeMsg
 	SyncAddUserNodeAckMsg
 
+	ForceSyncUserNodeMsg
+	ForceSyncUserNodeAckMsg
+
+	// user-name
 	SyncCreateUserNameMsg
 	SyncCreateUserNameAckMsg
 
 	SyncUpdateUserNameMsg // 56
 	SyncUpdateUserNameAckMsg
 
+	ForceSyncUserNameMsg
+	ForceSyncUserNameAckMsg
+
+	// user-img
 	SyncCreateUserImgMsg
 	SyncCreateUserImgAckMsg
 
 	SyncUpdateUserImgMsg // 60
 	SyncUpdateUserImgAckMsg
 
+	ForceSyncUserImgMsg
+	ForceSyncUserImgAckMsg
+
+	// name-card
 	SyncCreateNameCardMsg
 	SyncCreateNameCardAckMsg
 
 	SyncUpdateNameCardMsg // 56
 	SyncUpdateNameCardAckMsg
+
+	ForceSyncNameCardMsg
+	ForceSyncNameCardAckMsg
 )
 
 // user-profile

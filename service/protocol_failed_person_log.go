@@ -16,7 +16,11 @@
 
 package service
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
 func (pm *BaseProtocolManager) HandleFailedPersonLog(
 	oplog *BaseOplog,
@@ -61,6 +65,13 @@ func (pm *BaseProtocolManager) HandleFailedPersonLog(
 	return nil
 }
 
+func (pm *BaseProtocolManager) HandleFailedValidPersonLog(
+	oplog *BaseOplog,
+	person Object,
+) error {
+	return types.ErrNotImplemented
+}
+
 /**********
  * Handle Failed UpdatePersonLog
  **********/
@@ -92,4 +103,50 @@ func (pm *BaseProtocolManager) HandleFailedTransferPersonLog(
 	person Object,
 ) error {
 	return pm.HandleFailedPersonLog(oplog, person)
+}
+
+/**********
+ * Handle Failed Valid CreatePersonLog
+ **********/
+
+func (pm *BaseProtocolManager) HandleFailedValidCreatePersonLog(
+	oplog *BaseOplog,
+	person Object,
+
+	prefailed func(obj Object, oplog *BaseOplog) error,
+) error {
+	return types.ErrNotImplemented
+}
+
+/**********
+ * Handle Failed Valid UpdatePersonLog
+ **********/
+
+func (pm *BaseProtocolManager) HandleFailedValidUpdatePersonLog(
+	oplog *BaseOplog,
+	origPerson Object,
+) error {
+	return pm.HandleFailedValidPersonLog(oplog, origPerson)
+}
+
+/**********
+ * Handle Failed Valid TransferPersonLog
+ **********/
+
+func (pm *BaseProtocolManager) HandleFailedValidTransferPersonLog(
+	oplog *BaseOplog,
+	origPerson Object,
+) error {
+	return pm.HandleFailedValidPersonLog(oplog, origPerson)
+}
+
+/**********
+ * Handle Failed Valid TransferPersonLog
+ **********/
+
+func (pm *BaseProtocolManager) HandleFailedValidDeletePersonLog(
+	oplog *BaseOplog,
+	origPerson Object,
+) error {
+	return pm.HandleFailedValidPersonLog(oplog, origPerson)
 }

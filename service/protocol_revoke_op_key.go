@@ -35,6 +35,8 @@ func (pm *BaseProtocolManager) RevokeOpKey(keyID *types.PttID) (bool, error) {
 		opKey,
 		opData,
 
+		nil,
+
 		pm.SetOpKeyDB,
 
 		pm.NewOpKeyOplog,

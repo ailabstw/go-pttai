@@ -34,6 +34,8 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 	obj Object,
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
@@ -43,8 +45,6 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 
 	objID := oplog.ObjID
 	obj.SetID(objID)
-
-	log.Debug("HandleDeleteObjectLog: start", "objID", objID)
 
 	err := oplog.GetData(opData)
 	if err != nil {
@@ -68,7 +68,6 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 
 	// 3. check validity
 	origStatus := origObj.GetStatus()
-	log.Debug("HandleDeleteObjectLog: check validity", "origStatus", origStatus)
 	if origStatus >= types.StatusDeleted {
 		if oplog.UpdateTS.IsLess(origObj.GetUpdateTS()) {
 			err = pm.saveDeleteObjectWithOplog(origObj, oplog, types.StatusDeleted, true)
@@ -79,7 +78,20 @@ func (pm *BaseProtocolManager) HandleDeleteObjectLog(
 		return nil, ErrNewerOplog
 	}
 
-	err = pm.handleDeleteObjectLogCore(oplog, info, obj, opData, setLogDB, removeMediaInfoByBlockInfo, postdelete, updateDeleteInfo)
+	err = pm.handleDeleteObjectLogCore(
+		oplog,
+		info,
+
+		obj,
+		opData,
+
+		merkle,
+
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postdelete,
+		updateDeleteInfo,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +105,8 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 
 	origObj Object,
 	opData OpData,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -121,7 +135,18 @@ func (pm *BaseProtocolManager) handleDeleteObjectLogCore(
 	if isReplaceSyncInfo {
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, true, removeMediaInfoByBlockInfo, setLogDB)
+			err = pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				info,
+				oplog,
+				true,
+
+				merkle,
+
+				removeMediaInfoByBlockInfo,
+				setLogDB,
+			)
 			if err != nil {
 				return err
 			}
@@ -181,6 +206,8 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 	obj Object,
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 
 	removeMediaInfoByBlockInfo func(blockInfo *BlockInfo, info ProcessInfo, oplog *BaseOplog),
@@ -191,8 +218,6 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 
 	objID := oplog.ObjID
 	obj.SetID(objID)
-
-	log.Debug("handlePendingDeleteObjectLog: start", "oplog", oplog.ID, "objID", objID)
 
 	// 1. lock obj
 	err := obj.Lock()
@@ -215,7 +240,22 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 		return false, nil, ErrNewerOplog
 	}
 
-	err = pm.handlePendingDeleteObjectLogCore(oplog, info, origObj, opData, setLogDB, removeMediaInfoByBlockInfo, setPendingDeleteSyncInfo, updateDeleteInfo)
+	err = pm.handlePendingDeleteObjectLogCore(
+		oplog,
+		info,
+
+		origObj,
+		opData,
+
+		merkle,
+
+		setLogDB,
+
+		removeMediaInfoByBlockInfo,
+		setPendingDeleteSyncInfo,
+		updateDeleteInfo,
+	)
+
 	if err != nil {
 		return false, nil, err
 	}
@@ -229,6 +269,8 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 
 	origObj Object,
 	opData OpData,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -255,7 +297,18 @@ func (pm *BaseProtocolManager) handlePendingDeleteObjectLogCore(
 		// 1.1 replace sync-info
 		syncLogID := origSyncInfo.GetLogID()
 		if !reflect.DeepEqual(syncLogID, oplog.ID) {
-			err = pm.removeBlockAndMediaInfoBySyncInfo(origSyncInfo, info, oplog, false, removeMediaInfoByBlockInfo, setLogDB)
+			err = pm.removeBlockAndMediaInfoBySyncInfo(
+				origSyncInfo,
+
+				info,
+				oplog,
+				false,
+
+				merkle,
+
+				removeMediaInfoByBlockInfo,
+				setLogDB,
+			)
 			if err != nil {
 				return err
 			}

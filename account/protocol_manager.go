@@ -66,6 +66,8 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 
 		MaxMasters,
 
+		pm.userOplogMerkle, // log0Merkle
+
 		// sign
 		nil,
 		nil,

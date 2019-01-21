@@ -17,19 +17,19 @@
 package content
 
 import (
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) error {
 
-	log.Debug("content.HandleMessage: start", "op", op, "SyncCreateTitleMsg", SyncCreateTitleMsg)
-
 	var err error
+
 	switch op {
 	// friend oplog
 	case SyncBoardOplogMsg:
 		err = pm.HandleSyncBoardOplog(dataBytes, peer)
+	case ForceSyncBoardOplogAckMsg:
+		err = pm.HandleForceSyncBoardOplogAck(dataBytes, peer)
 	case SyncBoardOplogAckMsg:
 		err = pm.HandleSyncBoardOplogAck(dataBytes, peer)
 	case SyncBoardOplogNewOplogsMsg:
@@ -59,6 +59,10 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleSyncUpdateTitle(dataBytes, peer, SyncUpdateTitleAckMsg)
 	case SyncUpdateTitleAckMsg:
 		err = pm.HandleSyncUpdateTitleAck(dataBytes, peer)
+	case ForceSyncTitleMsg:
+		err = pm.HandleForceSyncTitle(dataBytes, peer)
+	case ForceSyncTitleAckMsg:
+		err = pm.HandleForceSyncTitleAck(dataBytes, peer)
 
 	// article
 	case SyncCreateArticleMsg:
@@ -78,6 +82,10 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleSyncArticleBlock(dataBytes, peer, SyncUpdateArticleBlockAckMsg)
 	case SyncUpdateArticleBlockAckMsg:
 		err = pm.HandleSyncUpdateArticleBlockAck(dataBytes, peer)
+	case ForceSyncArticleMsg:
+		err = pm.HandleForceSyncArticle(dataBytes, peer)
+	case ForceSyncArticleAckMsg:
+		err = pm.HandleForceSyncArticleAck(dataBytes, peer)
 
 	// comment
 	case SyncCreateCommentMsg:
@@ -88,19 +96,50 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleSyncCommentBlock(dataBytes, peer, SyncCreateCommentBlockAckMsg)
 	case SyncCreateCommentBlockAckMsg:
 		err = pm.HandleSyncCreateCommentBlockAck(dataBytes, peer)
+	case ForceSyncCommentMsg:
+		err = pm.HandleForceSyncComment(dataBytes, peer)
+	case ForceSyncCommentAckMsg:
+		err = pm.HandleForceSyncCommentAck(dataBytes, peer)
 
 	// media
 	case SyncCreateMediaMsg:
 		err = pm.HandleSyncCreateMedia(dataBytes, peer, SyncCreateMediaAckMsg)
 	case SyncCreateMediaAckMsg:
-		err = pm.HandleSyncCreateMediaAck(dataBytes, peer, pm.SetBoardDB, pm.broadcastBoardOplogCore)
+		err = pm.HandleSyncCreateMediaAck(
+			dataBytes,
+			peer,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.broadcastBoardOplogCore,
+		)
 	case SyncCreateMediaBlockMsg:
 		err = pm.HandleSyncMediaBlock(dataBytes, peer, SyncCreateMediaBlockAckMsg)
 	case SyncCreateMediaBlockAckMsg:
-		err = pm.HandleSyncCreateMediaBlockAck(dataBytes, peer, pm.SetBoardDB, pm.broadcastBoardOplogCore)
+		err = pm.HandleSyncCreateMediaBlockAck(
+			dataBytes,
+			peer,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			pm.broadcastBoardOplogCore,
+		)
+	case ForceSyncMediaMsg:
+		err = pm.HandleForceSyncMedia(dataBytes, peer, ForceSyncMediaAckMsg)
+	case ForceSyncMediaAckMsg:
+		err = pm.HandleForceSyncMediaAck(
+			dataBytes,
+			peer,
+
+			pm.boardOplogMerkle,
+
+			pm.SetBoardDB,
+			SyncCreateMediaBlockMsg,
+		)
 
 	default:
-		log.Error("invalid op", "op", op, "SyncCreateTitleMsg", SyncCreateTitleMsg)
 		err = pkgservice.ErrInvalidMsgCode
 	}
 

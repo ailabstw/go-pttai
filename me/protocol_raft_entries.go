@@ -253,7 +253,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 	}
 
 	// oplog-save
-	err = oplog.Save(false)
+	err = oplog.Save(false, nil)
 	log.Debug("publishEntriesAddNode: after oplog.Save", "e", err)
 	if err != nil {
 		return err
@@ -393,7 +393,7 @@ func (pm *ProtocolManager) publishEntriesRemoveNode(ent *pb.Entry, cc *pb.ConfCh
 		return err
 	}
 
-	err = oplog.Save(false)
+	err = oplog.Save(false, nil)
 	if err != nil {
 		return err
 	}

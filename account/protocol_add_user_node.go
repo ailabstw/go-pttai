@@ -41,6 +41,8 @@ func (pm *ProtocolManager) AddUserNode(nodeID *discover.NodeID) error {
 		data,
 		UserOpTypeAddUserNode,
 
+		pm.userOplogMerkle,
+
 		pm.NewUserNode,
 		pm.NewUserOplogWithTS,
 		nil,

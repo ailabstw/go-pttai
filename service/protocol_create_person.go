@@ -36,6 +36,8 @@ func (pm *BaseProtocolManager) CreatePerson(
 	createOp OpType,
 	isForce bool,
 
+	merkle *Merkle,
+
 	newPerson func(id *types.PttID) (Object, OpData, error),
 	newOplogWithTS func(objID *types.PttID, ts types.Timestamp, op OpType, opData OpData) (Oplog, error),
 	broadcastLog func(oplog *BaseOplog) error,
@@ -78,7 +80,7 @@ func (pm *BaseProtocolManager) CreatePerson(
 	}
 
 	// 6. oplog-save
-	err = oplog.Save(false)
+	err = oplog.Save(false, merkle)
 	if err != nil {
 		return nil, nil, err
 	}

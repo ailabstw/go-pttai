@@ -76,6 +76,14 @@ func (pm *ProtocolManager) handleFailedCreateNameCardLog(oplog *pkgservice.BaseO
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateNameCardLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyNameCard()
+	pm.SetNameCardDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

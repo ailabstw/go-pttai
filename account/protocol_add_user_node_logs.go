@@ -64,6 +64,14 @@ func (pm *ProtocolManager) handleFailedAddUserNodeLog(oplog *pkgservice.BaseOplo
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidAddUserNodeLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserNode()
+	pm.SetUserNodeDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

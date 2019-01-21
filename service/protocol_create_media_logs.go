@@ -87,6 +87,14 @@ func (pm *BaseProtocolManager) HandleFailedCreateMediaLog(oplog *BaseOplog) erro
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *BaseProtocolManager) HandleFailedValidCreateMediaLog(oplog *BaseOplog, info ProcessInfo) error {
+
+	obj := NewEmptyMedia()
+	pm.SetMediaDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 func (pm *BaseProtocolManager) newMediaWithOplog(oplog *BaseOplog, theOpData OpData) Object {
 
 	opData, ok := theOpData.(*OpCreateMedia)

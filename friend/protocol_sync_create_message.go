@@ -56,5 +56,15 @@ func (pm *ProtocolManager) HandleSyncCreateMessageBlockAck(dataBytes []byte, pee
 	obj := NewEmptyMessage()
 	pm.SetMessageDB(obj)
 
-	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, pm.SetFriendDB, pm.postcreateMessage, pm.broadcastFriendOplogCore)
+	return pm.HandleSyncCreateBlockAck(
+		dataBytes,
+		peer,
+
+		obj,
+		pm.friendOplogMerkle,
+
+		pm.SetFriendDB,
+		pm.postcreateMessage,
+		pm.broadcastFriendOplogCore,
+	)
 }

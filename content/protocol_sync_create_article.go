@@ -20,6 +20,10 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
+/**********
+ * Sync Article
+ **********/
+
 func (pm *ProtocolManager) SyncArticle(op pkgservice.OpType, syncIDs []*pkgservice.SyncID, peer *pkgservice.PttPeer) error {
 	return pm.SyncObject(op, syncIDs, peer)
 }
@@ -61,7 +65,18 @@ func (pm *ProtocolManager) HandleSyncCreateArticleBlockAck(dataBytes []byte, pee
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 
-	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, pm.postcreateArticle, pm.broadcastBoardOplogCore)
+	return pm.HandleSyncCreateBlockAck(
+		dataBytes,
+		peer,
+
+		obj,
+
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.postcreateArticle,
+		pm.broadcastBoardOplogCore,
+	)
 }
 
 func (pm *ProtocolManager) HandleSyncUpdateArticleBlockAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
@@ -69,5 +84,15 @@ func (pm *ProtocolManager) HandleSyncUpdateArticleBlockAck(dataBytes []byte, pee
 	obj := NewEmptyArticle()
 	pm.SetArticleDB(obj)
 
-	return pm.HandleSyncUpdateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, nil, pm.broadcastBoardOplogCore)
+	return pm.HandleSyncUpdateBlockAck(
+		dataBytes,
+		peer,
+		obj,
+
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		nil,
+		pm.broadcastBoardOplogCore,
+	)
 }

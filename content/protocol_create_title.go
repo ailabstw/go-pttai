@@ -38,6 +38,8 @@ func (pm *ProtocolManager) CreateTitle(title []byte) error {
 		data,
 		BoardOpTypeCreateTitle,
 
+		pm.boardOplogMerkle,
+
 		pm.NewTitle,
 		pm.NewBoardOplogWithTS,
 		nil,

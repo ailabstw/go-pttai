@@ -28,8 +28,10 @@ type SyncPendingOplog struct {
 
 func (pm *BaseProtocolManager) SyncPendingOplog(
 	peer *PttPeer,
+
 	setDB func(oplog *BaseOplog),
 	handleFailedOplog func(oplog *BaseOplog) error,
+
 	syncMsg OpType,
 ) error {
 

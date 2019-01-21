@@ -35,6 +35,8 @@ func (pm *ProtocolManager) handleDeleteCommentLogs(oplog *pkgservice.BaseOplog, 
 		obj,
 		opData,
 
+		pm.boardOplogMerkle,
+
 		pm.SetBoardDB,
 		pm.removeMediaInfoByBlockInfo,
 		pm.postdeleteComment,
@@ -54,6 +56,8 @@ func (pm *ProtocolManager) handlePendingDeleteCommentLogs(oplog *pkgservice.Base
 		info,
 		obj,
 		opData,
+
+		pm.boardOplogMerkle,
 
 		pm.SetBoardDB,
 		pm.removeMediaInfoByBlockInfo,
@@ -76,6 +80,14 @@ func (pm *ProtocolManager) handleFailedDeleteCommentLog(oplog *pkgservice.BaseOp
 	pm.SetCommentDB(obj)
 
 	return pm.HandleFailedDeleteObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidDeleteCommentLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyComment()
+	pm.SetCommentDB(obj)
+
+	return pm.HandleFailedValidDeleteObjectLog(oplog, obj, info, pm.updateCommentDeleteInfo)
 }
 
 /**********

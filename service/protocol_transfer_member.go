@@ -32,8 +32,6 @@ func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.P
 	// 1. validate
 	isValid := false
 
-	log.Debug("TransferMember: start", "myID", myID, "fromID", fromID, "toID", toID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
-
 	masters, _ := pm.GetMasterListFromCache(false)
 	for _, master := range masters {
 		log.Debug("TransferMember: (in-for-loop)", "master", master.ID, "status", master.Status)
@@ -62,12 +60,22 @@ func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.P
 	data := &PersonOpTransferPerson{ToID: toID}
 
 	err := pm.TransferPerson(
-		fromID, toID,
+		fromID,
+		toID,
+
 		MemberOpTypeTransferMember,
 		origPerson,
 		data,
 
-		pm.SetMemberDB, pm.NewMemberOplog, pm.signMemberOplog, pm.setTransferMemberWithOplog, pm.broadcastMemberOplogCore, pm.posttransferMember)
+		pm.MemberMerkle(),
+
+		pm.SetMemberDB,
+		pm.NewMemberOplog,
+		pm.signMemberOplog,
+		pm.setTransferMemberWithOplog,
+		pm.broadcastMemberOplogCore,
+		pm.posttransferMember,
+	)
 	log.Debug("TransferMember: after TransferPerson", "e", err)
 	if err != nil {
 		return err

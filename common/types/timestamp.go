@@ -77,7 +77,7 @@ func (t *Timestamp) IsEqMilli(t2 Timestamp) bool {
 }
 
 func (t *Timestamp) Marshal() ([]byte, error) {
-	theBytes := make([]byte, 12) // uint64 + uint32
+	theBytes := make([]byte, 12) // int64 + uint32
 	binary.BigEndian.PutUint64(theBytes[:8], uint64(t.Ts))
 	binary.BigEndian.PutUint32(theBytes[8:], t.NanoTs)
 

@@ -166,12 +166,37 @@ func (pm *ProtocolManager) HandleFailedMeOplog(oplog *pkgservice.BaseOplog) (err
 }
 
 /**********
+ * Handle Failed Valid Oplog
+ **********/
+
+func (pm *ProtocolManager) HandleFailedValidMeOplog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (err error) {
+
+	info, ok := processInfo.(*ProcessMeInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	switch oplog.Op {
+	case MeOpTypeMigrateMe:
+		err = pm.handleFailedValidMigrateMeLog(oplog, info)
+	case MeOpTypeDeleteMe:
+		err = pm.handleFailedValidDeleteMeLog(oplog, info)
+	}
+
+	return
+}
+
+func (pm *ProtocolManager) postprocessFailedValidMeOplogs(processInfo pkgservice.ProcessInfo, peer *pkgservice.PttPeer) error {
+
+	return nil
+}
+
+/**********
  * Postsync Oplog
  **********/
 
 func (pm *ProtocolManager) postsyncMeOplogs(peer *pkgservice.PttPeer) (err error) {
 	err = pm.SyncPendingMeOplog(peer)
-	log.Debug("postsyncMeOplogs: after SyncPendingMeOplog", "e", err)
 
 	return
 }

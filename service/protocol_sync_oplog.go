@@ -39,7 +39,6 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 	ptt := pm.Ptt()
 	myInfo := ptt.GetMyEntity()
 	if myInfo.GetStatus() != types.StatusAlive {
-		log.Warn("SyncOplog: I am not alive", "status", myInfo.GetStatus())
 		return nil
 	}
 
@@ -49,13 +48,11 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 	}
 
 	toSyncTime, err := merkle.ToSyncTime()
-	log.Debug("SyncOplog: after GetSyncTime", "e", pm.Entity().GetID(), "toSyncTime", toSyncTime, "e", err)
 	if err != nil {
 		return err
 	}
 
 	toSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
-	log.Debug("SyncOplog: after GetMerkleTreeList", "e", pm.Entity().GetID(), "toSyncNodes", toSyncNodes)
 	if err != nil {
 		return err
 	}
@@ -64,8 +61,6 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 		ToSyncTime:  toSyncTime,
 		ToSyncNodes: toSyncNodes,
 	}
-
-	log.Debug("SyncOplog: to SendDataToPeer", "e", pm.Entity().GetID(), "op", op, "toSyncTime", toSyncTime, "toSyncNodes", len(toSyncNodes))
 
 	err = pm.SendDataToPeer(op, syncOplog, peer)
 	if err != nil {
@@ -86,7 +81,11 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 	dataBytes []byte,
 	peer *PttPeer,
 	merkle *Merkle,
-	op OpType,
+
+	forceSyncOplogMsg OpType,
+	forceSyncOplogAckMsg OpType,
+	invalidOplogMsg OpType,
+	syncOplogAckMsg OpType,
 ) error {
 	ptt := pm.Ptt()
 	myInfo := ptt.GetMyEntity()
@@ -110,27 +109,44 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 		return err
 	}
 
+	log.Debug("HandleSyncOplog: after get myToSyncTime", "myToSyncTime", myToSyncTime, "data.ToSyncTime", data.ToSyncTime, "entity", pm.Entity().GetID())
+
+	if myToSyncTime.IsLess(data.ToSyncTime) {
+		return nil
+	}
+
 	toSyncTime := myToSyncTime
 	if data.ToSyncTime.IsLess(toSyncTime) {
 		toSyncTime = data.ToSyncTime
 	}
 
-	log.Debug("HandleSyncOplog: to GetMerkleTreeList", "op", op, "myToSyncTime", myToSyncTime, "toSyncTime", toSyncTime, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
-
 	// get my merkle-tree-list.
 	myToSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
-	log.Debug("HandleSyncOplog: GetMerkleTreeList", "op", op, "err", err, "myToSyncNodes", len(myToSyncNodes), "entity", pm.Entity().GetID())
+	log.Debug("HandleSyncOplog: after getMerkleTreeList", "myToSyncNodes", myToSyncNodes, "data.ToSyncNodes", data.ToSyncNodes, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}
 
 	// 2. validate merkle tree
-	isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime)
-	log.Debug("HandleSyncOplog: after ValidateMerkleTree", "op", op, "isValid", isValid)
+	diffTS, isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime)
+	log.Debug("HandleSyncOplog: after validateMerkleTree", "isValid", isValid, "entity", pm.Entity().GetID())
 	if !isValid {
-		return ErrInvalidOplog
+		return pm.SyncOplogInvalidAck(
+			peer,
+
+			data.ToSyncTime,
+			myToSyncTime,
+
+			diffTS,
+			toSyncTime,
+
+			merkle,
+
+			forceSyncOplogMsg,
+			invalidOplogMsg,
+		)
 	}
 
 	// 3. SyncOplogAck
-	return pm.SyncOplogAck(toSyncTime, merkle, op, peer)
+	return pm.SyncOplogAck(toSyncTime, myToSyncTime, merkle, forceSyncOplogAckMsg, syncOplogAckMsg, peer)
 }

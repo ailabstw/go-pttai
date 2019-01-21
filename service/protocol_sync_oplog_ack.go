@@ -40,12 +40,30 @@ SyncOplogAck: sending SyncOplogAck. Passed validating the oplogs until toSyncTim
 */
 func (pm *BaseProtocolManager) SyncOplogAck(
 	toSyncTime types.Timestamp,
+	myToSyncTime types.Timestamp,
 	merkle *Merkle,
 
+	forceSyncOplogAckMsg OpType,
 	syncOplogAckMsg OpType,
 
 	peer *PttPeer,
 ) error {
+
+	if toSyncTime.IsEqual(types.ZeroTimestamp) {
+		toSyncTime = pm.Entity().GetCreateTS()
+	}
+
+	if myToSyncTime.IsEqual(types.ZeroTimestamp) {
+		myToSyncTime = pm.Entity().GetCreateTS()
+	}
+
+	offsetHourTS, _ := myToSyncTime.ToHRTimestamp()
+
+	err := pm.ForceSyncOplogAck(toSyncTime, offsetHourTS, merkle, forceSyncOplogAckMsg, peer)
+	log.Debug("SyncOplogAck: after ForceSyncOplogAck", "toSyncTime", toSyncTime, "offsetHourTS", offsetHourTS, "e", err, "entity", pm.Entity().GetID())
+	if err != nil {
+		return err
+	}
 
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -54,11 +72,6 @@ func (pm *BaseProtocolManager) SyncOplogAck(
 
 	nodes := make([]*MerkleNode, 0, MaxSyncOplogAck)
 
-	if toSyncTime.IsEqual(types.ZeroTimestamp) {
-		toSyncTime = pm.Entity().GetCreateTS()
-	}
-
-	offsetHourTS, _ := toSyncTime.ToHRTimestamp()
 	startHourTS := offsetHourTS
 	nextHourTS := offsetHourTS
 
@@ -73,13 +86,14 @@ func (pm *BaseProtocolManager) SyncOplogAck(
 			startHourTS,
 			now,
 		)
-		log.Debug("SyncOplogAck: (in-for-loop) after syncOplogAckCore", "offsetHourTS", offsetHourTS, "currentHourTS", currentHourTS, "now", now, "nodes", len(nodes))
+		log.Debug("SyncOplogAck: (in-for-loop) after syncOplogAckCore", "nodes", nodes, "currentHour", currentHourTS, "nextHour", nextHourTS, "e", err, "entity", pm.Entity().GetID())
 		if err != nil {
 			return err
 		}
 	}
 
 	// deal with the last part of the nodes.
+	log.Debug("SyncOplogAck: after syncOplogAckCore", "nodes", nodes, "entity", pm.Entity().GetID())
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -154,9 +168,8 @@ func (pm *BaseProtocolManager) syncOplogAckCore(
 			EndTS:       currentHourTS,
 		}
 
-		log.Debug("syncOplogAckCore: to SendDataToPeer", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "nodes", nodes, "offsetHourTS", offsetHourTS, "startHourTS", startHourTS, "currentHourTS", currentHourTS)
-
 		err = pm.SendDataToPeer(syncOplogAckMsg, syncOplogAck, peer)
+		log.Debug("syncOplogAckCore: after SendDataToPeer", "e", err, "entity", pm.Entity().GetID())
 		if err != nil {
 			return nil, types.ZeroTimestamp, types.ZeroTimestamp, err
 		}
@@ -198,9 +211,8 @@ func (pm *BaseProtocolManager) syncOplogAckCore(
 			EndTS:       endTS,
 		}
 
-		log.Debug("syncOplogAckCore: to SendDataToPeer (in-for-loop)", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "nodes", eachEachNodes, "offsetHourTS", offsetHourTS, "StartHourTS (currentHourTS)", currentHourTS, "EndHourTS (nextHourTS)", nextHourTS, "StartTS", startTS, "EndTS", endTS)
-
 		err = pm.SendDataToPeer(syncOplogAckMsg, syncOplogAck, peer)
+		log.Debug("syncOplogAckCore: after SendDataToPeer", "e", err, "entity", pm.Entity().GetID())
 		if err != nil {
 			return nil, types.ZeroTimestamp, types.ZeroTimestamp, err
 		}
@@ -214,10 +226,13 @@ func (pm *BaseProtocolManager) syncOplogAckCore(
 func (pm *BaseProtocolManager) HandleSyncOplogAck(
 	dataBytes []byte,
 	peer *PttPeer,
+
 	merkle *Merkle,
+
 	setDB func(oplog *BaseOplog),
 	setNewestOplog func(log *BaseOplog) error,
 	postsync func(peer *PttPeer) error,
+
 	newLogsMsg OpType,
 ) error {
 
@@ -246,13 +261,30 @@ func (pm *BaseProtocolManager) HandleSyncOplogAck(
 	myNodes = pm.handleSyncOplogAckFilterTS(myNodes, data.StartTS, data.EndTS)
 
 	myNewKeys, theirNewKeys, err := MergeMerkleNodeKeys(myNodes, data.Nodes)
+	log.Debug("HandleSyncOplogAck: after MergeMerkleNodeKeys", "myNewKeys", myNewKeys, "theirNewKeys", theirNewKeys, "e", err, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}
 
-	log.Debug("HandleSyncOplogAck: to SyncOplogNewOplogs", "myNodes", myNodes, "myNewKeys", len(myNewKeys), "theirNewKeys", len(theirNewKeys), "newLogsMsg", newLogsMsg, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	var myLastNode *MerkleNode
+	if len(myNodes) > 0 {
+		myLastNode = myNodes[len(myNodes)-1]
+	}
 
-	return pm.SyncOplogNewOplogs(data, myNewKeys, theirNewKeys, peer, setDB, setNewestOplog, postsync, newLogsMsg)
+	return pm.SyncOplogNewOplogs(
+		data,
+		myNewKeys,
+		theirNewKeys,
+		peer,
+
+		merkle,
+		myLastNode,
+
+		setDB,
+		setNewestOplog,
+		postsync,
+		newLogsMsg,
+	)
 }
 
 func (pm *BaseProtocolManager) handleSyncOplogAckFilterTS(nodes []*MerkleNode, startTS types.Timestamp, endTS types.Timestamp) []*MerkleNode {

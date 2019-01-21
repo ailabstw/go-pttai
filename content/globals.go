@@ -45,6 +45,9 @@ const (
 	AddPendingBoardOplogsMsg
 
 	SyncBoardOplogMsg
+	ForceSyncBoardOplogMsg
+	ForceSyncBoardOplogAckMsg
+	InvalidSyncBoardOplogMsg
 	SyncBoardOplogAckMsg
 	SyncBoardOplogNewOplogsMsg
 	SyncBoardOplogNewOplogsAckMsg
@@ -59,6 +62,9 @@ const (
 	SyncUpdateTitleMsg
 	SyncUpdateTitleAckMsg
 
+	ForceSyncTitleMsg
+	ForceSyncTitleAckMsg
+
 	// sync article
 	SyncCreateArticleMsg
 	SyncCreateArticleAckMsg
@@ -70,17 +76,28 @@ const (
 	SyncUpdateArticleBlockMsg
 	SyncUpdateArticleBlockAckMsg
 
+	ForceSyncArticleMsg
+	ForceSyncArticleAckMsg
+
 	// sync comment
 	SyncCreateCommentMsg
 	SyncCreateCommentAckMsg
 	SyncCreateCommentBlockMsg
 	SyncCreateCommentBlockAckMsg
 
+	ForceSyncCommentMsg
+	ForceSyncCommentAckMsg
+
+	ForceSyncArticleCommentMsg
+
 	// sync media
 	SyncCreateMediaMsg
 	SyncCreateMediaAckMsg
 	SyncCreateMediaBlockMsg
 	SyncCreateMediaBlockAckMsg
+
+	ForceSyncMediaMsg
+	ForceSyncMediaAckMsg
 )
 
 // db

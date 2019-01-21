@@ -59,6 +59,14 @@ func (pm *ProtocolManager) handleFailedCreateUserImgLog(oplog *pkgservice.BaseOp
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
 }
 
+func (pm *ProtocolManager) handleFailedValidCreateUserImgLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserImg()
+	pm.SetUserImgDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
+}
+
 /**********
  * Customize
  **********/

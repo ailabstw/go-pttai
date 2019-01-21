@@ -28,6 +28,8 @@ func (pm *BaseProtocolManager) HandleSyncUpdateBlockAck(
 
 	obj Object,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 
 	postupdate func(obj Object, oplog *BaseOplog) error,
@@ -50,7 +52,19 @@ func (pm *BaseProtocolManager) HandleSyncUpdateBlockAck(
 	blocksByIDsByObjs := blocksToBlocksByIDsByObjs(blocks)
 
 	for objID, blocksByIDsByObj := range blocksByIDsByObjs {
-		err = pm.handleSyncUpdateBlockAck(blocksByIDsByObj, peer, &objID, obj, setLogDB, postupdate, broadcastLog)
+		err = pm.handleSyncUpdateBlockAck(
+			blocksByIDsByObj,
+			peer,
+
+			&objID,
+			obj,
+
+			merkle,
+
+			setLogDB,
+			postupdate,
+			broadcastLog,
+		)
 		if err != nil {
 			break
 		}
@@ -65,6 +79,8 @@ func (pm *BaseProtocolManager) handleSyncUpdateBlockAck(
 
 	objID *types.PttID,
 	origObj Object,
+
+	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
 
@@ -154,5 +170,14 @@ func (pm *BaseProtocolManager) handleSyncUpdateBlockAck(
 		return err
 	}
 
-	return pm.syncUpdateAckSaveOplog(oplog, syncInfo, origObj, broadcastLog, postupdate)
+	return pm.syncUpdateAckSaveOplog(
+		oplog,
+		syncInfo,
+		origObj,
+
+		merkle,
+
+		broadcastLog,
+		postupdate,
+	)
 }

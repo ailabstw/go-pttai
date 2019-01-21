@@ -49,9 +49,28 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		friendOplogMerkle: friendOplogMerkle,
 	}
 	b, err := pkgservice.NewBaseProtocolManager(
-		ptt, RenewOpKeySeconds, ExpireOpKeySeconds, MaxSyncRandomSeconds, MinSyncRandomSeconds, MaxMasters,
-		nil, nil, nil, pm.SetFriendDB,
-		nil, nil, nil, nil, nil, nil, nil,
+		ptt,
+
+		RenewOpKeySeconds,
+		ExpireOpKeySeconds,
+		MaxSyncRandomSeconds,
+		MinSyncRandomSeconds,
+
+		MaxMasters,
+
+		pm.friendOplogMerkle, // log0Merkle
+
+		// sign
+		nil,
+		nil,
+		nil,
+
+		pm.SetFriendDB, // setLog0DB
+
+		nil, // isMaster
+		nil,
+
+		nil, nil, nil, nil, nil,
 		pm.SyncFriendOplog,  // postsyncMemberOplog
 		nil,                 // leave
 		pm.DeleteFriend,     // theDelete

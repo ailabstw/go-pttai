@@ -67,6 +67,8 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	origObj Object,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 	updateCreateObject func(toObj Object, fromObj Object) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
@@ -87,7 +89,7 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 	defer oplog.Unlock()
 
 	// the temporal-oplog may be already deleted.
-	err = oplog.Get(obj.GetLogID(), true)
+	err = oplog.Get(logID, true)
 	if err != nil {
 		return nil
 	}
@@ -112,7 +114,15 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 
 	if origObj.GetIsGood() {
 		if origObj.GetIsAllGood() {
-			return pm.syncCreateAckSaveOplog(oplog, origObj, broadcastLog, postcreate)
+			return pm.syncCreateAckSaveOplog(
+				oplog,
+				origObj,
+
+				merkle,
+
+				broadcastLog,
+				postcreate,
+			)
 		}
 		return nil
 	}
@@ -141,13 +151,23 @@ func (pm *BaseProtocolManager) HandleSyncCreateObjectAck(
 		oplog.IsSync = true
 	}
 
-	return pm.syncCreateAckSaveOplog(oplog, origObj, broadcastLog, postcreate)
+	return pm.syncCreateAckSaveOplog(
+		oplog,
+		origObj,
+
+		merkle,
+
+		broadcastLog,
+		postcreate,
+	)
 
 }
 
 func (pm *BaseProtocolManager) syncCreateAckSaveOplog(
 	oplog *BaseOplog,
 	obj Object,
+
+	merkle *Merkle,
 
 	broadcastLog func(oplog *BaseOplog) error,
 	postcreate func(obj Object, oplog *BaseOplog) error,
@@ -156,7 +176,7 @@ func (pm *BaseProtocolManager) syncCreateAckSaveOplog(
 	if oplog.IsSync {
 		pm.SetOplogIsSync(oplog, true, broadcastLog)
 	}
-	err := oplog.Save(true)
+	err := oplog.Save(true, merkle)
 	if err != nil {
 		return err
 	}

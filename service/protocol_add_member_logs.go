@@ -31,9 +31,24 @@ func (pm *BaseProtocolManager) handleAddMemberLog(oplog *BaseOplog, info *Proces
 	log.Debug("handleAddMemberLog: start", "oplog.PreLogID", oplog.PreLogID)
 
 	if oplog.PreLogID == nil {
-		return pm.HandleCreatePersonLog(oplog, person, opData, pm.postaddMember)
+		return pm.HandleCreatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.postaddMember,
+		)
 	} else {
-		return pm.HandleUpdatePersonLog(oplog, person, opData, pm.SetMasterDB, pm.postaddMember)
+		return pm.HandleUpdatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.MemberMerkle(),
+
+			pm.SetMemberDB,
+			pm.postaddMember,
+		)
 	}
 }
 
@@ -45,9 +60,21 @@ func (pm *BaseProtocolManager) handlePendingAddMemberLog(oplog *BaseOplog, info 
 	opData := &MemberOpAddMember{}
 
 	if oplog.PreLogID == nil {
-		return pm.HandlePendingCreatePersonLog(oplog, person, opData)
+		return pm.HandlePendingCreatePersonLog(
+			oplog,
+			person,
+			opData,
+		)
 	} else {
-		return pm.HandlePendingUpdatePersonLog(oplog, person, opData, pm.SetMemberDB)
+		return pm.HandlePendingUpdatePersonLog(
+			oplog,
+			person,
+			opData,
+
+			pm.MemberMerkle(),
+
+			pm.SetMemberDB,
+		)
 	}
 }
 
@@ -68,6 +95,18 @@ func (pm *BaseProtocolManager) handleFailedAddMemberLog(oplog *BaseOplog) error 
 		return pm.HandleFailedCreatePersonLog(oplog, person, nil)
 	} else {
 		return pm.HandleFailedUpdatePersonLog(oplog, person)
+	}
+}
+
+func (pm *BaseProtocolManager) handleFailedValidAddMemberLog(oplog *BaseOplog) error {
+
+	person := NewEmptyMember()
+	pm.SetMemberObjDB(person)
+
+	if oplog.PreLogID == nil {
+		return pm.HandleFailedValidCreatePersonLog(oplog, person, nil)
+	} else {
+		return pm.HandleFailedValidUpdatePersonLog(oplog, person)
 	}
 }
 

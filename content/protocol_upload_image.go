@@ -42,6 +42,8 @@ func (pm *ProtocolManager) UploadImage(fileType string, theBytes []byte) (*pkgse
 		data,
 		BoardOpTypeCreateMedia,
 
+		pm.boardOplogMerkle,
+
 		pm.NewMedia,
 		pm.NewBoardOplogWithTS,
 		pm.inuploadImage,

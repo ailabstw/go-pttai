@@ -39,8 +39,18 @@ func (pm *BaseProtocolManager) HandleSyncCreateOpKeyAck(dataBytes []byte, peer *
 		pm.SetOpKeyObjDB(obj)
 
 		pm.HandleSyncCreateObjectAck(
-			obj, peer, origObj,
-			pm.SetOpKeyDB, pm.updateCreateOpKey, pm.postcreateOpKey, pm.broadcastOpKeyOplogCore)
+			obj,
+			peer,
+
+			origObj,
+
+			nil,
+
+			pm.SetOpKeyDB,
+			pm.updateCreateOpKey,
+			pm.postcreateOpKey,
+			pm.broadcastOpKeyOplogCore,
+		)
 	}
 
 	return nil

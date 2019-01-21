@@ -36,10 +36,12 @@ HandleOplogs handles a list of Oplog.
 func HandleOplogs(
 	oplogs []*BaseOplog,
 	peer *PttPeer,
+
 	isUpdateSyncTime bool,
 
 	pm ProtocolManager,
 	info ProcessInfo,
+
 	merkle *Merkle,
 
 	setDB func(oplog *BaseOplog),
@@ -188,6 +190,8 @@ func HandlePendingOplogs(
 	pm ProtocolManager,
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	setDB func(oplog *BaseOplog),
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
@@ -212,7 +216,19 @@ func HandlePendingOplogs(
 	}
 
 	// process
-	err = handlePendingOplogs(oplogs, peer, pm, info, processPendingLog, processLog, postprocessLogs)
+	err = handlePendingOplogs(
+		oplogs,
+		peer,
+
+		pm,
+		info,
+
+		merkle,
+
+		processPendingLog,
+		processLog,
+		postprocessLogs,
+	)
 	log.Debug("HandlePendingOplogs: after handlePendingOplogs", "e", err)
 	if err != nil {
 		return err
@@ -226,10 +242,13 @@ func HandlePendingOplogs(
 We require separated isToSign from processPendingLog, because in the "delete" situation, we still need to sign the oplog, but the oplog is not synced yet.
 */
 func handlePendingOplogs(
-	oplogs []*BaseOplog, peer *PttPeer,
+	oplogs []*BaseOplog,
+	peer *PttPeer,
 
 	pm ProtocolManager,
 	info ProcessInfo,
+
+	merkle *Merkle,
 
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
@@ -242,7 +261,16 @@ func handlePendingOplogs(
 	isToBroadcast := false
 	toBroadcastLogs := make([]*BaseOplog, 0, len(oplogs))
 	for _, oplog := range oplogs {
-		isToBroadcast, origLogs, err = handlePendingOplog(oplog, pm, info, processPendingLog, processLog)
+		isToBroadcast, origLogs, err = handlePendingOplog(
+			oplog,
+			pm,
+			info,
+
+			merkle,
+
+			processPendingLog,
+			processLog,
+		)
 		if err == ErrSkipOplog {
 			continue
 		}
@@ -278,6 +306,8 @@ func handlePendingOplog(
 	pm ProtocolManager,
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	processPendingLog func(oplog *BaseOplog, i ProcessInfo) (types.Bool, []*BaseOplog, error),
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) (bool, []*BaseOplog, error) {
@@ -290,14 +320,14 @@ func handlePendingOplog(
 
 	// integrate
 	// after integrate-me-oplog: oplog saved if orig exists and not new-signed.
-	isNewSign, err := pm.IntegrateOplog(oplog, true)
+	isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
 	if err != nil {
 		return false, nil, err
 	}
 
 	if oplog.IsSync {
 		if isNewSign {
-			err = oplog.Save(true)
+			err = oplog.Save(true, merkle)
 			if err != nil {
 				return false, nil, err
 			}
@@ -356,7 +386,9 @@ func handlePendingOplog(
  **********/
 
 func HandleFailedOplogs(
-	oplogs []*BaseOplog, setDB func(oplog *BaseOplog),
+	oplogs []*BaseOplog,
+
+	setDB func(oplog *BaseOplog),
 	handleFailedOplog func(oplog *BaseOplog) error,
 ) error {
 
@@ -371,6 +403,34 @@ func HandleFailedOplogs(
 
 		oplog.Delete(false)
 	}
+
+	return nil
+}
+
+func HandleFailedValidOplogs(
+	oplogs []*BaseOplog,
+	peer *PttPeer,
+
+	info ProcessInfo,
+
+	setDB func(oplog *BaseOplog),
+	handleFailedValidOplog func(oplog *BaseOplog, info ProcessInfo) error,
+	postprocessLogs func(info ProcessInfo, peer *PttPeer) error,
+) error {
+
+	var err error
+	for _, oplog := range oplogs {
+		setDB(oplog)
+
+		err = handleFailedValidOplog(oplog, info)
+		if err != nil {
+			continue
+		}
+
+		oplog.Delete(false)
+	}
+
+	postprocessLogs(info, peer)
 
 	return nil
 }
@@ -400,8 +460,6 @@ func preprocessOplogs(
 		expireTS = ts
 	}
 	expireTS.Ts -= OffsetMerkleSyncTime
-
-	log.Debug("preprocessOplogs: start", "oplogs", oplogs, "expireTS", expireTS)
 
 	// expire-ts: start-idx
 	startIdx := len(oplogs)

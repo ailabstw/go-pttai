@@ -223,6 +223,72 @@ func (pm *ProtocolManager) HandleFailedUserOplog(oplog *pkgservice.BaseOplog) (e
 }
 
 /**********
+ * Handle Failed Valid Oplog
+ **********/
+
+func (pm *ProtocolManager) HandleFailedValidUserOplog(oplog *pkgservice.BaseOplog, processInfo pkgservice.ProcessInfo) (err error) {
+
+	info, ok := processInfo.(*ProcessUserInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	switch oplog.Op {
+	case UserOpTypeCreateUserName:
+		err = pm.handleFailedValidCreateUserNameLog(oplog, info)
+	case UserOpTypeUpdateUserName:
+		err = pm.handleFailedValidUpdateUserNameLog(oplog, info)
+
+	case UserOpTypeCreateUserImg:
+		err = pm.handleFailedValidCreateUserImgLog(oplog, info)
+	case UserOpTypeUpdateUserImg:
+		err = pm.handleFailedValidUpdateUserImgLog(oplog, info)
+
+	case UserOpTypeAddUserNode:
+		err = pm.handleFailedValidAddUserNodeLog(oplog, info)
+	case UserOpTypeRemoveUserNode:
+		err = pm.handleFailedValidRemoveUserNodeLog(oplog, info)
+
+	case UserOpTypeCreateNameCard:
+		err = pm.handleFailedValidCreateNameCardLog(oplog, info)
+	case UserOpTypeUpdateNameCard:
+		err = pm.handleFailedValidUpdateNameCardLog(oplog, info)
+	}
+
+	return
+}
+
+func (pm *ProtocolManager) postprocessFailedValidUserOplogs(processInfo pkgservice.ProcessInfo, peer *pkgservice.PttPeer) error {
+
+	info, ok := processInfo.(*ProcessUserInfo)
+	if !ok {
+		return pkgservice.ErrInvalidData
+	}
+
+	// user-name
+	userNameIDs := pkgservice.ProcessInfoToForceSyncIDList(info.UserNameInfo)
+
+	pm.ForceSyncUserName(userNameIDs, peer)
+
+	// user-img
+	userImgIDs := pkgservice.ProcessInfoToForceSyncIDList(info.UserImgInfo)
+
+	pm.ForceSyncUserImg(userImgIDs, peer)
+
+	// user-node
+	userNodeIDs := pkgservice.ProcessInfoToForceSyncIDList(info.UserNodeInfo)
+
+	pm.ForceSyncUserNode(userNodeIDs, peer)
+
+	// name-card
+	nameCardIDs := pkgservice.ProcessInfoToForceSyncIDList(info.NameCardInfo)
+
+	pm.ForceSyncNameCard(nameCardIDs, peer)
+
+	return nil
+}
+
+/**********
  * Postsync Oplog
  **********/
 

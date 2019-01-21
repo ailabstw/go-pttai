@@ -17,9 +17,11 @@
 package service
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"reflect"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/ailabstw/go-pttai/common"
@@ -35,31 +37,53 @@ import (
 Merkle is the representation / op of the merkle-tree-over-time for the oplog.
 */
 type Merkle struct {
-	DBOplogPrefix         []byte
-	DBMerklePrefix        []byte
-	dbMerkleMetaPrefix    []byte
-	PrefixID              *types.PttID
-	db                    *pttdb.LDBBatch
-	LastGenerateTS        types.Timestamp
-	BusyGenerateTS        types.Timestamp
-	LastSyncTS            types.Timestamp
-	LastFailSyncTS        types.Timestamp
-	GenerateSeconds       time.Duration
-	ExpireGenerateSeconds int64
+	DBOplogPrefix                []byte
+	DBMerklePrefix               []byte
+	dbMerkleMetaPrefix           []byte
+	dbMerkleToUpdatePrefixWithID []byte
+	dbMerkleUpdatingPrefixWithID []byte
+	PrefixID                     *types.PttID
+	db                           *pttdb.LDBBatch
+	LastGenerateTS               types.Timestamp
+	BusyGenerateTS               types.Timestamp
+	LastSyncTS                   types.Timestamp
+	LastFailSyncTS               types.Timestamp
+	GenerateSeconds              time.Duration
+	ExpireGenerateSeconds        int64
+
+	lockToUpdateTS sync.Mutex
+	toUpdateTS     map[int64]bool
 }
 
 func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttID, db *pttdb.LDBBatch) (*Merkle, error) {
+
+	prefixIDBytes := prefixID[:]
+
 	dbMerkleMetaPrefix := common.CloneBytes(dbMerklePrefix)
 	copy(dbMerkleMetaPrefix[pttdb.OffsetDBKeyPrefixPostfix:], pttdb.DBMetaPostfix)
 
+	dbMerkleToUpdatePrefix := common.CloneBytes(dbMerklePrefix)
+	copy(dbMerkleToUpdatePrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleToUpdatePostfix)
+
+	dbMerkleToUpdatePrefixWithID := append(dbMerkleToUpdatePrefix, prefixIDBytes...)
+
+	dbMerkleUpdatingPrefix := common.CloneBytes(dbMerklePrefix)
+	copy(dbMerkleUpdatingPrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleUpdatingPostfix)
+
+	dbMerkleUpdatingPrefixWithID := append(dbMerkleUpdatingPrefix, prefixIDBytes...)
+
 	m := &Merkle{
-		DBOplogPrefix:         dbOplogPrefix,
-		DBMerklePrefix:        dbMerklePrefix,
-		dbMerkleMetaPrefix:    dbMerkleMetaPrefix,
+		DBOplogPrefix:                dbOplogPrefix,
+		DBMerklePrefix:               dbMerklePrefix,
+		dbMerkleMetaPrefix:           dbMerkleMetaPrefix,
+		dbMerkleToUpdatePrefixWithID: dbMerkleToUpdatePrefixWithID,
+		dbMerkleUpdatingPrefixWithID: dbMerkleUpdatingPrefixWithID,
+
 		PrefixID:              prefixID,
 		db:                    db,
 		GenerateSeconds:       GenerateOplogMerkleTreeSeconds,
 		ExpireGenerateSeconds: ExpireGenerateOplogMerkleTreeSeconds,
+		toUpdateTS:            make(map[int64]bool),
 	}
 
 	lastGenerateTS, err := m.GetGenerateTime()
@@ -490,25 +514,44 @@ func (m *Merkle) GetMerkleIterByKey(startKey []byte, level MerkleTreeLevel, list
 	return m.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
-func ValidateMerkleTree(myNodes []*MerkleNode, theirNodes []*MerkleNode, ts types.Timestamp) bool {
+func ValidateMerkleTree(myNodes []*MerkleNode, theirNodes []*MerkleNode, ts types.Timestamp) (types.Timestamp, bool) {
 	myNodes = validateMerkleTreeTrimNodes(myNodes, ts)
 	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts)
 
 	lenMyNodes := len(myNodes)
 	lenTheirNodes := len(theirNodes)
-	if lenMyNodes != lenTheirNodes {
-		log.Error("ValidateMerkleTree: len", "ts", ts, "lenMyNodes", lenMyNodes, "lenTheirNodes", lenTheirNodes)
-		return false
-	}
 
-	for i, pMyNode, pTheirNode := 0, myNodes, theirNodes; i < lenMyNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
+	/*
+		if lenMyNodes != lenTheirNodes {
+			log.Error("ValidateMerkleTree: len", "ts", ts, "lenMyNodes", lenMyNodes, "lenTheirNodes", lenTheirNodes)
+			return false
+		}
+	*/
+
+	var diffTS types.Timestamp
+
+	i := 0
+	for pMyNode, pTheirNode := myNodes, theirNodes; i < lenMyNodes && i < lenTheirNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
 		if !reflect.DeepEqual(pMyNode[0].Addr, pTheirNode[0].Addr) {
 			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0])
-			return false
+
+			diffTS = pMyNode[0].UpdateTS
+			if pTheirNode[0].UpdateTS.IsLess(ts) {
+				diffTS = pTheirNode[0].UpdateTS
+			}
+			return diffTS, false
 		}
 	}
 
-	return true
+	if i < lenMyNodes {
+		return myNodes[i].UpdateTS, false
+	}
+
+	if i < lenTheirNodes {
+		return theirNodes[i].UpdateTS, false
+	}
+
+	return types.ZeroTimestamp, true
 }
 
 func validateMerkleTreeTrimNodes(nodes []*MerkleNode, ts types.Timestamp) []*MerkleNode {
@@ -605,4 +648,174 @@ func (m *Merkle) Clean() {
 	key, err = m.MarshalFailSyncTimeKey()
 	log.Debug("Clean: (fail-sync-time)", "key", key)
 	db.Delete(key)
+}
+
+func (m *Merkle) ResetUpdateTS() error {
+	m.lockToUpdateTS.Lock()
+	defer m.lockToUpdateTS.Unlock()
+
+	m.toUpdateTS = make(map[int64]bool)
+
+	return nil
+}
+
+var merkleToUpdateTSValue = []byte("1")
+
+func (m *Merkle) SetUpdateTS(ts types.Timestamp) error {
+	hrTS, _ := ts.ToHRTimestamp()
+
+	m.lockToUpdateTS.Lock()
+	defer m.lockToUpdateTS.Unlock()
+
+	key := m.MarshalToUpdateTSKey(ts)
+
+	m.db.DB().Put(key, merkleToUpdateTSValue)
+
+	m.toUpdateTS[hrTS.Ts] = true
+
+	return nil
+}
+
+func (m *Merkle) SetUpdateTS2(ts types.Timestamp, ts2 types.Timestamp) error {
+	hrTS, _ := ts.ToHRTimestamp()
+	hrTS2, _ := ts2.ToHRTimestamp()
+
+	m.lockToUpdateTS.Lock()
+	defer m.lockToUpdateTS.Unlock()
+
+	m.toUpdateTS[hrTS.Ts] = true
+	m.toUpdateTS[hrTS2.Ts] = true
+
+	key := m.MarshalToUpdateTSKey(ts)
+
+	m.db.DB().Put(key, merkleToUpdateTSValue)
+
+	key = m.MarshalToUpdateTSKey(ts2)
+
+	m.db.DB().Put(key, merkleToUpdateTSValue)
+
+	return nil
+}
+
+func (m *Merkle) MarshalToUpdateTSKey(ts types.Timestamp) []byte {
+
+	tsBytes := make([]byte, 8) // int64
+	binary.BigEndian.PutUint64(tsBytes, uint64(ts.Ts))
+
+	theBytes, _ := common.Concat([][]byte{m.dbMerkleToUpdatePrefixWithID, tsBytes})
+
+	return theBytes
+}
+
+func (m *Merkle) GetAndResetToUpdateTSList() ([]int64, error) {
+	m.lockToUpdateTS.Lock()
+	defer m.lockToUpdateTS.Unlock()
+
+	toUpdateTSs, err := m.getAndResetToUpdateTSs(true)
+	if err != nil {
+		return nil, err
+	}
+
+	toUpdateTSList := make([]int64, len(toUpdateTSs))
+	pToUpdateTSList := toUpdateTSList
+	for ts, _ := range toUpdateTSs {
+		pToUpdateTSList[0] = ts
+		pToUpdateTSList = pToUpdateTSList[1:]
+	}
+
+	toUpdateTSListBytes, err := json.Marshal(toUpdateTSList)
+	if err != nil {
+		return nil, err
+	}
+
+	key := m.MarshalUpdatingKey()
+	m.db.DB().Put(key, toUpdateTSListBytes)
+
+	return toUpdateTSList, nil
+}
+
+func (m *Merkle) MarshalUpdatingKey() []byte {
+	return m.dbMerkleUpdatingPrefixWithID
+}
+
+func (m *Merkle) getAndResetToUpdateTSs(isLocked bool) (map[int64]bool, error) {
+	if !isLocked {
+		m.lockToUpdateTS.Lock()
+		defer m.lockToUpdateTS.Unlock()
+	}
+
+	origToUpdateTS := m.toUpdateTS
+	m.toUpdateTS = make(map[int64]bool)
+
+	m.resetToUpdateTSDB()
+
+	return origToUpdateTS, nil
+}
+
+func (m *Merkle) resetToUpdateTSDB() error {
+	iter, err := m.db.DB().NewIteratorWithPrefix(nil, m.dbMerkleToUpdatePrefixWithID, pttdb.ListOrderNext)
+	if err != nil {
+		return err
+	}
+	defer iter.Release()
+
+	var key []byte
+	for iter.Next() {
+		key = iter.Key()
+		m.db.DB().Delete(key)
+	}
+
+	return nil
+}
+
+func (m *Merkle) LoadToUpdateTSs() error {
+	m.lockToUpdateTS.Lock()
+	defer m.lockToUpdateTS.Unlock()
+
+	iter, err := m.db.DB().NewIteratorWithPrefix(nil, m.dbMerkleToUpdatePrefixWithID, pttdb.ListOrderNext)
+	if err != nil {
+		return err
+	}
+	defer iter.Release()
+
+	var key []byte
+	var ts int64
+	for iter.Next() {
+		key = iter.Key()
+		ts = m.tsFromToUpdateTSKey(key)
+		m.toUpdateTS[ts] = true
+	}
+
+	return nil
+}
+
+func (m *Merkle) tsFromToUpdateTSKey(key []byte) int64 {
+	offset := pttdb.SizeDBKeyPrefix + types.SizePttID
+	ts := binary.BigEndian.Uint64(key[offset:])
+
+	return int64(ts)
+}
+
+func (m *Merkle) LoadUpdatingTSList() ([]int64, error) {
+	key := m.MarshalUpdatingKey()
+
+	val, err := m.db.DB().Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	var toUpdateTSList []int64
+	err = json.Unmarshal(val, toUpdateTSList)
+	if err != nil {
+		return nil, err
+	}
+
+	return toUpdateTSList, nil
+}
+
+func (m *Merkle) ResetUpdatingTSList() error {
+	key := m.MarshalUpdatingKey()
+	m.db.DB().Delete(key)
+
+	return nil
 }

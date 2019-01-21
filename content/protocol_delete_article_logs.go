@@ -35,6 +35,8 @@ func (pm *ProtocolManager) handleDeleteArticleLogs(oplog *pkgservice.BaseOplog, 
 		obj,
 		opData,
 
+		pm.boardOplogMerkle,
+
 		pm.SetBoardDB,
 		pm.removeMediaInfoByBlockInfo,
 		pm.postdeleteArticle,
@@ -53,6 +55,8 @@ func (pm *ProtocolManager) handlePendingDeleteArticleLogs(oplog *pkgservice.Base
 		oplog,
 		info, obj,
 		opData,
+
+		pm.boardOplogMerkle,
 
 		pm.SetBoardDB,
 		pm.removeMediaInfoByBlockInfo,
@@ -75,6 +79,14 @@ func (pm *ProtocolManager) handleFailedDeleteArticleLog(oplog *pkgservice.BaseOp
 	pm.SetArticleDB(obj)
 
 	return pm.HandleFailedDeleteObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidDeleteArticleLog(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) error {
+
+	obj := NewEmptyArticle()
+	pm.SetArticleDB(obj)
+
+	return pm.HandleFailedValidDeleteObjectLog(oplog, obj, info, pm.updateArticleDeleteInfo)
 }
 
 /**********

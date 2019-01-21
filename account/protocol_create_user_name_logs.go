@@ -29,8 +29,17 @@ func (pm *ProtocolManager) handleCreateUserNameLogs(oplog *pkgservice.BaseOplog,
 	opData := &UserOpCreateUserName{}
 
 	return pm.HandleCreateObjectLog(
-		oplog, obj, opData, info,
-		pm.existsInInfoCreateUserName, pm.newUserNameWithOplog, nil, pm.updateCreateUserNameInfo)
+		oplog,
+		obj,
+
+		opData,
+		info,
+
+		pm.existsInInfoCreateUserName,
+		pm.newUserNameWithOplog,
+		nil,
+		pm.updateCreateUserNameInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingCreateUserNameLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -40,8 +49,16 @@ func (pm *ProtocolManager) handlePendingCreateUserNameLogs(oplog *pkgservice.Bas
 	opData := &UserOpCreateUserName{}
 
 	return pm.HandlePendingCreateObjectLog(
-		oplog, obj, opData, info,
-		pm.existsInInfoCreateUserName, pm.newUserNameWithOplog, nil, pm.updateCreateUserNameInfo)
+		oplog,
+		obj,
+		opData,
+		info,
+
+		pm.existsInInfoCreateUserName,
+		pm.newUserNameWithOplog,
+		nil,
+		pm.updateCreateUserNameInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestCreateUserNameLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -57,6 +74,14 @@ func (pm *ProtocolManager) handleFailedCreateUserNameLog(oplog *pkgservice.BaseO
 	pm.SetUserNameDB(obj)
 
 	return pm.HandleFailedCreateObjectLog(oplog, obj, nil)
+}
+
+func (pm *ProtocolManager) handleFailedValidCreateUserNameLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyUserName()
+	pm.SetUserNameDB(obj)
+
+	return pm.HandleFailedValidCreateObjectLog(oplog, obj, nil)
 }
 
 /**********

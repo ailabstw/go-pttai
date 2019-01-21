@@ -39,6 +39,8 @@ func (pm *BaseProtocolManager) DeleteMember(
 		types.StatusPendingDeleted,
 		types.StatusDeleted,
 
+		pm.MemberMerkle(),
+
 		pm.SetMemberDB,
 		pm.NewMemberOplog,
 		pm.broadcastMemberOplogCore,
@@ -52,7 +54,12 @@ func (pm *BaseProtocolManager) DeleteMember(
 	return true, nil
 }
 
-func (pm *BaseProtocolManager) postdeleteMember(id *types.PttID, oplog *BaseOplog, origObj Object, opData OpData) error {
+func (pm *BaseProtocolManager) postdeleteMember(
+	id *types.PttID,
+	oplog *BaseOplog,
+	origObj Object,
+	opData OpData,
+) error {
 
 	if pm.inpostdeleteMember != nil {
 		return pm.inpostdeleteMember(id, oplog, origObj, opData)

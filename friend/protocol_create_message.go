@@ -46,6 +46,8 @@ func (pm *ProtocolManager) CreateMessage(msg [][]byte, mediaIDs []*types.PttID) 
 		data,
 		FriendOpTypeCreateMessage,
 
+		pm.friendOplogMerkle,
+
 		pm.NewMessage,
 		pm.NewFriendOplogWithTS,
 		pm.increateMessage,

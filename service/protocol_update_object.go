@@ -39,6 +39,8 @@ func (pm *BaseProtocolManager) UpdateObject(
 	// oplog
 	opData OpData,
 
+	merkle *Merkle,
+
 	setLogDB func(oplog *BaseOplog),
 
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
@@ -131,7 +133,24 @@ func (pm *BaseProtocolManager) UpdateObject(
 	}
 
 	// 6. core
-	err = pm.handleUpdateObjectCoreCore(oplog, opData, origObj, syncInfo, nil, true, setLogDB, removeMediaInfoByBlockInfo, postupdate, nil)
+	err = pm.handleUpdateObjectCoreCore(
+		oplog,
+		opData,
+
+		origObj,
+		syncInfo,
+
+		nil,
+
+		true,
+
+		merkle,
+
+		setLogDB,
+		removeMediaInfoByBlockInfo,
+		postupdate,
+		nil,
+	)
 	log.Debug("UpdateObject: after handleUpdateObjectCoreCore", "oplog", oplog.ID, "obj", origObj.GetID(), "e", err)
 	if err != nil {
 		return err
@@ -143,7 +162,7 @@ func (pm *BaseProtocolManager) UpdateObject(
 	}
 
 	// 6. oplog save
-	err = oplog.Save(false)
+	err = oplog.Save(false, merkle)
 	if err != nil {
 		return err
 	}

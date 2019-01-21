@@ -119,6 +119,11 @@ type SyncID struct {
 	LogID *types.PttID `json:"l"`
 }
 
+type ForceSyncID struct {
+	ID *types.PttID
+	TS types.Timestamp
+}
+
 type SyncBlockID struct {
 	ID    *types.PttID
 	ObjID *types.PttID `json:"o"`

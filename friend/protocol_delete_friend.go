@@ -25,9 +25,20 @@ func (pm *ProtocolManager) DeleteFriend() error {
 	opData := &FriendOpDeleteFriend{}
 
 	err := pm.DeleteEntity(
-		FriendOpTypeDeleteFriend, opData,
-		types.StatusInternalDeleted, types.StatusPendingDeleted, types.StatusDeleted,
-		pm.NewFriendOplog, pm.setPendingDeleteFriendSyncInfo, pm.broadcastFriendOplogCore, pm.postdeleteFriend)
+		FriendOpTypeDeleteFriend,
+		opData,
+
+		types.StatusInternalDeleted,
+		types.StatusPendingDeleted,
+		types.StatusDeleted,
+
+		pm.friendOplogMerkle,
+
+		pm.NewFriendOplog,
+		pm.setPendingDeleteFriendSyncInfo,
+		pm.broadcastFriendOplogCore,
+		pm.postdeleteFriend,
+	)
 
 	return err
 }

@@ -17,11 +17,15 @@
 package content
 
 import (
-	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
+/**********
+ * Sync Comment
+ **********/
+
 func (pm *ProtocolManager) SyncComment(op pkgservice.OpType, syncIDs []*pkgservice.SyncID, peer *pkgservice.PttPeer) error {
+
 	return pm.SyncObject(op, syncIDs, peer)
 }
 
@@ -46,8 +50,6 @@ func (pm *ProtocolManager) HandleSyncCommentBlock(dataBytes []byte, peer *pkgser
 	obj := NewEmptyComment()
 	pm.SetCommentDB(obj)
 
-	log.Debug("HandleSyncCommentBlock: to HandleSyncBlock")
-
 	return pm.HandleSyncBlock(dataBytes, peer, obj, ackMsg)
 }
 
@@ -56,7 +58,15 @@ func (pm *ProtocolManager) HandleSyncCreateCommentBlockAck(dataBytes []byte, pee
 	obj := NewEmptyComment()
 	pm.SetCommentDB(obj)
 
-	log.Debug("HandleSyncCreateCommentBlockAck: to HandleSyncCreateBlockAck")
+	return pm.HandleSyncCreateBlockAck(
+		dataBytes,
+		peer,
+		obj,
 
-	return pm.HandleSyncCreateBlockAck(dataBytes, peer, obj, pm.SetBoardDB, pm.postcreateComment, pm.broadcastBoardOplogCore)
+		pm.boardOplogMerkle,
+
+		pm.SetBoardDB,
+		pm.postcreateComment,
+		pm.broadcastBoardOplogCore,
+	)
 }

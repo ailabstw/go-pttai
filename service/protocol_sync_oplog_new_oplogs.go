@@ -48,6 +48,7 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 
 	if len(theirNewKeys) == 0 && len(myNewKeys) == 0 {
 		if myLastNode != nil {
+			log.Debug("SyncOplogNewOplogs: to SaveSyncTime", "ts", myLastNode.UpdateTS, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			merkle.SaveSyncTime(myLastNode.UpdateTS)
 		}
 

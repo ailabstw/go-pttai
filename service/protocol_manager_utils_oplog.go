@@ -398,7 +398,7 @@ func (pm *BaseProtocolManager) IntegrateOplog(
 		defer oplog.Unlock()
 	}
 
-	isToSign, err := oplog.IntegrateExisting(true)
+	isToSign, err := oplog.IntegrateExisting(true, merkle)
 	if err != nil {
 		return false, err
 	}

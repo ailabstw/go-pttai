@@ -34,7 +34,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDevice3ForceSyncBasic(t *testing.T) {
+func TestMultiDevice3ForceSyncArticle3(t *testing.T) {
 	NNodes = 3
 	isDebug := true
 
@@ -445,14 +445,14 @@ func TestMultiDevice3ForceSyncBasic(t *testing.T) {
 
 	marshaledID, _ = board0_10_1.ID.MarshalText()
 
-	title0_35 := []byte("標題1")
-	marshaledStr = base64.StdEncoding.EncodeToString(title0_35)
+	title1_35 := []byte("標題1")
+	marshaledStr = base64.StdEncoding.EncodeToString(title1_35)
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createArticle", "params": ["%v", "%v", %v, []]}`, string(marshaledID), marshaledStr, string(article))
-	dataCreateArticle0_35 := &content.BackendCreateArticle{}
-	testCore(t1, bodyString, dataCreateArticle0_35, t, isDebug)
-	assert.Equal(board0_10_1.ID, dataCreateArticle0_35.BoardID)
-	assert.Equal(3, dataCreateArticle0_35.NBlock)
+	dataCreateArticle1_35 := &content.BackendCreateArticle{}
+	testCore(t1, bodyString, dataCreateArticle1_35, t, isDebug)
+	assert.Equal(board0_10_1.ID, dataCreateArticle1_35.BoardID)
+	assert.Equal(3, dataCreateArticle1_35.NBlock)
 
 	// wait 10 secs
 	time.Sleep(10 * time.Second)
@@ -608,6 +608,27 @@ func TestMultiDevice3ForceSyncBasic(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 
+	bool2_42 := false
+	testCore(t2, bodyString, &bool2_42, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	// 42.2 get merkle
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	t.Logf("42.2 get merkle: marshaledID: %v", marshaledID)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogMerkle", "params": ["%v"]}`, string(marshaledID))
+
+	merkle0_42_2 := &pkgservice.BackendMerkle{}
+	testCore(t0, bodyString, merkle0_42_2, t, isDebug)
+
+	merkle1_42_2 := &pkgservice.BackendMerkle{}
+	testCore(t1, bodyString, merkle1_42_2, t, isDebug)
+	assert.Equal(merkle0_42_2.LastSyncTS, merkle1_42_2.LastSyncTS)
+
+	merkle2_42_2 := &pkgservice.BackendMerkle{}
+	testCore(t2, bodyString, merkle2_42_2, t, isDebug)
+	assert.Equal(merkle0_42_2.LastSyncTS, merkle2_42_2.LastSyncTS)
+
 	// 43. shutdown t0.
 	bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
 
@@ -626,4 +647,214 @@ func TestMultiDevice3ForceSyncBasic(t *testing.T) {
 	merkle2_44_0 := &pkgservice.BackendMerkle{}
 	testCore(t2, bodyString, merkle2_44_0, t, isDebug)
 
+	// 45. t1 create article.
+	article, _ = json.Marshal([]string{
+		base64.StdEncoding.EncodeToString([]byte("測試31")),
+		base64.StdEncoding.EncodeToString([]byte("測試32")),
+		base64.StdEncoding.EncodeToString([]byte("測試33")),
+		base64.StdEncoding.EncodeToString([]byte("測試34")),
+		base64.StdEncoding.EncodeToString([]byte("測試35")),
+		base64.StdEncoding.EncodeToString([]byte("測試36")),
+		base64.StdEncoding.EncodeToString([]byte("測試37")),
+		base64.StdEncoding.EncodeToString([]byte("測試38")),
+		base64.StdEncoding.EncodeToString([]byte("測試39")),
+		base64.StdEncoding.EncodeToString([]byte("測試40")),
+	})
+
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+
+	title1_45 := []byte("標題2")
+	marshaledStr = base64.StdEncoding.EncodeToString(title1_45)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createArticle", "params": ["%v", "%v", %v, []]}`, string(marshaledID), marshaledStr, string(article))
+	dataCreateArticle1_45 := &content.BackendCreateArticle{}
+	testCore(t1, bodyString, dataCreateArticle1_45, t, isDebug)
+	assert.Equal(board0_10_1.ID, dataCreateArticle1_45.BoardID)
+	assert.Equal(2, dataCreateArticle1_45.NBlock)
+
+	// wait 10 secs
+	time.Sleep(10 * time.Second)
+
+	// 46. content-get-article-list
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+
+	dataGetArticleList1_46 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleList1_46, t, isDebug)
+	assert.Equal(2, len(dataGetArticleList1_46.Result))
+	assert.Equal(dataGetArticleList1_36.Result, dataGetArticleList1_46.Result[:1])
+	article1_46 := dataGetArticleList1_46.Result[1]
+
+	dataGetArticleList2_46 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t2, bodyString, dataGetArticleList2_46, t, isDebug)
+	assert.Equal(2, len(dataGetArticleList2_46.Result))
+	assert.Equal(dataGetArticleList2_36.Result, dataGetArticleList2_46.Result[:1])
+	article2_46 := dataGetArticleList2_46.Result[1]
+
+	assert.Equal(article1_46, article2_46)
+
+	// 47. get-article-block
+	marshaledID2, _ = article1_46.ID.MarshalText()
+	marshaledID3, _ = article1_46.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList1_47 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_47, t, isDebug)
+	assert.Equal(2, len(dataGetArticleBlockList1_47.Result))
+
+	article0 = [][]byte{
+		[]byte("測試31"),
+	}
+
+	article1 = [][]byte{
+		[]byte("測試32"),
+		[]byte("測試33"),
+		[]byte("測試34"),
+		[]byte("測試35"),
+		[]byte("測試36"),
+		[]byte("測試37"),
+		[]byte("測試38"),
+		[]byte("測試39"),
+		[]byte("測試40"),
+	}
+
+	assert.Equal(article0, dataGetArticleBlockList1_47.Result[0].Buf)
+	assert.Equal(article1, dataGetArticleBlockList1_47.Result[1].Buf)
+
+	dataGetArticleBlockList2_47 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t2, bodyString, dataGetArticleBlockList2_47, t, isDebug)
+	assert.Equal(2, len(dataGetArticleBlockList2_47.Result))
+
+	assert.Equal(article0, dataGetArticleBlockList2_47.Result[0].Buf)
+	assert.Equal(article1, dataGetArticleBlockList2_47.Result[1].Buf)
+
+	// 48.0. shutdown t1, t2.
+	bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
+
+	resultString = `{"jsonrpc":"2.0","id":"testID","result":true}`
+	testBodyEqualCore(t1, bodyString, resultString, t)
+
+	time.Sleep(5 * time.Second)
+
+	testBodyEqualCore(t2, bodyString, resultString, t)
+
+	time.Sleep(5 * time.Second)
+
+	// 48. restart t0
+	startNode(t, 0, offsetSecond)
+
+	time.Sleep(TimeSleepRestart)
+
+	// 48.1. restart t1
+	startNode(t, 1, offsetSecond)
+
+	time.Sleep(TimeSleepRestart)
+
+	// 48.2 offset second
+	t.Logf("48.2. get offset second")
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "ptt_getOffsetSecond", "params": []}`)
+
+	var offsetSecond0_48_2 int64
+	testCore(t0, bodyString, &offsetSecond0_48_2, t, isDebug)
+	assert.Equal(offsetSecond, offsetSecond0_48_2)
+
+	var offsetSecond1_48_2 int64
+	testCore(t1, bodyString, &offsetSecond1_48_2, t, isDebug)
+	assert.Equal(offsetSecond, offsetSecond1_48_2)
+
+	// 49. content-get-article-list
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+
+	dataGetArticleList0_49 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleList0_49, t, isDebug)
+	assert.Equal(2, len(dataGetArticleList0_49.Result))
+
+	// 50. get-article-block
+	marshaledID2, _ = article1_46.ID.MarshalText()
+	marshaledID3, _ = article1_46.ContentBlockID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleBlockList", "params": ["%v", "%v", "%v", 0, 0, 10, 2]}`, string(marshaledID), string(marshaledID2), string(marshaledID3))
+
+	dataGetArticleBlockList0_50 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetArticleBlockList0_50, t, isDebug)
+	assert.Equal(2, len(dataGetArticleBlockList0_50.Result))
+
+	assert.Equal(article0, dataGetArticleBlockList0_50.Result[0].Buf)
+	assert.Equal(article1, dataGetArticleBlockList0_50.Result[1].Buf)
+
+	// 51.0 get merkle
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	t.Logf("51.0 get merkle: marshaledID: %v", marshaledID)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogMerkle", "params": ["%v"]}`, string(marshaledID))
+
+	merkle0_51_0 := &pkgservice.BackendMerkle{}
+	testCore(t0, bodyString, merkle0_51_0, t, isDebug)
+
+	merkle1_51_0 := &pkgservice.BackendMerkle{}
+	testCore(t1, bodyString, merkle1_51_0, t, isDebug)
+
+	// 52. sync.
+	t.Logf("52. force sync")
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_forceSync", "params": ["%v"]}`, string(marshaledID))
+
+	bool0_52 := false
+	testCore(t0, bodyString, &bool0_52, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	bool1_52 := false
+	testCore(t1, bodyString, &bool1_52, t, isDebug)
+
+	time.Sleep(5 * time.Second)
+
+	// 53.0 get merkle
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+	t.Logf("53.0 get merkle: marshaledID: %v", board0_10_1.ID)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogMerkle", "params": ["%v"]}`, string(marshaledID))
+
+	merkle0_53_0 := &pkgservice.BackendMerkle{}
+	testCore(t0, bodyString, merkle0_53_0, t, isDebug)
+
+	merkle1_53_0 := &pkgservice.BackendMerkle{}
+	testCore(t1, bodyString, merkle1_53_0, t, isDebug)
+
+	assert.Equal(merkle0_53_0.LastSyncTS, merkle1_53_0.LastSyncTS)
+
+	// 54. get board oplogs
+	marshaledID, _ = board0_10_1.ID.MarshalText()
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+
+	dataGetBoardOplogList0_54 := &struct {
+		Result []*content.BoardOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataGetBoardOplogList0_54, t, isDebug)
+	assert.Equal(3, len(dataGetBoardOplogList0_54.Result))
+	boardOplog0_54_2 := dataGetBoardOplogList0_54.Result[2]
+
+	dataGetBoardOplogList1_54 := &struct {
+		Result []*content.BoardOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetBoardOplogList1_54, t, isDebug)
+	assert.Equal(3, len(dataGetBoardOplogList1_54.Result))
+	boardOplog1_54_2 := dataGetBoardOplogList1_54.Result[2]
+
+	assert.Equal(boardOplog0_54_2, boardOplog1_54_2)
 }

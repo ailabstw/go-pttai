@@ -48,6 +48,10 @@ type ProtocolManager struct {
 	// user-img
 	dbUserImgPrefix    []byte
 	dbUserImgIdxPrefix []byte
+
+	// name-card
+	dbNameCardPrefix    []byte
+	dbNameCardIdxPrefix []byte
 }
 
 func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgservice.Entity) *pkgservice.BaseProtocolManager {
@@ -136,6 +140,10 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 	// user-img
 	pm.dbUserImgPrefix = DBUserImgPrefix
 	pm.dbUserImgIdxPrefix = DBUserImgIdxPrefix
+
+	// name-card
+	pm.dbNameCardPrefix = DBNameCardPrefix
+	pm.dbNameCardIdxPrefix = DBNameCardIdxPrefix
 
 	return pm, nil
 }

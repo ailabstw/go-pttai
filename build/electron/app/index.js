@@ -145,7 +145,7 @@ function run_gptt_node () {
       '2>', errLog
     ]
 
-    gptt_node = require('child_process').spawn(proc, args, {setsid:true});
+    gptt_node = spawn(proc, args, {setsid:true});
 }
 
 function load_content () {
@@ -169,7 +169,7 @@ function open_window () {
     if (!gptt_win) {
 
         gptt_win = new BrowserWindow({
-          width: 554,
+          width: 414,
           height: 1000,
         })
 
@@ -177,12 +177,23 @@ function open_window () {
         gptt_win.on('close', (e) => {
           e.preventDefault();
           gptt_win.hide();
+
+          if (process.platform !== "darwin") {
+            //spawn("taskkill", ["/PID", gptt_node.pid, "/F", "T"])
+            spawn("taskkill", ["/F", "/IM", "gptt.exe", "/T"])
+            spawn("taskkill", ["/F", "/IM", "Pttai.exe", "/T"])
+          }
         });
 
         app.on('before-quit', (e) => {
           // Handle menu-item or keyboard shortcut quit here
           gptt_win = null
-          gptt_node.kill()
+          if (process.platform !== "darwin") {
+            spawn("taskkill", ["/F", "/IM", "gptt.exe", "/T"])
+            spawn("taskkill", ["/F", "/IM", "Pttai.exe", "/T"])
+          } else {
+            gptt_node.kill()
+          }
           app.exit()
         });
 

@@ -47,3 +47,15 @@ func userImgToBackendUserImg(u *UserImg) *BackendUserImg {
 		Height: u.Height,
 	}
 }
+
+type BackendNameCard struct {
+	ID   *types.PttID
+	Card []byte `json:"C"`
+}
+
+func userNameToBackendNameCard(u *NameCard) *BackendNameCard {
+	return &BackendNameCard{
+		ID:   u.ID,
+		Card: u.Card,
+	}
+}

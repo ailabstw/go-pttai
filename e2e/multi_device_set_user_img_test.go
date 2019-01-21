@@ -163,7 +163,7 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_3_4, t, isDebug)
-	assert.Equal(4, len(dataGetUserOplogList0_3_4.Result))
+	assert.Equal(5, len(dataGetUserOplogList0_3_4.Result))
 	userOplog0_3_4 := dataGetUserOplogList0_3_4.Result[0]
 	masterSigns0_3_4 := userOplog0_3_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_3_4))
@@ -175,7 +175,7 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetUserOplogList1_3_4, t, isDebug)
-	assert.Equal(4, len(dataGetUserOplogList1_3_4.Result))
+	assert.Equal(5, len(dataGetUserOplogList1_3_4.Result))
 	userOplog1_3_4 := dataGetUserOplogList1_3_4.Result[0]
 	masterSigns1_3_4 := userOplog1_3_4.MasterSigns
 	assert.Equal(1, len(masterSigns1_3_4))
@@ -453,7 +453,7 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_10_4, t, isDebug)
-	assert.Equal(5, len(dataGetUserOplogList0_10_4.Result))
+	assert.Equal(6, len(dataGetUserOplogList0_10_4.Result))
 	userOplog0_10_4_0 := dataGetUserOplogList0_10_4.Result[0]
 	masterSigns0_10_4_0 := userOplog0_10_4_0.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4_0))
@@ -475,19 +475,19 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_10_4_2.Op)
 
-	userOplog0_10_4_3 := dataGetUserOplogList0_10_4.Result[3]
-	masterSigns0_10_4_3 := userOplog0_10_4_3.MasterSigns
-	assert.Equal(1, len(masterSigns0_10_4_3))
-	assert.Equal(me0_3.ID, masterSigns0_10_4_3[0].ID)
-	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_3.MasterLogID)
-	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_3.Op)
-
 	userOplog0_10_4_4 := dataGetUserOplogList0_10_4.Result[4]
 	masterSigns0_10_4_4 := userOplog0_10_4_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4_4))
 	assert.Equal(me0_3.ID, masterSigns0_10_4_4[0].ID)
 	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_4.MasterLogID)
-	assert.Equal(account.UserOpTypeDeleteProfile, userOplog0_10_4_4.Op)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_4.Op)
+
+	userOplog0_10_4_5 := dataGetUserOplogList0_10_4.Result[5]
+	masterSigns0_10_4_5 := userOplog0_10_4_5.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_4_5))
+	assert.Equal(me0_3.ID, masterSigns0_10_4_5[0].ID)
+	assert.Equal(masterOplog0_10_2.ID, userOplog0_10_4_5.MasterLogID)
+	assert.Equal(account.UserOpTypeDeleteProfile, userOplog0_10_4_5.Op)
 
 	// t1
 	t.Logf("10.4 GetUserOplogList: t1")
@@ -497,7 +497,7 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetUserOplogList1_10_4, t, isDebug)
-	assert.Equal(5, len(dataGetUserOplogList1_10_4.Result))
+	assert.Equal(6, len(dataGetUserOplogList1_10_4.Result))
 	userOplog1_10_4_0 := dataGetUserOplogList1_10_4.Result[0]
 	masterSigns1_10_4_0 := userOplog1_10_4_0.MasterSigns
 	assert.Equal(1, len(masterSigns1_10_4_0))
@@ -519,19 +519,19 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog1_10_4_2.Op)
 
-	userOplog1_10_4_3 := dataGetUserOplogList1_10_4.Result[3]
-	masterSigns1_10_4_3 := userOplog1_10_4_3.MasterSigns
-	assert.Equal(1, len(masterSigns1_10_4_3))
-	assert.Equal(me1_3.ID, masterSigns1_10_4_3[0].ID)
-	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_3.MasterLogID)
-	assert.Equal(account.UserOpTypeAddUserNode, userOplog1_10_4_3.Op)
-
 	userOplog1_10_4_4 := dataGetUserOplogList1_10_4.Result[4]
 	masterSigns1_10_4_4 := userOplog1_10_4_4.MasterSigns
 	assert.Equal(1, len(masterSigns1_10_4_4))
 	assert.Equal(me1_3.ID, masterSigns1_10_4_4[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_4.MasterLogID)
 	assert.Equal(account.UserOpTypeAddUserNode, userOplog1_10_4_4.Op)
+
+	userOplog1_10_4_5 := dataGetUserOplogList1_10_4.Result[5]
+	masterSigns1_10_4_5 := userOplog1_10_4_5.MasterSigns
+	assert.Equal(1, len(masterSigns1_10_4_5))
+	assert.Equal(me1_3.ID, masterSigns1_10_4_5[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog1_10_4_5.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog1_10_4_5.Op)
 
 	// new t0 (should be the same as t1)
 	t.Logf("10.4 GetUserOplogList: new t0")
@@ -541,7 +541,7 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_10_4_1, t, isDebug)
-	assert.Equal(5, len(dataGetUserOplogList0_10_4_1.Result))
+	assert.Equal(6, len(dataGetUserOplogList0_10_4_1.Result))
 	userOplog0_10_4_1_0 := dataGetUserOplogList0_10_4_1.Result[0]
 	mastersigns0_10_4_1_0 := userOplog0_10_4_1_0.MasterSigns
 	assert.Equal(1, len(mastersigns0_10_4_1_0))
@@ -563,24 +563,24 @@ func TestMultiDeviceSetUserImg(t *testing.T) {
 	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_2.MasterLogID)
 	assert.Equal(account.UserOpTypeCreateUserImg, userOplog0_10_4_1_2.Op)
 
-	userOplog0_10_4_1_3 := dataGetUserOplogList0_10_4_1.Result[3]
-	masterSigns0_10_4_1_3 := userOplog0_10_4_1_3.MasterSigns
-	assert.Equal(1, len(masterSigns0_10_4_1_3))
-	assert.Equal(me1_3.ID, masterSigns0_10_4_1_3[0].ID)
-	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_3.MasterLogID)
-	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_1_3.Op)
-	opData0_10_4_1_3 := &account.UserOpAddUserNode{}
-	userOplog0_10_4_1_3.GetData(opData0_10_4_1_3)
-	assert.Equal(me1_1.NodeID, opData0_10_4_1_3.NodeID)
-
 	userOplog0_10_4_1_4 := dataGetUserOplogList0_10_4_1.Result[4]
 	masterSigns0_10_4_1_4 := userOplog0_10_4_1_4.MasterSigns
 	assert.Equal(1, len(masterSigns0_10_4_1_4))
 	assert.Equal(me1_3.ID, masterSigns0_10_4_1_4[0].ID)
 	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_4.MasterLogID)
 	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_1_4.Op)
+	opData0_10_4_1_3 := &account.UserOpAddUserNode{}
+	userOplog0_10_4_1_4.GetData(opData0_10_4_1_3)
+	assert.Equal(me1_1.NodeID, opData0_10_4_1_3.NodeID)
+
+	userOplog0_10_4_1_5 := dataGetUserOplogList0_10_4_1.Result[5]
+	masterSigns0_10_4_1_5 := userOplog0_10_4_1_5.MasterSigns
+	assert.Equal(1, len(masterSigns0_10_4_1_5))
+	assert.Equal(me1_3.ID, masterSigns0_10_4_1_5[0].ID)
+	assert.Equal(masterOplog1_10_2.ID, userOplog0_10_4_1_5.MasterLogID)
+	assert.Equal(account.UserOpTypeAddUserNode, userOplog0_10_4_1_5.Op)
 	opData0_10_4_1_4 := &account.UserOpAddUserNode{}
-	userOplog0_10_4_1_4.GetData(opData0_10_4_1_4)
+	userOplog0_10_4_1_5.GetData(opData0_10_4_1_4)
 	assert.Equal(me0_1.NodeID, opData0_10_4_1_4.NodeID)
 
 	assert.Equal(dataGetUserOplogList1_10_4, dataGetUserOplogList0_10_4_1)

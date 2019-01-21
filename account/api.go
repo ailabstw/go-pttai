@@ -78,6 +78,10 @@ func (api *PrivateAPI) GetRawUserImg(idStr string) (*UserImg, error) {
 	return api.b.GetRawUserImg([]byte(idStr))
 }
 
+func (api *PrivateAPI) GetRawNameCard(idStr string) (*NameCard, error) {
+	return api.b.GetRawNameCard([]byte(idStr))
+}
+
 func (api *PrivateAPI) GetRawProfile(idStr string) (*Profile, error) {
 	return api.b.GetRawProfile([]byte(idStr))
 }
@@ -210,12 +214,6 @@ func (api *PublicAPI) GetUserName(idStr string) (*BackendUserName, error) {
 	return api.b.GetUserName([]byte(idStr))
 }
 
-/*
-func (api *PublicAPI) GetUserNameList(idStr string, limit int, listOrder pttdb.ListOrder) ([]*BackendUserName, error) {
-	return api.b.GetUserNameList([]byte(idStr), limit, listOrder)
-}
-*/
-
 func (api *PublicAPI) GetUserNameByIDs(idStrs []string) (map[string]*BackendUserName, error) {
 	idByteList := make([][]byte, len(idStrs))
 	for i, idStr := range idStrs {
@@ -234,4 +232,16 @@ func (api *PublicAPI) GetUserImgByIDs(idStrs []string) (map[string]*BackendUserI
 		idByteList[i] = []byte(idStr)
 	}
 	return api.b.GetUserImgByIDs(idByteList)
+}
+
+func (api *PublicAPI) GetNameCard(idStr string) (*BackendNameCard, error) {
+	return api.b.GetNameCard([]byte(idStr))
+}
+
+func (api *PublicAPI) GetNameCardByIDs(idStrs []string) (map[string]*BackendNameCard, error) {
+	idByteList := make([][]byte, len(idStrs))
+	for i, idStr := range idStrs {
+		idByteList[i] = []byte(idStr)
+	}
+	return api.b.GetNameCardByIDs(idByteList)
 }

@@ -54,6 +54,11 @@ func (spm *ServiceProtocolManager) CreateProfile() (*Profile, error) {
 		return nil, err
 	}
 
+	err = pm.CreateNameCard(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return profile, nil
 }
 

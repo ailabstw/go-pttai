@@ -253,3 +253,54 @@ func (b *Backend) GetUserImgByIDs(idByteList [][]byte) (map[string]*BackendUserI
 
 	return backendUserImgs, nil
 }
+
+/**********
+ * Name Card
+ **********/
+
+func (b *Backend) GetRawNameCard(idBytes []byte) (*NameCard, error) {
+
+	id, err := types.UnmarshalTextPttID(idBytes, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.GetRawNameCardByID(id)
+
+}
+
+func (b *Backend) GetRawNameCardByID(id *types.PttID) (*NameCard, error) {
+
+	spm := b.SPM().(*ServiceProtocolManager)
+	return spm.GetNameCardByID(id)
+}
+
+func (b *Backend) GetNameCard(idBytes []byte) (*BackendNameCard, error) {
+
+	u, err := b.GetRawNameCard(idBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return userNameToBackendNameCard(u), nil
+}
+
+func (b *Backend) GetNameCardByIDs(idByteList [][]byte) (map[string]*BackendNameCard, error) {
+
+	backendNameCards := make(map[string]*BackendNameCard)
+
+	var u *BackendNameCard
+	var err error
+
+	for _, idBytes := range idByteList {
+
+		u, err = b.GetNameCard(idBytes)
+		if err != nil {
+			continue
+		}
+
+		backendNameCards[string(idBytes)] = u
+	}
+
+	return backendNameCards, nil
+}

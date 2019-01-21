@@ -248,6 +248,11 @@ func (pm *ProtocolManager) HandleFailedValidUserOplog(oplog *pkgservice.BaseOplo
 		err = pm.handleFailedValidAddUserNodeLog(oplog, info)
 	case UserOpTypeRemoveUserNode:
 		err = pm.handleFailedValidRemoveUserNodeLog(oplog, info)
+
+	case UserOpTypeCreateNameCard:
+		err = pm.handleFailedValidCreateNameCardLog(oplog, info)
+	case UserOpTypeUpdateNameCard:
+		err = pm.handleFailedValidUpdateNameCardLog(oplog, info)
 	}
 
 	return
@@ -274,6 +279,11 @@ func (pm *ProtocolManager) postprocessFailedValidUserOplogs(processInfo pkgservi
 	userNodeIDs := pkgservice.ProcessInfoToForceSyncIDList(info.UserNodeInfo)
 
 	pm.ForceSyncUserNode(userNodeIDs, peer)
+
+	// name-card
+	nameCardIDs := pkgservice.ProcessInfoToForceSyncIDList(info.NameCardInfo)
+
+	pm.ForceSyncNameCard(nameCardIDs, peer)
 
 	return nil
 }

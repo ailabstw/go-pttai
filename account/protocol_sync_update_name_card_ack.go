@@ -45,7 +45,14 @@ func (pm *ProtocolManager) HandleSyncUpdateNameCardAck(dataBytes []byte, peer *p
 			peer,
 
 			origObj,
-			pm.SetUserDB, pm.updateSyncNameCard, nil, pm.broadcastUserOplogCore)
+
+			pm.userOplogMerkle,
+
+			pm.SetUserDB,
+			pm.updateSyncNameCard,
+			nil,
+			pm.broadcastUserOplogCore,
+		)
 	}
 
 	return nil

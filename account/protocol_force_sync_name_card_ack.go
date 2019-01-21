@@ -22,11 +22,7 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-type SyncNameCardAck struct {
-	Objs []*NameCard `json:"o"`
-}
-
-func (pm *ProtocolManager) HandleSyncCreateNameCardAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+func (pm *ProtocolManager) HandleForceSyncNameCardAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
 	data := &SyncNameCardAck{}
 	err := json.Unmarshal(dataBytes, data)
@@ -34,16 +30,13 @@ func (pm *ProtocolManager) HandleSyncCreateNameCardAck(dataBytes []byte, peer *p
 		return err
 	}
 
-	if len(data.Objs) == 0 {
-		return nil
-	}
-
 	origObj := NewEmptyNameCard()
 	pm.SetNameCardDB(origObj)
+
 	for _, obj := range data.Objs {
 		pm.SetNameCardDB(obj)
 
-		pm.HandleSyncCreateObjectAck(
+		err = pm.HandleForceSyncObjectAck(
 			obj,
 			peer,
 
@@ -52,10 +45,10 @@ func (pm *ProtocolManager) HandleSyncCreateNameCardAck(dataBytes []byte, peer *p
 			pm.userOplogMerkle,
 
 			pm.SetUserDB,
-			nil,
-			nil,
-			pm.broadcastUserOplogCore,
 		)
+		if err != nil {
+			continue
+		}
 	}
 
 	return nil

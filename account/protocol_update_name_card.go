@@ -41,15 +41,24 @@ func (pm *ProtocolManager) UpdateNameCard(card []byte) (*NameCard, error) {
 
 	err := pm.UpdateObject(
 		myID,
+
 		data,
 		UserOpTypeUpdateNameCard,
+
 		origObj,
+
 		opData,
 
+		pm.userOplogMerkle,
+
 		pm.SetUserDB,
+
 		pm.NewUserOplog,
+
 		pm.inupdateNameCard,
+
 		nil,
+
 		pm.broadcastUserOplogCore,
 		nil,
 	)

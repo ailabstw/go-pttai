@@ -28,8 +28,24 @@ func (pm *ProtocolManager) handleUpdateNameCardLogs(oplog *pkgservice.BaseOplog,
 	opData := &UserOpUpdateNameCard{}
 
 	return pm.HandleUpdateObjectLog(
-		oplog, opData, obj, info,
-		pm.syncNameCardInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateNameCardInfo)
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncNameCardInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+
+		pm.updateUpdateNameCardInfo,
+	)
 }
 
 func (pm *ProtocolManager) handlePendingUpdateNameCardLogs(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
@@ -38,7 +54,25 @@ func (pm *ProtocolManager) handlePendingUpdateNameCardLogs(oplog *pkgservice.Bas
 
 	opData := &UserOpUpdateNameCard{}
 
-	return pm.HandlePendingUpdateObjectLog(oplog, opData, obj, info, pm.syncNameCardInfoFromOplog, pm.SetUserDB, nil, nil, pm.updateUpdateNameCardInfo)
+	return pm.HandlePendingUpdateObjectLog(
+		oplog,
+		opData,
+
+		obj,
+
+		info,
+
+		pm.userOplogMerkle,
+
+		pm.syncNameCardInfoFromOplog,
+
+		pm.SetUserDB,
+		nil,
+
+		nil,
+
+		pm.updateUpdateNameCardInfo,
+	)
 }
 
 func (pm *ProtocolManager) setNewestUpdateNameCardLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
@@ -54,6 +88,14 @@ func (pm *ProtocolManager) handleFailedUpdateNameCardLog(oplog *pkgservice.BaseO
 	pm.SetNameCardDB(obj)
 
 	return pm.HandleFailedUpdateObjectLog(oplog, obj)
+}
+
+func (pm *ProtocolManager) handleFailedValidUpdateNameCardLog(oplog *pkgservice.BaseOplog, info *ProcessUserInfo) error {
+
+	obj := NewEmptyNameCard()
+	pm.SetNameCardDB(obj)
+
+	return pm.HandleFailedValidUpdateObjectLog(oplog, obj, info, pm.updateUpdateNameCardInfo)
 }
 
 /**********

@@ -79,11 +79,15 @@ const (
 	ForceSyncUserImgMsg
 	ForceSyncUserImgAckMsg
 
+	// name-card
 	SyncCreateNameCardMsg
 	SyncCreateNameCardAckMsg
 
 	SyncUpdateNameCardMsg // 56
 	SyncUpdateNameCardAckMsg
+
+	ForceSyncNameCardMsg
+	ForceSyncNameCardAckMsg
 )
 
 // user-profile

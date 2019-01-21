@@ -33,6 +33,8 @@ func (pm *ProtocolManager) CreateNameCard(nameCard []byte) error {
 		nil,
 		UserOpTypeCreateNameCard,
 
+		pm.userOplogMerkle,
+
 		pm.NewNameCard,
 		pm.NewUserOplogWithTS,
 		nil,

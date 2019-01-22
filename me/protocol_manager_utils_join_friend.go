@@ -168,3 +168,19 @@ func (pm *ProtocolManager) GetFriendRequests() ([]*pkgservice.JoinRequest, error
 	}
 	return theList, nil
 }
+
+func (pm *ProtocolManager) RemoveFriendRequests(hash []byte) (bool, error) {
+	pm.lockJoinFriendRequest.Lock()
+	defer pm.lockJoinFriendRequest.Unlock()
+
+	addr := &common.Address{}
+	copy(addr[:], hash)
+	_, ok := pm.joinFriendRequests[*addr]
+	if !ok {
+		return false, types.ErrAlreadyDeleted
+	}
+
+	delete(pm.joinFriendRequests, *addr)
+
+	return true, nil
+}

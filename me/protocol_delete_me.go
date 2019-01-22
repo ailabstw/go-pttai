@@ -88,7 +88,7 @@ func (pm *ProtocolManager) postdeleteDeleteMe(theOpData pkgservice.OpData, isFor
 		if !entity.IsOwner(myID) {
 			continue
 		}
-		entity.PM().Leave()
+		entity.PM().LeaveEntity()
 	}
 
 	return nil

@@ -393,3 +393,12 @@ func (b *BaseService) ForceSync(entityIDBytes []byte) (bool, error) {
 
 	return true, nil
 }
+
+func (b *BaseService) LeaveEntity(entityIDBytes []byte) (bool, error) {
+	pm, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+
+	return pm.LeaveEntity()
+}

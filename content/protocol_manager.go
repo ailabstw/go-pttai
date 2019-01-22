@@ -75,7 +75,6 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 
 		pm.SyncBoardOplog, // postsyncMemberOplog
 
-		nil,                // leave
 		pm.DeleteBoard,     // theDelete
 		pm.postdeleteBoard, // postdelete
 

@@ -98,6 +98,17 @@ func (api *PrivateAPI) GetMeRequests(entityID string) ([]*pkgservice.BackendJoin
 	return api.b.GetMeRequests([]byte(entityID))
 }
 
+func (api *PrivateAPI) RemoveMeRequests(entityID string, hash []byte) (bool, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return false, err
+		}
+	}
+	return api.b.RemoveMeRequests([]byte(entityID), hash)
+}
+
 /**********
  * JoinFriend
  **********/
@@ -120,6 +131,17 @@ func (api *PrivateAPI) GetFriendRequests(entityID string) ([]*pkgservice.Backend
 	return api.b.GetFriendRequests([]byte(entityID))
 }
 
+func (api *PrivateAPI) RemoveFriendRequests(entityID string, hash []byte) (bool, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return false, err
+		}
+	}
+	return api.b.RemoveFriendRequests([]byte(entityID), hash)
+}
+
 /**********
  * JoinBoard
  **********/
@@ -140,6 +162,17 @@ func (api *PrivateAPI) GetBoardRequests(entityID string) ([]*pkgservice.BackendJ
 		}
 	}
 	return api.b.GetBoardRequests([]byte(entityID))
+}
+
+func (api *PrivateAPI) RemoveBoardRequests(entityID string, hash []byte) (bool, error) {
+	var err error
+	if len(entityID) == 0 {
+		entityID, err = api.b.GetMyIDStr()
+		if err != nil {
+			return false, err
+		}
+	}
+	return api.b.RemoveBoardRequests([]byte(entityID), hash)
 }
 
 /**********

@@ -112,8 +112,8 @@ func (api *PrivateAPI) DeleteReply(entityID string, articleID string, commentID 
 	)
 }
 
-func (api *PrivateAPI) LeaveBoard(entityID string) (*BackendLeaveBoard, error) {
-	return api.b.LeaveBoard([]byte(entityID))
+func (api *PrivateAPI) LeaveBoard(entityID string) (bool, error) {
+	return api.b.LeaveEntity([]byte(entityID))
 }
 
 func (api *PrivateAPI) InviteMaster(entityID string, userID string, nodeURL string) (*BackendInviteMaster, error) {

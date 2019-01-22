@@ -16,7 +16,11 @@
 
 package me
 
-import "github.com/ailabstw/go-pttai/common"
+import (
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
+	pkgservice "github.com/ailabstw/go-pttai/service"
+)
 
 func (pm *ProtocolManager) IsJoinMeKeyHash(hash *common.Address) bool {
 	return pm.BaseProtocolManager.IsJoinKeyHash(hash)
@@ -29,4 +33,34 @@ func (pm *ProtocolManager) IsJoinMeRequests(hash *common.Address) bool {
 	_, ok := pm.joinMeRequests[*hash]
 
 	return ok
+}
+
+func (pm *ProtocolManager) GetMeRequests() ([]*pkgservice.JoinRequest, error) {
+	pm.lockJoinMeRequest.RLock()
+	defer pm.lockJoinMeRequest.RUnlock()
+
+	lenRequests := len(pm.joinMeRequests)
+	results := make([]*pkgservice.JoinRequest, 0, lenRequests)
+
+	for _, joinRequest := range pm.joinMeRequests {
+		results = append(results, joinRequest)
+	}
+
+	return results, nil
+}
+
+func (pm *ProtocolManager) RemoveMeRequests(hash []byte) (bool, error) {
+	pm.lockJoinMeRequest.Lock()
+	defer pm.lockJoinMeRequest.Unlock()
+
+	addr := &common.Address{}
+	copy(addr[:], hash)
+	_, ok := pm.joinMeRequests[*addr]
+	if !ok {
+		return false, types.ErrAlreadyDeleted
+	}
+
+	delete(pm.joinMeRequests, *addr)
+
+	return true, nil
 }

@@ -171,7 +171,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		pm.IsPendingPeer,
 
 		nil, // postsyncMemberOplog
-		nil, // leave
+
 		nil, // theDelete
 		nil, // postdelete
 

@@ -18,6 +18,7 @@ package me
 
 import (
 	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -41,4 +42,20 @@ func (pm *ProtocolManager) GetBoardRequests() ([]*pkgservice.JoinRequest, error)
 		i++
 	}
 	return theList, nil
+}
+
+func (pm *ProtocolManager) RemoveBoardRequests(hash []byte) (bool, error) {
+	pm.lockJoinBoardRequest.Lock()
+	defer pm.lockJoinBoardRequest.Unlock()
+
+	addr := &common.Address{}
+	copy(addr[:], hash)
+	_, ok := pm.joinBoardRequests[*addr]
+	if !ok {
+		return false, types.ErrAlreadyDeleted
+	}
+
+	delete(pm.joinBoardRequests, *addr)
+
+	return true, nil
 }

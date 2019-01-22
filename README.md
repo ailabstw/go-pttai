@@ -43,6 +43,7 @@ Testing for specific dir:
     ./scripts/test.sh [dir]
     (ex: ./scripts/test.sh common)
 
+
 E2E-Test
 -----
 
@@ -85,3 +86,12 @@ The code-structure is based on [go-ethereum](https://github.com/ethereum/go-ethe
     * http-connection: 9774
     * api-connection: 14779
     * p2p-connection: 9487
+
+
+SSH Tunnel
+-----
+
+1. ssh -L [rpcport-for-localhost]:localhost:[rpcport-for-remote-host] [username]@[remote-host]
+2. ssh -L [httpport-for-localhost]:localhost:[httpport-for-remote-host] [username]@[remote-host]
+3. ./build/bin/gptt --testp2p --rpcport [port-for-remote-host] --httpaddr 127.0.0.1:[http-port] --exthttpaddr http://localhost:[httpport-for-localhost] --extrpcaddr http://localhost:[rpcport-for-localhost]
+4. (in browser) http://localhost:[httpport-for-localhost]

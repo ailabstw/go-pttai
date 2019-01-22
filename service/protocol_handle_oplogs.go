@@ -64,11 +64,23 @@ func HandleOplogs(
 	}
 
 	// handle oplogs
-	newestUpdateTS, err := handleOplogs(oplogs, peer, info, processLog, postprocessLogs)
+	newestUpdateTS, err := handleOplogs(
+		oplogs,
+		peer,
+
+		pm,
+		info,
+
+		merkle,
+
+		processLog,
+		postprocessLogs,
+	)
 
 	// update-sync-time
 	var err2 error
 	if isUpdateSyncTime && merkle != nil {
+		log.Debug("HandleOplogs: to save sync time", "ts", newestUpdateTS, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 		err2 = merkle.SaveSyncTime(newestUpdateTS)
 		if err2 == pttdb.ErrInvalidUpdateTS {
 			err2 = nil
@@ -92,7 +104,10 @@ func handleOplogs(
 	oplogs []*BaseOplog,
 	peer *PttPeer,
 
+	pm ProtocolManager,
 	info ProcessInfo,
+
+	merkle *Merkle,
 
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 	postprocessLogs func(i ProcessInfo, toBroadcastLogs []*BaseOplog, p *PttPeer, isPending bool) error,
@@ -106,9 +121,16 @@ func handleOplogs(
 	isToBroadcast := types.Bool(false)
 	toBroadcastLogs := make([]*BaseOplog, 0, len(oplogs))
 	for _, oplog := range oplogs {
-		isToBroadcast, origLogs, err = handleOplog(oplog, info, processLog)
-		log.Debug("handleOplogs: after handleOplog", "isToBroadcast", isToBroadcast, "origLogs", origLogs, "e", err)
+		log.Debug("handleOplogs (in-for-loop): to handleOplog", "updateTS", oplog.UpdateTS, "entity", pm.Entity().GetID())
+		isToBroadcast, origLogs, err = handleOplog(
+			oplog,
+			info,
 
+			merkle,
+
+			processLog,
+		)
+		log.Debug("handleOplogs: after handleOplog", "isToBroadcast", isToBroadcast, "origLogs", origLogs, "updateTS", oplog.UpdateTS, "e", err, "entity", pm.Entity().GetID())
 		if err == ErrSkipOplog {
 			continue
 		}
@@ -138,6 +160,8 @@ func handleOplog(
 	oplog *BaseOplog,
 	info ProcessInfo,
 
+	merkle *Merkle,
+
 	processLog func(oplog *BaseOplog, info ProcessInfo) ([]*BaseOplog, error),
 ) (types.Bool, []*BaseOplog, error) {
 
@@ -148,7 +172,7 @@ func handleOplog(
 	defer oplog.Unlock()
 
 	// select
-	isToBroadcast, err := oplog.SelectExisting(true)
+	isToBroadcast, err := oplog.SelectExisting(true, merkle)
 	log.Debug("handleOplog: after SelectExisting", "oplog", oplog, "e", err, "IsSync", oplog.IsSync)
 	if err != nil {
 		return false, nil, err
@@ -475,9 +499,9 @@ func preprocessOplogs(
 		oplogs = oplogs[startIdx:]
 	}
 
-	log.Debug("preprocessOplogs: after startIdx", "startIdx", startIdx, "oplogs", oplogs)
+	log.Debug("preprocessOplogs: after startIdx", "startIdx", startIdx, "oplogs", oplogs, "entity", pm.Entity().GetID())
 
-	// expire-ts: end-idx
+	// future-ts: end-idx
 	lenLogs := len(oplogs)
 	endIdx := 0
 	for i := lenLogs - 1; i >= 0; i-- {
@@ -492,7 +516,7 @@ func preprocessOplogs(
 	}
 	oplogs = oplogs[:endIdx]
 
-	log.Debug("preprocessOplogs: after endIdx", "endIdx", endIdx, "oplogs", len(oplogs))
+	log.Debug("preprocessOplogs: after endIdx", "endIdx", endIdx, "oplogs", len(oplogs), "entity", pm.Entity().GetID())
 
 	if len(oplogs) == 0 {
 		return oplogs, nil

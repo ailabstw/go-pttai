@@ -64,6 +64,8 @@ func (pm *ProtocolManager) processMeLog(oplog *pkgservice.BaseOplog, processInfo
 		origLogs, err = pm.handleFriendLog(oplog, info)
 	case MeOpTypeJoinFriend:
 		origLogs, err = pm.handleFriendLog(oplog, info)
+
+	case MeOpTypeSetNodeName:
 	}
 	return
 }
@@ -84,6 +86,8 @@ func (pm *ProtocolManager) processPendingMeLog(oplog *pkgservice.BaseOplog, proc
 		isToSign, origLogs, err = pm.handlePendingMigrateMeLog(oplog, info)
 	case MeOpTypeDeleteMe:
 		isToSign, origLogs, err = pm.handlePendingDeleteMeLog(oplog, info)
+
+	case MeOpTypeSetNodeName:
 	}
 	return
 }
@@ -143,6 +147,8 @@ func (pm *ProtocolManager) SetNewestMeOplog(oplog *pkgservice.BaseOplog) (err er
 		isNewer, err = pm.setNewestFriendLog(oplog)
 	case MeOpTypeJoinFriend:
 		isNewer, err = pm.setNewestFriendLog(oplog)
+
+	case MeOpTypeSetNodeName:
 	}
 
 	oplog.IsNewer = isNewer
@@ -160,6 +166,8 @@ func (pm *ProtocolManager) HandleFailedMeOplog(oplog *pkgservice.BaseOplog) (err
 		err = pm.handleFailedMigrateMeLog(oplog)
 	case MeOpTypeDeleteMe:
 		err = pm.handleFailedDeleteMeLog(oplog)
+
+	case MeOpTypeSetNodeName:
 	}
 
 	return
@@ -181,6 +189,8 @@ func (pm *ProtocolManager) HandleFailedValidMeOplog(oplog *pkgservice.BaseOplog,
 		err = pm.handleFailedValidMigrateMeLog(oplog, info)
 	case MeOpTypeDeleteMe:
 		err = pm.handleFailedValidDeleteMeLog(oplog, info)
+
+	case MeOpTypeSetNodeName:
 	}
 
 	return

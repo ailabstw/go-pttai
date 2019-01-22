@@ -268,6 +268,7 @@ func (m *Merkle) GetGenerateTime() (types.Timestamp, error) {
 }
 
 func (m *Merkle) SaveSyncTime(ts types.Timestamp) error {
+	log.Debug("SaveSyncTime: start", "ts", ts, "prefixID", m.PrefixID)
 	key, err := m.MarshalSyncTimeKey()
 	if err != nil {
 		return err
@@ -283,6 +284,8 @@ func (m *Merkle) SaveSyncTime(ts types.Timestamp) error {
 	if err != nil {
 		return err
 	}
+
+	log.Debug("SaveSyncTime: to set ts", "ts", ts, "prefixID", m.PrefixID)
 
 	m.LastSyncTS = ts
 

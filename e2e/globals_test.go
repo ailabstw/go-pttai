@@ -227,7 +227,7 @@ func testListCore(c *baloo.Client, bodyString string, data interface{}, t *testi
 	ParseBody(rbody.Body, t, data, true)
 
 	if isDebug {
-		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, rbody.Body, data)
+		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, string(rbody.Body), data)
 	}
 
 	return rbody.Body
@@ -263,9 +263,9 @@ func testCore(c *baloo.Client, bodyString string, data interface{}, t *testing.T
 
 	if isDebug {
 		if data != nil {
-			t.Logf("after Parse: body: %v data: %v", rbody.Body, dataWrapper.Result)
+			t.Logf("after Parse: body: %v data: %v", string(rbody.Body), dataWrapper.Result)
 		} else {
-			t.Logf("after Parse: body: %v", rbody.Body)
+			t.Logf("after Parse: body: %v", string(rbody.Body))
 
 		}
 	}
@@ -289,7 +289,7 @@ func testStringCore(c *baloo.Client, bodyString string, t *testing.T, isDebug bo
 
 	ParseBody(rbody.Body, t, dataWrapper, false)
 	if isDebug {
-		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, rbody.Body, dataWrapper.Result)
+		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, string(rbody.Body), dataWrapper.Result)
 	}
 
 	return dataWrapper.Result, rbody.Body
@@ -311,7 +311,7 @@ func testIntCore(c *baloo.Client, bodyString string, t *testing.T, isDebug bool)
 
 	ParseBody(rbody.Body, t, dataWrapper, false)
 	if isDebug {
-		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, rbody.Body, dataWrapper.Result)
+		t.Logf("after Parse: length: %v header: %v body: %v data: %v", rbody.ContentLength, rbody.Header, string(rbody.Body), dataWrapper.Result)
 	}
 
 	return dataWrapper.Result, rbody.Body

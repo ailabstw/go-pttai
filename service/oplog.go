@@ -220,11 +220,18 @@ func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 		return err
 	}
 
-	if merkle == nil {
-		return nil
+	err = o.setMerkleUpdateTS(origKeys, merkle)
+	if err != nil {
+		return err
 	}
 
-	log.Debug("Oplog.Save: to keyToUpdateTS", "origKeys", origKeys)
+	return nil
+}
+
+func (o *BaseOplog) setMerkleUpdateTS(origKeys [][]byte, merkle *Merkle) error {
+	if o.MasterLogID == nil || !o.IsSync || merkle == nil {
+		return nil
+	}
 
 	if origKeys == nil {
 		merkle.SetUpdateTS(o.UpdateTS)
@@ -241,7 +248,7 @@ func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 	return nil
 }
 
-func (o *BaseOplog) ForceSave(isLocked bool) error {
+func (o *BaseOplog) ForceSave(isLocked bool, merkle *Merkle) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -256,7 +263,12 @@ func (o *BaseOplog) ForceSave(isLocked bool) error {
 	}
 
 	// XXX need to do verify before save
-	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
+	origKeys, err := o.db.ForcePutAll(idxKey, idx, kvs)
+	if err != nil {
+		return err
+	}
+
+	err = o.setMerkleUpdateTS(origKeys, merkle)
 	if err != nil {
 		return err
 	}
@@ -295,7 +307,7 @@ func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 		merkleNode := &MerkleNode{
 			Level:     MerkleTreeLevelNow,
 			Addr:      addr,
-			UpdateTS:  o.CreateTS,
+			UpdateTS:  o.UpdateTS,
 			NChildren: 0,
 			Key:       key,
 		}
@@ -961,7 +973,7 @@ SelectExisting determines whether we select the new oplog or the original oplog 
 
 Return: isToBroadcast, err
 */
-func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
+func (o *BaseOplog) SelectExisting(isLocked bool, merkle *Merkle) (types.Bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -1010,7 +1022,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
 
 	// orig is not valid
 	if orig.MasterLogID == nil {
-		o.ForceSave(true)
+		o.ForceSave(true, merkle)
 		return true, nil
 	}
 
@@ -1021,7 +1033,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
 	switch {
 	case o.UpdateTS.IsLess(orig.UpdateTS):
 		isToBroadcast = true
-		err = o.ForceSave(true)
+		err = o.ForceSave(true, merkle)
 	case orig.UpdateTS.IsLess(o.UpdateTS):
 		o.UpdateTS = orig.UpdateTS
 		o.Hash = orig.Hash
@@ -1031,7 +1043,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
 		err = nil
 	case cmp < 0:
 		isToBroadcast = true
-		err = o.ForceSave(true)
+		err = o.ForceSave(true, merkle)
 	default:
 		o.UpdateTS = orig.UpdateTS
 		o.Hash = orig.Hash
@@ -1046,7 +1058,7 @@ func (o *BaseOplog) SelectExisting(isLocked bool) (types.Bool, error) {
 
 // IntegrateExisting integrates with existing oplog.
 // Return: is-to-re-sign, error
-func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
+func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
@@ -1088,7 +1100,7 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 
 	// o valid
 	if o.MasterLogID != nil {
-		_, err = o.SelectExisting(true)
+		_, err = o.SelectExisting(true, merkle)
 		return false, err
 	}
 
@@ -1123,7 +1135,7 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool) (bool, error) {
 	}
 
 	if isAllMasters && isAllInternals {
-		err = o.ForceSave(true)
+		err = o.ForceSave(true, merkle)
 		return false, err
 	}
 

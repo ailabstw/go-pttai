@@ -207,22 +207,28 @@ func (b *Backend) GetMeRequests(entityIDBytes []byte) ([]*pkgservice.BackendJoin
 	}
 	pm := thePM.(*ProtocolManager)
 
-	joinMeRequests, lockJoinMeRequest := pm.GetJoinMeRequests()
+	joinMeRequests, err := pm.GetMeRequests()
+	if err != nil {
+		return nil, err
+	}
 
-	lockJoinMeRequest.RLock()
-	defer lockJoinMeRequest.RUnlock()
+	results := make([]*pkgservice.BackendJoinRequest, len(joinMeRequests))
 
-	lenRequests := len(joinMeRequests)
-	results := make([]*pkgservice.BackendJoinRequest, lenRequests)
-
-	i := 0
-	for _, joinRequest := range joinMeRequests {
+	for i, joinRequest := range joinMeRequests {
 		results[i] = pkgservice.JoinRequestToBackendJoinRequest(joinRequest)
-
-		i++
 	}
 
 	return results, nil
+}
+
+func (b *Backend) RemoveMeRequests(entityIDBytes []byte, hash []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.RemoveMeRequests(hash)
 }
 
 func (b *Backend) GetJoinKeys(entityIDBytes []byte) ([]*pkgservice.KeyInfo, error) {
@@ -304,6 +310,16 @@ func (b *Backend) GetFriendRequests(entityIDBytes []byte) ([]*pkgservice.Backend
 	return theList, nil
 }
 
+func (b *Backend) RemoveFriendRequests(entityIDBytes []byte, hash []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.RemoveFriendRequests(hash)
+}
+
 /**********
  * JoinBoard
  **********/
@@ -349,6 +365,16 @@ func (b *Backend) GetBoardRequests(entityIDBytes []byte) ([]*pkgservice.BackendJ
 		theList[i] = pkgservice.JoinRequestToBackendJoinRequest(request)
 	}
 	return theList, nil
+}
+
+func (b *Backend) RemoveBoardRequests(entityIDBytes []byte, hash []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.RemoveBoardRequests(hash)
 }
 
 /**********

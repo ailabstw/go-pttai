@@ -70,12 +70,22 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		nil, // isMaster
 		nil,
 
-		nil, nil, nil, nil, nil,
-		pm.SyncFriendOplog,  // postsyncMemberOplog
-		nil,                 // leave
+		// peer-type
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+
+		pm.SyncFriendOplog, // postsyncMemberOplog
+
 		pm.DeleteFriend,     // theDelete
 		pm.postdeleteFriend, // postdelete
-		f, dbFriend)
+
+		f, // entity
+
+		dbFriend, // db
+	)
 	if err != nil {
 		return nil, err
 	}

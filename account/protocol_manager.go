@@ -87,7 +87,6 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 
 		pm.SyncUserOplog, // postsyncMemberOplog
 
-		pm.LeaveProfile,      // leave
 		pm.DeleteProfile,     // theDelete
 		pm.postdeleteProfile, // postdelete
 

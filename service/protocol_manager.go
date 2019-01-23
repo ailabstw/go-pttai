@@ -40,7 +40,7 @@ type ProtocolManager interface {
 
 	Sync(peer *PttPeer) error
 
-	Leave() error
+	LeaveEntity() (bool, error)
 	Delete() error
 	PostdeleteEntity(opData OpData, isForce bool) error
 
@@ -384,7 +384,6 @@ type BaseProtocolManager struct {
 	// entity
 	entity Entity
 
-	leave      func() error
 	theDelete  func() error
 	postdelete func(opData OpData, isForce bool) error
 
@@ -435,7 +434,6 @@ func NewBaseProtocolManager(
 
 	postsyncMemberOplog func(peer *PttPeer) error,
 
-	leave func() error,
 	theDelete func() error,
 	postdelete func(opData OpData, isForce bool) error,
 
@@ -567,7 +565,6 @@ func NewBaseProtocolManager(
 		// entity
 		entity: e,
 
-		leave:      leave,
 		theDelete:  theDelete,
 		postdelete: postdelete,
 
@@ -614,9 +611,6 @@ func NewBaseProtocolManager(
 	}
 	if pm.isPendingPeer == nil {
 		pm.isPendingPeer = pm.defaultIsPendingPeer
-	}
-	if pm.leave == nil {
-		pm.leave = pm.defaultLeave
 	}
 	if pm.theDelete == nil {
 		pm.theDelete = pm.defaultDelete

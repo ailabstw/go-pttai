@@ -207,11 +207,6 @@ func (b *Backend) DeleteBoard(entityIDBytes []byte) (*BackendDeleteBoard, error)
 	return nil, types.ErrNotImplemented
 }
 
-func (b *Backend) LeaveBoard(entityIDBytes []byte) (*BackendLeaveBoard, error) {
-
-	return nil, types.ErrNotImplemented
-}
-
 func (b *Backend) InviteMaster(boardID []byte, userID []byte, nodeURL []byte) (*BackendInviteMaster, error) {
 
 	return nil, types.ErrNotImplemented

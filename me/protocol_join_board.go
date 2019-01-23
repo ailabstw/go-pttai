@@ -77,9 +77,9 @@ loop:
 	return nil
 }
 
-func (spm *ProtocolManager) SyncJoinBoard() error {
-	spm.lockJoinBoardRequest.Lock()
-	defer spm.lockJoinBoardRequest.Unlock()
+func (pm *ProtocolManager) SyncJoinBoard() error {
+	pm.lockJoinBoardRequest.Lock()
+	defer pm.lockJoinBoardRequest.Unlock()
 
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -87,7 +87,7 @@ func (spm *ProtocolManager) SyncJoinBoard() error {
 	}
 
 	toRemoveHashs := make([]*common.Address, 0)
-	for hash, joinRequest := range spm.joinBoardRequests {
+	for hash, joinRequest := range pm.joinBoardRequests {
 		if joinRequest.CreateTS.Ts < now.Ts-pkgservice.IntRenewJoinKeySeconds {
 			log.Warn("SyncJoinBoard: expired", "joinRequest", joinRequest.CreateTS, "now", now)
 			toRemoveHashs = append(toRemoveHashs, &hash)
@@ -98,11 +98,11 @@ func (spm *ProtocolManager) SyncJoinBoard() error {
 			continue
 		}
 
-		spm.EventMux().Post(&JoinBoardEvent{JoinRequest: joinRequest})
+		pm.EventMux().Post(&JoinBoardEvent{JoinRequest: joinRequest})
 	}
 
 	for _, hash := range toRemoveHashs {
-		delete(spm.joinBoardRequests, *hash)
+		delete(pm.joinBoardRequests, *hash)
 	}
 
 	return nil

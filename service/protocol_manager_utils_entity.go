@@ -24,14 +24,6 @@ func (pm *BaseProtocolManager) defaultDelete() error {
 	return nil
 }
 
-func (pm *BaseProtocolManager) Leave() error {
-	return pm.leave()
-}
-
-func (pm *BaseProtocolManager) defaultLeave() error {
-	return nil
-}
-
 /*
 PostdeleteEntity deals with postdeleting entity.
 

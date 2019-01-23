@@ -72,11 +72,6 @@ func (pm *ProtocolManager) getJoinRequestCore(hash *common.Address, lock *sync.R
 	return nil, pkgservice.ErrInvalidMsg
 }
 
-func (pm *ProtocolManager) GetJoinMeRequests() (map[common.Address]*pkgservice.JoinRequest, *sync.RWMutex) {
-
-	return pm.joinMeRequests, &pm.lockJoinMeRequest
-}
-
 func (pm *ProtocolManager) Master0Hash() []byte {
 	return nil
 }

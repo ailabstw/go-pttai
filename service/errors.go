@@ -22,6 +22,8 @@ import (
 )
 
 var (
+	ErrAlreadyPrestarted = errors.New("already prestarted")
+	ErrAlreadyStarted    = errors.New("already started")
 	ErrClosed            = errors.New("peer set is closed")
 	ErrAlreadyRegistered = errors.New("peer is already registered")
 	ErrNotRegistered     = errors.New("peer is not registered")

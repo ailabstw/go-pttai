@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) DeletePerson(
@@ -89,6 +90,10 @@ func (pm *BaseProtocolManager) DeletePerson(
 		return err
 	}
 
+	if reflect.DeepEqual(myID, id) && len(oplog.MasterSigns) == 1 {
+		oplog.SetMasterLogID(pm.GetNewestMasterLogID(), 0)
+	}
+
 	// 5. update obj
 	oplogStatus := types.StatusToDeleteStatus(
 		oplog.ToStatus(),
@@ -97,9 +102,13 @@ func (pm *BaseProtocolManager) DeletePerson(
 		status,
 	)
 
+	log.Debug("DeletePerson: after StatusToDeleteStatus", "oplogStatus", oplogStatus, "entity", pm.Entity().GetID())
+
 	if oplogStatus >= types.StatusDeleted {
 		err = pm.handleDeletePersonLogCore(
 			oplog,
+			nil,
+
 			origPerson,
 			opData,
 
@@ -109,10 +118,13 @@ func (pm *BaseProtocolManager) DeletePerson(
 
 			setLogDB,
 			postdelete,
+			nil,
 		)
 	} else {
 		err = pm.handlePendingDeletePersonLogCore(
 			oplog,
+			nil,
+
 			origPerson,
 			opData,
 
@@ -122,6 +134,7 @@ func (pm *BaseProtocolManager) DeletePerson(
 			merkle,
 
 			setLogDB,
+			nil,
 		)
 	}
 	if err != nil {
@@ -133,6 +146,8 @@ func (pm *BaseProtocolManager) DeletePerson(
 	if err != nil {
 		return err
 	}
+
+	log.Debug("DeletePerson: to broadcastLog", "entity", pm.Entity().GetID())
 
 	broadcastLog(oplog)
 

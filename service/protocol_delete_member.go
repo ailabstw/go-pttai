@@ -17,7 +17,10 @@
 package service
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) DeleteMember(
@@ -46,7 +49,7 @@ func (pm *BaseProtocolManager) DeleteMember(
 		pm.broadcastMemberOplogCore,
 		pm.postdeleteMember,
 	)
-
+	log.Debug("DeleteMember: after DeletePerson", "e", err)
 	if err != nil {
 		return false, err
 	}
@@ -61,8 +64,28 @@ func (pm *BaseProtocolManager) postdeleteMember(
 	opData OpData,
 ) error {
 
+	var err error
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	entity := pm.Entity()
+
+	log.Debug("postdeleteMember: start", "id", id, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "myID", myID)
+
 	if pm.inpostdeleteMember != nil {
-		return pm.inpostdeleteMember(id, oplog, origObj, opData)
+		err = pm.inpostdeleteMember(id, oplog, origObj, opData)
+		if err != nil {
+			return err
+		}
+	}
+
+	if reflect.DeepEqual(myID, oplog.ObjID) {
+		pm.myMemberLog = OplogToMemberOplog(oplog)
+		entity.SetStatus(types.StatusDeleted)
+		entity.Save(false)
+
+		if pm.postdelete != nil {
+			pm.postdelete(opData, true)
+		}
 	}
 
 	return nil

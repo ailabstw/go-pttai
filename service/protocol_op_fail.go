@@ -16,13 +16,32 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/log"
+import (
+	"encoding/json"
 
-func (pm *BaseProtocolManager) LeaveEntity() (bool, error) {
+	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/log"
+)
 
-	myID := pm.Ptt().GetMyEntity().GetID()
+type OpFail struct {
+	Hash *common.Address `json:"H"`
+}
 
-	log.Debug("LeaveEntity: to DeleteMember", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+func (p *BasePtt) OpFail(hash *common.Address, peer *PttPeer) error {
+	data := &OpFail{
+		Hash: hash,
+	}
+	return p.SendDataToPeer(CodeTypeOpFail, data, peer)
+}
 
-	return pm.DeleteMember(myID)
+func (p *BasePtt) HandleOpFail(dataBytes []byte, peer *PttPeer) error {
+	data := &OpFail{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("HandleOpFail: to RequestOpKey", "hash", data.Hash)
+
+	return p.RequestOpKey(data.Hash, peer)
 }

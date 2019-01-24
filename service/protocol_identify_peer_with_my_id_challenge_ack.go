@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type IdentifyPeerWithMyIDChallengeAck struct {
@@ -37,11 +38,13 @@ func (p *BasePtt) IdentifyPeerWithMyIDChallengeAck(data *IdentifyPeer, peer *Ptt
 	}
 
 	myID := p.myEntity.GetID()
+	log.Debug("IdentifyPeerWithMyIDChallengeAck: to compare IDEntityID", "IDEntityID", peer.IDEntityID, "myID", myID)
 	if !reflect.DeepEqual(peer.IDEntityID, myID) {
 		return nil
 	}
 
 	peerAckData, err := p.IdentifyPeerAck(data.Challenge, peer)
+	log.Debug("IdentifyPeerWithMyIDChallengeAck: after IdentifyPeerAck", "peerAckData", peerAckData, "e", err)
 	if err != nil {
 		return err
 	}
@@ -50,6 +53,8 @@ func (p *BasePtt) IdentifyPeerWithMyIDChallengeAck(data *IdentifyPeer, peer *Ptt
 		Challenge: peer.IDChallenge,
 		AckData:   peerAckData,
 	}
+
+	log.Debug("IdentifyPeerWithMyIDChallengeAck: to SendDataToPeer", "ackData", ackData, "peer", peer)
 
 	return p.SendDataToPeer(CodeTypeIdentifyPeerWithMyIDChallengeAck, ackData, peer)
 }
@@ -70,14 +75,19 @@ func (p *BasePtt) HandleIdentifyPeerWithMyIDChallengeAck(dataBytes []byte, peer 
 		return err
 	}
 
+	log.Debug("HandleIdentifyPeerWithMyIDChallengeAck: to HandleIdentifyPeerAck: ", "data", data, "peer", peer)
+
 	err = p.HandleIdentifyPeerAck(myID, data.AckData, peer)
 	if err != nil {
 		return err
 	}
 
+	log.Debug("HandleIdentifyPeerWithMyIDChallengeAck: after HandleIdentifyPeerAck", "challenge", data.Challenge, "peer", peer)
+
 	if peer.PeerType == PeerTypeRandom {
 		return nil
 	}
 
+	log.Debug("HandleIdentifyPeerWithMyIDChallengeAck: to IdentifyPeerWithMyIDAck", "challenge", data.Challenge, "peer", peer)
 	return p.IdentifyPeerWithMyIDAck(data.Challenge, peer)
 }

@@ -285,3 +285,21 @@ func (pm *BaseProtocolManager) ConnectMaster() error {
 
 	return nil
 }
+
+func (pm *BaseProtocolManager) CleanMaster() error {
+	pm.lockMaster.Lock()
+	defer pm.lockMaster.Unlock()
+
+	pm.masters = make(map[types.PttID]*Master)
+
+	masters, err := pm.GetMasterList(nil, 0, pttdb.ListOrderNext, false)
+	if err != nil {
+		return err
+	}
+
+	for _, master := range masters {
+		master.Delete(false)
+	}
+
+	return nil
+}

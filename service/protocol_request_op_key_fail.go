@@ -16,13 +16,33 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/log"
+import (
+	"encoding/json"
 
-func (pm *BaseProtocolManager) LeaveEntity() (bool, error) {
+	"github.com/ailabstw/go-pttai/common/types"
+)
 
-	myID := pm.Ptt().GetMyEntity().GetID()
+type OpKeyFail struct {
+	EntityID *types.PttID `json:"ID"`
+}
 
-	log.Debug("LeaveEntity: to DeleteMember", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+func (p *BasePtt) RequestOpKeyFail(entityID *types.PttID, peer *PttPeer) error {
+	data := &OpKeyFail{
+		EntityID: entityID,
+	}
+	return p.SendDataToPeer(CodeTypeRequestOpKeyFail, data, peer)
+}
 
-	return pm.DeleteMember(myID)
+func (p *BasePtt) HandleRequestOpKeyFail(dataBytes []byte, peer *PttPeer) error {
+	if peer.UserID == nil {
+		return types.ErrInvalidID
+	}
+
+	data := &OpKeyFail{}
+	err := json.Unmarshal(dataBytes, data)
+	if err != nil {
+		return err
+	}
+
+	return p.OpCheckMember(data.EntityID, peer)
 }

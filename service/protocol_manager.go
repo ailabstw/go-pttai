@@ -203,22 +203,27 @@ type ProtocolManager interface {
 	CreateOpKey() error
 	ForceCreateOpKey() error
 
+	ForceOpKey() chan struct{}
+
 	// op-key-oplog
 
 	BroadcastOpKeyOplog(log *OpKeyOplog) error
-	SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) error
 
 	HandleAddOpKeyOplog(dataBytes []byte, peer *PttPeer) error
 	HandleAddOpKeyOplogs(dataBytes []byte, peer *PttPeer) error
 	HandleAddPendingOpKeyOplog(dataBytes []byte, peer *PttPeer) error
 	HandleAddPendingOpKeyOplogs(dataBytes []byte, peer *PttPeer) error
 
+	SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) error
 	HandleSyncOpKeyOplog(dataBytes []byte, peer *PttPeer, syncMsg OpType) error
 	HandleSyncPendingOpKeyOplog(dataBytes []byte, peer *PttPeer) error
 	HandleSyncPendingOpKeyOplogAck(dataBytes []byte, peer *PttPeer) error
 
+	HandleOpKeyOplogs(oplogs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
+
 	HandleSyncCreateOpKey(dataBytes []byte, peer *PttPeer) error
 	HandleSyncCreateOpKeyAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncCreateOpKeyAckObj(opKey *KeyInfo, peer *PttPeer) error
 
 	GetOpKeyOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*OpKeyOplog, error)
 
@@ -350,6 +355,8 @@ type BaseProtocolManager struct {
 
 	dbOpKeyPrefix    []byte
 	dbOpKeyIdxPrefix []byte
+
+	forceOpKey chan struct{}
 
 	// op-key-oplog
 	dbOpKeyLock *types.LockMap
@@ -532,6 +539,8 @@ func NewBaseProtocolManager(
 		dbOpKeyPrefix:    dbOpKeyPrefix,
 		dbOpKeyIdxPrefix: dbOpKeyIdxPrefix,
 
+		forceOpKey: make(chan struct{}),
+
 		// op-key-oplog
 		dbOpKeyLock: dbOpKeyLock,
 
@@ -628,6 +637,10 @@ func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *
 }
 
 func (pm *BaseProtocolManager) Prestart() error {
+	if pm.isPrestart {
+		log.Warn("Prestart: already prestarted", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		return ErrAlreadyPrestarted
+	}
 	pm.isPrestart = true
 
 	pm.sendDataToPeersSub = pm.eventMux.Subscribe(&SendDataToPeersEvent{})
@@ -713,6 +726,11 @@ func (pm *BaseProtocolManager) Prestart() error {
 }
 
 func (pm *BaseProtocolManager) Start() error {
+	if pm.isStart {
+		log.Warn("Start: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		return ErrAlreadyStarted
+	}
+
 	pm.isStart = true
 
 	log.Info("Start: to master merkle-tree", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())

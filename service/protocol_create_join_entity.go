@@ -82,6 +82,8 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		}
 	}
 
+	log.Debug("CreateJoinEntity: after check isNew", "isNew", isNew)
+
 	// 3. set join-ts.
 	if meLog == nil {
 		ts, err = types.GetTimestamp()
@@ -125,6 +127,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		log.Debug("CreateJoinEntity: to HandleMemberOplogs", "entity", entity.GetID(), "memberLog", memberLog.ObjID)
 	}
 	pm.HandleMemberOplogs(memberLogs, peer, false)
+	log.Debug("CreateJoinEntity: after HandleMemberOplogs")
 	pm.SetMemberSyncTime(types.ZeroTimestamp)
 
 	// register-master-peer again from
@@ -176,6 +179,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 
 	// 13. entity start
 	if isStart {
+		log.Debug("CreateJoinEntity: to PrestartAndStart", "entity", entity.GetID(), "Service", entity.Service().Name())
 		entity.PrestartAndStart()
 	}
 

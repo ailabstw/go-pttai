@@ -65,13 +65,10 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 	}
 	defer iter.Release()
 
-	// XXX hack for skip expire-op-key
-	/*
-		expireTS, err := pm.getExpireOpKeyTS()
-		if err != nil {
-			return nil, err
-		}
-	*/
+	expireTS, err := pm.getExpireOpKeyTS()
+	if err != nil {
+		return nil, err
+	}
 
 	log.Trace("loadOpKeyInfo: to for-loop")
 
@@ -92,14 +89,11 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 
 		pm.SetOpKeyObjDB(keyInfo)
 
-		// XXX hack for skip expire-op-key
-		/*
-			if keyInfo.UpdateTS.IsLess(expireTS) {
-				log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
-				toExpireOpKeyInfos = append(toExpireOpKeyInfos, keyInfo)
-				continue
-			}
-		*/
+		if keyInfo.UpdateTS.IsLess(expireTS) {
+			log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
+			toExpireOpKeyInfos = append(toExpireOpKeyInfos, keyInfo)
+			continue
+		}
 
 		opKeyInfos = append(opKeyInfos, keyInfo)
 	}
@@ -160,19 +154,16 @@ func (pm *BaseProtocolManager) GetNewestOpKey(isLocked bool) (*KeyInfo, error) {
 		return pm.getNewestOpKeyFullScan(true)
 	}
 
-	// XXX hack for skipping newest-op-key
-	/*
-		expireRenewTS, err := pm.getExpireRenewOpKeyTS()
-		if err != nil {
-			log.Warn("GetNewestOpKey: unable to get expireRenewTS", "e", err)
-			return nil, err
-		}
+	expireRenewTS, err := pm.getExpireRenewOpKeyTS()
+	if err != nil {
+		log.Warn("GetNewestOpKey: unable to get expireRenewTS", "e", err)
+		return nil, err
+	}
 
-		if pm.newestOpKeyInfo.UpdateTS.IsLess(expireRenewTS) {
-			log.Warn("GetNewestOpKey: key expired renew ts", "key", pm.newestOpKeyInfo.UpdateTS, "expireRenew:", expireRenewTS)
-			return nil, ErrInvalidKey
-		}
-	*/
+	if pm.newestOpKeyInfo.UpdateTS.IsLess(expireRenewTS) {
+		log.Warn("GetNewestOpKey: key expired renew ts", "key", pm.newestOpKeyInfo.UpdateTS, "expireRenew:", expireRenewTS)
+		return nil, ErrInvalidKey
+	}
 
 	return pm.newestOpKeyInfo, nil
 }
@@ -187,17 +178,14 @@ func (pm *BaseProtocolManager) GetOldestOpKey(isLocked bool) (*KeyInfo, error) {
 		return nil, ErrInvalidKey
 	}
 
-	// XXX hack for skipping newest-op-key
-	/*
-		expireRenewTS, err := pm.getExpireRenewOpKeyTS()
-		if err != nil {
-			return nil, err
-		}
+	expireRenewTS, err := pm.getExpireRenewOpKeyTS()
+	if err != nil {
+		return nil, err
+	}
 
-		if pm.oldestOpKeyInfo != nil && !pm.oldestOpKeyInfo.UpdateTS.IsLess(expireRenewTS) {
-			return pm.oldestOpKeyInfo, nil
-		}
-	*/
+	if pm.oldestOpKeyInfo != nil && !pm.oldestOpKeyInfo.UpdateTS.IsLess(expireRenewTS) {
+		return pm.oldestOpKeyInfo, nil
+	}
 
 	if pm.oldestOpKeyInfo != nil {
 		return pm.oldestOpKeyInfo, nil
@@ -217,6 +205,8 @@ func (pm *BaseProtocolManager) getNewestOpKeyFullScan(isLocked bool) (*KeyInfo, 
 	if err != nil {
 		return nil, err
 	}
+
+	pm.newestOpKeyInfo = nil
 
 	for _, keyInfo := range pm.opKeyInfos {
 		pm.checkNewestOpKeyInfo(keyInfo, expireRenewTS)
@@ -239,6 +229,8 @@ func (pm *BaseProtocolManager) getOldestOpKeyFullScan(isLocked bool) (*KeyInfo, 
 	if err != nil {
 		return nil, err
 	}
+
+	pm.oldestOpKeyInfo = nil
 
 	for _, keyInfo := range pm.opKeyInfos {
 		pm.checkOldestOpKeyInfo(keyInfo, expireRenewTS)
@@ -283,92 +275,78 @@ func (pm *BaseProtocolManager) ExpireOpKeyInfo(keyInfo *KeyInfo, isLocked bool) 
 		defer pm.lockOpKeyInfo.Unlock()
 	}
 
-	// XXX hack for skip expire-op-key
-	return nil
-
-	// return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
+	return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
 }
 
 func (pm *BaseProtocolManager) RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error {
 
-	// XXX hack for skip expire-op-key
+	entityID := pm.Entity().GetID()
+
+	log.Debug("RemoveOpKeyFromHash: start")
+
+	if !isLocked {
+		pm.lockOpKeyInfo.Lock()
+		defer pm.lockOpKeyInfo.Unlock()
+	}
+
+	keyInfo, ok := pm.opKeyInfos[*hash]
+	if !ok {
+		return nil
+	}
+
+	// delete pm.opKeyInfos
+	delete(pm.opKeyInfos, *hash)
+
+	if isDeleteOplog {
+		if keyInfo.LogID != nil {
+			pm.removeOpKeyOplog(keyInfo.LogID, false)
+		} else {
+			log.Error("keyInfo: unable to get", "keyInfo", keyInfo)
+		}
+		if keyInfo.CreateLogID != nil {
+			pm.removeOpKeyOplog(keyInfo.CreateLogID, false)
+		}
+	}
+
+	// delete db
+	if isDeleteDB {
+		keyInfo.Delete(false)
+	}
+
+	log.Debug("to ptt.RemoveOpKey")
+
+	// ptt
+	ptt := pm.Ptt()
+	ptt.RemoveOpKey(hash, entityID, false)
+
+	pm.getNewestOpKeyFullScan(true)
+	pm.getOldestOpKeyFullScan(true)
 
 	return nil
-
-	/*
-		entityID := pm.Entity().GetID()
-
-		log.Debug("RemoveOpKeyFromHash: start")
-
-		if !isLocked {
-			pm.lockOpKeyInfo.Lock()
-			defer pm.lockOpKeyInfo.Unlock()
-		}
-
-		keyInfo, ok := pm.opKeyInfos[*hash]
-		if !ok {
-			return nil
-		}
-
-		// delete pm.opKeyInfos
-		delete(pm.opKeyInfos, *hash)
-
-		if isDeleteOplog {
-			if keyInfo.LogID != nil {
-				pm.removeOpKeyOplog(keyInfo.LogID, false)
-			} else {
-				log.Error("keyInfo: unable to get", "keyInfo", keyInfo)
-			}
-			if keyInfo.CreateLogID != nil {
-				pm.removeOpKeyOplog(keyInfo.CreateLogID, false)
-			}
-		}
-
-		// delete db
-		if isDeleteDB {
-			keyInfo.Delete(false)
-		}
-
-		log.Debug("to ptt.RemoveOpKey")
-
-		// ptt
-		ptt := pm.Ptt()
-		ptt.RemoveOpKey(hash, entityID, false)
-
-		pm.getNewestOpKeyFullScan(true)
-
-		return nil
-	*/
 }
 
 func (pm *BaseProtocolManager) removeOpKeyOplog(logID *types.PttID, isLocked bool) error {
-	return nil
 
-	/*
-		if !isLocked {
-			err := pm.dbOpKeyLock.Lock(logID)
-			if err != nil {
-				return err
-			}
-			defer pm.dbOpKeyLock.Unlock(logID)
+	if !isLocked {
+		err := pm.dbOpKeyLock.Lock(logID)
+		if err != nil {
+			return err
 		}
+		defer pm.dbOpKeyLock.Unlock(logID)
+	}
 
-		// delete oplog
-		oplog := &BaseOplog{ID: logID}
-		pm.SetOpKeyDB(oplog)
-		oplog.Delete(false)
+	// delete oplog
+	oplog := &BaseOplog{ID: logID}
+	pm.SetOpKeyDB(oplog)
+	oplog.Delete(false)
 
-		return nil
-	*/
+	return nil
 }
 
 func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
-	// XXX hack for skip expire-op-key
-	/*
-		if keyInfo.UpdateTS.IsLess(expireRenewTS) {
-			return
-		}
-	*/
+	if keyInfo.UpdateTS.IsLess(expireRenewTS) {
+		return
+	}
 
 	if pm.oldestOpKeyInfo == nil || keyInfo.UpdateTS.IsLess(pm.oldestOpKeyInfo.UpdateTS) {
 		pm.oldestOpKeyInfo = keyInfo
@@ -378,13 +356,10 @@ func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRene
 }
 
 func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
-	// XXX hack for skip expire-op-key
-	/*
-		if keyInfo.UpdateTS.IsLess(expireRenewTS) {
-			log.Warn("checkNewestOpKeyInfo: key expired renew ts", "key", keyInfo.UpdateTS, "expireTS", expireRenewTS)
-			return
-		}
-	*/
+	if keyInfo.UpdateTS.IsLess(expireRenewTS) {
+		log.Warn("checkNewestOpKeyInfo: key expired renew ts", "key", keyInfo.UpdateTS, "expireTS", expireRenewTS)
+		return
+	}
 
 	if pm.newestOpKeyInfo == nil || pm.newestOpKeyInfo.UpdateTS.IsLess(keyInfo.UpdateTS) {
 		pm.newestOpKeyInfo = keyInfo

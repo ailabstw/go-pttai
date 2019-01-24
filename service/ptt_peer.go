@@ -205,3 +205,9 @@ func (p *PttPeer) FinishID(entityID *types.PttID) {
 
 	p.IDEntityID = nil
 }
+
+func (p *PttPeer) String() string {
+	str := p.Peer.String()
+
+	return str + " " + p.PeerType.String()
+}

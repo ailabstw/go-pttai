@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
@@ -29,6 +30,8 @@ func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *Pro
 
 	toBroadcastLogs, err := pm.HandleDeletePersonLog(
 		oplog,
+		info,
+
 		obj,
 		opData,
 
@@ -39,6 +42,7 @@ func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *Pro
 		pm.SetMemberDB,
 
 		pm.postdeleteMember,
+		pm.updateDeleteMemberInfo,
 	)
 	if err != nil {
 		return nil, err
@@ -54,9 +58,12 @@ func (pm *BaseProtocolManager) handlePendingDeleteMemberLog(oplog *BaseOplog, in
 
 	opData := &MemberOpDeleteMember{}
 
+	log.Debug("handlePendingDeleteMemberLog: to HandlePendingDeletePersonLog", "entity", pm.Entity().GetID())
+
 	return pm.HandlePendingDeletePersonLog(
 		oplog,
 		info,
+
 		obj,
 		opData,
 
@@ -66,6 +73,7 @@ func (pm *BaseProtocolManager) handlePendingDeleteMemberLog(oplog *BaseOplog, in
 		pm.MemberMerkle(),
 
 		pm.SetMemberDB,
+		pm.updateDeleteMemberInfo,
 	)
 }
 
@@ -88,4 +96,22 @@ func (pm *BaseProtocolManager) handleFailedValidDeleteMemberLog(oplog *BaseOplog
 	pm.SetMemberObjDB(obj)
 
 	return pm.HandleFailedValidDeletePersonLog(oplog, obj)
+}
+
+func (pm *BaseProtocolManager) updateDeleteMemberInfo(
+	member Object,
+	oplog *BaseOplog,
+	theInfo ProcessInfo,
+) error {
+
+	info, ok := theInfo.(*ProcessPersonInfo)
+	if !ok {
+		return ErrInvalidData
+	}
+
+	personID := oplog.ObjID
+	delete(info.CreateInfo, *personID)
+	info.DeleteInfo[*personID] = oplog
+
+	return nil
 }

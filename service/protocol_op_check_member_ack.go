@@ -23,29 +23,47 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-/*
-IdentifyPeerWithMyIDChallenge requests challenge to make sure the user-id (acker)
-*/
-func (p *BasePtt) IdentifyPeerWithMyIDChallenge(userID *types.PttID, peer *PttPeer) error {
-	data, err := p.IdentifyPeer(userID, p.quitSync, peer)
-	if err != nil {
-		return err
-	}
-
-	log.Debug("IdentifyPeerWithMyIDChallenge: to SendDataToPeer", "data", data)
-
-	return p.SendDataToPeer(CodeTypeIdentifyPeerWithMyIDChallenge, data, peer)
+type OpCheckMemberAck struct {
+	EntityID *types.PttID `json:"ID"`
+	Log      *BaseOplog   `json:"l"`
 }
 
-/*
-HandleIdentifyPeerWithMyIDChallenge handles IdentifyPeerWithMyIDChallenge (requester)
-*/
-func (p *BasePtt) HandleIdentifyPeerWithMyIDChallenge(dataBytes []byte, peer *PttPeer) error {
-	data := &IdentifyPeer{}
+func (p *BasePtt) OpCheckMemberAck(
+	entityID *types.PttID,
+	memberLog *BaseOplog,
+	peer *PttPeer,
+) error {
+
+	data := &OpCheckMemberAck{
+		EntityID: entityID,
+		Log:      memberLog,
+	}
+
+	return p.SendDataToPeer(CodeTypeOpCheckMemberAck, data, peer)
+
+}
+
+func (p *BasePtt) HandleOpCheckMemberAck(dataBytes []byte, peer *PttPeer) error {
+
+	data := &OpCheckMemberAck{}
 	err := json.Unmarshal(dataBytes, data)
 	if err != nil {
 		return err
 	}
 
-	return p.IdentifyPeerWithMyIDChallengeAck(data, peer)
+	entity, ok := p.entities[*data.EntityID]
+	if !ok {
+		return types.ErrInvalidID
+	}
+	pm := entity.PM()
+
+	err = data.Log.Verify()
+	log.Debug("HandleOpCheckMemberAck: after Verify", "e", err)
+	if err != nil {
+		return err
+	}
+
+	err = pm.HandleMemberOplogs([]*BaseOplog{data.Log}, peer, false)
+	log.Debug("HandleOpCheckMemberAck: after HandleMemberOplogs", "e", err)
+	return err
 }

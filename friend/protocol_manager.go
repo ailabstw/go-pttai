@@ -100,6 +100,7 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 }
 
 func (pm *ProtocolManager) Start() error {
+	log.Debug("Start: start", "entity", pm.Entity().GetID())
 	err := pm.BaseProtocolManager.Start()
 	if err != nil {
 		log.Error("Start: unable to start BaseProtocolManager", "e", err)

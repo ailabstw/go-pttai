@@ -219,4 +219,8 @@ func (pm *BaseProtocolManager) CleanPeers() {
 	for _, peer := range pendingPeerList {
 		pm.UnregisterPeer(peer, false, false, false)
 	}
+
+	peers, _ := pm.GetPeers()
+
+	log.Debug("CleanPeers: done", "entity", pm.Entity().GetID(), "peers", peers)
 }

@@ -62,6 +62,7 @@ func (p *BasePtt) JoinEntity(joinRequest *JoinRequest, joinAckChallenge *JoinAck
 	}
 
 	pttData.Node = peer.GetID()[:]
+	log.Debug("JoinEntity: to SendData")
 	err = peer.SendData(pttData)
 
 	return nil

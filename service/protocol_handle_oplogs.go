@@ -307,6 +307,7 @@ func handlePendingOplogs(
 		}
 
 		// new-sign
+		log.Debug("handlePendingOplogs (in-for-loop)", "isToBroadcast", isToBroadcast, "entity", pm.Entity().GetID())
 		if isToBroadcast {
 			toBroadcastLogs = append(toBroadcastLogs, oplog)
 		}

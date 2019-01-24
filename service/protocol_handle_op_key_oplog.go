@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type ProcessOpKeyInfo struct {
@@ -88,6 +89,8 @@ func (pm *BaseProtocolManager) postprocessOpKeyOplogs(processInfo ProcessInfo, t
 	createOpKeyInfos, deleteOpKeyInfos := info.CreateOpKeyInfo, info.DeleteOpKeyInfo
 
 	createOpKeyIDList := ProcessInfoToSyncIDList(createOpKeyInfos, OpKeyOpTypeCreateOpKey)
+
+	log.Debug("postprocessOpKeyOplogs: to process create-op-key-ids", "createOpKeyIDList", createOpKeyIDList, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	if isPending {
 		toBroadcastLogs = ProcessInfoToBroadcastLogs(deleteOpKeyInfos, toBroadcastLogs)

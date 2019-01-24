@@ -34,7 +34,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestMultiDeviceSyncFriend(t *testing.T) {
+func TestMultiDeviceSyncFriend1(t *testing.T) {
 	NNodes = 3
 	isDebug := true
 

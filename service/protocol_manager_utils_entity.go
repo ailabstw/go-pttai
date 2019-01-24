@@ -34,16 +34,24 @@ func (pm *BaseProtocolManager) PostdeleteEntity(opData OpData, isForce bool) err
 }
 
 func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bool) error {
-	// peer
-	pm.CleanPeers()
 
 	// join-key
 	pm.CleanJoinKey()
 
 	// op-key
 	pm.CleanOpKey()
-
 	pm.CleanOpKeyOplog()
+
+	// master
+	pm.CleanMaster()
+	pm.CleanMasterOplog()
+
+	// member
+	pm.CleanMember()
+	pm.CleanMemberOplog()
+
+	// peer
+	pm.CleanPeers()
 
 	return nil
 }

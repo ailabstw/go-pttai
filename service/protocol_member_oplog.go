@@ -58,4 +58,8 @@ func (pm *BaseProtocolManager) CleanMemberOplog() {
 	pm.SetMemberDB(oplog)
 
 	pm.CleanOplog(oplog, nil)
+
+	// retain my-log
+	myLog := pm.myMemberLog
+	myLog.Save(false, pm.MemberMerkle())
 }

@@ -240,6 +240,7 @@ func (pm *BaseProtocolManager) HandlePendingDeleteObjectLog(
 		return false, nil, ErrNewerOplog
 	}
 
+	// 4. core
 	err = pm.handlePendingDeleteObjectLogCore(
 		oplog,
 		info,

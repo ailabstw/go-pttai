@@ -24,13 +24,20 @@ type CodeType uint64
 const (
 	CodeTypeInvalid CodeType = iota
 	CodeTypeStatus
+
 	CodeTypeJoin
 	CodeTypeJoinAck
+
 	CodeTypeOp
 	CodeTypeOpAck
+
+	CodeTypeRequireHash // require hash
+
 	CodeTypeOpFail
-	CodeTypeRequestOp
-	CodeTypeRequestOpAck
+
+	CodeTypeRequestOpKey
+	CodeTypeRequestOpKeyAck
+	CodeTypeRequestOpKeyFail
 
 	CodeTypeIdentifyPeer
 	CodeTypeIdentifyPeerAck
@@ -41,19 +48,26 @@ const (
 	CodeTypeIdentifyPeerWithMyIDChallengeAck
 	CodeTypeIdentifyPeerWithMyIDAck
 
+	CodeTypeOpCheckMember
+	CodeTypeOpCheckMemberAck
+
 	NCodeType
 )
 
 var codeTypeStr = map[CodeType]string{
-	CodeTypeInvalid:      "invalid",
-	CodeTypeStatus:       "status",
-	CodeTypeJoin:         "join",
-	CodeTypeJoinAck:      "join-ack",
-	CodeTypeOp:           "op",
-	CodeTypeOpAck:        "op-ack",
-	CodeTypeOpFail:       "fail",
-	CodeTypeRequestOp:    "request-op",
-	CodeTypeRequestOpAck: "request-op-ack",
+	CodeTypeInvalid: "invalid",
+	CodeTypeStatus:  "status",
+
+	CodeTypeJoin:    "join",
+	CodeTypeJoinAck: "join-ack",
+
+	CodeTypeOp:     "op",
+	CodeTypeOpAck:  "op-ack",
+	CodeTypeOpFail: "op-fail",
+
+	CodeTypeRequestOpKey:     "request-op-key",
+	CodeTypeRequestOpKeyAck:  "request-op-key-ack",
+	CodeTypeRequestOpKeyFail: "request-op-key-fail",
 
 	CodeTypeIdentifyPeer:     "identify-peer",
 	CodeTypeIdentifyPeerAck:  "identify-peer-ack",
@@ -63,6 +77,9 @@ var codeTypeStr = map[CodeType]string{
 	CodeTypeIdentifyPeerWithMyIDChallenge:    "identify-peer-with-my-id-challenge",
 	CodeTypeIdentifyPeerWithMyIDChallengeAck: "identify-peer-with-my-id-challenge-ack",
 	CodeTypeIdentifyPeerWithMyIDAck:          "identify-peer-with-my-id-ack",
+
+	CodeTypeOpCheckMember:    "op-check-member",
+	CodeTypeOpCheckMemberAck: "op-check-member-ack",
 }
 
 func (c CodeType) String() string {

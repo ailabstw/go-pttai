@@ -17,12 +17,20 @@
 package friend
 
 import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
+	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
 type ApproveJoin struct {
-	Friend    *Friend             `json:"f"`
-	OpKeyInfo *pkgservice.KeyInfo `json:"O"`
+	Friend *Friend `json:"f"`
+
+	Oplog0     *pkgservice.BaseOplog   `json:"0"`
+	MasterLogs []*pkgservice.BaseOplog `json:"M"`
+	MemberLogs []*pkgservice.BaseOplog `json:"m"`
+	OpKey      *pkgservice.KeyInfo     `json:"O"`
+	OpKeyLog   *pkgservice.BaseOplog   `json:"o"`
 }
 
 func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, keyInfo *pkgservice.KeyInfo, peer *pkgservice.PttPeer) (*pkgservice.KeyInfo, interface{}, error) {
@@ -36,15 +44,51 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	}
 	pm.RegisterPendingPeer(peer)
 
+	// master
+	oplog := &pkgservice.BaseOplog{}
+	pm.SetMasterDB(oplog)
+	masterLogs, err := pkgservice.GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusAlive, false)
+	if err != nil {
+		log.Error("ApproveJoinFriend: unable to get master logs", "e", err, "entity", pm.Entity().GetID())
+		return nil, nil, err
+	}
+
+	// member
+	_, _, err = pm.AddMember(peer.UserID, true)
+	if err != nil {
+		log.Error("ApproveJoinFriend: unable to add member", "e", err, "entity", pm.Entity().GetID())
+		return nil, nil, err
+	}
+
+	pm.SetMemberDB(oplog)
+	memberLogs, err := pkgservice.GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusAlive, false)
+	if err != nil {
+		log.Error("ApproveJoinFriend: unable to get member logs", "e", err, "entity", pm.Entity().GetID())
+		return nil, nil, err
+	}
+
 	// op-key
-	opKeyInfo, err := pm.GetNewestOpKey(false)
+	opKey, err := pm.GetNewestOpKey(false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	opKeyLog := &pkgservice.BaseOplog{}
+	pm.SetOpKeyDB(opKeyLog)
+	err = opKeyLog.Get(opKey.LogID, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	approveJoin := &ApproveJoin{
-		Friend:    f,
-		OpKeyInfo: opKeyInfo,
+		Friend: f,
+
+		Oplog0:     pm.GetOplog0(),
+		MasterLogs: masterLogs,
+		MemberLogs: memberLogs,
+
+		OpKey:    opKey,
+		OpKeyLog: opKeyLog,
 	}
-	return opKeyInfo, approveJoin, nil
+	return opKey, approveJoin, nil
 }

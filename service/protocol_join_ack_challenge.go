@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common"
+	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 )
 
@@ -88,8 +89,9 @@ func (p *BasePtt) HandleJoinAckChallenge(dataBytes []byte, hash *common.Address,
 
 	id := joinAckChallenge.ID
 
-	_, ok := p.entities[*id]
-	if ok {
+	entity, ok := p.entities[*id]
+	if ok && entity.GetStatus() == types.StatusAlive {
+		log.Error("HandleJoinAckChallenge: already registered", "entity", entity.GetID(), "service", entity.Service().Name())
 		return ErrAlreadyRegistered
 	}
 
@@ -98,6 +100,8 @@ func (p *BasePtt) HandleJoinAckChallenge(dataBytes []byte, hash *common.Address,
 		log.Error("HandleJoinAckChallenge: creator not meet id", "peer", peer, "id", id, "creator", joinRequest.CreatorID)
 		return ErrInvalidData
 	}
+
+	log.Debug("HandleJoinAckChallenge: to JoinEntity")
 
 	return p.JoinEntity(joinRequest, joinAckChallenge, peer)
 }

@@ -56,6 +56,27 @@ func (pm *BaseProtocolManager) HandleSyncCreateOpKeyAck(dataBytes []byte, peer *
 	return nil
 }
 
+func (pm *BaseProtocolManager) HandleSyncCreateOpKeyAckObj(opKey *KeyInfo, peer *PttPeer) error {
+
+	origObj := NewEmptyOpKey()
+	pm.SetOpKeyObjDB(origObj)
+
+	pm.SetOpKeyObjDB(opKey)
+
+	return pm.HandleSyncCreateObjectAck(
+		opKey,
+		peer,
+
+		origObj,
+		nil,
+
+		pm.SetOpKeyDB,
+		pm.updateCreateOpKey,
+		pm.postcreateOpKey,
+		pm.broadcastOpKeyOplogCore,
+	)
+}
+
 /***
  * syncCreateObject
  ***/

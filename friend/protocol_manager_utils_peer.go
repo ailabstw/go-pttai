@@ -28,6 +28,7 @@ import (
 )
 
 func (pm *ProtocolManager) LoadPeers() error {
+	log.Debug("LoadPeers: start", "entity", pm.Entity().GetID())
 	userNodeID, err := pm.GetUserNodeID()
 	if err != nil {
 		return err

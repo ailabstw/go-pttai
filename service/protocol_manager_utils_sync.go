@@ -88,6 +88,7 @@ looping:
 func pmSyncPeer(pm ProtocolManager) (*PttPeer, error) {
 	peerList := pm.Peers().PeerList(false)
 	if len(peerList) == 0 {
+		pm.LoadPeers()
 		return nil, nil
 	}
 	peer := RandomPeer(peerList)

@@ -92,6 +92,8 @@ type ProtocolManager interface {
 	IsSuspiciousID(id *types.PttID, nodeID *discover.NodeID) bool
 	IsGoodID(id *types.PttID, nodeID *discover.NodeID) bool
 
+	LoadPeers() error
+
 	/**********
 	 * implemented in base-protocol-manager
 	 **********/
@@ -850,4 +852,8 @@ func (pm *BaseProtocolManager) Log0Merkle() *Merkle {
 
 func (pm *BaseProtocolManager) IsStart() bool {
 	return pm.isStart
+}
+
+func (pm *BaseProtocolManager) LoadPeers() error {
+	return nil
 }

@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
 )
 
 func (pm *BaseProtocolManager) IsMember(id *types.PttID, isLocked bool) bool {
@@ -111,6 +112,19 @@ func (pm *BaseProtocolManager) loadMyMemberLog() error {
 		return err
 	}
 	pm.myMemberLog = memberLog
+
+	return nil
+}
+
+func (pm *BaseProtocolManager) CleanMember() error {
+	members, err := pm.GetMemberList(nil, 0, pttdb.ListOrderNext, false)
+	if err != nil {
+		return err
+	}
+
+	for _, member := range members {
+		member.Delete(false)
+	}
 
 	return nil
 }

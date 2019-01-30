@@ -20,7 +20,12 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
+
+/**********
+ * Handle DeleteRenewableObjectLog
+ **********/
 
 /**********
  * Handle DeleteRenewableObjectLog
@@ -28,6 +33,8 @@ import (
 
 func (pm *BaseProtocolManager) HandleDeletePersonLog(
 	oplog *BaseOplog,
+	info ProcessInfo,
+
 	origPerson Object,
 	opData OpData,
 
@@ -38,6 +45,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 	setLogDB func(oplog *BaseOplog),
 
 	postdelete func(id *types.PttID, oplog *BaseOplog, origPerson Object, opData OpData) error,
+	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 
 ) ([]*BaseOplog, error) {
 
@@ -77,6 +85,8 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 
 	err = pm.handleDeletePersonLogCore(
 		oplog,
+		info,
+
 		origPerson,
 		opData,
 
@@ -86,6 +96,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 
 		setLogDB,
 		postdelete,
+		updateDeleteInfo,
 	)
 
 	if err != nil {
@@ -97,6 +108,8 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 
 func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 	oplog *BaseOplog,
+	info ProcessInfo,
+
 	origPerson Object,
 	opData OpData,
 
@@ -106,6 +119,7 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 
 	setLogDB func(oplog *BaseOplog),
 	postdelete func(id *types.PttID, oplog *BaseOplog, origPerson Object, opData OpData) error,
+	updateDeleteInfo func(obj Object, oplog *BaseOplog, info ProcessInfo) error,
 
 ) error {
 
@@ -143,7 +157,7 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 		origPerson.SetSyncInfo(nil)
 	}
 
-	// 4. saveUpdateObj
+	// 4. saveDeleteObj
 	err = pm.saveDeleteObjectWithOplog(origPerson, oplog, oplogStatus, true)
 	if err != nil {
 		return err
@@ -155,6 +169,12 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 
 	oplog.IsSync = true
 
+	// 6. updateDeleteInfo
+	if info == nil {
+		return nil
+	}
+	updateDeleteInfo(origPerson, oplog, info)
+
 	return nil
 }
 
@@ -165,6 +185,7 @@ func (pm *BaseProtocolManager) handleDeletePersonLogCore(
 func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 	oplog *BaseOplog,
 	info ProcessInfo,
+
 	origPerson Object,
 	opData OpData,
 
@@ -174,6 +195,8 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
+	updateDeleteInfo func(person Object, oplog *BaseOplog, info ProcessInfo) error,
+
 ) (types.Bool, []*BaseOplog, error) {
 
 	// 1. lock person
@@ -188,25 +211,26 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 
 	// 2. get person
 	err = origPerson.GetByID(true)
+	log.Debug("HandlePendingDeletePersonLog: after GetByID", "e", err)
 	if err != nil {
 		return false, nil, err
 	}
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
+		log.Warn("HandlePendingDeletePersonLog: pre-log-id", "person", origPerson.GetLogID(), "preLogID", oplog.PreLogID, "entity", pm.Entity().GetID())
 		return false, nil, ErrInvalidPreLog
 	}
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	if origStatus == types.StatusAlive {
-		return false, nil, ErrNewerOplog
-	}
 	if origStatus == types.StatusTransferred {
 		return false, nil, ErrNewerOplog
 	}
 
 	// 4. core
+	log.Debug("HandlePendingDeletePersonLog: to handlePendingDeletePersonLogCore", "entity", pm.Entity().GetID())
 	err = pm.handlePendingDeletePersonLogCore(
 		oplog,
+		info,
 
 		origPerson,
 		opData,
@@ -217,9 +241,18 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 		merkle,
 
 		setLogDB,
+		updateDeleteInfo,
 	)
+	log.Debug("HandlePendingDeletePersonLog: after handlePendingDeletePersonLogCore", "entity", pm.Entity().GetID(), "e", err)
 	if err != nil {
 		return false, nil, err
+	}
+
+	pm.InternalSign(oplog)
+
+	myID := pm.Ptt().GetMyEntity().GetID()
+	if reflect.DeepEqual(myID, personID) && len(oplog.MasterSigns) == 1 {
+		oplog.SetMasterLogID(pm.GetNewestMasterLogID(), 0)
 	}
 
 	return true, nil, nil
@@ -227,8 +260,9 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 
 func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 	oplog *BaseOplog,
+	info ProcessInfo,
 
-	origObj Object,
+	origPerson Object,
 	opData OpData,
 
 	internalPendingStatus types.Status,
@@ -237,6 +271,7 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 	merkle *Merkle,
 
 	setLogDB func(oplog *BaseOplog),
+	updateDeleteInfo func(person Object, oplog *BaseOplog, info ProcessInfo) error,
 
 ) error {
 
@@ -246,7 +281,7 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), internalPendingStatus, pendingStatus, types.StatusDeleted)
 
 	var isReplaceSyncInfo bool
-	origSyncInfo := origObj.GetSyncInfo()
+	origSyncInfo := origPerson.GetSyncInfo()
 
 	if origSyncInfo != nil {
 		isReplaceSyncInfo = isReplaceOrigSyncPersonInfo(origSyncInfo, oplogStatus, oplog.UpdateTS, oplog.ID)
@@ -273,15 +308,22 @@ func (pm *BaseProtocolManager) handlePendingDeletePersonLogCore(
 				return err
 			}
 		}
-		origObj.SetSyncInfo(nil)
+		origPerson.SetSyncInfo(nil)
 	}
 
-	// 4. save obj
-	SetPendingPersonSyncInfo(origObj, oplogStatus, oplog)
-	err = origObj.Save(true)
+	// 4. save person
+	SetPendingPersonSyncInfo(origPerson, oplogStatus, oplog)
+	err = origPerson.Save(true)
 	if err != nil {
 		return err
 	}
+
+	// 6. info
+	if info == nil {
+		return nil
+	}
+
+	updateDeleteInfo(origPerson, oplog, info)
 
 	return nil
 }

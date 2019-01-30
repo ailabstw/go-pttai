@@ -221,5 +221,4 @@ func TestMultiDevice3Basic(t *testing.T) {
 	assert.Equal(types.StatusAlive, myNode2_8_0.Status)
 	assert.Equal(types.StatusAlive, myNode2_8_1.Status)
 	assert.Equal(types.StatusAlive, myNode2_8_2.Status)
-
 }

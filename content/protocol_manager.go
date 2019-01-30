@@ -123,6 +123,10 @@ func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) 
 
 func (pm *ProtocolManager) Start() error {
 	err := pm.BaseProtocolManager.Start()
+	if err == pkgservice.ErrAlreadyStarted {
+		log.Warn("Start: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		return nil
+	}
 	if err != nil {
 		log.Error("Start: unable to start BaseProtocolManager", "e", err)
 		return err

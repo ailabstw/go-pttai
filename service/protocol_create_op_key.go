@@ -24,9 +24,9 @@ import (
 )
 
 func (pm *BaseProtocolManager) CreateOpKeyLoop() error {
-	log.Debug("CreateOpKeyLoop: start")
+	log.Debug("CreateOpKeyLoop: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	err := pm.TryCreateOpKeyInfo()
-	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err)
+	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	toRenewSeconds := pm.GetToRenewOpKeySeconds()
 	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds, "service", pm.Entity().Service().Name())
@@ -43,6 +43,9 @@ loop:
 			toRenewSeconds = pm.GetToRenewOpKeySeconds()
 			log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds)
 			ticker = time.NewTimer(time.Duration(toRenewSeconds) * time.Second)
+		case <-pm.ForceOpKey():
+			log.Debug("CreateOpKeyLoop: ForceOpKey", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			pm.CreateOpKey()
 		case <-pm.QuitSync():
 			log.Debug("CreateOpKeyLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			break loop
@@ -103,12 +106,12 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 	// 1. validate
 	if !pm.IsMaster(myID, false) {
-		log.Warn("CreateOpKeyInfo: not master")
+		log.Warn("CreateOpKeyInfo: not master", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 		return nil
 	}
 
 	// 2. create object
-	_, err := pm.CreateObject(
+	_, err := pm.ForceCreateObject(
 		nil,
 		OpKeyOpTypeCreateOpKey,
 
@@ -124,8 +127,9 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 		pm.postcreateOpKey,
 	)
+	log.Debug("CreateOpKey: done", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	if err != nil {
-		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err)
+		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 		return err
 	}
 	return nil
@@ -186,4 +190,8 @@ func (pm *BaseProtocolManager) postcreateOpKey(theOpKey Object, oplog *BaseOplog
 	pm.RegisterOpKey(opKey, false)
 
 	return nil
+}
+
+func (pm *BaseProtocolManager) ForceOpKey() chan struct{} {
+	return pm.forceOpKey
 }

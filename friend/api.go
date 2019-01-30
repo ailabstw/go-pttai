@@ -222,3 +222,11 @@ func (api *PrivateAPI) CountPeers(entityID string) (int, error) {
 func (api *PrivateAPI) GetPeers(entityID string) ([]*pkgservice.BackendPeer, error) {
 	return api.b.GetPeers([]byte(entityID))
 }
+
+func (api *PrivateAPI) ForceSync(entityID string) (bool, error) {
+	return api.b.ForceSync([]byte(entityID))
+}
+
+func (api *PrivateAPI) ForceOpKey(entityID string) (bool, error) {
+	return api.b.ForceOpKey([]byte(entityID))
+}

@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -53,6 +54,9 @@ func (pm *ProtocolManager) postdeleteBoard(theOpData pkgservice.OpData, isForce 
 	}
 
 	// board-oplog
+
+	log.Debug("postdeleteBoard: to CleanBoardOplog", "entity", pm.Entity().GetID())
+
 	pm.CleanBoardOplog()
 
 	pm.CleanObject()

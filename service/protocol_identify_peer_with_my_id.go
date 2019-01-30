@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type IdentifyPeerWithMyID struct {
@@ -48,7 +49,10 @@ func (p *BasePtt) IdentifyPeerWithMyID(peer *PttPeer) error {
 		Challenge: salt,
 	}
 
+	peer.IDEntityID = nil
 	peer.InitID(myID, salt, p.quitSync)
+
+	log.Debug("IdentifyPeerWithMyID: to SendDataToPeer", "peer", peer)
 
 	return p.SendDataToPeer(CodeTypeIdentifyPeerWithMyID, data, peer)
 }
@@ -67,6 +71,8 @@ func (p *BasePtt) HandleIdentifyPeerWithMyID(dataBytes []byte, peer *PttPeer) er
 
 		return p.IdentifyPeerWithMyIDAck(data.Challenge, peer)
 	}
+
+	log.Debug("HandleIdentifyPeerWithMyID: to IdentifyPeerWithMyIDChallenge", "peer", peer, "data", data)
 
 	return p.IdentifyPeerWithMyIDChallenge(data.ID, peer)
 }

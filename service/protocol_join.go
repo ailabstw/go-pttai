@@ -39,6 +39,8 @@ func (p *BasePtt) TryJoin(challenge []byte, hash *common.Address, key *ecdsa.Pri
 	p.peerLock.RLock()
 	defer p.peerLock.RUnlock()
 
+	log.Debug("TryJoin start", "challenge", challenge, "hash", hash)
+
 	// 1. my node
 	_, ok := p.myPeers[*nodeID]
 	if ok {

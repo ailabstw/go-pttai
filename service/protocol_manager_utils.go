@@ -45,6 +45,10 @@ func PrestartPM(pm ProtocolManager) error {
 
 	// 3. pre-start
 	err = pm.Prestart()
+	if err == ErrAlreadyPrestarted {
+		log.Warn("PrestartPM: already prestarted", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -72,6 +76,10 @@ func StartPM(pm ProtocolManager) error {
 
 	// 2. pm.Start
 	err := pm.Start()
+	if err == ErrAlreadyStarted {
+		log.Warn("StartPM: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -149,12 +157,12 @@ func (pm *BaseProtocolManager) sendDataToPeers(op OpType, data interface{}, peer
 
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		log.Error("SendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
+		log.Error("sendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
 		return err
 	}
 
 	opKeyInfo, err := pm.GetOldestOpKey(false)
-	log.Debug("SendDataToPeers: after get opKey", "opKey", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "e", err)
+	log.Debug("sendDataToPeers: after get opKey", "opKey", opKeyInfo, "entity", pm.Entity().GetID(), "e", err)
 
 	if err != nil {
 		return err
@@ -178,7 +186,7 @@ func (pm *BaseProtocolManager) sendDataToPeers(op OpType, data interface{}, peer
 		if err == nil {
 			okCount++
 		} else {
-			log.Warn("PMSendDataToPeers: unable to SendData", "peer", peer, "e", err)
+			log.Warn("sendDataToPeers: unable to SendData", "peer", peer, "e", err)
 		}
 	}
 	if okCount == 0 {
@@ -245,6 +253,8 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 	if err != nil {
 		return err
 	}
+
+	log.Debug("sendDataToPeerWithCode: to MarshalData", "hash", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	pttData, err := ptt.MarshalData(code, opKeyInfo.Hash, encData)
 	if err != nil {

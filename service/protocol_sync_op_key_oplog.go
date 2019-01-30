@@ -34,9 +34,9 @@ type SyncOpKeyOplog struct {
 
 func (pm *BaseProtocolManager) SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) error {
 	oplogs, failedOplogs, err := pm.getOpKeyOplogs()
-	log.Debug("SyncOpKeyOplog: after getOpKeyOplogs", "oplogs", oplogs, "failedOplogs", failedOplogs, "e", err, "entity", pm.Entity().GetID())
+	log.Debug("SyncOpKeyOplog: after getOpKeyOplogs", "oplogs", oplogs, "failedOplogs", failedOplogs, "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	err = HandleFailedOplogs(failedOplogs, pm.SetOpKeyDB, pm.HandleFailedOpKeyOplog)
-	log.Debug("SyncOpKeyOplog: after HandleFailedOplogs", "e", err, "entity", pm.Entity().GetID())
+	log.Debug("SyncOpKeyOplog: after HandleFailedOplogs", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (pm *BaseProtocolManager) SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) err
 	}
 
 	err = pm.SendDataToPeer(syncMsg, data, peer)
-	log.Debug("SyncOpKeyOplogs: after send data", "e", err, "entity", pm.Entity().GetID())
+	log.Debug("SyncOpKeyOplog: after send data", "e", err, "entity", pm.Entity().GetID())
 
 	return nil
 }
@@ -62,6 +62,7 @@ func (pm *BaseProtocolManager) HandleSyncOpKeyOplog(dataBytes []byte, peer *PttP
 		return err
 	}
 
+	log.Debug("HandleSyncOpKeyOplog: to HandleOpKeyOplogs", "oplogs", data.Oplogs, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	err = pm.HandleOpKeyOplogs(data.Oplogs, peer, false)
 	if err != nil {
 		return err

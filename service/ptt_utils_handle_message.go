@@ -74,7 +74,7 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 		return err
 	}
 
-	if evCode != code || (code < CodeTypeIdentifyPeerFail && !reflect.DeepEqual(evHash[:], data.Hash[:])) {
+	if evCode != code || (code < CodeTypeRequireHash && !reflect.DeepEqual(evHash[:], data.Hash[:])) {
 		log.Error("HandleMessage: hash not match", "evHash", evHash, "dataHash", data.Hash)
 		return ErrInvalidData
 	}
@@ -84,8 +84,24 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 		err = p.HandleCodeJoin(evHash, encData, peer)
 	case CodeTypeJoinAck:
 		err = p.HandleCodeJoinAck(evHash, encData, peer)
+
 	case CodeTypeOp:
 		err = p.HandleCodeOp(evHash, encData, peer)
+	case CodeTypeOpFail:
+		err = p.HandleCodeOpFail(evHash, encData, peer)
+
+	case CodeTypeRequestOpKey:
+		err = p.HandleCodeRequestOpKey(evHash, encData, peer)
+	case CodeTypeRequestOpKeyFail:
+		err = p.HandleCodeRequestOpKeyFail(evHash, encData, peer)
+	case CodeTypeRequestOpKeyAck:
+		err = p.HandleCodeRequestOpKeyAck(evHash, encData, peer)
+
+	case CodeTypeOpCheckMember:
+		err = p.HandleCodeOpCheckMember(evHash, encData, peer)
+	case CodeTypeOpCheckMemberAck:
+		err = p.HandleCodeOpCheckMemberAck(evHash, encData, peer)
+
 	case CodeTypeIdentifyPeer:
 		err = p.HandleCodeIdentifyPeer(evHash, encData, peer)
 	case CodeTypeIdentifyPeerFail:
@@ -179,7 +195,7 @@ func (p *BasePtt) HandleCodeOp(hash *common.Address, encData []byte, peer *PttPe
 	log.Debug("HandleCodeOp: after getEntityFromHash", "e", err, "hash", hash)
 	if err != nil {
 		log.Error("HandleCodeOp: invalid entity", "hash", hash, "e", err)
-		return err
+		return p.OpFail(hash, peer)
 	}
 
 	pm := entity.PM()
@@ -187,6 +203,33 @@ func (p *BasePtt) HandleCodeOp(hash *common.Address, encData []byte, peer *PttPe
 	err = PMHandleMessageWrapper(pm, hash, encData, peer)
 
 	return err
+}
+
+func (p *BasePtt) HandleCodeOpFail(hash *common.Address, encData []byte, peer *PttPeer) error {
+
+	return p.HandleOpFail(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeRequestOpKey(hash *common.Address, encData []byte, peer *PttPeer) error {
+
+	return p.HandleRequestOpKey(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeRequestOpKeyFail(hash *common.Address, encData []byte, peer *PttPeer) error {
+
+	return p.HandleRequestOpKeyFail(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeRequestOpKeyAck(hash *common.Address, encData []byte, peer *PttPeer) error {
+	return p.HandleRequestOpKeyAck(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeOpCheckMember(hash *common.Address, encData []byte, peer *PttPeer) error {
+	return p.HandleOpCheckMember(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeOpCheckMemberAck(hash *common.Address, encData []byte, peer *PttPeer) error {
+	return p.HandleOpCheckMemberAck(encData, peer)
 }
 
 func (p *BasePtt) HandleCodeIdentifyPeer(hash *common.Address, encData []byte, peer *PttPeer) error {

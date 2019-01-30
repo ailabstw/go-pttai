@@ -402,3 +402,14 @@ func (b *BaseService) LeaveEntity(entityIDBytes []byte) (bool, error) {
 
 	return pm.LeaveEntity()
 }
+
+func (b *BaseService) ForceOpKey(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+
+	thePM.ForceOpKey() <- struct{}{}
+
+	return true, nil
+}

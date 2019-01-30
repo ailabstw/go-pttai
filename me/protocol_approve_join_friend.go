@@ -98,12 +98,36 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 		return err
 	}
 
-	// new op-key
 	newPM := f.PM().(*friend.ProtocolManager)
 
-	newOpKey := friendData.OpKeyInfo
+	// master logs
+	log.Debug("HandleApproveJoinFriend: to HandleMasterOplogs", "masterLogs", friendData.MasterLogs)
+	newPM.HandleMasterOplogs(friendData.MasterLogs, peer, false)
+
+	// member logs
+	log.Debug("HandleApproveJoinFriend: to HandleMemberOplogs", "memberLogs", friendData.MemberLogs)
+	newPM.HandleMemberOplogs(friendData.MemberLogs, peer, false)
+
+	// oplog0
+	oplog0 := friendData.Oplog0
+	newPM.SetLog0DB(oplog0)
+	err = oplog0.Save(false, newPM.Log0Merkle())
+	if err != nil {
+		return err
+	}
+
+	// new op-key
+
+	newOpKey := friendData.OpKey
 	newOpKey.Init(newPM)
 	err = newOpKey.Save(false)
+	if err != nil {
+		return err
+	}
+
+	opKeyLog := friendData.OpKeyLog
+	newPM.SetOpKeyDB(opKeyLog)
+	err = opKeyLog.Save(false, nil)
 	if err != nil {
 		return err
 	}

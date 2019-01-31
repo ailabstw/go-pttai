@@ -116,9 +116,9 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	case peer.PeerType < PeerTypeMember:
 		pm.Ptt().SetupPeer(peer, PeerTypeMember, false)
 	case peer.PeerType == PeerTypeMe:
-		pm.RegisterPeer(peer, PeerTypeMe)
+		pm.RegisterPeer(peer, PeerTypeMe, false)
 	default:
-		pm.RegisterPeer(peer, PeerTypeMember)
+		pm.RegisterPeer(peer, PeerTypeMember, false)
 	}
 
 	log.Debug("ApproveJoinEntity: done", "entity", entity.GetID(), "name", entity.Name(), "peer", peer, "service", entity.Service().Name())

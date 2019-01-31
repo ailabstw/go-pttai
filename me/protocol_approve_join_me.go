@@ -65,7 +65,7 @@ func (pm *ProtocolManager) ApproveJoinMe(joinEntity *pkgservice.JoinEntity, keyI
 
 	// 2. register pending peer
 	peer.UserID = myID
-	pm.RegisterPendingPeer(peer)
+	pm.RegisterPendingPeer(peer, false)
 
 	// 3. propose raft.
 	pm.ProposeRaftAddNode(peerID, 1)
@@ -170,7 +170,7 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	log.Debug("HandleApproveJoinMe: to RegisterPeer")
 
 	peer.UserID = newMyInfo.ID
-	newPM.RegisterPendingPeer(peer)
+	newPM.RegisterPendingPeer(peer, false)
 
 	log.Debug("HandleApproveJoinMe: after RegisterPeer")
 

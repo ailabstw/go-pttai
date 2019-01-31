@@ -102,12 +102,19 @@ func Env() Environment {
 func LocalEnv() Environment {
 	env := applyEnvFlags(Environment{Name: "local", Repo: "ptt.ai/go-pttai"})
 
+	env.Version = readVersion()
+
 	head := readGitFile("HEAD")
-	if splits := strings.Split(head, " "); len(splits) == 2 {
-		head = splits[1]
-	} else {
+	splits := strings.Split(head, " ")
+	if len(splits) != 2 {
+		if env.Commit == "" {
+			env.Commit = head
+		}
 		return env
 	}
+
+	head = splits[1]
+
 	if env.Commit == "" {
 		env.Commit = readGitFile(head)
 	}
@@ -119,8 +126,6 @@ func LocalEnv() Environment {
 	if info, err := os.Stat(".git/objects"); err == nil && info.IsDir() && env.Tag == "" {
 		env.Tag = firstLine(RunGit("tag", "-l", "--points-at", "HEAD"))
 	}
-
-	env.Version = readVersion()
 
 	return env
 }

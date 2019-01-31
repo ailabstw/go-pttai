@@ -60,6 +60,7 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 		nil,
 		nil,
 		nil,
+		nil,
 
 		pm.SetBoardDB, // setLog0DB
 

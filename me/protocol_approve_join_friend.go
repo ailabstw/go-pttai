@@ -141,7 +141,7 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	if peer.UserID == nil {
 		peer.UserID = f.FriendID
 	}
-	newPM.RegisterPendingPeer(peer)
+	newPM.RegisterPendingPeer(peer, false)
 
 	// add to entity
 	friendSPM.RegisterEntity(f.ID, f)

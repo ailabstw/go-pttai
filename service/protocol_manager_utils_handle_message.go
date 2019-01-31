@@ -133,7 +133,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	origPeer = pm.Peers().GetPeerWithPeerType(peer.GetID(), fitPeerType, false)
 
 	if origPeer == nil {
-		pm.RegisterPeer(peer, fitPeerType)
+		pm.RegisterPeer(peer, fitPeerType, false)
 	}
 
 	return pm.HandleMessage(op, dataBytes, peer)

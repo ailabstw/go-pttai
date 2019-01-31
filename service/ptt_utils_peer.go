@@ -481,7 +481,7 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 			continue
 		}
 
-		err = pm.RegisterPeer(peer, fitPeerType)
+		err = pm.RegisterPeer(peer, fitPeerType, false)
 		if err != nil {
 			log.Warn("RegisterPeerToEntities: unable to register peer to entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}
@@ -702,7 +702,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 		if err != nil {
 			return err
 		}
-		entity.PM().RegisterPeer(peer, peerType)
+		entity.PM().RegisterPeer(peer, peerType, false)
 		return nil
 	}
 

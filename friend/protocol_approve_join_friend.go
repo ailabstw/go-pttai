@@ -42,7 +42,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	if peer.UserID == nil {
 		peer.UserID = joinEntity.ID
 	}
-	pm.RegisterPendingPeer(peer)
+	pm.RegisterPendingPeer(peer, false)
 
 	// master
 	oplog := &pkgservice.BaseOplog{}

@@ -728,6 +728,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 func (p *BasePtt) CheckDialEntityAndIdentifyPeer(peer *PttPeer) error {
 	// 1. check dial-entity
 	entity, err := p.checkDialEntity(peer)
+	log.Debug("CheckDialEntityAndIdentifyPeer: after checkDialEntity", "entity", entity, "e", err)
 	if err != nil {
 		return err
 	}

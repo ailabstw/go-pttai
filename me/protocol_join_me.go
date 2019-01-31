@@ -114,7 +114,7 @@ func (pm *ProtocolManager) SyncJoinMe() error {
 			continue
 		}
 
-		pm.EventMux().Post(&JoinMeEvent{JoinMeRequest: joinRequest})
+		pm.processJoinMeEvent(joinRequest, true)
 	}
 
 	for _, hash := range toRemoveHashs {
@@ -132,7 +132,7 @@ func (pm *ProtocolManager) JoinMeLoop() error {
 			continue
 		}
 
-		err := pm.processJoinMeEvent(ev.JoinMeRequest)
+		err := pm.processJoinMeEvent(ev.JoinMeRequest, false)
 		if err != nil {
 			log.Error("unable to process join me event", "e", err)
 		}
@@ -141,9 +141,11 @@ func (pm *ProtocolManager) JoinMeLoop() error {
 	return nil
 }
 
-func (pm *ProtocolManager) processJoinMeEvent(request *pkgservice.JoinRequest) error {
-	pm.lockJoinMeRequest.Lock()
-	defer pm.lockJoinMeRequest.Unlock()
+func (pm *ProtocolManager) processJoinMeEvent(request *pkgservice.JoinRequest, isLocked bool) error {
+	if !isLocked {
+		pm.lockJoinMeRequest.Lock()
+		defer pm.lockJoinMeRequest.Unlock()
+	}
 
 	if request.Status != pkgservice.JoinStatusPending {
 		return pkgservice.ErrInvalidStatus

@@ -87,10 +87,10 @@ func (pm *ProtocolManager) SyncJoinFriend() error {
 	}
 
 	toRemoveHashs := make([]*common.Address, 0)
-	for hash, joinRequest := range pm.joinFriendRequests {
+	for _, joinRequest := range pm.joinFriendRequests {
 		if joinRequest.CreateTS.Ts < now.Ts-pkgservice.IntRenewJoinKeySeconds {
 			log.Warn("SyncJoinFriend: expired", "joinRequest", joinRequest.CreateTS, "now", now)
-			toRemoveHashs = append(toRemoveHashs, &hash)
+			toRemoveHashs = append(toRemoveHashs, joinRequest.Hash)
 			continue
 		}
 

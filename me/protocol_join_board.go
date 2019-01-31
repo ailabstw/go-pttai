@@ -87,10 +87,10 @@ func (pm *ProtocolManager) SyncJoinBoard() error {
 	}
 
 	toRemoveHashs := make([]*common.Address, 0)
-	for hash, joinRequest := range pm.joinBoardRequests {
+	for _, joinRequest := range pm.joinBoardRequests {
 		if joinRequest.CreateTS.Ts < now.Ts-pkgservice.IntRenewJoinKeySeconds {
 			log.Warn("SyncJoinBoard: expired", "joinRequest", joinRequest.CreateTS, "now", now)
-			toRemoveHashs = append(toRemoveHashs, &hash)
+			toRemoveHashs = append(toRemoveHashs, joinRequest.Hash)
 			continue
 		}
 

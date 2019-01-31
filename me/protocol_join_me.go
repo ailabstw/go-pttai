@@ -104,9 +104,9 @@ func (pm *ProtocolManager) SyncJoinMe() error {
 	}
 
 	toRemoveHashs := make([]*common.Address, 0)
-	for hash, joinRequest := range pm.joinMeRequests {
+	for _, joinRequest := range pm.joinMeRequests {
 		if joinRequest.CreateTS.Ts < now.Ts-pkgservice.IntRenewJoinKeySeconds {
-			toRemoveHashs = append(toRemoveHashs, &hash)
+			toRemoveHashs = append(toRemoveHashs, joinRequest.Hash)
 			continue
 		}
 

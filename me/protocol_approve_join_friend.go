@@ -152,6 +152,7 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	// remove joinFriendRequest
 	pm.lockJoinFriendRequest.Lock()
 	defer pm.lockJoinFriendRequest.Unlock()
+
 	delete(pm.joinFriendRequests, *joinRequest.Hash)
 
 	// init-friend-info

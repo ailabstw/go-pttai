@@ -69,7 +69,7 @@ loop:
 		case <-ticker.C:
 			pm.SyncJoinBoard()
 		case <-pm.QuitSync():
-			log.Debug("SyncJoinBoardLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Info("SyncJoinBoardLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			break loop
 		}
 	}
@@ -98,7 +98,7 @@ func (pm *ProtocolManager) SyncJoinBoard() error {
 			continue
 		}
 
-		pm.EventMux().Post(&JoinBoardEvent{JoinRequest: joinRequest})
+		pm.processJoinBoardEvent(joinRequest, true)
 	}
 
 	for _, hash := range toRemoveHashs {
@@ -119,16 +119,18 @@ func (pm *ProtocolManager) JoinBoardLoop() {
 			continue
 		}
 
-		err := pm.processJoinBoardEvent(ev.JoinRequest)
+		err := pm.processJoinBoardEvent(ev.JoinRequest, false)
 		if err != nil {
 			log.Error("Unable to process join board event", "data", ev, "e", err)
 		}
 	}
 }
 
-func (pm *ProtocolManager) processJoinBoardEvent(request *pkgservice.JoinRequest) error {
-	pm.lockJoinBoardRequest.Lock()
-	defer pm.lockJoinBoardRequest.Unlock()
+func (pm *ProtocolManager) processJoinBoardEvent(request *pkgservice.JoinRequest, isLocked bool) error {
+	if !isLocked {
+		pm.lockJoinBoardRequest.Lock()
+		defer pm.lockJoinBoardRequest.Unlock()
+	}
 
 	if request.Status != pkgservice.JoinStatusPending {
 		return pkgservice.ErrInvalidStatus

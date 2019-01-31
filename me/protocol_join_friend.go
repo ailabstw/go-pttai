@@ -98,9 +98,10 @@ func (pm *ProtocolManager) SyncJoinFriend() error {
 			continue
 		}
 
-		pm.EventMux().Post(&JoinFriendEvent{JoinRequest: joinRequest})
+		pm.processJoinFriendEvent(joinRequest, true)
 	}
 
+	log.Debug("SyncJoinFriend: to remove hashs", "hashs", toRemoveHashs)
 	for _, hash := range toRemoveHashs {
 		delete(pm.joinFriendRequests, *hash)
 	}
@@ -116,7 +117,7 @@ func (pm *ProtocolManager) JoinFriendLoop() error {
 			continue
 		}
 
-		err := pm.processJoinFriendEvent(ev.JoinRequest)
+		err := pm.processJoinFriendEvent(ev.JoinRequest, false)
 		if err != nil {
 			log.Error("unable to process join friend event", "e", err)
 		}
@@ -125,9 +126,11 @@ func (pm *ProtocolManager) JoinFriendLoop() error {
 	return nil
 }
 
-func (pm *ProtocolManager) processJoinFriendEvent(request *pkgservice.JoinRequest) error {
-	pm.lockJoinFriendRequest.Lock()
-	defer pm.lockJoinFriendRequest.Unlock()
+func (pm *ProtocolManager) processJoinFriendEvent(request *pkgservice.JoinRequest, isLocked bool) error {
+	if !isLocked {
+		pm.lockJoinFriendRequest.Lock()
+		defer pm.lockJoinFriendRequest.Unlock()
+	}
 
 	if request.Status != pkgservice.JoinStatusPending {
 		return pkgservice.ErrInvalidStatus

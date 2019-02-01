@@ -46,7 +46,7 @@ func (pm *ProtocolManager) InitFriendInfoAck(peer *pkgservice.PttPeer) error {
 	}
 
 	// register-peer
-	pm.RegisterPeer(peer, pkgservice.PeerTypeMember)
+	pm.RegisterPeer(peer, pkgservice.PeerTypeMember, false)
 
 	// add-master
 	f := pm.Entity().(*Friend)
@@ -163,7 +163,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 		return err
 	}
 	profile := theProfile.(*account.Profile)
-	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant, false)
 
 	// board
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
@@ -172,7 +172,7 @@ func (pm *ProtocolManager) HandleInitFriendInfoAckCore(
 		return err
 	}
 	board := theBoard.(*content.Board)
-	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant, false)
 
 	// friend
 	ts, err := types.GetTimestamp()

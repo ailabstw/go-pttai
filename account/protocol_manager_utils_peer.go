@@ -51,26 +51,3 @@ func (pm *ProtocolManager) IsMemberPeer(peer *pkgservice.PttPeer) bool {
 func (pm *ProtocolManager) IsFitPeer(peer *pkgservice.PttPeer) pkgservice.PeerType {
 	return pm.GetPeerType(peer)
 }
-
-func (pm *ProtocolManager) RegisterPeer(peer *pkgservice.PttPeer, peerType pkgservice.PeerType) error {
-	pm.BaseProtocolManager.RegisterPeer(peer, peerType)
-
-	if peerType != pkgservice.PeerTypePending {
-		return nil
-	}
-	pm.postRegisterPeer(peer)
-
-	return nil
-}
-
-func (pm *ProtocolManager) RegisterPendingPeer(peer *pkgservice.PttPeer) error {
-	pm.BaseProtocolManager.RegisterPendingPeer(peer)
-
-	pm.postRegisterPeer(peer)
-
-	return nil
-}
-
-func (pm *ProtocolManager) postRegisterPeer(peer *pkgservice.PttPeer) error {
-	return nil
-}

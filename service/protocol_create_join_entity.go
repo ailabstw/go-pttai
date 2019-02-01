@@ -185,7 +185,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 
 	// 14. register member
 	if peer.PeerType != PeerTypeMe {
-		pm.RegisterPeer(peer, PeerTypeImportant)
+		pm.RegisterPeer(peer, PeerTypeImportant, false)
 	}
 
 	// 15. me-oplog

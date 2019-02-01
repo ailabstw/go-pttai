@@ -155,6 +155,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 
 		// sign
 		pm.InternalSignMyOplog,
+		pm.ForceSignMyOplog,
 		pm.IsValidMyOplog,
 		pm.ValidateIntegrateSignMyOplog,
 

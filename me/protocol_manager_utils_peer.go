@@ -100,18 +100,18 @@ func (pm *ProtocolManager) IsPendingPeer(peer *pkgservice.PttPeer) bool {
 	return myNode.Status < types.StatusSync
 }
 
-func (pm *ProtocolManager) RegisterPeer(peer *pkgservice.PttPeer, peerType pkgservice.PeerType) error {
+func (pm *ProtocolManager) RegisterPeer(peer *pkgservice.PttPeer, peerType pkgservice.PeerType, isLocked bool) error {
 
 	log.Debug("RegisterPeer: start", "peer", peer, "userID", peer.UserID, "peerType", peerType)
-	pm.BaseProtocolManager.RegisterPeer(peer, peerType)
+	pm.BaseProtocolManager.RegisterPeer(peer, peerType, isLocked)
 
 	pm.postRegisterPeer(peer)
 
 	return nil
 }
 
-func (pm *ProtocolManager) RegisterPendingPeer(peer *pkgservice.PttPeer) error {
-	pm.BaseProtocolManager.RegisterPendingPeer(peer)
+func (pm *ProtocolManager) RegisterPendingPeer(peer *pkgservice.PttPeer, isLocked bool) error {
+	pm.BaseProtocolManager.RegisterPendingPeer(peer, isLocked)
 
 	pm.postRegisterPeer(peer)
 

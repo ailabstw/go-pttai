@@ -358,6 +358,29 @@ func TestFriend3Comment(t *testing.T) {
 	board1_16_2 := dataBoardList1_16.Result[2]
 	board1_16_3 := dataBoardList1_16.Result[3]
 
+	var board1_16_0_0 *content.BackendGetBoard
+	var board1_16_0_1 *content.BackendGetBoard
+
+	if reflect.DeepEqual(me0_1.ID, board1_16_0.CreatorID) {
+		board1_16_0_0 = board1_16_0
+	} else if reflect.DeepEqual(me0_1.ID, board1_16_1.CreatorID) {
+		board1_16_0_0 = board1_16_1
+	} else if reflect.DeepEqual(me0_1.ID, board1_16_2.CreatorID) {
+		board1_16_0_0 = board1_16_2
+	} else if reflect.DeepEqual(me0_1.ID, board1_16_3.CreatorID) {
+		board1_16_0_0 = board1_16_3
+	}
+
+	if reflect.DeepEqual(me1_3.BoardID, board1_16_0.ID) {
+		board1_16_0_1 = board1_16_0
+	} else if reflect.DeepEqual(me1_3.BoardID, board1_16_1.ID) {
+		board1_16_0_1 = board1_16_1
+	} else if reflect.DeepEqual(me1_3.BoardID, board1_16_2.ID) {
+		board1_16_0_1 = board1_16_2
+	} else if reflect.DeepEqual(me1_3.BoardID, board1_16_3.ID) {
+		board1_16_0_1 = board1_16_3
+	}
+
 	assert.Equal(types.StatusAlive, board1_16_0.Status)
 	assert.Equal(pkgservice.EntityTypePersonal, board1_16_0.BoardType)
 	assert.Equal(me1_1.ID, board1_16_0.CreatorID)
@@ -379,7 +402,7 @@ func TestFriend3Comment(t *testing.T) {
 	assert.Equal(3, len(dataBoardList2_16.Result))
 
 	// 17. get count peers0
-	marshaled, _ = board1_16_0.ID.MarshalText()
+	marshaled, _ = board1_16_0_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
 
 	count0_17, _ := testIntCore(t0, bodyString, t, isDebug)
@@ -389,7 +412,7 @@ func TestFriend3Comment(t *testing.T) {
 	assert.Equal(2, count1_17)
 
 	// 17.1. count peers1
-	marshaled, _ = board1_16_1.ID.MarshalText()
+	marshaled, _ = board1_16_0_0.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
 
 	count0_17_1, _ := testIntCore(t0, bodyString, t, isDebug)
@@ -398,7 +421,7 @@ func TestFriend3Comment(t *testing.T) {
 	count1_17_1, _ := testIntCore(t1, bodyString, t, isDebug)
 	assert.Equal(1, count1_17_1)
 
-	// 17.2. count peers2
+	// 17.2. count peers3
 	marshaled, _ = board1_16_3.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_countPeers", "params": ["%v"]}`, string(marshaled))
 

@@ -65,6 +65,25 @@ func (pm *ProtocolManager) InternalSignMyOplog(oplog *pkgservice.BaseOplog) (boo
 	return true, nil
 }
 
+func (pm *ProtocolManager) ForceSignMyOplog(oplog *pkgservice.BaseOplog) error {
+	err := pm.SignOplog(oplog)
+	if err != nil {
+		return err
+	}
+
+	if oplog.MasterLogID != nil {
+		return nil
+	}
+
+	masterLogID := pm.GetNewestMasterLogID()
+	err = oplog.SetMasterLogID(masterLogID, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (pm *ProtocolManager) IsValidMyOplog(signInfos []*pkgservice.SignInfo) (*types.PttID, uint32, bool) {
 
 	return pm.IsValidInternalOplog(signInfos)

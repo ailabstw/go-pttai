@@ -39,14 +39,20 @@ func (pm *BaseProtocolManager) NoMorePeers() chan struct{} {
 	return pm.noMorePeers
 }
 
-func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (err error) {
+func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, isLocked bool) (err error) {
 	log.Debug("RegisterPeer: start", "peer", peer, "peerType", peerType)
+
+	if !isLocked {
+		pm.Peers().Lock()
+		defer pm.Peers().Unlock()
+	}
+
 	if peerType == PeerTypeRandom {
 		return nil
 	}
 
 	if peerType == PeerTypePending {
-		return pm.RegisterPendingPeer(peer)
+		return pm.RegisterPendingPeer(peer, true)
 	}
 
 	// We just primitively check the existence without lock
@@ -54,7 +60,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (e
 	// The consequence of entering race-condition is just doing sync multiple-times.
 	origPeer := pm.Peers().Peer(peer.GetID(), true)
 	if origPeer != nil {
-		return pm.Peers().Register(peer, peerType, false)
+		return pm.Peers().Register(peer, peerType, true)
 	}
 	if !pm.isStart {
 		return nil
@@ -64,7 +70,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (e
 
 	select {
 	case pm.NewPeerCh() <- peer:
-		err = pm.Peers().Register(peer, peerType, false)
+		err = pm.Peers().Register(peer, peerType, true)
 	case <-pm.NoMorePeers():
 		err = p2p.DiscQuitting
 	}
@@ -74,8 +80,8 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType) (e
 	return err
 }
 
-func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer) error {
-	return pm.peers.Register(peer, PeerTypePending, false)
+func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer, isLocked bool) error {
+	return pm.peers.Register(peer, PeerTypePending, isLocked)
 }
 
 func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isForceReset bool, isForceNotReset bool, isPttLocked bool) error {

@@ -75,6 +75,11 @@ func (pm *BaseProtocolManager) SignOplog(oplog *BaseOplog) error {
 }
 
 func (pm *BaseProtocolManager) ForceSignOplog(oplog *BaseOplog) error {
+	return pm.forceSignOplog(oplog)
+}
+
+func (pm *BaseProtocolManager) defaultForceSignOplog(oplog *BaseOplog) error {
+
 	myEntity := pm.Ptt().GetMyEntity()
 
 	err := myEntity.Sign(oplog)
@@ -93,7 +98,7 @@ func (pm *BaseProtocolManager) ForceSignOplog(oplog *BaseOplog) error {
 
 	masterLogID := pm.GetNewestMasterLogID()
 
-	err = oplog.SetMasterLogID(masterLogID, 1)
+	err = oplog.SetMasterLogID(masterLogID, 0)
 	if err != nil {
 		return err
 	}

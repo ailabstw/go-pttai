@@ -116,7 +116,7 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 		return err
 	}
 	profile := theProfile.(*account.Profile)
-	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+	profile.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant, false)
 
 	// content
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM().(*content.ServiceProtocolManager)
@@ -126,7 +126,7 @@ func (pm *ProtocolManager) HandleInitFriendInfo(dataBytes []byte, peer *pkgservi
 		return err
 	}
 	board := theBoard.(*content.Board)
-	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant)
+	board.PM().RegisterPeer(peer, pkgservice.PeerTypeImportant, false)
 
 	// f
 	f.ProfileID = profile.ID

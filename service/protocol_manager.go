@@ -237,8 +237,8 @@ type ProtocolManager interface {
 	NoMorePeers() chan struct{}
 	SetNoMorePeers(noMorePeers chan struct{})
 
-	RegisterPeer(peer *PttPeer, peerType PeerType) error
-	RegisterPendingPeer(peer *PttPeer) error
+	RegisterPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
+	RegisterPendingPeer(peer *PttPeer, isLocked bool) error
 	UnregisterPeer(peer *PttPeer, isForceReset bool, isForceNotReset bool, isPttLocked bool) error
 
 	GetPeerType(peer *PttPeer) PeerType
@@ -365,6 +365,7 @@ type BaseProtocolManager struct {
 
 	// oplog
 	internalSign          func(oplog *BaseOplog) (bool, error)
+	forceSignOplog        func(oplog *BaseOplog) error
 	isValidOplog          func(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error
 
@@ -427,6 +428,7 @@ func NewBaseProtocolManager(
 	log0Merkle *Merkle,
 
 	internalSign func(oplog *BaseOplog) (bool, error),
+	forceSignOplog func(oplog *BaseOplog) error,
 	isValidOplog func(signInfos []*SignInfo) (*types.PttID, uint32, bool),
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error,
 
@@ -548,6 +550,7 @@ func NewBaseProtocolManager(
 
 		// oplog
 		internalSign:          internalSign,
+		forceSignOplog:        forceSignOplog,
 		isValidOplog:          isValidOplog,
 		validateIntegrateSign: validateIntegrateSign,
 
@@ -595,6 +598,9 @@ func NewBaseProtocolManager(
 	}
 	if pm.internalSign == nil {
 		pm.internalSign = pm.defaultInternalSign
+	}
+	if pm.forceSignOplog == nil {
+		pm.forceSignOplog = pm.defaultForceSignOplog
 	}
 	if pm.isValidOplog == nil {
 		pm.isValidOplog = pm.defaultIsValidOplog

@@ -31,7 +31,7 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestFriendAccount(t *testing.T) {
+func TestFriendConcurrent(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
@@ -104,6 +104,10 @@ func TestFriendAccount(t *testing.T) {
 	// 5. show-url
 	bodyString = `{"id": "testID", "method": "me_showURL", "params": []}`
 
+	dataShowURL0_5 := &pkgservice.BackendJoinURL{}
+	testCore(t0, bodyString, dataShowURL0_5, t, isDebug)
+	url0_5 := dataShowURL0_5.URL
+
 	dataShowURL1_5 := &pkgservice.BackendJoinURL{}
 	testCore(t1, bodyString, dataShowURL1_5, t, isDebug)
 	url1_5 := dataShowURL1_5.URL
@@ -116,6 +120,14 @@ func TestFriendAccount(t *testing.T) {
 
 	assert.Equal(me1_3.ID, dataJoinFriend0_7.CreatorID)
 	assert.Equal(me1_1.NodeID, dataJoinFriend0_7.NodeID)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinFriend", "params": ["%v"]}`, url0_5)
+
+	dataJoinFriend1_7 := &pkgservice.BackendJoinRequest{}
+	testCore(t1, bodyString, dataJoinFriend1_7, t, isDebug)
+
+	assert.Equal(me0_3.ID, dataJoinFriend1_7.CreatorID)
+	assert.Equal(me0_1.NodeID, dataJoinFriend1_7.NodeID)
 
 	// wait 10
 	t.Logf("wait 10 seconds for hand-shaking")

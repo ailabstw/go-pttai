@@ -48,7 +48,7 @@ func (pm *BaseProtocolManager) HandleSyncMemberOplog(dataBytes []byte, peer *Ptt
 		pm.MemberMerkle(),
 
 		ForceSyncMemberOplogMsg,
-		ForceSyncMasterOplogAckMsg,
+		ForceSyncMemberOplogAckMsg,
 		InvalidSyncMemberOplogMsg,
 		SyncMemberOplogAckMsg,
 	)

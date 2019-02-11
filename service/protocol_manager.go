@@ -651,9 +651,6 @@ func (pm *BaseProtocolManager) Prestart() error {
 	}
 	pm.isPrestart = true
 
-	// XXX HACK TO fix #138 - unexpected masters
-	pm.Fix138MasterLog()
-
 	// send-data-to-peer sub
 	pm.sendDataToPeersSub = pm.eventMux.Subscribe(&SendDataToPeersEvent{})
 	go pm.sendDataToPeersLoop()

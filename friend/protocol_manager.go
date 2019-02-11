@@ -118,6 +118,9 @@ func (pm *ProtocolManager) Start() error {
 		pkgservice.PMOplogMerkleTreeLoop(pm, pm.friendOplogMerkle)
 	}()
 
+	// XXX hack for #141
+	pm.Fix141MasterOplog()
+
 	return nil
 }
 

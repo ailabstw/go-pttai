@@ -37,6 +37,12 @@ func (pm *BaseProtocolManager) Fix138MasterLog() error {
 		return nil
 	}
 
+	// XXX #141 hack for skipping service-name as friend
+	serviceName := pm.Entity().Service().Name()
+	if serviceName == "friend" {
+		return nil
+	}
+
 	minLog := oplogs[0]
 	var eachLog *MasterOplog
 	for plogs := oplogs; len(plogs) > 0; plogs = plogs[1:] {

@@ -42,6 +42,10 @@ func (pm *ProtocolManager) Fix141MasterOplog() error {
 
 	f := pm.Entity().(*Friend)
 
+	if !pm.IsMember(f.FriendID, false) {
+		return nil
+	}
+
 	pm.AddMaster(f.FriendID, false)
 
 	return nil

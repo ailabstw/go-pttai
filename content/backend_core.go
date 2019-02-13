@@ -212,11 +212,6 @@ func (b *Backend) InviteMaster(boardID []byte, userID []byte, nodeURL []byte) (*
 	return nil, types.ErrNotImplemented
 }
 
-func (b *Backend) RevokeMaster(boardID []byte, userID []byte) (*BackendRevokeMaster, error) {
-
-	return nil, types.ErrNotImplemented
-}
-
 func (b *Backend) TransferMaster(boardID []byte, userID []byte) (*BackendRevokeMaster, error) {
 
 	return nil, types.ErrNotImplemented
@@ -749,4 +744,19 @@ func (b *Backend) GetJoinKeys(entityIDBytes []byte) ([]*pkgservice.KeyInfo, erro
 	pm := thePM.(*ProtocolManager)
 
 	return pm.JoinKeyList(), nil
+}
+
+func (b *Backend) DeleteMember(entityIDBytes []byte, userIDBytes []byte) (bool, error) {
+
+	userID, err := types.UnmarshalTextPttID(userIDBytes, false)
+	if err != nil {
+		return false, err
+	}
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.DeleteMember(userID)
 }

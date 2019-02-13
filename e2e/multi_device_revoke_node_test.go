@@ -496,9 +496,9 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 		Result []*account.UserOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetUserOplogList0_15, t, isDebug)
-	assert.Equal(6, len(dataGetUserOplogList0_15.Result))
-	assert.Equal(dataGetUserOplogList0_9_4_1.Result, dataGetUserOplogList0_15.Result[:5])
-	userOplog0_15 := dataGetUserOplogList0_15.Result[5]
+	assert.Equal(7, len(dataGetUserOplogList0_15.Result))
+	assert.Equal(dataGetUserOplogList0_9_4_1.Result, dataGetUserOplogList0_15.Result[:6])
+	userOplog0_15 := dataGetUserOplogList0_15.Result[6]
 	assert.Equal(types.StatusAlive, userOplog0_15.ToStatus())
 	assert.Equal(account.UserOpTypeRemoveUserNode, userOplog0_15.Op)
 

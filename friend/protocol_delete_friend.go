@@ -50,9 +50,6 @@ func (pm *ProtocolManager) postdeleteFriend(theOpData pkgservice.OpData, isForce
 		return nil
 	}
 
-	// friend-oplog
-	pm.CleanFriendOplog()
-
 	pm.DefaultPostdeleteEntity(theOpData, isForce)
 
 	return nil

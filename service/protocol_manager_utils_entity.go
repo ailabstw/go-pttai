@@ -16,6 +16,22 @@
 
 package service
 
+func (pm *BaseProtocolManager) GetEntityLog() (*BaseOplog, error) {
+	// get entity log
+	entityLogID := pm.Entity().GetLogID()
+
+	entityLog := &BaseOplog{}
+	pm.setLog0DB(entityLog)
+
+	entityLog.ID = entityLogID
+	err := entityLog.Get(entityLogID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return entityLog, nil
+}
+
 func (pm *BaseProtocolManager) Delete() error {
 	return pm.theDelete()
 }
@@ -49,6 +65,9 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 	// member
 	pm.CleanMember()
 	pm.CleanMemberOplog()
+
+	// clean log0
+	pm.CleanLog0()
 
 	// peer
 	pm.CleanPeers()

@@ -56,9 +56,6 @@ func (pm *ProtocolManager) postdeleteProfile(theOpData pkgservice.OpData, isForc
 		return nil
 	}
 
-	// user-oplog
-	pm.CleanUserOplog()
-
 	// user-node
 	pm.CleanUserNode()
 

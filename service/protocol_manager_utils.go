@@ -121,15 +121,7 @@ func StopPM(pm ProtocolManager) error {
 }
 
 func (pm *BaseProtocolManager) SendDataToPeers(op OpType, data interface{}, peerList []*PttPeer) error {
-	ev := &SendDataToPeersEvent{
-		op:       op,
-		data:     data,
-		peerList: peerList,
-	}
-
-	pm.eventMux.Post(ev)
-
-	return nil
+	return pm.sendDataToPeers(op, data, peerList)
 }
 
 func (pm *BaseProtocolManager) sendDataToPeersLoop() {
@@ -202,16 +194,7 @@ func (pm *BaseProtocolManager) SendDataToPeer(op OpType, data interface{}, peer 
 
 func (pm *BaseProtocolManager) SendDataToPeerWithCode(code CodeType, op OpType, data interface{}, peer *PttPeer) error {
 
-	ev := &SendDataToPeerWithCodeEvent{
-		Code: code,
-		Op:   op,
-		Data: data,
-		Peer: peer,
-	}
-
-	pm.eventMux.Post(ev)
-
-	return nil
+	return pm.sendDataToPeerWithCode(code, op, data, peer)
 }
 
 func (pm *BaseProtocolManager) sendDataToPeerWithCodeLoop() {

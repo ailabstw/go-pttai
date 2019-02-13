@@ -82,9 +82,6 @@ func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity
 	// clean my nodes
 	pm.revokeMyNodeCleanMyNodes(isLockedNode)
 
-	// peer
-	pm.CleanPeers()
-
 	// join-key
 	pm.CleanJoinKey()
 
@@ -93,8 +90,11 @@ func (pm *ProtocolManager) HandleRevokeMyNode(oplog *MasterOplog, isLockedEntity
 
 	pm.CleanOpKeyOplog()
 
-	// me-oplog
-	pm.CleanMeOplog()
+	// clean log0
+	pm.CleanLog0()
+
+	// peer
+	pm.CleanPeers()
 
 	// revoke-key
 	myInfo := pm.Entity()

@@ -202,9 +202,19 @@ func (b *Backend) DeleteReply(entityIDBytes []byte, articleIDBytes []byte, comme
 	return nil, types.ErrNotImplemented
 }
 
-func (b *Backend) DeleteBoard(entityIDBytes []byte) (*BackendDeleteBoard, error) {
+func (b *Backend) DeleteBoard(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
 
-	return nil, types.ErrNotImplemented
+	err = pm.DeleteBoard()
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (b *Backend) InviteMaster(boardID []byte, userID []byte, nodeURL []byte) (*BackendInviteMaster, error) {

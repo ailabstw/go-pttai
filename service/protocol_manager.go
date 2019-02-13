@@ -158,9 +158,13 @@ type ProtocolManager interface {
 
 	GetMemberLogByMemberID(id *types.PttID, isLocked bool) (*MemberOplog, error)
 
+	MyMemberLog() *MemberOplog
+
 	// log0
 	SetLog0DB(oplog *BaseOplog)
 	Log0Merkle() *Merkle
+
+	HandleLog0s(logs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
 
 	// join
 	GetJoinKeyFromHash(hash *common.Address) (*KeyInfo, error)
@@ -274,6 +278,10 @@ type ProtocolManager interface {
 		postcreateEntity func(entity Entity) error,
 	) error
 
+	GetEntityLog() (*BaseOplog, error)
+
+	HandleEntityDeleted(status types.Status, entityLog *BaseOplog, peer *PttPeer) error
+
 	// ptt
 	Ptt() Ptt
 
@@ -369,9 +377,10 @@ type BaseProtocolManager struct {
 	isValidOplog          func(signInfos []*SignInfo) (*types.PttID, uint32, bool)
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error
 
-	oplog0     *BaseOplog
-	log0Merkle *Merkle
-	setLog0DB  func(oplog *BaseOplog)
+	oplog0      *BaseOplog
+	log0Merkle  *Merkle
+	setLog0DB   func(oplog *BaseOplog)
+	handleLog0s func(logs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error
 
 	// peer
 	peers       *PttPeerSet
@@ -433,6 +442,7 @@ func NewBaseProtocolManager(
 	validateIntegrateSign func(oplog *BaseOplog, isLocked bool) error,
 
 	setLog0DB func(oplog *BaseOplog),
+	handleLog0s func(logs []*BaseOplog, peer *PttPeer, isUpdateSyncTime bool) error,
 
 	isMaster func(id *types.PttID, isLocked bool) bool,
 	isMember func(id *types.PttID, isLocked bool) bool,
@@ -554,8 +564,9 @@ func NewBaseProtocolManager(
 		isValidOplog:          isValidOplog,
 		validateIntegrateSign: validateIntegrateSign,
 
-		log0Merkle: log0Merkle,
-		setLog0DB:  setLog0DB,
+		log0Merkle:  log0Merkle,
+		setLog0DB:   setLog0DB,
+		handleLog0s: handleLog0s,
 
 		// peers
 		newPeerCh: make(chan *PttPeer),
@@ -844,26 +855,14 @@ func (pm *BaseProtocolManager) MemberMerkle() *Merkle {
 	return pm.memberMerkle
 }
 
-func (pm *BaseProtocolManager) GetOplog0() *BaseOplog {
-	return pm.oplog0
-}
-
-func (pm *BaseProtocolManager) SetOplog0(oplog *BaseOplog) {
-	pm.oplog0 = oplog
-}
-
-func (pm *BaseProtocolManager) SetLog0DB(oplog *BaseOplog) {
-	pm.setLog0DB(oplog)
-}
-
-func (pm *BaseProtocolManager) Log0Merkle() *Merkle {
-	return pm.log0Merkle
-}
-
 func (pm *BaseProtocolManager) IsStart() bool {
 	return pm.isStart
 }
 
 func (pm *BaseProtocolManager) LoadPeers() error {
 	return nil
+}
+
+func (pm *BaseProtocolManager) MyMemberLog() *MemberOplog {
+	return pm.myMemberLog
 }

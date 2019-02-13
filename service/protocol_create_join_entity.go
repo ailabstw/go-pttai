@@ -82,7 +82,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		}
 	}
 
-	log.Debug("CreateJoinEntity: after check isNew", "isNew", isNew)
+	log.Debug("CreateJoinEntity: after check isNew", "isNew", isNew, "service", spm.Service().Name())
 
 	// 3. set join-ts.
 	if meLog == nil {

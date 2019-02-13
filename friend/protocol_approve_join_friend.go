@@ -53,6 +53,8 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 		return nil, nil, err
 	}
 
+	log.Debug("ApproveJoinFriend: after master GetOplogList", "masterLogs", masterLogs)
+
 	// member
 	_, _, err = pm.AddMember(peer.UserID, true)
 	if err != nil {

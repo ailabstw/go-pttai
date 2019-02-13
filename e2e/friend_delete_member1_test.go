@@ -18,10 +18,10 @@ package e2e
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
-	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/friend"
@@ -31,12 +31,13 @@ import (
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
-func TestFriendForceSyncAccount(t *testing.T) {
+func TestFriendDeleteMember1(t *testing.T) {
 	NNodes = 2
 	isDebug := true
 
 	var bodyString string
 	var marshaled []byte
+	var marshaled2 []byte
 	assert := assert.New(t)
 
 	setupTest(t)
@@ -69,7 +70,6 @@ func TestFriendForceSyncAccount(t *testing.T) {
 	assert.Equal(1, len(me0_3.OwnerIDs))
 	assert.Equal(me0_3.ID, me0_3.OwnerIDs[0])
 	assert.Equal(true, me0_3.IsOwner(me0_3.ID))
-	profileID0_3 := me0_3.ProfileID
 
 	me1_3 := &me.MyInfo{}
 	testCore(t1, bodyString, me1_3, t, isDebug)
@@ -78,28 +78,6 @@ func TestFriendForceSyncAccount(t *testing.T) {
 	assert.Equal(1, len(me1_3.OwnerIDs))
 	assert.Equal(me1_3.ID, me1_3.OwnerIDs[0])
 	assert.Equal(true, me1_3.IsOwner(me1_3.ID))
-	profileID1_3 := me1_3.ProfileID
-
-	// 4. get account master oplog
-	marshaled, _ = profileID0_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
-
-	dataGetMasterLogList0_4 := &struct {
-		Result []*pkgservice.MasterOplog `json:"result"`
-	}{}
-
-	testListCore(t0, bodyString, dataGetMasterLogList0_4, t, isDebug)
-	assert.Equal(1, len(dataGetMasterLogList0_4.Result))
-
-	marshaled, _ = profileID1_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
-
-	dataGetMasterLogList1_4 := &struct {
-		Result []*pkgservice.MasterOplog `json:"result"`
-	}{}
-
-	testListCore(t1, bodyString, dataGetMasterLogList1_4, t, isDebug)
-	assert.Equal(1, len(dataGetMasterLogList1_4.Result))
 
 	// 5. show-url
 	bodyString = `{"id": "testID", "method": "me_showURL", "params": []}`
@@ -119,7 +97,7 @@ func TestFriendForceSyncAccount(t *testing.T) {
 
 	// wait 10
 	t.Logf("wait 10 seconds for hand-shaking")
-	time.Sleep(TimeSleepDefault)
+	time.Sleep(TimeSleepRestart)
 
 	// 8. get-friend-list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendList", "params": ["", 0]}`)
@@ -151,7 +129,6 @@ func TestFriendForceSyncAccount(t *testing.T) {
 	testCore(t0, bodyString, friend0_9, t, isDebug)
 	assert.Equal(friend0_8.ID, friend0_9.ID)
 	assert.Equal(me1_1.ID, friend0_9.FriendID)
-	assert.Equal(me0_1.ID, friend0_9.OwnerIDs[0])
 
 	friend1_9 := &friend.Friend{}
 	testCore(t1, bodyString, friend1_9, t, isDebug)
@@ -159,63 +136,6 @@ func TestFriendForceSyncAccount(t *testing.T) {
 	assert.Equal(friend0_9.Friend0ID, friend1_9.Friend0ID)
 	assert.Equal(friend0_9.Friend1ID, friend1_9.Friend1ID)
 	assert.Equal(me0_1.ID, friend1_9.FriendID)
-	assert.Equal(me1_1.ID, friend1_9.OwnerIDs[0])
-
-	// 9.1. get-raw-board
-	marshaled, _ = me0_3.BoardID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
-
-	board0_9_1 := &content.Board{}
-	testCore(t0, bodyString, board0_9_1, t, isDebug)
-	assert.Equal(me0_1.ID, board0_9_1.CreatorID)
-	assert.Equal(me0_1.ID, board0_9_1.OwnerIDs[0])
-
-	board1_9_1 := &content.Board{}
-	testCore(t1, bodyString, board1_9_1, t, isDebug)
-	assert.Equal(me0_1.ID, board1_9_1.CreatorID)
-	assert.Equal(me1_1.ID, board1_9_1.OwnerIDs[0])
-
-	// 9.2. get-raw-board
-	marshaled, _ = me1_3.BoardID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaled))
-
-	board0_9_2 := &content.Board{}
-	testCore(t0, bodyString, board0_9_2, t, isDebug)
-	assert.Equal(me1_1.ID, board0_9_2.CreatorID)
-	assert.Equal(me0_1.ID, board0_9_2.OwnerIDs[0])
-
-	board1_9_2 := &content.Board{}
-	testCore(t1, bodyString, board1_9_2, t, isDebug)
-	assert.Equal(me1_1.ID, board1_9_2.CreatorID)
-	assert.Equal(me1_1.ID, board1_9_2.OwnerIDs[0])
-
-	// 9.3. get-raw-account
-	marshaled, _ = me0_3.ProfileID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
-
-	profile0_9_3 := &account.Profile{}
-	testCore(t0, bodyString, profile0_9_3, t, isDebug)
-	assert.Equal(me0_1.ID, profile0_9_3.CreatorID)
-	assert.Equal(me0_1.ID, profile0_9_3.OwnerIDs[0])
-
-	profile1_9_3 := &account.Profile{}
-	testCore(t1, bodyString, profile1_9_3, t, isDebug)
-	assert.Equal(me0_1.ID, profile1_9_3.CreatorID)
-	assert.Equal(me1_1.ID, profile1_9_3.OwnerIDs[0])
-
-	// 9.4. get-raw-account
-	marshaled, _ = me1_3.ProfileID.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getRawProfile", "params": ["%v"]}`, string(marshaled))
-
-	profile0_9_4 := &account.Profile{}
-	testCore(t0, bodyString, profile0_9_4, t, isDebug)
-	assert.Equal(me1_1.ID, profile0_9_4.CreatorID)
-	assert.Equal(me0_1.ID, profile0_9_4.OwnerIDs[0])
-
-	profile1_9_4 := &account.Profile{}
-	testCore(t1, bodyString, profile1_9_4, t, isDebug)
-	assert.Equal(me1_1.ID, profile1_9_4.CreatorID)
-	assert.Equal(me1_1.ID, profile1_9_4.OwnerIDs[0])
 
 	// 10. master-oplog
 	marshaled, _ = friend0_8.ID.MarshalText()
@@ -332,46 +252,180 @@ func TestFriendForceSyncAccount(t *testing.T) {
 	assert.Equal(2, len(dataMemberList1_12_1.Result))
 	assert.Equal(dataMemberList0_12_1, dataMemberList1_12_1)
 
-	// 13. get account master oplog
-	marshaled, _ = profileID0_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	// 13. get board list
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)
 
-	dataGetMasterLogList0_13 := &struct {
-		Result []*pkgservice.MasterOplog `json:"result"`
+	dataBoardList0_13 := &struct {
+		Result []*content.BackendGetBoard `json:"result"`
 	}{}
 
-	testListCore(t0, bodyString, dataGetMasterLogList0_13, t, isDebug)
-	assert.Equal(1, len(dataGetMasterLogList0_13.Result))
+	testListCore(t0, bodyString, dataBoardList0_13, t, isDebug)
+	assert.Equal(2, len(dataBoardList0_13.Result))
+	board0_13_0 := dataBoardList0_13.Result[0]
+	assert.Equal(me0_3.BoardID, board0_13_0.ID)
+	assert.Equal(types.StatusAlive, board0_13_0.Status)
 
-	marshaled, _ = profileID1_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	board0_13_1 := dataBoardList0_13.Result[1]
+	assert.Equal(me1_3.BoardID, board0_13_1.ID)
+	assert.Equal(types.StatusAlive, board0_13_1.Status)
 
-	dataGetMasterLogList1_13 := &struct {
-		Result []*pkgservice.MasterOplog `json:"result"`
+	// t1
+	dataBoardList1_13 := &struct {
+		Result []*content.BackendGetBoard `json:"result"`
 	}{}
 
-	testListCore(t1, bodyString, dataGetMasterLogList1_13, t, isDebug)
-	assert.Equal(1, len(dataGetMasterLogList1_13.Result))
+	testListCore(t1, bodyString, dataBoardList1_13, t, isDebug)
+	assert.Equal(2, len(dataBoardList1_13.Result))
+	board1_13_0 := dataBoardList1_13.Result[0]
+	assert.Equal(me1_3.BoardID, board1_13_0.ID)
+	assert.Equal(types.StatusAlive, board1_13_0.Status)
 
-	// 14. get account member oplog
-	marshaled, _ = profileID0_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMemberOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+	board1_13_1 := dataBoardList1_13.Result[1]
+	assert.Equal(me0_3.BoardID, board1_13_1.ID)
+	assert.Equal(types.StatusAlive, board1_13_1.Status)
 
-	dataGetMemberLogList0_13 := &struct {
+	// 14. delete-member
+	t.Logf("14. delete-member")
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	marshaled2, _ = me1_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_deleteMember", "params": ["%v", "%v"]}`, string(marshaled), string(marshaled2))
+
+	dataDeleteMember0_14 := false
+	testCore(t0, bodyString, &dataDeleteMember0_14, t, isDebug)
+	assert.Equal(true, dataDeleteMember0_14)
+
+	time.Sleep(TimeSleepDefault)
+
+	// 15. get board list
+	t.Logf("15. get board list")
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)
+
+	dataBoardList0_15 := &struct {
+		Result []*content.BackendGetBoard `json:"result"`
+	}{}
+
+	testListCore(t0, bodyString, dataBoardList0_15, t, isDebug)
+	assert.Equal(2, len(dataBoardList0_15.Result))
+	board0_15_0 := dataBoardList0_15.Result[0]
+	assert.Equal(me0_3.BoardID, board0_15_0.ID)
+	assert.Equal(types.StatusAlive, board0_15_0.Status)
+
+	board0_15_1 := dataBoardList0_15.Result[1]
+	assert.Equal(me1_3.BoardID, board0_15_1.ID)
+	assert.Equal(types.StatusAlive, board0_15_1.Status)
+
+	// t1
+	dataBoardList1_15 := &struct {
+		Result []*content.BackendGetBoard `json:"result"`
+	}{}
+
+	testListCore(t1, bodyString, dataBoardList1_15, t, isDebug)
+	assert.Equal(2, len(dataBoardList1_15.Result))
+	board1_15_0 := dataBoardList1_15.Result[0]
+	assert.Equal(me1_3.BoardID, board1_15_0.ID)
+	assert.Equal(types.StatusAlive, board1_15_0.Status)
+
+	board1_15_1 := dataBoardList1_15.Result[1]
+	assert.Equal(me0_3.BoardID, board1_15_1.ID)
+	assert.Equal(types.StatusDeleted, board1_15_1.Status)
+
+	// 16. get board-oplog
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+
+	dataBoardOplogList0_16 := &struct {
+		Result []*content.BoardOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataBoardOplogList0_16, t, isDebug)
+	assert.Equal(1, len(dataBoardOplogList0_16.Result))
+
+	dataBoardOplogList1_16 := &struct {
+		Result []*content.BoardOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataBoardOplogList1_16, t, isDebug)
+	assert.Equal(0, len(dataBoardOplogList1_16.Result))
+
+	// 17. get member-oplog
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getMemberOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+
+	dataMemberOplogList0_17 := &struct {
 		Result []*pkgservice.MemberOplog `json:"result"`
 	}{}
+	testListCore(t0, bodyString, dataMemberOplogList0_17, t, isDebug)
+	assert.Equal(3, len(dataMemberOplogList0_17.Result))
 
-	testListCore(t0, bodyString, dataGetMemberLogList0_13, t, isDebug)
-	assert.Equal(2, len(dataGetMemberLogList0_13.Result))
-
-	marshaled, _ = profileID1_3.MarshalText()
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "account_getMemberOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
-
-	dataGetMemberLogList1_13 := &struct {
+	dataMemberOplogList1_17 := &struct {
 		Result []*pkgservice.MemberOplog `json:"result"`
 	}{}
+	testListCore(t1, bodyString, dataMemberOplogList1_17, t, isDebug)
+	assert.Equal(1, len(dataMemberOplogList1_17.Result))
 
-	testListCore(t1, bodyString, dataGetMemberLogList1_13, t, isDebug)
-	assert.Equal(2, len(dataGetMemberLogList1_13.Result))
+	// 18. get master-oplog
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))
 
+	dataMasterOplogList0_18 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataMasterOplogList0_18, t, isDebug)
+	assert.Equal(1, len(dataMasterOplogList0_18.Result))
+
+	dataMasterOplogList1_18 := &struct {
+		Result []*pkgservice.MasterOplog `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataMasterOplogList1_18, t, isDebug)
+	assert.Equal(0, len(dataMasterOplogList1_18.Result))
+
+	// 19. get members
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getMemberList", "params": ["%v", "", 0, 2]}`, string(marshaled))
+
+	dataMembers0_19 := &struct {
+		Result []*pkgservice.Member `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataMembers0_19, t, isDebug)
+	assert.Equal(2, len(dataMembers0_19.Result))
+	member0_19_0 := dataMembers0_19.Result[0]
+	member0_19_1 := dataMembers0_19.Result[1]
+	var member0_19_me *pkgservice.Member
+	var member0_19_other *pkgservice.Member
+	if reflect.DeepEqual(member0_19_0.ID, me0_1.ID) {
+		member0_19_me = member0_19_0
+		member0_19_other = member0_19_1
+	} else {
+		member0_19_me = member0_19_1
+		member0_19_other = member0_19_0
+	}
+
+	assert.Equal(types.StatusAlive, member0_19_me.Status)
+	assert.Equal(types.StatusDeleted, member0_19_other.Status)
+
+	dataMembers1_19 := &struct {
+		Result []*pkgservice.Member `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataMembers1_19, t, isDebug)
+	assert.Equal(1, len(dataMembers1_19.Result))
+
+	member1_19_0 := dataMembers1_19.Result[0]
+	assert.Equal(member1_19_0.ID, me1_1.ID)
+	assert.Equal(types.StatusDeleted, member1_19_0.Status)
+
+	// 20. get peers
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getPeers", "params": ["%v"]}`, string(marshaled))
+
+	/*
+		dataPeers0_19 := &struct {
+			Result []*pkgservice.BackendPeer `json:"result"`
+		}{}
+		testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
+		assert.Equal(0, len(dataPeers0_19.Result))
+	*/
+
+	dataPeers1_19 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_19, t, isDebug)
+	assert.Equal(0, len(dataPeers1_19.Result))
 }

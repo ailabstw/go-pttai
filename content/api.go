@@ -116,18 +116,15 @@ func (api *PrivateAPI) LeaveBoard(entityID string) (bool, error) {
 	return api.b.LeaveEntity([]byte(entityID))
 }
 
+func (api *PrivateAPI) DeleteMember(entityID string, userID string) (bool, error) {
+	return api.b.DeleteMember([]byte(entityID), []byte(userID))
+}
+
 func (api *PrivateAPI) InviteMaster(entityID string, userID string, nodeURL string) (*BackendInviteMaster, error) {
 	return api.b.InviteMaster(
 		[]byte(entityID),
 		[]byte(userID),
 		[]byte(nodeURL),
-	)
-}
-
-func (api *PrivateAPI) RevokeMaster(entityID string, userID string) (*BackendRevokeMaster, error) {
-	return api.b.RevokeMaster(
-		[]byte(entityID),
-		[]byte(userID),
 	)
 }
 

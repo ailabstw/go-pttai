@@ -74,15 +74,3 @@ func (pm *ProtocolManager) broadcastMeOplogsCore(oplogs []*pkgservice.BaseOplog)
 func (pm *ProtocolManager) SetMeOplogIsSync(oplog *MeOplog, isBroadcast bool) (bool, error) {
 	return pm.SetOplogIsSync(oplog.BaseOplog, isBroadcast, pm.broadcastMeOplogCore)
 }
-
-/**********
- * CleanMeOplog
- **********/
-
-func (pm *ProtocolManager) CleanMeOplog() {
-	oplog := &pkgservice.BaseOplog{}
-	pm.SetMeDB(oplog)
-
-	pm.CleanOplog(oplog, pm.meOplogMerkle)
-
-}

@@ -70,14 +70,3 @@ func (pm *ProtocolManager) broadcastFriendOplogsCore(oplogs []*pkgservice.BaseOp
 func (pm *ProtocolManager) SetFriendOplogIsSync(oplog *FriendOplog, isBroadcast bool) (bool, error) {
 	return pm.SetOplogIsSync(oplog.BaseOplog, isBroadcast, pm.broadcastFriendOplogCore)
 }
-
-/**********
- * CleanFriendOplog
- **********/
-
-func (pm *ProtocolManager) CleanFriendOplog() {
-	oplog := &pkgservice.BaseOplog{}
-	pm.SetFriendDB(oplog)
-
-	pm.CleanOplog(oplog, pm.friendOplogMerkle)
-}

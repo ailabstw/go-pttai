@@ -29,9 +29,9 @@ func (pm *ProtocolManager) DeleteBoard() error {
 		BoardOpTypeDeleteBoard,
 		opData,
 
-		types.StatusInternalDeleted,
-		types.StatusPendingDeleted,
-		types.StatusDeleted,
+		types.StatusInternalTerminal,
+		types.StatusPendingTerminal,
+		types.StatusTerminal,
 
 		pm.boardOplogMerkle,
 
@@ -42,22 +42,16 @@ func (pm *ProtocolManager) DeleteBoard() error {
 		pm.broadcastBoardOplogCore,
 		pm.postdeleteBoard,
 	)
+	log.Debug("DeleteBoard: after DeleteEntity", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	return err
 }
 
 func (pm *ProtocolManager) postdeleteBoard(theOpData pkgservice.OpData, isForce bool) error {
 
-	// both are masters
-	if !isForce {
-		return nil
-	}
-
 	// board-oplog
 
 	log.Debug("postdeleteBoard: to CleanBoardOplog", "entity", pm.Entity().GetID())
-
-	pm.CleanBoardOplog()
 
 	pm.CleanObject()
 

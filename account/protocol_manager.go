@@ -74,7 +74,8 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 		nil,
 		nil,
 
-		pm.SetUserDB, // setLog0DB
+		pm.SetUserDB,        // setLog0DB
+		pm.HandleUserOplogs, // handleLog0s
 
 		nil, // isMaster
 		nil, // isMember

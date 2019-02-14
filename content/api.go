@@ -86,7 +86,7 @@ func (api *PrivateAPI) UpdateReply(entityID string, articleID string, commentID 
 	)
 }
 
-func (api *PrivateAPI) DeleteBoard(entityID string) (*BackendDeleteBoard, error) {
+func (api *PrivateAPI) DeleteBoard(entityID string) (bool, error) {
 	return api.b.DeleteBoard([]byte(entityID))
 }
 

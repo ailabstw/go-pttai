@@ -40,6 +40,8 @@ type ProcessBoardInfo struct {
 	CreateMediaInfo map[types.PttID]*pkgservice.BaseOplog
 	MediaInfo       map[types.PttID]*pkgservice.BaseOplog
 	MediaBlockInfo  map[types.PttID]*pkgservice.BaseOplog
+
+	BoardInfo map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessBoardInfo() *ProcessBoardInfo {
@@ -62,6 +64,8 @@ func NewProcessBoardInfo() *ProcessBoardInfo {
 		CreateMediaInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 		MediaInfo:       make(map[types.PttID]*pkgservice.BaseOplog),
 		MediaBlockInfo:  make(map[types.PttID]*pkgservice.BaseOplog),
+
+		BoardInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -77,6 +81,7 @@ func (pm *ProtocolManager) processBoardLog(oplog *pkgservice.BaseOplog, processI
 
 	switch oplog.Op {
 	case BoardOpTypeDeleteBoard:
+		origLogs, err = pm.handleDeleteBoardLogs(oplog, info)
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
@@ -120,6 +125,7 @@ func (pm *ProtocolManager) processPendingBoardLog(oplog *pkgservice.BaseOplog, p
 
 	switch oplog.Op {
 	case BoardOpTypeDeleteBoard:
+		isToSign, origLogs, err = pm.handlePendingDeleteBoardLogs(oplog, info)
 	case BoardOpTypeMigrateBoard:
 
 	case BoardOpTypeCreateTitle:
@@ -224,6 +230,11 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 	}
 
 	pm.broadcastBoardOplogsCore(toBroadcastLogs)
+
+	// post-delete-board
+	if !isPending && len(info.BoardInfo) > 0 {
+		pm.postdeleteBoard(nil, false)
+	}
 
 	return
 }

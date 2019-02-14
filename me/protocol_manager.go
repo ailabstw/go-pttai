@@ -159,7 +159,8 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		pm.IsValidMyOplog,
 		pm.ValidateIntegrateSignMyOplog,
 
-		pm.SetMeDB, // setLog0DB
+		pm.SetMeDB,        // setLog0DB
+		pm.HandleMeOplogs, // handleLog0s
 
 		pm.IsMaster, // isMaster
 		pm.IsMember, // isMember

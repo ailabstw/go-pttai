@@ -97,6 +97,9 @@ func (p *BasePtt) HandleMessage(code CodeType, data *PttData, peer *PttPeer) err
 	case CodeTypeRequestOpKeyAck:
 		err = p.HandleCodeRequestOpKeyAck(evHash, encData, peer)
 
+	case CodeTypeEntityDeleted:
+		err = p.HandleCodeEntityDeleted(evHash, encData, peer)
+
 	case CodeTypeOpCheckMember:
 		err = p.HandleCodeOpCheckMember(evHash, encData, peer)
 	case CodeTypeOpCheckMemberAck:
@@ -222,6 +225,10 @@ func (p *BasePtt) HandleCodeRequestOpKeyFail(hash *common.Address, encData []byt
 
 func (p *BasePtt) HandleCodeRequestOpKeyAck(hash *common.Address, encData []byte, peer *PttPeer) error {
 	return p.HandleRequestOpKeyAck(encData, peer)
+}
+
+func (p *BasePtt) HandleCodeEntityDeleted(hash *common.Address, encData []byte, peer *PttPeer) error {
+	return p.HandleEntityDeleted(encData, peer)
 }
 
 func (p *BasePtt) HandleCodeOpCheckMember(hash *common.Address, encData []byte, peer *PttPeer) error {

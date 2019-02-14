@@ -39,6 +39,8 @@ const (
 	CodeTypeRequestOpKeyAck
 	CodeTypeRequestOpKeyFail
 
+	CodeTypeEntityDeleted
+
 	CodeTypeIdentifyPeer
 	CodeTypeIdentifyPeerAck
 	CodeTypeIdentifyPeerFail

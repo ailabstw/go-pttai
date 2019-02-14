@@ -66,7 +66,8 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		nil,
 		nil,
 
-		pm.SetFriendDB, // setLog0DB
+		pm.SetFriendDB,        // setLog0DB
+		pm.HandleFriendOplogs, // handleLog0s
 
 		nil, // isMaster
 		nil,

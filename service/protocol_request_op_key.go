@@ -57,6 +57,7 @@ func (p *BasePtt) RequestOpKey(hash *common.Address, peer *PttPeer) error {
 		OpKeyLogs: oplogs,
 		OpKeys:    opKeys,
 	}
+	log.Debug("RequestOpKey: to SendDataToPeer", "entity", entity.GetID(), "service", entity.Service().Name(), "opKeys", opKeys)
 
 	return p.SendDataToPeer(CodeTypeRequestOpKey, data, peer)
 }
@@ -78,7 +79,14 @@ func (p *BasePtt) HandleRequestOpKey(dataBytes []byte, peer *PttPeer) error {
 		return types.ErrInvalidID
 	}
 	pm := entity.PM()
-	pm.HandleOpKeyOplogs(data.OpKeyLogs, peer, false)
+
+	if entity.GetStatus() >= types.StatusDeleted {
+		return p.EntityDeleted(entity, pm, peer)
+	}
+
+	err = pm.HandleOpKeyOplogs(data.OpKeyLogs, peer, false)
+
+	log.Debug("HandleRequestOpKey: after HandleOpKeyOplogs", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	for _, opKey := range data.OpKeys {
 		pm.HandleSyncCreateOpKeyAckObj(opKey, peer)

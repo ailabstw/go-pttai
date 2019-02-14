@@ -42,8 +42,8 @@ func (api *PrivateAPI) CreateMessage(entityID string, message [][]byte, mediaIDs
 	)
 }
 
-func (api *PrivateAPI) RemoveFriend(entityID string) (bool, error) {
-	return api.b.RemoveFriend([]byte(entityID))
+func (api *PrivateAPI) DeleteFriend(entityID string) (bool, error) {
+	return api.b.DeleteFriend([]byte(entityID))
 }
 
 func (api *PrivateAPI) MarkFriendSeen(entityID string) (types.Timestamp, error) {

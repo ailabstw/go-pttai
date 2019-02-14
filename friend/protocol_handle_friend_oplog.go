@@ -28,6 +28,8 @@ type ProcessFriendInfo struct {
 	CreateMediaInfo map[types.PttID]*pkgservice.BaseOplog
 
 	BlockInfo map[types.PttID]*pkgservice.BaseOplog
+
+	FriendInfo map[types.PttID]*pkgservice.BaseOplog
 }
 
 func NewProcessFriendInfo() *ProcessFriendInfo {
@@ -37,6 +39,8 @@ func NewProcessFriendInfo() *ProcessFriendInfo {
 		CreateMediaInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 
 		BlockInfo: make(map[types.PttID]*pkgservice.BaseOplog),
+
+		FriendInfo: make(map[types.PttID]*pkgservice.BaseOplog),
 	}
 }
 
@@ -52,6 +56,7 @@ func (pm *ProtocolManager) processFriendLog(oplog *pkgservice.BaseOplog, process
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
+		origLogs, err = pm.handleDeleteFriendLogs(oplog, info)
 	case FriendOpTypeCreateMessage:
 		origLogs, err = pm.handleCreateMessageLogs(oplog, info)
 
@@ -72,6 +77,7 @@ func (pm *ProtocolManager) processPendingFriendLog(oplog *pkgservice.BaseOplog, 
 
 	switch oplog.Op {
 	case FriendOpTypeDeleteFriend:
+		isToSign, origLogs, err = pm.handlePendingDeleteFriendLogs(oplog, info)
 
 	case FriendOpTypeCreateMessage:
 		isToSign, origLogs, err = pm.handlePendingCreateMessageLogs(oplog, info)
@@ -107,6 +113,11 @@ func (pm *ProtocolManager) postprocessFriendOplogs(processInfo pkgservice.Proces
 	pm.SyncBlock(SyncCreateMessageBlockMsg, blockIDs, peer)
 
 	pm.broadcastFriendOplogsCore(toBroadcastLogs)
+
+	// post-delete-friend
+	if !isPending && len(info.FriendInfo) > 0 {
+		pm.postdeleteFriend(nil, false)
+	}
 
 	return
 }

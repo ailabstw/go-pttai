@@ -56,8 +56,7 @@ func (pm *ProtocolManager) postdeleteProfile(theOpData pkgservice.OpData, isForc
 		return nil
 	}
 
-	// user-node
-	pm.CleanUserNode()
+	pm.CleanObject()
 
 	pm.DefaultPostdeleteEntity(theOpData, isForce)
 

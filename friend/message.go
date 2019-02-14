@@ -230,3 +230,26 @@ func (m *Message) SetSyncInfo(theSyncInfo pkgservice.SyncInfo) error {
 
 	return nil
 }
+
+func (m *Message) DeleteAll(isLocked bool) error {
+	var err error
+	if !isLocked {
+		err = m.Lock()
+		if err != nil {
+			return err
+		}
+		defer m.Unlock()
+	}
+
+	// block-info
+	blockInfo := m.GetBlockInfo()
+	setBlockInfoDB := m.SetBlockInfoDB()
+	setBlockInfoDB(blockInfo, m.ID)
+
+	blockInfo.Remove(false)
+
+	// delete
+	m.Delete(true)
+
+	return nil
+}

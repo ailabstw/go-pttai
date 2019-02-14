@@ -68,6 +68,7 @@ type ProtocolManager interface {
 
 	AddMember(id *types.PttID, isForce bool) (*Member, *MemberOplog, error)
 	TransferMember(fromID *types.PttID, toID *types.PttID) error
+	DeleteMember(id *types.PttID) (bool, error)
 
 	// owner-id
 	SetOwnerID(ownerID *types.PttID, isLocked bool)

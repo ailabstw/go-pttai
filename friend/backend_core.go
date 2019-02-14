@@ -69,8 +69,19 @@ func (b *Backend) GetFriendByFriendID(friendIDBytes []byte) (*BackendGetFriend, 
 	return friendToBackendGetFriend(theFriend, userName), nil
 }
 
-func (b *Backend) RemoveFriend(idBytes []byte) (bool, error) {
-	return false, types.ErrNotImplemented
+func (b *Backend) DeleteFriend(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	err = pm.DeleteFriend()
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (b *Backend) GetFriendList(startIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {

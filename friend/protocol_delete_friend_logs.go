@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package content
+package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
@@ -22,11 +22,11 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) handleDeleteBoardLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) ([]*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handleDeleteFriendLogs(oplog *pkgservice.BaseOplog, info *ProcessFriendInfo) ([]*pkgservice.BaseOplog, error) {
 
-	opData := &BoardOpDeleteBoard{}
+	opData := &FriendOpDeleteFriend{}
 
-	log.Debug("handleDeleteBoardLogs: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("handleDeleteFriendLogs: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	return pm.HandleDeleteEntityLog(
 		oplog,
@@ -35,17 +35,17 @@ func (pm *ProtocolManager) handleDeleteBoardLogs(oplog *pkgservice.BaseOplog, in
 		opData,
 		types.StatusTerminal,
 
-		pm.boardOplogMerkle,
+		pm.friendOplogMerkle,
 
-		pm.SetBoardDB,
+		pm.SetFriendDB,
 		nil,
-		pm.updateBoardDeleteInfo,
+		pm.updateFriendDeleteInfo,
 	)
 }
 
-func (pm *ProtocolManager) handlePendingDeleteBoardLogs(oplog *pkgservice.BaseOplog, info *ProcessBoardInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
+func (pm *ProtocolManager) handlePendingDeleteFriendLogs(oplog *pkgservice.BaseOplog, info *ProcessFriendInfo) (types.Bool, []*pkgservice.BaseOplog, error) {
 
-	opData := &BoardOpDeleteBoard{}
+	opData := &FriendOpDeleteFriend{}
 
 	return pm.HandlePendingDeleteEntityLog(
 		oplog,
@@ -53,23 +53,23 @@ func (pm *ProtocolManager) handlePendingDeleteBoardLogs(oplog *pkgservice.BaseOp
 
 		types.StatusInternalTerminal,
 		types.StatusPendingTerminal,
-		BoardOpTypeDeleteBoard,
+		FriendOpTypeDeleteFriend,
 		opData,
 
-		pm.boardOplogMerkle,
+		pm.friendOplogMerkle,
 
-		pm.SetBoardDB,
-		pm.setPendingDeleteBoardSyncInfo,
-		pm.updateBoardDeleteInfo,
+		pm.SetFriendDB,
+		pm.setPendingDeleteFriendSyncInfo,
+		pm.updateFriendDeleteInfo,
 	)
 }
 
-func (pm *ProtocolManager) setNewestDeleteBoardLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
+func (pm *ProtocolManager) setNewestDeleteFriendLog(oplog *pkgservice.BaseOplog) (types.Bool, error) {
 
 	return false, nil
 }
 
-func (pm *ProtocolManager) handleFailedDeleteBoardLog(oplog *pkgservice.BaseOplog) error {
+func (pm *ProtocolManager) handleFailedDeleteFriendLog(oplog *pkgservice.BaseOplog) error {
 
 	return pm.HandleFailedDeleteEntityLog(oplog)
 }
@@ -78,14 +78,14 @@ func (pm *ProtocolManager) handleFailedDeleteBoardLog(oplog *pkgservice.BaseOplo
  * Customize
  **********/
 
-func (pm *ProtocolManager) updateBoardDeleteInfo(oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) error {
+func (pm *ProtocolManager) updateFriendDeleteInfo(oplog *pkgservice.BaseOplog, theInfo pkgservice.ProcessInfo) error {
 
-	info, ok := theInfo.(*ProcessBoardInfo)
+	info, ok := theInfo.(*ProcessFriendInfo)
 	if !ok {
 		return pkgservice.ErrInvalidData
 	}
 
-	info.BoardInfo[*oplog.ObjID] = oplog
+	info.FriendInfo[*oplog.ObjID] = oplog
 
 	return nil
 }

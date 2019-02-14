@@ -46,9 +46,30 @@ func (pm *ProtocolManager) DeleteFriend() error {
 func (pm *ProtocolManager) postdeleteFriend(theOpData pkgservice.OpData, isForce bool) error {
 
 	// both are masters
-	if !isForce {
-		return nil
-	}
+	/*
+		if !isForce {
+			return nil
+		}
+	*/
+
+	f := pm.Entity().(*Friend)
+	friendID := f.FriendID
+
+	myEntity := pm.Ptt().GetMyEntity()
+	myProfilePM := myEntity.GetProfile().PM()
+	myProfilePM.DeleteMember(friendID)
+
+	myBoardPM := myEntity.GetBoard().PM()
+	myBoardPM.DeleteMember(friendID)
+
+	myID := myEntity.GetID()
+	friendProfilePM := f.Profile.PM()
+	friendProfilePM.DeleteMember(myID)
+
+	friendBoardPM := f.Board.PM()
+	friendBoardPM.DeleteMember(myID)
+
+	pm.CleanObject()
 
 	pm.DefaultPostdeleteEntity(theOpData, isForce)
 

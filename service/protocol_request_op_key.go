@@ -80,8 +80,8 @@ func (p *BasePtt) HandleRequestOpKey(dataBytes []byte, peer *PttPeer) error {
 	}
 	pm := entity.PM()
 
-	if entity.GetStatus() >= types.StatusDeleted {
-		return p.EntityDeleted(entity, pm, peer)
+	if entity.GetStatus() >= types.StatusMigrated {
+		return p.EntityTerminal(entity, pm, peer)
 	}
 
 	err = pm.HandleOpKeyOplogs(data.OpKeyLogs, peer, false)

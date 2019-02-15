@@ -52,7 +52,7 @@ type Friend struct {
 }
 
 func NewEmptyFriend() *Friend {
-	return &Friend{BaseEntity: &pkgservice.BaseEntity{}}
+	return &Friend{BaseEntity: &pkgservice.BaseEntity{SyncInfo: &pkgservice.BaseSyncInfo{}}}
 }
 
 func NewFriend(friendID *types.PttID, ptt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*Friend, error) {
@@ -243,6 +243,10 @@ func (f *Friend) GetByFriendID(friendID *types.PttID) error {
 	}
 
 	val, err := dbFriend.GetBy2ndIdxKey(idx2Key)
+	log.Debug("GetByFriendID: after GetBy2ndIdxKey", "e", err)
+	if err != nil {
+		return err
+	}
 
 	err = f.Unmarshal(val)
 	if err != nil {

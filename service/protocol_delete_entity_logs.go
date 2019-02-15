@@ -63,6 +63,10 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 			if err != nil {
 				return nil, err
 			}
+			err = entity.Save(true)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return nil, ErrNewerOplog
 	}
@@ -95,8 +99,13 @@ func (pm *BaseProtocolManager) HandleDeleteEntityLog(
 		entity.SetSyncInfo(nil)
 	}
 
-	// 7. saveDeleteObj
+	// 7. saveDeleteEntity
 	err = SetNewEntityWithOplog(entity, status, oplog)
+	log.Debug("HandleDeleteEntityLog: after SetNewEntityWithOplog", "e", err, "entity.Status", entity.GetStatus(), "entity", entity.GetID())
+	if err != nil {
+		return nil, err
+	}
+	err = entity.Save(true)
 	if err != nil {
 		return nil, err
 	}

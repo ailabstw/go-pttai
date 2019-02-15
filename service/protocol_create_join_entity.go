@@ -112,8 +112,12 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 		}
 	}
 
-	// 6. master-logs
 	pm := entity.PM()
+
+	// clean log
+	pm.FullCleanLog()
+
+	// 6. master-logs
 	log.Debug("CreateJoinEntity: to HandleMasterOplogs", "entity", entity.GetID(), "masterLogs", len(masterLogs))
 	for _, masterLog := range masterLogs {
 		log.Debug("CreateJoinEntity: to HandleMasterOplogs", "entity", entity.GetID(), "masterLog", masterLog.ID, "master", masterLog.ObjID)

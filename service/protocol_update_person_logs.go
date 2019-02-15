@@ -54,9 +54,16 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 	if err != nil {
 		return nil, err
 	}
-	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
-		return nil, ErrInvalidPreLog
+
+	if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
+		return nil, ErrNewerOplog
 	}
+
+	/*
+		if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
+			return nil, ErrInvalidPreLog
+		}
+	*/
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
@@ -182,6 +189,7 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 	if err != nil {
 		return false, nil, err
 	}
+
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
 		return false, nil, ErrInvalidPreLog
 	}

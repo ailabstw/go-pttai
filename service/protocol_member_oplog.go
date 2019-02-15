@@ -53,13 +53,15 @@ func (pm *BaseProtocolManager) SetMemberOplogIsSync(oplog *MemberOplog, isBroadc
  * CleanMemberOplog
  **********/
 
-func (pm *BaseProtocolManager) CleanMemberOplog() {
+func (pm *BaseProtocolManager) CleanMemberOplog(isRetainLog bool) {
 	oplog := &BaseOplog{}
 	pm.SetMemberDB(oplog)
 
-	pm.CleanOplog(oplog, nil)
+	pm.CleanOplog(oplog, pm.MemberMerkle())
 
 	// retain my-log
-	myLog := pm.myMemberLog
-	myLog.Save(false, pm.MemberMerkle())
+	if isRetainLog {
+		myLog := pm.myMemberLog
+		myLog.Save(false, nil)
+	}
 }

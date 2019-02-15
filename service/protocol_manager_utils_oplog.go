@@ -551,6 +551,8 @@ func (pm *BaseProtocolManager) CleanOplog(oplog *BaseOplog, merkle *Merkle) {
 		oplog.Delete(true)
 	}
 
+	log.Debug("CleanOplog: to clean merkle", "merkle", merkle)
+
 	// merkle
 	if merkle == nil {
 		return

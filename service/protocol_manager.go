@@ -44,6 +44,8 @@ type ProtocolManager interface {
 	Delete() error
 	PostdeleteEntity(opData OpData, isForce bool) error
 
+	FullCleanLog()
+
 	// join
 	ApproveJoin(
 		joinEntity *JoinEntity,
@@ -281,7 +283,7 @@ type ProtocolManager interface {
 
 	GetEntityLog() (*BaseOplog, error)
 
-	HandleEntityDeleted(status types.Status, entityLog *BaseOplog, peer *PttPeer) error
+	HandleEntityTerminal(status types.Status, entityLog *BaseOplog, peer *PttPeer) error
 
 	// ptt
 	Ptt() Ptt

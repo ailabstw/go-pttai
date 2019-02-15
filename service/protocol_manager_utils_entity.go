@@ -16,6 +16,8 @@
 
 package service
 
+import "github.com/ailabstw/go-pttai/log"
+
 func (pm *BaseProtocolManager) GetEntityLog() (*BaseOplog, error) {
 	// get entity log
 	entityLogID := pm.Entity().GetLogID()
@@ -64,13 +66,22 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 
 	// member
 	pm.CleanMember()
-	pm.CleanMemberOplog()
+	log.Debug("DefaultPostdeleteEntity: to CleanMemberOplog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	pm.CleanMemberOplog(true)
 
 	// clean log0
-	pm.CleanLog0()
+	log.Debug("DefaultPostdeleteEntity: to CleanLog0", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	pm.CleanLog0(true)
 
 	// peer
 	pm.CleanPeers()
 
 	return nil
+}
+
+func (pm *BaseProtocolManager) FullCleanLog() {
+	log.Debug("FullCleanLog: to CleanMemberOplog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	pm.CleanMemberOplog(false)
+	log.Debug("FullCleanLog: to CleanLog0", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	pm.CleanLog0(false)
 }

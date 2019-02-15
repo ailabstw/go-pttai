@@ -36,10 +36,13 @@ func (pm *BaseProtocolManager) HandleLog0s(logs []*BaseOplog, peer *PttPeer, isU
 	return pm.handleLog0s(logs, peer, isUpdateSyncTime)
 }
 
-func (pm *BaseProtocolManager) CleanLog0() {
+func (pm *BaseProtocolManager) CleanLog0(isRetainLog bool) {
 
+	var entityLog *BaseOplog
 	// get entity log
-	entityLog, _ := pm.GetEntityLog()
+	if isRetainLog {
+		entityLog, _ = pm.GetEntityLog()
+	}
 
 	// clean-log
 	oplog := &BaseOplog{}
@@ -47,7 +50,7 @@ func (pm *BaseProtocolManager) CleanLog0() {
 	pm.CleanOplog(oplog, pm.log0Merkle)
 
 	// entity log
-	if entityLog != nil {
-		entityLog.Save(false, pm.log0Merkle)
+	if isRetainLog && entityLog != nil {
+		entityLog.Save(false, nil)
 	}
 }

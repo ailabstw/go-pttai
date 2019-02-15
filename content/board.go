@@ -42,7 +42,7 @@ type Board struct {
 }
 
 func NewEmptyBoard() *Board {
-	return &Board{BaseEntity: &pkgservice.BaseEntity{}}
+	return &Board{BaseEntity: &pkgservice.BaseEntity{SyncInfo: &pkgservice.BaseSyncInfo{}}}
 }
 
 func NewBoard(myID *types.PttID, ts types.Timestamp, ptt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*Board, error) {

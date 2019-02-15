@@ -18,6 +18,7 @@ package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -28,9 +29,9 @@ func (pm *ProtocolManager) DeleteFriend() error {
 		FriendOpTypeDeleteFriend,
 		opData,
 
-		types.StatusInternalDeleted,
-		types.StatusPendingDeleted,
-		types.StatusDeleted,
+		types.StatusInternalTerminal,
+		types.StatusPendingTerminal,
+		types.StatusTerminal,
 
 		pm.friendOplogMerkle,
 
@@ -39,6 +40,8 @@ func (pm *ProtocolManager) DeleteFriend() error {
 		pm.broadcastFriendOplogCore,
 		pm.postdeleteFriend,
 	)
+
+	log.Debug("DeleteFriend: after DeleteEntity", "e", err, "entity", pm.Entity().GetID())
 
 	return err
 }
@@ -72,6 +75,9 @@ func (pm *ProtocolManager) postdeleteFriend(theOpData pkgservice.OpData, isForce
 	pm.CleanObject()
 
 	pm.DefaultPostdeleteEntity(theOpData, isForce)
+
+	origFriend, err := pm.Entity().Service().SPM().(*ServiceProtocolManager).GetFriendByFriendID(friendID)
+	log.Debug("postdeleteFriend: after GetFriendByFriendID", "e", err, "origID", origFriend.GetID(), "id", f.GetID(), "status", origFriend.Status)
 
 	return nil
 }

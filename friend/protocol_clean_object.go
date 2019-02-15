@@ -23,10 +23,10 @@ import (
 )
 
 func (pm *ProtocolManager) CleanObject() error {
+	// msg
 	msg := NewEmptyMessage()
 	pm.SetMessageDB(msg)
 
-	// msg
 	iter, err := msg.GetObjIterWithObj(nil, pttdb.ListOrderNext, false)
 	if err != nil {
 		return err

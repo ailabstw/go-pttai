@@ -345,13 +345,17 @@ func TestFriendDeleteFriend1(t *testing.T) {
 		Result []*friend.BackendGetFriend `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataGetFriendList0_14, t, isDebug)
-	assert.Equal(0, len(dataGetFriendList0_14.Result))
+	assert.Equal(1, len(dataGetFriendList0_14.Result))
+	friend0_14_0 := dataGetFriendList0_14.Result[0]
+	assert.Equal(types.StatusTerminal, friend0_14_0.Status)
 
 	dataGetFriendList1_14 := &struct {
 		Result []*friend.BackendGetFriend `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataGetFriendList1_14, t, isDebug)
-	assert.Equal(0, len(dataGetFriendList1_14.Result))
+	assert.Equal(1, len(dataGetFriendList1_14.Result))
+	friend1_14_0 := dataGetFriendList1_14.Result[0]
+	assert.Equal(types.StatusTerminal, friend1_14_0.Status)
 
 	// 15. get-board-list
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)

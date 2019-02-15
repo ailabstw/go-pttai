@@ -32,8 +32,18 @@ type ApproveJoinFriend struct {
 
 func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, keyInfo *pkgservice.KeyInfo, peer *pkgservice.PttPeer) (*pkgservice.KeyInfo, interface{}, error) {
 
-	// create friend
 	friendSPM := pm.Entity().Service().(*Backend).friendBackend.SPM().(*friend.ServiceProtocolManager)
+
+	// Reset friend
+	origFriend, err := friendSPM.GetFriendEntityByFriendID(joinEntity.ID)
+	log.Debug("ApproveJoinFriend: after GetFriendEntityByFriendID", "e", err, "origFriend", origFriend, "friendID", joinEntity.ID)
+	if err == nil {
+		origFriend.PM().FullCleanLog()
+		err = friendSPM.UnregisterEntity(origFriend.ID)
+		log.Debug("ApproveJoinFriend: after UnregisterEntity", "e", err)
+	}
+
+	// create friend
 
 	theFriend, err := friendSPM.CreateFriend(joinEntity.ID)
 	log.Debug("ApproveJoinFriend: after CreateFriend", "e", err)

@@ -374,7 +374,7 @@ func TestFriendLeaveBoard3(t *testing.T) {
 		Result []*content.BoardOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataBoardOplogList1_16, t, isDebug)
-	assert.Equal(0, len(dataBoardOplogList1_16.Result))
+	assert.Equal(1, len(dataBoardOplogList1_16.Result))
 
 	// 17. get member-oplog
 	marshaled, _ = board1_13_1.ID.MarshalText()

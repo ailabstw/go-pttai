@@ -32,7 +32,7 @@ type Profile struct {
 }
 
 func NewEmptyProfile() *Profile {
-	return &Profile{BaseEntity: &pkgservice.BaseEntity{}}
+	return &Profile{BaseEntity: &pkgservice.BaseEntity{SyncInfo: &pkgservice.BaseSyncInfo{}}}
 }
 
 func NewProfile(myID *types.PttID, ts types.Timestamp, ptt pkgservice.Ptt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*Profile, error) {

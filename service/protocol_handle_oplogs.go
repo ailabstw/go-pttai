@@ -56,6 +56,7 @@ func HandleOplogs(
 	}
 
 	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, pm, merkle, peer)
+	log.Debug("HandleOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	if err != nil {
 		return err
 	}
@@ -477,7 +478,7 @@ func preprocessOplogs(
 		return nil, err
 	}
 	expireTS := now
-	if isUpdateSyncTime {
+	if merkle != nil {
 		ts, err := merkle.GetSyncTime()
 		if err != nil {
 			return nil, err

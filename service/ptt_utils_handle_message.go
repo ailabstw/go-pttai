@@ -228,7 +228,7 @@ func (p *BasePtt) HandleCodeRequestOpKeyAck(hash *common.Address, encData []byte
 }
 
 func (p *BasePtt) HandleCodeEntityDeleted(hash *common.Address, encData []byte, peer *PttPeer) error {
-	return p.HandleEntityDeleted(encData, peer)
+	return p.HandleEntityTerminal(encData, peer)
 }
 
 func (p *BasePtt) HandleCodeOpCheckMember(hash *common.Address, encData []byte, peer *PttPeer) error {

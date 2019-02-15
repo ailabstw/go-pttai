@@ -64,9 +64,16 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 	if err != nil {
 		return nil, err
 	}
-	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
-		return nil, ErrInvalidPreLog
+
+	if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
+		return nil, ErrNewerOplog
 	}
+
+	/*
+		if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
+			return nil, ErrInvalidPreLog
+		}
+	*/
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
@@ -215,6 +222,11 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 	if err != nil {
 		return false, nil, err
 	}
+
+	if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
+		return false, nil, ErrNewerOplog
+	}
+
 	if !reflect.DeepEqual(origPerson.GetLogID(), oplog.PreLogID) {
 		log.Warn("HandlePendingDeletePersonLog: pre-log-id", "person", origPerson.GetLogID(), "preLogID", oplog.PreLogID, "entity", pm.Entity().GetID())
 		return false, nil, ErrInvalidPreLog

@@ -61,7 +61,7 @@ func (pm *BaseProtocolManager) DeleteEntity(
 
 	// 3. check validity
 	origStatus := entity.GetStatus()
-	if origStatus >= types.StatusDeleted {
+	if origStatus >= types.StatusMigrated {
 		return nil
 	}
 

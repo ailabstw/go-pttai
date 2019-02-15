@@ -18,6 +18,7 @@ package friend
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
@@ -39,9 +40,11 @@ func (spm *ServiceProtocolManager) GetFriendList(startingFriendID *types.PttID, 
 			break
 		}
 
+		k := iter.Key()
+		log.Debug("GetFriendList (in-for-loop)", "k", k)
 		v := iter.Value()
 
-		eachFriend := &Friend{}
+		eachFriend := NewEmptyFriend()
 		err := eachFriend.Unmarshal(v)
 		if err != nil {
 			continue
@@ -50,7 +53,7 @@ func (spm *ServiceProtocolManager) GetFriendList(startingFriendID *types.PttID, 
 		ts, _ := eachFriend.LoadLastSeen()
 		eachFriend.LastSeen = ts
 
-		ts, err = eachFriend.LoadMessageCreateTS()
+		ts, _ = eachFriend.LoadMessageCreateTS()
 		eachFriend.MessageCreateTS = ts
 
 		friendList = append(friendList, eachFriend)

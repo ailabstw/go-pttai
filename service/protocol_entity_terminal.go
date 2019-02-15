@@ -28,7 +28,7 @@ type EntityDeleted struct {
 	Status    types.Status `json:"S"`
 }
 
-func (p *BasePtt) EntityDeleted(entity Entity, pm ProtocolManager, peer *PttPeer) error {
+func (p *BasePtt) EntityTerminal(entity Entity, pm ProtocolManager, peer *PttPeer) error {
 
 	entityLog, _ := pm.GetEntityLog()
 
@@ -43,7 +43,7 @@ func (p *BasePtt) EntityDeleted(entity Entity, pm ProtocolManager, peer *PttPeer
 	return nil
 }
 
-func (p *BasePtt) HandleEntityDeleted(dataBytes []byte, peer *PttPeer) error {
+func (p *BasePtt) HandleEntityTerminal(dataBytes []byte, peer *PttPeer) error {
 	if peer.UserID == nil {
 		return types.ErrInvalidID
 	}
@@ -60,7 +60,7 @@ func (p *BasePtt) HandleEntityDeleted(dataBytes []byte, peer *PttPeer) error {
 	}
 	pm := entity.PM()
 
-	pm.HandleEntityDeleted(data.Status, data.EntityLog, peer)
+	pm.HandleEntityTerminal(data.Status, data.EntityLog, peer)
 
 	return nil
 }
@@ -69,13 +69,13 @@ func (p *BasePtt) HandleEntityDeleted(dataBytes []byte, peer *PttPeer) error {
  * pm
  **********/
 
-func (pm *BaseProtocolManager) HandleEntityDeleted(status types.Status, entityLog *BaseOplog, peer *PttPeer) error {
+func (pm *BaseProtocolManager) HandleEntityTerminal(status types.Status, entityLog *BaseOplog, peer *PttPeer) error {
 
 	if !pm.IsMember(peer.UserID, false) {
 		return nil
 	}
 
-	if status < types.StatusTransferred {
+	if status < types.StatusMigrated {
 		return nil
 	}
 

@@ -54,7 +54,7 @@ type MyInfo struct {
 }
 
 func NewEmptyMyInfo() *MyInfo {
-	return &MyInfo{BaseEntity: &pkgservice.BaseEntity{}}
+	return &MyInfo{BaseEntity: &pkgservice.BaseEntity{SyncInfo: &pkgservice.BaseSyncInfo{}}}
 }
 
 func NewMyInfo(id *types.PttID, myKey *ecdsa.PrivateKey, ptt pkgservice.MyPtt, service pkgservice.Service, spm pkgservice.ServiceProtocolManager, dbLock *types.LockMap) (*MyInfo, error) {

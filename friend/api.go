@@ -74,6 +74,14 @@ func (api *PrivateAPI) GetFriendList(startingFriendID string, limit int) ([]*Bac
 	)
 }
 
+func (api *PrivateAPI) MarkFriendListSeen() (types.Timestamp, error) {
+	return api.b.MarkFriendListSeen()
+}
+
+func (api *PrivateAPI) GetFriendListSeen() (types.Timestamp, error) {
+	return api.b.GetFriendListSeen()
+}
+
 func (api *PrivateAPI) GetFriendListByMsgCreateTS(tsBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
 	return api.b.GetFriendListByMsgCreateTS(
 		tsBytes,

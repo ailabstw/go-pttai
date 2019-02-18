@@ -56,6 +56,8 @@ var (
 	DBMessageCreateTSPrefix    = []byte(".frmc")
 	DBMessageCreateTSIdxPrefix = []byte(".mcix")
 	DBMessageCreateTS2Prefix   = []byte(".mcdb")
+
+	DBFriendListSeenPrefix = []byte(".frsn")
 )
 
 // protocol

@@ -111,6 +111,37 @@ func (b *Backend) GetFriendList(startIDBytes []byte, limit int, listOrder pttdb.
 
 }
 
+func (b *Backend) GetFriendListByMsgCreateTS(tsBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
+
+	ts := types.ZeroTimestamp
+	var err error
+	if len(tsBytes) != 0 {
+		ts, err = types.UnmarshalTimestamp(tsBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	friendList, err := b.SPM().(*ServiceProtocolManager).GetFriendListByMsgCreateTS(ts, limit, listOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	accountBackend := b.accountBackend
+	backendFriendList := make([]*BackendGetFriend, len(friendList))
+	var userName *account.UserName
+	for i, f := range friendList {
+		userName, err = accountBackend.GetRawUserNameByID(f.FriendID)
+		if err != nil {
+			userName = account.NewEmptyUserName()
+		}
+		backendFriendList[i] = friendToBackendGetFriend(f, userName)
+	}
+
+	return backendFriendList, nil
+
+}
+
 func (b *Backend) GetFriendOplogList(entityIDBytes []byte, logIDBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*FriendOplog, error) {
 
 	thePM, err := b.EntityIDToPM(entityIDBytes)

@@ -325,10 +325,20 @@ func (f *Friend) SaveMessageCreateTS(ts types.Timestamp) error {
 		return err
 	}
 
+	err = f.SaveMessageCreateTS2(ts)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (f *Friend) LoadMessageCreateTS() (types.Timestamp, error) {
+	ts, err := f.LoadMessageCreateTS2()
+	if err == nil {
+		return ts, nil
+	}
+
 	key, err := f.MarshalMessageCreateTSKey()
 	if err != nil {
 		return types.ZeroTimestamp, err
@@ -352,4 +362,80 @@ func (f *Friend) LoadMessageCreateTS() (types.Timestamp, error) {
 
 func (f *Friend) MarshalMessageCreateTSKey() ([]byte, error) {
 	return common.Concat([][]byte{DBMessageCreateTSPrefix, f.ID[:]})
+}
+
+func (f *Friend) SaveMessageCreateTS2(ts types.Timestamp) error {
+	f.MessageCreateTS = ts
+
+	idxKey, err := f.MarshalMessageCreateTSIdxKey()
+	if err != nil {
+		return err
+	}
+
+	key, err := f.MarshalMessageCreateTSKey2(ts)
+	if err != nil {
+		return err
+	}
+
+	val := &pttdb.DBable{
+		UpdateTS: ts,
+	}
+
+	marshaled, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+
+	idx := &pttdb.Index{Keys: [][]byte{key}, UpdateTS: ts}
+
+	kvs := []*pttdb.KeyVal{
+		&pttdb.KeyVal{K: key, V: marshaled},
+	}
+
+	_, err = dbFriend.TryPutAll(idxKey, idx, kvs, true, false)
+	if err != nil && err != pttdb.ErrInvalidUpdateTS {
+		return err
+	}
+
+	return nil
+}
+
+func (f *Friend) MarshalMessageCreateTSIdxKey() ([]byte, error) {
+	return common.Concat([][]byte{DBMessageCreateTSIdxPrefix, f.ID[:]})
+}
+
+func (f *Friend) MarshalMessageCreateTSKey2(ts types.Timestamp) ([]byte, error) {
+	marshaledTimestamp, err := ts.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	return common.Concat([][]byte{DBMessageCreateTS2Prefix, marshaledTimestamp, f.ID[:]})
+}
+
+func (f *Friend) LoadMessageCreateTS2() (types.Timestamp, error) {
+	idxKey, err := f.MarshalMessageCreateTSIdxKey()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+	val, err := dbFriend.GetByIdxKey(idxKey, 0)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	dbable := &pttdb.DBable{}
+	err = dbable.Unmarshal(val)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return dbable.UpdateTS, nil
+}
+
+func msgCreateTSKeyToEntityID(key []byte) *types.PttID {
+	theID := &types.PttID{}
+
+	offset := pttdb.SizeDBKeyPrefix + types.SizeTimestamp
+	copy(theID[:], key[offset:])
+
+	return theID
 }

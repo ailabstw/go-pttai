@@ -82,10 +82,16 @@ func (pm *ProtocolManager) NewUserNode(theData pkgservice.CreateData) (pkgservic
 
 func (pm *ProtocolManager) postcreateUserNode(obj pkgservice.Object, oplog *pkgservice.BaseOplog) error {
 
-	log.Debug("postcreateUserNode: start", "entity", pm.Entity().GetID(), "objID", oplog.ObjID)
+	entityID := pm.Entity().GetID()
+
+	log.Debug("postcreateUserNode: start", "entity", entityID, "objID", oplog.ObjID)
 
 	pm.lockUserNodeInfo.Lock()
 	defer pm.lockUserNodeInfo.Unlock()
+
+	if pm.userNodeInfo == nil {
+		pm.InitUserNode(entityID)
+	}
 
 	pm.userNodeInfo.NUserNode++
 	randN := rand.Intn(pm.userNodeInfo.NUserNode)

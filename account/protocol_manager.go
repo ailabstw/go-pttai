@@ -127,12 +127,7 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 	pm.dbUserNodeIdx2Prefix = common.CloneBytes(pm.dbUserNodeIdxPrefix)
 	pm.dbUserNodeIdx2Prefix[pttdb.SizeDBKeyPrefix-1] = '2'
 
-	userNodeInfo := &UserNodeInfo{}
-	err = userNodeInfo.Get(entityID)
-	if err != nil {
-		userNodeInfo = &UserNodeInfo{ID: entityID}
-	}
-	pm.userNodeInfo = userNodeInfo
+	pm.InitUserNode(entityID)
 
 	// user-name
 	pm.dbUserNamePrefix = DBUserNamePrefix

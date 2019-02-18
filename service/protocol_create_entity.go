@@ -112,7 +112,7 @@ func (spm *BaseServiceProtocolManager) CreateEntity(
 
 	// 6.1. add to entities
 	err = spm.RegisterEntity(entityID, entity)
-	log.Debug("CreateEntity: after RegisterEntity", "e", err)
+	log.Debug("CreateEntity: after RegisterEntity", "e", err, "service", spm.Service().Name())
 	if err != nil {
 		return nil, err
 	}

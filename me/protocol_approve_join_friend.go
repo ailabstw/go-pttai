@@ -37,7 +37,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	// Reset friend
 	origFriend, err := friendSPM.GetFriendEntityByFriendID(joinEntity.ID)
 	log.Debug("ApproveJoinFriend: after GetFriendEntityByFriendID", "e", err, "origFriend", origFriend, "friendID", joinEntity.ID)
-	if err == nil {
+	if err == nil && origFriend.Status >= types.StatusDeleted {
 		origFriend.PM().FullCleanLog()
 		err = friendSPM.UnregisterEntity(origFriend.ID)
 		log.Debug("ApproveJoinFriend: after UnregisterEntity", "e", err)
@@ -46,7 +46,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	// create friend
 
 	theFriend, err := friendSPM.CreateFriend(joinEntity.ID)
-	log.Debug("ApproveJoinFriend: after CreateFriend", "e", err)
+	log.Debug("ApproveJoinFriend: after CreateFriend", "e", err, "theFriend.Status", theFriend.GetStatus())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -85,13 +85,15 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 		return pkgservice.ErrInvalidData
 	}
 
-	// 1. new friend
 	ptt := pm.Ptt()
 	myID := ptt.GetMyEntity().GetID()
-	var friendID *types.PttID
 
 	friendService := pm.Entity().Service().(*Backend).friendBackend
 	friendSPM := friendService.SPM().(*friend.ServiceProtocolManager)
+
+	// friendID
+	var friendID *types.PttID
+
 	friendData := approveJoinFriend.FriendData
 	f := friendData.Friend
 	if reflect.DeepEqual(myID, f.Friend0ID) {
@@ -99,6 +101,17 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	} else {
 		friendID = f.Friend0ID
 	}
+
+	// Reset friend
+	origFriend, err := friendSPM.GetFriendEntityByFriendID(friendID)
+	log.Debug("HandleApproveJoinFriend: after GetFriendEntityByFriendID", "e", err, "origFriend", origFriend, "friendID", friendID)
+	if err == nil && origFriend.Status >= types.StatusDeleted {
+		origFriend.PM().FullCleanLog()
+		err = friendSPM.UnregisterEntity(origFriend.ID)
+		log.Debug("HandleApproveJoinFriend: after UnregisterEntity", "e", err)
+	}
+
+	// 1. new friend
 	f.FriendID = friendID
 
 	f.Status = types.StatusInit

@@ -16,9 +16,15 @@
 
 package account
 
-import "github.com/ailabstw/go-pttai/pttdb"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/pttdb"
+)
 
 func (pm *ProtocolManager) CleanUserNode() error {
+	pm.lockUserNodeInfo.Lock()
+	defer pm.lockUserNodeInfo.Unlock()
+
 	if pm.userNodeInfo != nil {
 		pm.userNodeInfo.Delete()
 		pm.userNodeInfo = nil
@@ -40,4 +46,13 @@ func (pm *ProtocolManager) CleanUserNode() error {
 	}
 
 	return nil
+}
+
+func (pm *ProtocolManager) InitUserNode(entityID *types.PttID) {
+	userNodeInfo := &UserNodeInfo{}
+	err := userNodeInfo.Get(entityID)
+	if err != nil {
+		userNodeInfo = &UserNodeInfo{ID: entityID}
+	}
+	pm.userNodeInfo = userNodeInfo
 }

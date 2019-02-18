@@ -51,6 +51,9 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 		return nil, nil, err
 	}
 
+	// save message-create-ts
+	theFriend.SaveMessageCreateTS(theFriend.GetCreateTS())
+
 	// get friend-key and friend oplog
 	friendPM := theFriend.PM().(*friend.ProtocolManager)
 	friendOpKeyInfo, friendData, err := friendPM.ApproveJoinFriend(joinEntity, keyInfo, peer)
@@ -107,6 +110,9 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	if err != nil {
 		return err
 	}
+
+	// save message-create-ts
+	f.SaveMessageCreateTS(f.GetCreateTS())
 
 	newPM := f.PM().(*friend.ProtocolManager)
 

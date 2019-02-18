@@ -279,3 +279,36 @@ func (b *Backend) MarkFriendSeen(entityIDBytes []byte) (types.Timestamp, error) 
 
 	return pm.SaveLastSeen(types.ZeroTimestamp)
 }
+
+func (b *Backend) MarkFriendListSeen() (types.Timestamp, error) {
+	ts, err := types.GetTimestamp()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	tsBytes, err := ts.Marshal()
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	err = dbMeta.Put(DBFriendListSeenPrefix, tsBytes)
+	if err != nil {
+		return types.ZeroTimestamp, err
+	}
+
+	return ts, nil
+}
+
+func (b *Backend) GetFriendListSeen() (types.Timestamp, error) {
+	tsBytes, err := dbMeta.Get(DBFriendListSeenPrefix)
+	if err != nil {
+		return types.ZeroTimestamp, nil
+	}
+
+	ts, err := types.UnmarshalTimestamp(tsBytes)
+	if err != nil {
+		return types.ZeroTimestamp, nil
+	}
+
+	return ts, nil
+}

@@ -54,6 +54,8 @@ var (
 
 	DBLastSeenPrefix        = []byte(".frls")
 	DBMessageCreateTSPrefix = []byte(".frmc")
+
+	DBFriendListSeenPrefix = []byte(".frsn")
 )
 
 // protocol

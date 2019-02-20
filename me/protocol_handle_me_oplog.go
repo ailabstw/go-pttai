@@ -103,6 +103,7 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 	}
 
 	// board
+	log.Debug("postprocessMeOplogs: to InternalSyncBoard", "boardInfo", info.BoardInfo)
 	for _, oplog := range info.BoardInfo {
 		pm.InternalSyncBoard(oplog, peer)
 	}

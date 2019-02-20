@@ -17,6 +17,8 @@
 package me
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
@@ -44,7 +46,19 @@ func (pm *ProtocolManager) setNewestFriendLog(
 	oplog *pkgservice.BaseOplog,
 ) (types.Bool, error) {
 
+	opData := &MeOpEntity{}
+
+	err := oplog.GetData(opData)
+	if err != nil {
+		return true, err
+	}
+
 	friendSPM := pm.Entity().Service().(*Backend).friendBackend.SPM()
 
-	return pm.SetNewestEntityLog(oplog, friendSPM)
+	entity := friendSPM.Entity(oplog.ObjID)
+	if entity == nil {
+		return true, err
+	}
+
+	return !types.Bool(reflect.DeepEqual(opData.LogID, entity.GetLogID())), nil
 }

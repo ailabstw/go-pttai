@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -35,6 +36,7 @@ func (pm *ProtocolManager) HandleEntityLog(
 ) ([]*pkgservice.BaseOplog, error) {
 
 	entity := spm.Entity(oplog.ObjID)
+	log.Debug("HandleEntityLog: after get Entity", "entityID", oplog.ObjID, "entity", entity, "isNewer", oplog.IsNewer)
 	if entity == nil {
 		if oplog.IsNewer {
 			return nil, nil

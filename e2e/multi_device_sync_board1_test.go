@@ -336,9 +336,6 @@ func TestMultiDeviceSyncBoard1(t *testing.T) {
 
 	assert.Equal(title0_13_2, dataGetTitle0_13_3.Title)
 
-	// wait 10 secs
-	time.Sleep(10 * time.Second)
-
 	// 14. MeOplog
 	bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`
 
@@ -725,9 +722,6 @@ func TestMultiDeviceSyncBoard1(t *testing.T) {
 	assert.Equal(content.CommentTypePush, articleBlock1_42.CommentType)
 	assert.Equal([][]byte{comment}, articleBlock1_42.Buf)
 
-	// wait 10 secs
-	time.Sleep(10 * time.Second)
-
 	// 48. content-delete-comment
 	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
@@ -756,6 +750,17 @@ func TestMultiDeviceSyncBoard1(t *testing.T) {
 	assert.Equal(content.ContentTypeComment, articleBlock0_49.ContentType)
 	assert.Equal(content.DefaultDeletedComment, articleBlock0_49.Buf)
 
+	dataGetArticleBlockList1_49 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_49, t, isDebug)
+	assert.Equal(3, len(dataGetArticleBlockList1_49.Result))
+	articleBlock1_49 := dataGetArticleBlockList1_49.Result[2]
+
+	assert.Equal(types.StatusDeleted, articleBlock1_49.Status)
+	assert.Equal(content.ContentTypeComment, articleBlock1_49.ContentType)
+	assert.Equal(content.DefaultDeletedComment, articleBlock1_49.Buf)
+
 	// 50. content-delete-article
 	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
@@ -779,6 +784,12 @@ func TestMultiDeviceSyncBoard1(t *testing.T) {
 	testListCore(t0, bodyString, dataGetArticleBlockList0_51, t, isDebug)
 	assert.Equal(0, len(dataGetArticleBlockList0_51.Result))
 
+	dataGetArticleBlockList1_51 := &struct {
+		Result []*content.ArticleBlock `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleBlockList1_51, t, isDebug)
+	assert.Equal(0, len(dataGetArticleBlockList1_51.Result))
+
 	// // 52. content-get-article-list
 	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
 
@@ -793,4 +804,16 @@ func TestMultiDeviceSyncBoard1(t *testing.T) {
 	assert.Equal(0, article0_52.NPush)
 	assert.Equal(0, article0_52.NBoo)
 	assert.Equal(types.StatusDeleted, article0_52.Status)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
+	dataGetArticleList1_52 := &struct {
+		Result []*content.BackendGetArticle `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetArticleList1_52, t, isDebug)
+	assert.Equal(1, len(dataGetArticleList1_52.Result))
+	article1_52 := dataGetArticleList1_52.Result[0]
+
+	assert.Equal(0, article1_52.NPush)
+	assert.Equal(0, article1_52.NBoo)
+	assert.Equal(types.StatusDeleted, article1_52.Status)
 }

@@ -58,6 +58,7 @@ type MeOpCreateEntity struct {
 */
 
 type MeOpEntity struct {
+	LogID *types.PttID `json:"l"`
 }
 
 type MeOpMigrateMe struct {

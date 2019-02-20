@@ -49,7 +49,7 @@ func (m *MyInfo) CreateJoinEntityOplog(entity pkgservice.Entity) error {
 	}
 
 	entityID := entity.GetID()
-	oplog, err := pm.CreateMeOplog(entityID, ts, op, &MeOpEntity{})
+	oplog, err := pm.CreateMeOplog(entityID, ts, op, &MeOpEntity{LogID: entity.GetLogID()})
 	if err != nil {
 		return err
 	}

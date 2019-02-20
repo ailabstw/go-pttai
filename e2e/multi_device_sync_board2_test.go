@@ -61,9 +61,9 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	testCore(t0, bodyString, me0_1, t, isDebug)
 	assert.Equal(types.StatusAlive, me0_1.Status)
 
-	nodeID0_1 := me0_1.NodeID
-	pubKey0_1, _ := nodeID0_1.Pubkey()
-	nodeAddr0_1 := crypto.PubkeyToAddress(*pubKey0_1)
+	//nodeID0_1 := me0_1.NodeID
+	//pubKey0_1, _ := nodeID0_1.Pubkey()
+	// nodeAddr0_1 := crypto.PubkeyToAddress(*pubKey0_1)
 
 	me1_1 := &me.BackendMyInfo{}
 	testCore(t1, bodyString, me1_1, t, isDebug)
@@ -130,6 +130,21 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	}{}
 	testListCore(t0, bodyString, dataGetJoinKeys0_6_1, t, isDebug)
 	assert.Equal(1, len(dataGetJoinKeys0_6_1.Result))
+
+	// 13. create-board
+	title := []byte("標題1")
+	marshaledStr = base64.StdEncoding.EncodeToString(title)
+
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createBoard", "params": ["%v", true]}`, marshaledStr)
+
+	dataCreateBoard1_13 := &content.BackendCreateBoard{}
+
+	testCore(t1, bodyString, dataCreateBoard1_13, t, isDebug)
+	assert.Equal(pkgservice.EntityTypePrivate, dataCreateBoard1_13.BoardType)
+	assert.Equal(title, dataCreateBoard1_13.Title)
+	assert.Equal(types.StatusAlive, dataCreateBoard1_13.Status)
+	assert.Equal(me1_1.ID, dataCreateBoard1_13.CreatorID)
+	assert.Equal(me1_1.ID, dataCreateBoard1_13.UpdaterID)
 
 	// 7. join-me
 	log.Debug("7. join-me")
@@ -218,7 +233,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(types.Bool(true), masterOplog1_9.IsSync)
 	assert.Equal(masterOplog1_9.ID, masterOplog1_9.MasterLogID)
 
-	masterOplog1_9_2 := dataMasterOplogs1_9.Result[2]
+	// masterOplog1_9_2 := dataMasterOplogs1_9.Result[2]
 
 	for i, oplog := range dataMasterOplogs0_9.Result {
 		oplog1 := dataMasterOplogs1_9.Result[i]
@@ -254,25 +269,32 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 		Result []*me.MeOplog `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataMeOplogs0_9_2, t, isDebug)
-	assert.Equal(1, len(dataMeOplogs0_9_2.Result))
-	meOplog0_9_2 := dataMeOplogs0_9_2.Result[0]
-	assert.Equal(me1_3.ID, meOplog0_9_2.CreatorID)
-	assert.Equal(me1_3.ID, meOplog0_9_2.ObjID)
-	assert.Equal(me.MeOpTypeCreateMe, meOplog0_9_2.Op)
-	assert.Equal(nilPttID, meOplog0_9_2.PreLogID)
-	assert.Equal(types.Bool(true), meOplog0_9_2.IsSync)
-	assert.Equal(masterOplog1_9.ID, meOplog0_9_2.MasterLogID)
-	assert.Equal(me1_3.LogID, meOplog0_9_2.ID)
-	masterSign0_9_2 := meOplog0_9_2.MasterSigns[0]
-	assert.Equal(nodeAddr1_1[:], masterSign0_9_2.ID[:common.AddressLength])
-	assert.Equal(me1_3.ID[:common.AddressLength], masterSign0_9_2.ID[common.AddressLength:])
-	assert.Equal(me0_8_1.LogID, meOplog0_9_2.ID)
+	assert.Equal(2, len(dataMeOplogs0_9_2.Result))
+	meOplog0_9_2_0 := dataMeOplogs0_9_2.Result[0]
+	assert.Equal(me1_3.ID, meOplog0_9_2_0.CreatorID)
+	assert.Equal(me1_3.ID, meOplog0_9_2_0.ObjID)
+	assert.Equal(me.MeOpTypeCreateMe, meOplog0_9_2_0.Op)
+	assert.Equal(nilPttID, meOplog0_9_2_0.PreLogID)
+	assert.Equal(types.Bool(true), meOplog0_9_2_0.IsSync)
+	assert.Equal(masterOplog1_9.ID, meOplog0_9_2_0.MasterLogID)
+	assert.Equal(me1_3.LogID, meOplog0_9_2_0.ID)
+	masterSign0_9_2_0 := meOplog0_9_2_0.MasterSigns[0]
+	assert.Equal(nodeAddr1_1[:], masterSign0_9_2_0.ID[:common.AddressLength])
+	assert.Equal(me1_3.ID[:common.AddressLength], masterSign0_9_2_0.ID[common.AddressLength:])
+	assert.Equal(me0_8_1.LogID, meOplog0_9_2_0.ID)
+
+	meOplog0_9_2_1 := dataMeOplogs0_9_2.Result[1]
+	assert.Equal(me.MeOpTypeCreateBoard, meOplog0_9_2_1.Op)
+	assert.Equal(masterOplog1_9.ID, meOplog0_9_2_1.MasterLogID)
+	masterSign0_9_2_1 := meOplog0_9_2_1.MasterSigns[0]
+	assert.Equal(nodeAddr1_1[:], masterSign0_9_2_1.ID[:common.AddressLength])
+	assert.Equal(me1_3.ID[:common.AddressLength], masterSign0_9_2_1.ID[common.AddressLength:])
 
 	dataMeOplogs1_9_2 := &struct {
 		Result []*me.MeOplog `json:"result"`
 	}{}
 	testListCore(t1, bodyString, dataMeOplogs1_9_2, t, isDebug)
-	assert.Equal(1, len(dataMeOplogs1_9_2.Result))
+	assert.Equal(2, len(dataMeOplogs1_9_2.Result))
 	meOplog1_9_2 := dataMeOplogs1_9_2.Result[0]
 	assert.Equal(me1_3.ID, meOplog1_9_2.CreatorID)
 	assert.Equal(me1_3.ID, meOplog1_9_2.ObjID)
@@ -284,26 +306,22 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	masterSign1_9_2 := meOplog1_9_2.MasterSigns[0]
 	assert.Equal(nodeAddr1_1[:], masterSign1_9_2.ID[:common.AddressLength])
 	assert.Equal(me1_3.ID[:common.AddressLength], masterSign1_9_2.ID[common.AddressLength:])
-	assert.Equal(meOplog0_9_2, meOplog1_9_2)
+	assert.Equal(meOplog0_9_2_0, meOplog1_9_2)
 	assert.Equal(me1_8_1.LogID, meOplog1_9_2.ID)
 
-	// 13. create-board
-	title := []byte("標題1")
-	marshaledStr = base64.StdEncoding.EncodeToString(title)
+	meOplog1_9_2_1 := dataMeOplogs1_9_2.Result[1]
+	assert.Equal(me.MeOpTypeCreateBoard, meOplog1_9_2_1.Op)
+	assert.Equal(masterOplog1_9.ID, meOplog1_9_2_1.MasterLogID)
+	masterSign1_9_2_1 := meOplog1_9_2_1.MasterSigns[0]
+	assert.Equal(nodeAddr1_1[:], masterSign1_9_2_1.ID[:common.AddressLength])
+	assert.Equal(me1_3.ID[:common.AddressLength], masterSign1_9_2_1.ID[common.AddressLength:])
 
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createBoard", "params": ["%v", true]}`, marshaledStr)
-
-	dataCreateBoard0_13 := &content.BackendCreateBoard{}
-
-	testCore(t0, bodyString, dataCreateBoard0_13, t, isDebug)
-	assert.Equal(pkgservice.EntityTypePrivate, dataCreateBoard0_13.BoardType)
-	assert.Equal(title, dataCreateBoard0_13.Title)
-	assert.Equal(types.StatusAlive, dataCreateBoard0_13.Status)
-	assert.Equal(me1_1.ID, dataCreateBoard0_13.CreatorID)
-	assert.Equal(me1_1.ID, dataCreateBoard0_13.UpdaterID)
+	// wait 10
+	t.Logf("wait 10 seconds for board-sync")
+	time.Sleep(TimeSleepRestart)
 
 	// 13.1. board
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaledID))
 
 	board0_13_1 := &content.Board{}
@@ -313,6 +331,14 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(board0_13_1.CreatorID, me1_3.ID)
 	assert.Equal(types.StatusAlive, board0_13_1.Status)
 	assert.Equal(pkgservice.EntityTypePrivate, board0_13_1.EntityType)
+
+	board1_13_1 := &content.Board{}
+
+	testCore(t1, bodyString, board1_13_1, t, isDebug)
+	assert.Equal(board1_13_1.ID[common.AddressLength:], me1_3.ID[:common.AddressLength])
+	assert.Equal(board1_13_1.CreatorID, me1_3.ID)
+	assert.Equal(types.StatusAlive, board1_13_1.Status)
+	assert.Equal(pkgservice.EntityTypePrivate, board1_13_1.EntityType)
 
 	// 13.2 set title
 	marshaled, _ = board0_13_1.ID.MarshalText()
@@ -336,9 +362,6 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 
 	assert.Equal(title0_13_2, dataGetTitle0_13_3.Title)
 
-	// wait 10 secs
-	time.Sleep(10 * time.Second)
-
 	// 14. MeOplog
 	bodyString = `{"id": "testID", "method": "me_getMeOplogList", "params": ["", 0, 2]}`
 
@@ -347,17 +370,17 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	}{}
 	testListCore(t0, bodyString, dataMeOplogs0_14, t, isDebug)
 	assert.Equal(2, len(dataMeOplogs0_14.Result))
-	assert.Equal(dataMeOplogs0_9_2.Result, dataMeOplogs0_14.Result[:1])
+	assert.Equal(dataMeOplogs0_9_2.Result, dataMeOplogs0_14.Result)
 
 	meOplog0_14 := dataMeOplogs0_14.Result[1]
 	assert.Equal(me1_3.ID, meOplog0_14.CreatorID)
-	assert.Equal(dataCreateBoard0_13.ID, meOplog0_14.ObjID)
+	assert.Equal(dataCreateBoard1_13.ID, meOplog0_14.ObjID)
 	assert.Equal(me.MeOpTypeCreateBoard, meOplog0_14.Op)
 	assert.Equal(nilPttID, meOplog0_14.PreLogID)
 	assert.Equal(types.Bool(true), meOplog0_14.IsSync)
-	assert.Equal(masterOplog1_9_2.ID, meOplog0_14.MasterLogID)
+	assert.Equal(masterOplog1_9.ID, meOplog0_14.MasterLogID)
 	masterSign0_14 := meOplog0_14.MasterSigns[0]
-	assert.Equal(nodeAddr0_1[:], masterSign0_14.ID[:common.AddressLength])
+	assert.Equal(nodeAddr1_1[:], masterSign0_14.ID[:common.AddressLength])
 	assert.Equal(me1_3.ID[:common.AddressLength], masterSign0_14.ID[common.AddressLength:])
 
 	dataMeOplogs1_14 := &struct {
@@ -365,21 +388,21 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	}{}
 	testListCore(t1, bodyString, dataMeOplogs1_14, t, isDebug)
 	assert.Equal(2, len(dataMeOplogs1_14.Result))
-	assert.Equal(dataMeOplogs0_9_2.Result, dataMeOplogs1_14.Result[:1])
+	assert.Equal(dataMeOplogs0_9_2.Result, dataMeOplogs1_14.Result)
 
 	meOplog1_14 := dataMeOplogs1_14.Result[1]
 	assert.Equal(me1_3.ID, meOplog1_14.CreatorID)
-	assert.Equal(dataCreateBoard0_13.ID, meOplog1_14.ObjID)
+	assert.Equal(dataCreateBoard1_13.ID, meOplog1_14.ObjID)
 	assert.Equal(me.MeOpTypeCreateBoard, meOplog1_14.Op)
 	assert.Equal(nilPttID, meOplog1_14.PreLogID)
 	assert.Equal(types.Bool(true), meOplog1_14.IsSync)
-	assert.Equal(masterOplog1_9_2.ID, meOplog1_14.MasterLogID)
+	assert.Equal(masterOplog1_9.ID, meOplog1_14.MasterLogID)
 	masterSign1_14 := meOplog1_14.MasterSigns[0]
-	assert.Equal(nodeAddr0_1[:], masterSign1_14.ID[:common.AddressLength])
+	assert.Equal(nodeAddr1_1[:], masterSign1_14.ID[:common.AddressLength])
 	assert.Equal(me1_3.ID[:common.AddressLength], masterSign1_14.ID[common.AddressLength:])
 
 	// 15. board
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getRawBoard", "params": ["%v"]}`, string(marshaledID))
 
 	board1_15 := content.NewEmptyBoard()
@@ -391,7 +414,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(pkgservice.EntityTypePrivate, board1_15.EntityType)
 
 	// 16. master-oplog
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getMasterOplogList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 
 	dataMasterOplogs0_16 := &struct {
@@ -427,7 +450,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(me1_3.ID, masterSign1_16.ID)
 
 	// 16. BoardOplog
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 
 	dataBoardOplogs0_16_1 := &struct {
@@ -438,7 +461,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 
 	boardOplog0_16_1 := dataBoardOplogs0_16_1.Result[0]
 	assert.Equal(me1_3.ID, boardOplog0_16_1.CreatorID)
-	assert.Equal(dataCreateBoard0_13.ID, boardOplog0_16_1.ObjID)
+	assert.Equal(dataCreateBoard1_13.ID, boardOplog0_16_1.ObjID)
 	assert.Equal(content.BoardOpTypeCreateBoard, boardOplog0_16_1.Op)
 	assert.Equal(nilPttID, boardOplog0_16_1.PreLogID)
 	assert.Equal(types.Bool(true), boardOplog0_16_1.IsSync)
@@ -454,7 +477,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 
 	boardOplog1_16_1 := dataBoardOplogs1_16_1.Result[0]
 	assert.Equal(me1_3.ID, boardOplog1_16_1.CreatorID)
-	assert.Equal(dataCreateBoard0_13.ID, boardOplog1_16_1.ObjID)
+	assert.Equal(dataCreateBoard1_13.ID, boardOplog1_16_1.ObjID)
 	assert.Equal(content.BoardOpTypeCreateBoard, boardOplog1_16_1.Op)
 	assert.Equal(nilPttID, boardOplog1_16_1.PreLogID)
 	assert.Equal(types.Bool(true), boardOplog1_16_1.IsSync)
@@ -463,7 +486,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(me1_3.ID, masterSign1_16_1.ID)
 
 	// 42.0. upload file
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	file0_42_0, _ := ioutil.ReadFile("./e2e-test.zip")
 	marshaledStr = base64.StdEncoding.EncodeToString(file0_42_0)
 	marshaledStr2 = "e2e-test.zip"
@@ -499,7 +522,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 		base64.StdEncoding.EncodeToString([]byte("測試22")),
 	})
 
-	marshaled, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaled, _ = dataCreateBoard1_13.ID.MarshalText()
 
 	title0_35 := []byte("標題1")
 	marshaledStr = base64.StdEncoding.EncodeToString(title0_35)
@@ -507,14 +530,14 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createArticle", "params": ["%v", "%v", %v, []]}`, string(marshaled), marshaledStr, string(article))
 	dataCreateArticle0_35 := &content.BackendCreateArticle{}
 	testCore(t0, bodyString, dataCreateArticle0_35, t, isDebug)
-	assert.Equal(dataCreateBoard0_13.ID, dataCreateArticle0_35.BoardID)
+	assert.Equal(dataCreateBoard1_13.ID, dataCreateArticle0_35.BoardID)
 	assert.Equal(3, dataCreateArticle0_35.NBlock)
 
 	// wait 10 secs
 	time.Sleep(10 * time.Second)
 
 	// 36. content-get-article-list
-	marshaled, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaled, _ = dataCreateBoard1_13.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaled))
 	dataGetArticleList0_36 := &struct {
@@ -535,7 +558,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(article0_36.ID, article1_36.ID)
 
 	// 38. get-article-block
-	marshaled, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaled, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
 	marshaledID3, _ = article0_36.ContentBlockID.MarshalText()
 
@@ -605,13 +628,13 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 		base64.StdEncoding.EncodeToString([]byte("測試69")),
 	})
 
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_updateArticle", "params": ["%v", "%v", %v, []]}`, string(marshaledID), string(marshaledID2), string(article48))
 	dataUpdateArticle0_48 := &content.BackendUpdateArticle{}
 	testCore(t0, bodyString, dataUpdateArticle0_48, t, isDebug)
-	assert.Equal(dataCreateBoard0_13.ID, dataUpdateArticle0_48.BoardID)
+	assert.Equal(dataCreateBoard1_13.ID, dataUpdateArticle0_48.BoardID)
 	assert.Equal(article0_36.ID, dataUpdateArticle0_48.ArticleID)
 	assert.Equal(2, dataUpdateArticle0_48.NBlock)
 
@@ -619,7 +642,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// 49. content-get-article-list
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 	dataGetArticleList0_49 := &struct {
@@ -642,7 +665,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(dataUpdateArticle0_48.ContentBlockID, article1_49_0.ContentBlockID)
 
 	// 50. get-article-block
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_49_0.ID.MarshalText()
 	marshaledID3, _ = article0_49_0.ContentBlockID.MarshalText()
 
@@ -685,7 +708,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	comment := []byte("這是comment")
 	commentStr := base64.StdEncoding.EncodeToString(comment)
 
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_createComment", "params": ["%v", "%v", 0, "%v", ""]}`, string(marshaledID), string(marshaledID2), commentStr)
@@ -729,7 +752,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// 48. content-delete-comment
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
 	marshaledID3, _ = articleBlock0_42.RefID.MarshalText()
 
@@ -757,7 +780,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(content.DefaultDeletedComment, articleBlock0_49.Buf)
 
 	// 50. content-delete-article
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 	marshaledID2, _ = article0_36.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_deleteArticle", "params": ["%v", "%v"]}`, string(marshaledID), string(marshaledID2))
@@ -780,7 +803,7 @@ func TestMultiDeviceSyncBoard2(t *testing.T) {
 	assert.Equal(0, len(dataGetArticleBlockList0_51.Result))
 
 	// // 52. content-get-article-list
-	marshaledID, _ = dataCreateBoard0_13.ID.MarshalText()
+	marshaledID, _ = dataCreateBoard1_13.ID.MarshalText()
 
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getArticleList", "params": ["%v", "", 0, 2]}`, string(marshaledID))
 	dataGetArticleList0_52 := &struct {

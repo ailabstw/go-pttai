@@ -17,7 +17,10 @@
 package me
 
 import (
+	"reflect"
+
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -32,8 +35,9 @@ func (pm *ProtocolManager) handleBoardLog(
 
 	opData := &MeOpEntity{}
 
-	return pm.HandleEntityLog(oplog, contentSPM, opData, info, pm.updateBoardInfo)
+	log.Debug("handleBoardLog: to HandleEntityLog", "op", oplog.Op, "MeOpTypeCreateBoard", MeOpTypeCreateBoard)
 
+	return pm.HandleEntityLog(oplog, contentSPM, opData, info, pm.updateBoardInfo)
 }
 
 func (pm *ProtocolManager) updateBoardInfo(oplog *pkgservice.BaseOplog, info *ProcessMeInfo) {
@@ -44,7 +48,20 @@ func (pm *ProtocolManager) setNewestBoardLog(
 	oplog *pkgservice.BaseOplog,
 ) (types.Bool, error) {
 
+	opData := &MeOpEntity{}
+
+	err := oplog.GetData(opData)
+	if err != nil {
+		return true, err
+	}
+
 	contentSPM := pm.Entity().Service().(*Backend).contentBackend.SPM()
 
-	return pm.SetNewestEntityLog(oplog, contentSPM)
+	entity := contentSPM.Entity(oplog.ObjID)
+	if entity == nil {
+		return true, err
+	}
+
+	return !types.Bool(reflect.DeepEqual(opData.LogID, entity.GetLogID())), nil
+
 }

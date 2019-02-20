@@ -95,6 +95,12 @@ func (pm *ProtocolManager) HandleInternalSyncFriendAck(
 	oplog := &pkgservice.BaseOplog{ID: data.LogID}
 	pm.SetMeDB(oplog)
 
+	opData := &MeOpEntity{}
+	err = oplog.GetData(opData)
+	if err != nil {
+		return err
+	}
+
 	// lock
 	err = oplog.Lock()
 	if err != nil {
@@ -122,7 +128,15 @@ func (pm *ProtocolManager) HandleInternalSyncFriendAck(
 	theFriend := friendSPM.Entity(oplog.ObjID)
 	log.Debug("HandleInternalSyncFriendAck: after get theFriend", "theFriend", theFriend)
 	if theFriend == nil {
-		return pm.handleInternalSyncFriendAckNew(friendBackend, friendSPM, data, oplog, peer)
+		err = pm.handleInternalSyncFriendAckNew(friendBackend, friendSPM, data, oplog, peer)
+		if err != nil {
+			return err
+		}
+
+		oplog.IsSync = true
+		oplog.Save(true, pm.meOplogMerkle)
+
+		return nil
 	}
 	f, ok := theFriend.(*friend.Friend)
 	if !ok {
@@ -133,13 +147,13 @@ func (pm *ProtocolManager) HandleInternalSyncFriendAck(
 	friendStatus := f.Status
 
 	switch {
-	case friendStatus == types.StatusAlive && reflect.DeepEqual(f.LogID, oplog.ID):
+	case friendStatus == types.StatusAlive && reflect.DeepEqual(f.LogID, opData.LogID):
 		err = pm.handleInternalSyncEntityAckSameLog(f, oplog, peer)
 	case friendStatus >= types.StatusTerminal:
 	case friendStatus == types.StatusAlive:
 		err = pm.handleInternalSyncEntityAckDiffAliveLog(f, oplog, peer)
 	default:
-		err = pm.handleInternalSyncFriendAckDiffLog(data, oplog, peer)
+		err = pm.handleInternalSyncFriendAckDiffLog(f, data, oplog, peer)
 	}
 
 	oplog.IsSync = true
@@ -155,8 +169,11 @@ func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
 	peer *pkgservice.PttPeer,
 ) error {
 
+	// from me.HandleApproveJoinFriend
+
 	theFriendData := data.InitFriendInfoAck.FriendData
 
+	// 1. new friend
 	f := theFriendData.Entity.(*friend.Friend)
 
 	f.Status = types.StatusInit
@@ -167,10 +184,59 @@ func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
 	if err != nil {
 		return err
 	}
-	spm.RegisterEntity(f.ID, f)
-	f.PrestartAndStart()
+
+	// save message-create-ts
+	f.SaveMessageCreateTS(f.GetCreateTS())
 
 	friendPM := f.PM().(*friend.ProtocolManager)
+
+	// master logs
+	log.Debug("handleInternalSyncFriendAckNew: to HandleMasterOplogs", "masterLogs", theFriendData.MasterLogs)
+	friendPM.HandleMasterOplogs(theFriendData.MasterLogs, peer, false)
+
+	// member logs
+	log.Debug("HandleInternalSyncFriendAckNew: to HandleMemberOplogs", "memberLogs", theFriendData.MemberLogs)
+	friendPM.HandleMemberOplogs(theFriendData.MemberLogs, peer, false)
+
+	// oplog0
+	oplog0 := theFriendData.Oplog0
+	friendPM.SetLog0DB(oplog0)
+	err = oplog0.Save(false, friendPM.Log0Merkle())
+	if err != nil {
+		return err
+	}
+
+	// new op-key
+	newOpKey := theFriendData.OpKey
+	newOpKey.Init(friendPM)
+	err = newOpKey.Save(false)
+	if err != nil {
+		return err
+	}
+
+	opKeyLog := theFriendData.OpKeyLog
+	friendPM.SetOpKeyDB(opKeyLog)
+	err = opKeyLog.Save(false, nil)
+	if err != nil {
+		return err
+	}
+
+	err = friendPM.RegisterOpKey(newOpKey, false)
+	if err != nil {
+		return err
+	}
+
+	// register-peer
+	if peer.UserID == nil {
+		peer.UserID = f.FriendID
+	}
+	friendPM.RegisterPendingPeer(peer, false)
+
+	// add to entity
+	spm.RegisterEntity(f.ID, f)
+
+	// start
+	f.PrestartAndStart()
 
 	log.Debug("HandleInternalSyncFriendAckNew: to HandleInitFriendInfoAckCore")
 
@@ -183,14 +249,11 @@ func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
 }
 
 func (pm *ProtocolManager) handleInternalSyncFriendAckDiffLog(
+	f *friend.Friend,
 	data *InternalSyncFriendAck,
 	oplog *pkgservice.BaseOplog,
 	peer *pkgservice.PttPeer,
 ) error {
-
-	theFriendData := data.InitFriendInfoAck.FriendData
-
-	f := theFriendData.Entity.(*friend.Friend)
 
 	friendPM := f.PM().(*friend.ProtocolManager)
 

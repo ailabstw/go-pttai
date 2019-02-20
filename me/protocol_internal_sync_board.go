@@ -127,7 +127,15 @@ func (pm *ProtocolManager) HandleInternalSyncBoardAck(
 
 	theBoard := contentSPM.Entity(oplog.ObjID)
 	if theBoard == nil {
-		return pm.handleInternalSyncBoardAckNew(contentSPM, theBoardData, oplog, peer)
+		err = pm.handleInternalSyncBoardAckNew(contentSPM, theBoardData, oplog, peer)
+		if err != nil {
+			return err
+		}
+
+		oplog.IsSync = true
+		oplog.Save(true, pm.meOplogMerkle)
+
+		return nil
 	}
 	board, ok := theBoard.(*content.Board)
 	if !ok {
@@ -145,6 +153,9 @@ func (pm *ProtocolManager) HandleInternalSyncBoardAck(
 		err = pm.handleInternalSyncEntityAckDiffAliveLog(board, oplog, peer)
 	default:
 		err = pm.handleInternalSyncBoardAckDiffLog(contentSPM, theBoardData, oplog, peer)
+	}
+	if err != nil {
+		return err
 	}
 
 	oplog.IsSync = true

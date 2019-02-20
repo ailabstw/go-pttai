@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
@@ -1250,6 +1251,8 @@ func TestLDBBatch_TryPutAll(t *testing.T) {
 	dbBatch, _ := NewLDBBatch(tDefaultDB)
 
 	updateTS1, _ := types.GetTimestamp()
+
+	time.Sleep(1)
 
 	updateTS2, _ := types.GetTimestamp()
 

@@ -76,7 +76,7 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 		}
 		return nil, ErrNewerOplog
 	}
-	if origStatus == types.StatusTransferred {
+	if origStatus >= types.StatusMigrated {
 		return nil, ErrNewerOplog
 	}
 
@@ -199,7 +199,7 @@ func (pm *BaseProtocolManager) HandlePendingUpdatePersonLog(
 	if origStatus == types.StatusAlive {
 		return false, nil, ErrNewerOplog
 	}
-	if origStatus == types.StatusTransferred {
+	if origStatus >= types.StatusMigrated {
 		return false, nil, ErrNewerOplog
 	}
 

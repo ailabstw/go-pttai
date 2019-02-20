@@ -31,9 +31,9 @@ func (pm *ProtocolManager) DeleteProfile() error {
 		UserOpTypeDeleteProfile,
 		opData,
 
-		types.StatusInternalDeleted,
-		types.StatusPendingDeleted,
-		types.StatusDeleted,
+		types.StatusInternalTerminal,
+		types.StatusPendingTerminal,
+		types.StatusTerminal,
 
 		pm.userOplogMerkle,
 

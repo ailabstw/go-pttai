@@ -43,6 +43,10 @@ func (pm *BaseProtocolManager) TransferPerson(
 
 	merkle *Merkle,
 
+	statusInternalTransfer types.Status,
+	statusPendingTransfer types.Status,
+	statusTransferred types.Status,
+
 	setLogDB func(oplog *BaseOplog),
 	newOplog func(objID *types.PttID, op OpType, opData OpData) (Oplog, error),
 	signOplog func(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error,
@@ -82,7 +86,9 @@ func (pm *BaseProtocolManager) TransferPerson(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	if origStatus >= types.StatusDeleted {
+	origStatusClass := types.StatusToStatusClass(origStatus)
+	statusClass := types.StatusToStatusClass(statusTransferred)
+	if origStatusClass >= statusClass {
 		return types.ErrAlreadyDeleted
 	}
 
@@ -100,17 +106,22 @@ func (pm *BaseProtocolManager) TransferPerson(
 	}
 
 	// 5. update obj
-	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), types.StatusInternalTransfer, types.StatusPendingTransfer, types.StatusTransferred)
+	oplogStatus := types.StatusToDeleteStatus(
+		oplog.ToStatus(),
+		statusInternalTransfer,
+		statusPendingTransfer,
+		statusTransferred,
+	)
 
-	log.Debug("TransferPerson: to TransferPersonLogCore", "oplogStatus", oplogStatus)
-
-	if oplogStatus == types.StatusTransferred {
+	if oplogStatus == statusTransferred {
 		err = pm.handleTransferPersonLogCore(
 			oplog,
 			origPerson,
 			opData,
 
 			merkle,
+
+			statusTransferred,
 
 			setLogDB,
 			posttransfer,
@@ -122,6 +133,10 @@ func (pm *BaseProtocolManager) TransferPerson(
 			opData,
 
 			merkle,
+
+			statusInternalTransfer,
+			statusPendingTransfer,
+			statusTransferred,
 
 			setLogDB,
 		)
@@ -165,7 +180,12 @@ func (pm *BaseProtocolManager) posttransferPerson(
 	err = origPerson.GetByID(true)
 	switch err {
 	case nil:
-		err = pm.posttransferUpdatePerson(origPerson, oplog, postcreatePerson)
+		err = pm.posttransferUpdatePerson(
+			origPerson,
+			oplog,
+
+			postcreatePerson,
+		)
 	case leveldb.ErrNotFound:
 		origPerson, err = pm.posttransferCreatePerson(toID, oplog, newPerson, postcreatePerson)
 	}
@@ -178,6 +198,7 @@ func (pm *BaseProtocolManager) posttransferPerson(
 func (pm *BaseProtocolManager) posttransferUpdatePerson(
 	origPerson Object,
 	oplog *BaseOplog,
+
 	postcreatePerson func(obj Object, oplog *BaseOplog) error,
 ) error {
 
@@ -188,7 +209,8 @@ func (pm *BaseProtocolManager) posttransferUpdatePerson(
 	if origStatus == types.StatusAlive {
 		return nil
 	}
-	if origStatus == types.StatusTransferred {
+
+	if origStatus >= types.StatusMigrated {
 		return types.ErrAlreadyDeleted
 	}
 
@@ -209,7 +231,9 @@ func (pm *BaseProtocolManager) posttransferUpdatePerson(
 func (pm *BaseProtocolManager) posttransferCreatePerson(
 	id *types.PttID,
 	oplog *BaseOplog,
+
 	newPerson func(id *types.PttID) (Object, OpData, error),
+
 	postcreate func(obj Object, oplog *BaseOplog) error,
 ) (Object, error) {
 
@@ -220,6 +244,10 @@ func (pm *BaseProtocolManager) posttransferCreatePerson(
 	if err != nil {
 		return nil, err
 	}
+
+	// set is good
+	person.SetIsGood(true)
+	person.SetIsAllGood(true)
 
 	// save object
 	err = pm.saveNewObjectWithOplog(person, oplog, true, false, postcreate)

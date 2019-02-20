@@ -38,6 +38,8 @@ func (pm *BaseProtocolManager) HandleTransferPersonLog(
 
 	merkle *Merkle,
 
+	statusTransferred types.Status,
+
 	setLogDB func(oplog *BaseOplog),
 	posttransfer func(fromID *types.PttID, toID *types.PttID, person Object, oplog *BaseOplog, opData OpData) error,
 
@@ -64,7 +66,7 @@ func (pm *BaseProtocolManager) HandleTransferPersonLog(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	if origStatus == types.StatusTransferred {
+	if origStatus == statusTransferred {
 		if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
 			err = pm.saveUpdateObjectWithOplog(origPerson, oplog, true)
 			if err != nil {
@@ -81,6 +83,8 @@ func (pm *BaseProtocolManager) HandleTransferPersonLog(
 		opData,
 
 		merkle,
+
+		statusTransferred,
 
 		setLogDB,
 		posttransfer,
@@ -99,6 +103,8 @@ func (pm *BaseProtocolManager) handleTransferPersonLogCore(
 
 	merkle *Merkle,
 
+	statusTransferred types.Status,
+
 	setLogDB func(oplog *BaseOplog),
 	posttransfer func(fromID *types.PttID, toID *types.PttID, person Object, oplog *BaseOplog, opData OpData) error,
 
@@ -110,7 +116,7 @@ func (pm *BaseProtocolManager) handleTransferPersonLogCore(
 	var err error
 
 	// 1. check sync-info
-	oplogStatus := types.StatusTransferred
+	oplogStatus := statusTransferred
 
 	var isReplaceSyncInfo bool
 	origSyncInfo := origPerson.GetSyncInfo()
@@ -164,6 +170,10 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 
 	merkle *Merkle,
 
+	statusInternalTransfer types.Status,
+	statusPendingTransfer types.Status,
+	statusTransferred types.Status,
+
 	setLogDB func(oplog *BaseOplog),
 
 ) (types.Bool, []*BaseOplog, error) {
@@ -189,17 +199,24 @@ func (pm *BaseProtocolManager) HandlePendingTransferPersonLog(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	if origStatus == types.StatusTransferred {
+	origStatusClass := types.StatusToStatusClass(origStatus)
+	statusClass := types.StatusToStatusClass(statusTransferred)
+	if origStatusClass == statusClass {
 		return false, nil, ErrNewerOplog
 	}
 
 	// 4. core
 	err = pm.handlePendingTransferPersonLogCore(
 		oplog,
+
 		origPerson,
 		opData,
 
 		merkle,
+
+		statusInternalTransfer,
+		statusPendingTransfer,
+		statusTransferred,
 
 		setLogDB,
 	)
@@ -218,13 +235,22 @@ func (pm *BaseProtocolManager) handlePendingTransferPersonLogCore(
 
 	merkle *Merkle,
 
+	statusInternalTransfer types.Status,
+	statusPendingTransfer types.Status,
+	statusTransferred types.Status,
+
 	setLogDB func(oplog *BaseOplog),
 ) error {
 
 	var err error
 
 	// 1. sync info
-	oplogStatus := types.StatusToDeleteStatus(oplog.ToStatus(), types.StatusInternalTransfer, types.StatusPendingTransfer, types.StatusTransferred)
+	oplogStatus := types.StatusToDeleteStatus(
+		oplog.ToStatus(),
+		statusInternalTransfer,
+		statusPendingTransfer,
+		statusTransferred,
+	)
 
 	var isReplaceSyncInfo bool
 	origSyncInfo := origObj.GetSyncInfo()

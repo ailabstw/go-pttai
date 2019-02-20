@@ -44,7 +44,7 @@ func (pm *BaseProtocolManager) UpdatePerson(
 	if origStatus <= types.StatusAlive {
 		return nil, nil, types.ErrAlreadyExists
 	}
-	if origStatus == types.StatusTransferred {
+	if origStatus >= types.StatusMigrated {
 		return nil, nil, types.ErrAlreadyDeleted
 	}
 

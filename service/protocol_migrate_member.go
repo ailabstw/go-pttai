@@ -20,10 +20,9 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.PttID) error {
+func (pm *BaseProtocolManager) MigrateMember(fromID *types.PttID, toID *types.PttID) error {
 	ptt := pm.Ptt()
 	myID := ptt.GetMyEntity().GetID()
 
@@ -31,11 +30,6 @@ func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.P
 
 	// 1. validate
 	isValid := false
-
-	masters, _ := pm.GetMasterListFromCache(false)
-	for _, master := range masters {
-		log.Debug("TransferMember: (in-for-loop)", "master", master.ID, "status", master.Status)
-	}
 
 	if pm.IsMaster(fromID, false) {
 		return types.ErrInvalidID
@@ -63,20 +57,23 @@ func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.P
 		fromID,
 		toID,
 
-		MemberOpTypeTransferMember,
+		MemberOpTypeMigrateMember,
 		origPerson,
 		data,
 
 		pm.MemberMerkle(),
 
+		types.StatusInternalMigrate,
+		types.StatusPendingMigrate,
+		types.StatusMigrated,
+
 		pm.SetMemberDB,
 		pm.NewMemberOplog,
-		pm.signMemberOplog,
-		pm.setTransferMemberWithOplog,
+		pm.signMigrateMemberOplog,
+		pm.setMigrateMemberWithOplog,
 		pm.broadcastMemberOplogCore,
-		pm.posttransferMember,
+		pm.postmigrateMember,
 	)
-	log.Debug("TransferMember: after TransferPerson", "e", err)
 	if err != nil {
 		return err
 	}
@@ -84,18 +81,18 @@ func (pm *BaseProtocolManager) TransferMember(fromID *types.PttID, toID *types.P
 	return nil
 }
 
-func (pm *BaseProtocolManager) signMemberOplog(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error {
-	return pm.SignOplog(oplog)
+func (pm *BaseProtocolManager) signMigrateMemberOplog(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error {
+	return pm.ForceSignOplog(oplog)
 }
 
-func (pm *BaseProtocolManager) setTransferMemberWithOplog(theMember Object, oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) setMigrateMemberWithOplog(theMember Object, oplog *BaseOplog) error {
 
 	member, ok := theMember.(*Member)
 	if !ok {
 		return ErrInvalidData
 	}
 
-	SetDeleteObjectWithOplog(theMember, types.StatusTransferred, oplog)
+	SetDeleteObjectWithOplog(theMember, types.StatusMigrated, oplog)
 
 	member.TransferToID = oplog.ObjID
 

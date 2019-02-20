@@ -25,11 +25,17 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	var err error
 
 	switch op {
-	// friend oplog
+	// board oplog
 	case SyncBoardOplogMsg:
 		err = pm.HandleSyncBoardOplog(dataBytes, peer)
+
+	case ForceSyncBoardOplogMsg:
+		err = pm.HandleForceSyncBoardOplog(dataBytes, peer)
 	case ForceSyncBoardOplogAckMsg:
 		err = pm.HandleForceSyncBoardOplogAck(dataBytes, peer)
+	case InvalidSyncBoardOplogMsg:
+		err = pm.HandleSyncBoardOplogInvalidAck(dataBytes, peer)
+
 	case SyncBoardOplogAckMsg:
 		err = pm.HandleSyncBoardOplogAck(dataBytes, peer)
 	case SyncBoardOplogNewOplogsMsg:

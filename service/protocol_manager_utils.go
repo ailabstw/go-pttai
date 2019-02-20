@@ -147,6 +147,10 @@ Send Data to Peers using op-key
 */
 func (pm *BaseProtocolManager) sendDataToPeers(op OpType, data interface{}, peerList []*PttPeer) error {
 
+	if len(peerList) == 0 {
+		return nil
+	}
+
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Error("sendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
@@ -220,6 +224,10 @@ Send Data to Peers using op-key
 */
 func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, data interface{}, peer *PttPeer) error {
 
+	if peer == nil {
+		return nil
+	}
+
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Error("sendDataToPeerWithCode: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
@@ -248,7 +256,7 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 
 	err = peer.SendData(pttData)
 	if err != nil {
-		return ErrNotSent
+		return err
 	}
 
 	return nil

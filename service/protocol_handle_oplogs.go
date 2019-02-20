@@ -477,7 +477,7 @@ func preprocessOplogs(
 	if err != nil {
 		return nil, err
 	}
-	expireTS := now
+	expireTS := types.ZeroTimestamp
 	if merkle != nil {
 		ts, err := merkle.GetSyncTime()
 		if err != nil {
@@ -485,7 +485,11 @@ func preprocessOplogs(
 		}
 		expireTS = ts
 	}
-	expireTS.Ts -= OffsetMerkleSyncTime
+	if expireTS.Ts >= OffsetMerkleSyncTime {
+		expireTS.Ts -= OffsetMerkleSyncTime
+	} else {
+		expireTS = types.ZeroTimestamp
+	}
 
 	// expire-ts: start-idx
 	startIdx := len(oplogs)

@@ -120,7 +120,11 @@ type ProtocolManager interface {
 	HandleAddPendingMasterOplogs(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
+
+	HandleForceSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+
 	HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplogAck(dataBytes []byte, peer *PttPeer) error
@@ -146,7 +150,11 @@ type ProtocolManager interface {
 	HandleAddPendingMemberOplogs(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
+
+	HandleForceSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMemberOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+
 	HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplogAck(dataBytes []byte, peer *PttPeer) error

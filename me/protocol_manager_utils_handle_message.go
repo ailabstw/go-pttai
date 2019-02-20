@@ -50,8 +50,14 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	// me oplog
 	case SyncMeOplogMsg:
 		err = pm.HandleSyncMeOplog(dataBytes, peer)
+
+	case ForceSyncMeOplogMsg:
+		err = pm.HandleForceSyncMeOplog(dataBytes, peer)
 	case ForceSyncMeOplogAckMsg:
 		err = pm.HandleForceSyncMeOplogAck(dataBytes, peer)
+	case InvalidSyncMeOplogMsg:
+		err = pm.HandleSyncMeOplogInvalidAck(dataBytes, peer)
+
 	case SyncMeOplogAckMsg:
 		err = pm.HandleSyncMeOplogAck(dataBytes, peer)
 	case SyncMeOplogNewOplogsMsg:

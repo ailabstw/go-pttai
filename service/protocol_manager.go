@@ -194,7 +194,7 @@ type ProtocolManager interface {
 	RegisterOpKey(keyInfo *KeyInfo, isLocked bool) error
 
 	RevokeOpKey(keyID *types.PttID) (bool, error)
-	RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error
+	RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteHash bool, isDeleteOplog bool, isDeleteDB bool) error
 
 	OpKeys() map[common.Address]*KeyInfo
 	OpKeyList() []*KeyInfo

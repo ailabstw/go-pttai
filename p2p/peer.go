@@ -29,6 +29,8 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rlp"
+
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 const (
@@ -162,6 +164,14 @@ func (p *Peer) String() string {
 // Inbound returns true if the peer is an inbound connection
 func (p *Peer) Inbound() bool {
 	return p.rw.flags&inboundConn != 0
+}
+
+func (p *Peer) Addrs() []ma.Multiaddr {
+	if p.rw == nil {
+		return nil
+	}
+
+	return p.rw.Addrs
 }
 
 func newPeer(conn *conn, protocols []Protocol) *Peer {

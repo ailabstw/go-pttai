@@ -32,6 +32,8 @@ func (pm *BaseProtocolManager) processMasterLog(oplog *BaseOplog, processInfo Pr
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
 		origLogs, err = pm.handleAddMasterLog(oplog, info)
+	case MasterOpTypeMigrateMaster:
+		origLogs, err = pm.handleMigrateMasterLog(oplog, info)
 	case MasterOpTypeTransferMaster:
 		origLogs, err = pm.handleTransferMasterLog(oplog, info)
 	}
@@ -55,6 +57,8 @@ func (pm *BaseProtocolManager) processPendingMasterLog(oplog *BaseOplog, process
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
 		isToSign, origLogs, err = pm.handlePendingAddMasterLog(oplog, info)
+	case MasterOpTypeMigrateMaster:
+		isToSign, origLogs, err = pm.handlePendingMigrateMasterLog(oplog, info)
 	case MasterOpTypeTransferMaster:
 		isToSign, origLogs, err = pm.handlePendingTransferMasterLog(oplog, info)
 	}
@@ -83,6 +87,8 @@ func (pm *BaseProtocolManager) SetNewestMasterOplog(oplog *BaseOplog) error {
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
 		isNewer, err = pm.setNewestAddMasterLog(oplog)
+	case MasterOpTypeMigrateMaster:
+		isNewer, err = pm.setNewestMigrateMasterLog(oplog)
 	case MasterOpTypeTransferMaster:
 		isNewer, err = pm.setNewestTransferMasterLog(oplog)
 	}
@@ -106,6 +112,8 @@ func (pm *BaseProtocolManager) HandleFailedMasterOplog(oplog *BaseOplog) error {
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
 		err = pm.handleFailedAddMasterLog(oplog)
+	case MasterOpTypeMigrateMaster:
+		err = pm.handleFailedMigrateMasterLog(oplog)
 	case MasterOpTypeTransferMaster:
 		err = pm.handleFailedTransferMasterLog(oplog)
 	}
@@ -119,6 +127,8 @@ func (pm *BaseProtocolManager) HandleFailedValidMasterOplog(oplog *BaseOplog, pr
 	switch oplog.Op {
 	case MasterOpTypeAddMaster:
 		err = pm.handleFailedValidAddMasterLog(oplog)
+	case MasterOpTypeMigrateMaster:
+		err = pm.handleFailedValidMigrateMasterLog(oplog)
 	case MasterOpTypeTransferMaster:
 		err = pm.handleFailedValidTransferMasterLog(oplog)
 	}

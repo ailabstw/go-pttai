@@ -23,7 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) handleTransferMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handleMigrateMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
 
 	person := NewEmptyMember()
 	pm.SetMemberObjDB(person)
@@ -37,8 +37,10 @@ func (pm *BaseProtocolManager) handleTransferMemberLog(oplog *BaseOplog, info *P
 
 		pm.MemberMerkle(),
 
+		types.StatusMigrated,
+
 		pm.SetMemberDB,
-		pm.posttransferMember,
+		pm.postmigrateMember,
 	)
 }
 
@@ -50,7 +52,7 @@ PosttransferMember deals with the situation after transferring the member:
     => if toID is one of my ids: Doing migration
     => no: transfer to others.
 */
-func (pm *BaseProtocolManager) posttransferMember(fromID *types.PttID, toID *types.PttID, theMember Object, oplog *BaseOplog, opData OpData) error {
+func (pm *BaseProtocolManager) postmigrateMember(fromID *types.PttID, toID *types.PttID, theMember Object, oplog *BaseOplog, opData OpData) error {
 	_, ok := theMember.(*Member)
 	if !ok {
 		return ErrInvalidData
@@ -61,39 +63,25 @@ func (pm *BaseProtocolManager) posttransferMember(fromID *types.PttID, toID *typ
 	pm.SetMemberObjDB(origPerson)
 
 	_, err := pm.posttransferPerson(
-		toID, oplog, origPerson,
-		pm.NewMember, pm.postaddMember,
+		toID,
+		oplog,
+		origPerson,
+
+		pm.NewMember,
+		pm.postaddMember,
 	)
-	log.Debug("posttransferMember: after posttransferPerson", "e", err)
 	if err != nil {
 		return err
 	}
 
 	// 2. check myID and fromID
 	myID := pm.Ptt().GetMyEntity().GetID()
-	log.Debug("posttransferMember: to check myID", "myID", myID, "fromID", fromID)
 	if !reflect.DeepEqual(myID, fromID) {
 		return nil
 	}
 
-	// 3. check migrate
-	isMigrate := false
-	mySPM := pm.Ptt().GetMyService().SPM()
-	for _, entity := range mySPM.Entities() {
-		if reflect.DeepEqual(entity.GetID(), toID) {
-			isMigrate = true
-			break
-		}
-	}
-
-	if !isMigrate {
-		log.Debug("posttransferMember: not Migrate: to delete Entity", "entity", pm.Entity().GetID())
-		pm.PostdeleteEntity(nil, true)
-		return nil
-	}
-
 	// 4. entity owner
-	log.Debug("posttransferMember: to check owner", "fromID", fromID, "toID", toID, "myID", myID)
+	log.Debug("postmigrateMember: to check owner", "fromID", fromID, "toID", toID, "myID", myID)
 	entity := pm.Entity()
 	if entity.IsOwner(fromID) {
 		entity.RemoveOwnerID(fromID)
@@ -110,7 +98,7 @@ func (pm *BaseProtocolManager) posttransferMember(fromID *types.PttID, toID *typ
 	return err
 }
 
-func (pm *BaseProtocolManager) handlePendingTransferMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingMigrateMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMember()
 	pm.SetMemberObjDB(person)
@@ -124,18 +112,22 @@ func (pm *BaseProtocolManager) handlePendingTransferMemberLog(oplog *BaseOplog, 
 
 		pm.MemberMerkle(),
 
+		types.StatusInternalMigrate,
+		types.StatusPendingMigrate,
+		types.StatusMigrated,
+
 		pm.SetMemberDB,
 	)
 }
 
-func (pm *BaseProtocolManager) setNewestTransferMemberLog(oplog *BaseOplog) (types.Bool, error) {
+func (pm *BaseProtocolManager) setNewestMigrateMemberLog(oplog *BaseOplog) (types.Bool, error) {
 	obj := NewEmptyMember()
 	pm.SetMemberObjDB(obj)
 
 	return pm.SetNewestTransferPersonLog(oplog, obj)
 }
 
-func (pm *BaseProtocolManager) handleFailedTransferMemberLog(oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) handleFailedMigrateMemberLog(oplog *BaseOplog) error {
 
 	obj := NewEmptyMember()
 	pm.SetMemberObjDB(obj)
@@ -145,7 +137,7 @@ func (pm *BaseProtocolManager) handleFailedTransferMemberLog(oplog *BaseOplog) e
 	return nil
 }
 
-func (pm *BaseProtocolManager) handleFailedValidTransferMemberLog(oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) handleFailedValidMigrateMemberLog(oplog *BaseOplog) error {
 
 	obj := NewEmptyMember()
 	pm.SetMemberObjDB(obj)

@@ -20,7 +20,7 @@ const (
 	_ OpType = iota
 	MemberOpTypeAddMember
 	MemberOpTypeDeleteMember
-	MemberOpTypeTransferMember
+	MemberOpTypeMigrateMember
 )
 
 type MemberOpAddMember struct {

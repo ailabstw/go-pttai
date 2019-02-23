@@ -18,10 +18,9 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
-func (pm *BaseProtocolManager) handleTransferMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
+func (pm *BaseProtocolManager) handleMigrateMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
 
 	person := NewEmptyMaster()
 	pm.SetMasterObjDB(person)
@@ -35,14 +34,20 @@ func (pm *BaseProtocolManager) handleTransferMasterLog(oplog *BaseOplog, info *P
 
 		pm.MasterMerkle(),
 
-		types.StatusTransferred,
+		types.StatusMigrated,
 
 		pm.SetMasterDB,
-		pm.posttransferMaster,
+		pm.postmigrateMaster,
 	)
 }
 
-func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *types.PttID, theMaster Object, oplog *BaseOplog, opData OpData) error {
+func (pm *BaseProtocolManager) postmigrateMaster(
+	fromID *types.PttID,
+	toID *types.PttID,
+	theMaster Object,
+	oplog *BaseOplog,
+	opData OpData,
+) error {
 	_, ok := theMaster.(*Master)
 	if !ok {
 		return ErrInvalidData
@@ -50,8 +55,6 @@ func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *typ
 
 	origPerson := NewEmptyMaster()
 	pm.SetMasterObjDB(origPerson)
-
-	log.Debug("posttransferMaster: start", "fromID", fromID, "toID", toID)
 
 	newMaster, err := pm.posttransferPerson(
 		toID,
@@ -61,7 +64,6 @@ func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *typ
 		pm.NewMaster,
 		nil,
 	)
-	log.Debug("posttransferMaster: after posttransferPerson", "e", err)
 	if err != nil {
 		return err
 	}
@@ -76,40 +78,7 @@ func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *typ
 	return pm.postposttransferMaster(theMaster, newMaster, oplog)
 }
 
-func (pm *BaseProtocolManager) postposttransferMaster(theMaster Object, theNewMaster Object, oplog *BaseOplog) error {
-
-	master, ok := theMaster.(*Master)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	newMaster, ok := theNewMaster.(*Master)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	err := pm.SetNewestMasterLogID(oplog.ID)
-	log.Debug("postposttransferMaster: after SetNewestMasterLogID", "e", err)
-	if err != nil {
-		return err
-	}
-
-	pm.lockMaster.Lock()
-	defer pm.lockMaster.Unlock()
-
-	err = pm.UnregisterMaster(master, true)
-	if err != nil {
-		return err
-	}
-	err = pm.RegisterMaster(newMaster, true, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
+func (pm *BaseProtocolManager) handlePendingMigrateMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) (types.Bool, []*BaseOplog, error) {
 
 	person := NewEmptyMaster()
 	pm.SetMasterObjDB(person)
@@ -123,22 +92,22 @@ func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, 
 
 		pm.MasterMerkle(),
 
-		types.StatusInternalTransfer,
-		types.StatusPendingTransfer,
-		types.StatusTransferred,
+		types.StatusInternalMigrate,
+		types.StatusPendingMigrate,
+		types.StatusMigrated,
 
 		pm.SetMasterDB,
 	)
 }
 
-func (pm *BaseProtocolManager) setNewestTransferMasterLog(oplog *BaseOplog) (types.Bool, error) {
+func (pm *BaseProtocolManager) setNewestMigrateMasterLog(oplog *BaseOplog) (types.Bool, error) {
 	obj := NewEmptyMaster()
 	pm.SetMasterObjDB(obj)
 
 	return pm.SetNewestTransferPersonLog(oplog, obj)
 }
 
-func (pm *BaseProtocolManager) handleFailedTransferMasterLog(oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) handleFailedMigrateMasterLog(oplog *BaseOplog) error {
 
 	obj := NewEmptyMaster()
 	pm.SetMasterObjDB(obj)
@@ -148,7 +117,7 @@ func (pm *BaseProtocolManager) handleFailedTransferMasterLog(oplog *BaseOplog) e
 	return nil
 }
 
-func (pm *BaseProtocolManager) handleFailedValidTransferMasterLog(oplog *BaseOplog) error {
+func (pm *BaseProtocolManager) handleFailedValidMigrateMasterLog(oplog *BaseOplog) error {
 
 	obj := NewEmptyMaster()
 	pm.SetMasterObjDB(obj)

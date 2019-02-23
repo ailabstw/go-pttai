@@ -188,6 +188,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 	assert.Equal(true, me0_9.IsOwner(me0_3.ID))
 
 	// 9.1. getPeers
+	t.Logf("9.1 get Peers")
 	bodyString = `{"id": "testID", "method": "me_getPeers", "params": [""]}`
 
 	dataPeers0_9_1 := &struct {

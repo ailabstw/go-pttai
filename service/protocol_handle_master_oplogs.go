@@ -341,10 +341,12 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 	// is-sync: sign
 	if isToSign {
 		if oplog.Op == MasterOpTypeTransferMaster {
-			err = pm.signMasterOplog(oplog, fromID, toID)
+			err = pm.signTransferMasterOplog(oplog, fromID, toID)
 			if err != nil {
 				return false, nil, err
 			}
+		} else if oplog.Op == MasterOpTypeMigrateMaster {
+			err = pm.signMigrateMasterOplog(oplog, fromID, toID)
 		} else {
 			_, err = pm.InternalSign(oplog)
 			if err != nil {

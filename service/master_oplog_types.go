@@ -19,6 +19,7 @@ package service
 const (
 	_ OpType = iota
 	MasterOpTypeAddMaster
+	MasterOpTypeMigrateMaster
 	MasterOpTypeTransferMaster
 )
 

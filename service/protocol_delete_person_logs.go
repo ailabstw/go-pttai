@@ -86,7 +86,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 		}
 		return nil, ErrNewerOplog
 	}
-	if origStatus == types.StatusTransferred {
+	if origStatus >= types.StatusMigrated {
 		return nil, ErrNewerOplog
 	}
 
@@ -234,7 +234,7 @@ func (pm *BaseProtocolManager) HandlePendingDeletePersonLog(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
-	if origStatus == types.StatusTransferred {
+	if origStatus >= types.StatusMigrated {
 		return false, nil, ErrNewerOplog
 	}
 

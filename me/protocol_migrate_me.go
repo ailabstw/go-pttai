@@ -64,6 +64,7 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 
 	// add member
 	entities := pm.myPtt.GetEntities()
+
 	for _, entity := range entities {
 		if entity == myInfo {
 			continue
@@ -97,25 +98,26 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 		}
 
 		if !entity.IsOwner(myID) {
-			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs()[0])
+			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs(), "service", entity.Service().Name())
 			continue
 		}
 
 		entityPM = entity.PM()
 
 		if entityPM.IsMaster(myID, false) {
-			err = entityPM.TransferMaster(newMyID)
+			err = entityPM.MigrateMaster(newMyID)
 			log.Debug("postdeleteMigrateMe: after transfer master", "entity", entity.GetID(), "e", err)
 			if err != nil {
 				continue
 			}
 		}
 
-		err = entityPM.TransferMember(myID, newMyID)
-		log.Debug("postdeleteMigrateMe: after transfer member", "entity", entity.GetID(), "e", err)
+		err = entityPM.MigrateMember(myID, newMyID)
+		log.Debug("postdeleteMigrateMe: after migrate member", "entity", entity.GetID(), "e", err, "service", entity.Service().Name())
 		if err != nil {
 			continue
 		}
+
 	}
 
 	log.Debug("postdeleteMigrateMe: after for-loop")

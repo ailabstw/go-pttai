@@ -18,7 +18,6 @@ package service
 
 import (
 	"encoding/base64"
-	"net"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -48,15 +47,26 @@ type BackendPeer struct {
 	NodeID   *discover.NodeID `json:"ID"`
 	PeerType PeerType         `json:"T"`
 	UserID   *types.PttID     `json:"UID"`
-	Addr     net.Addr
+	Addrs    []string         `json:"A"`
 }
 
 func PeerToBackendPeer(peer *PttPeer) *BackendPeer {
+	addrs := peer.Addrs()
+
+	var addrsStrs []string
+	lenAddrs := 0
+	if addrs != nil {
+		lenAddrs = len(addrs)
+		addrsStrs = make([]string, lenAddrs)
+		for i := 0; i < lenAddrs; i++ {
+			addrsStrs[i] = addrs[i].String()
+		}
+	}
 	return &BackendPeer{
 		NodeID:   peer.GetID(),
 		PeerType: peer.PeerType,
 		UserID:   peer.UserID,
-		Addr:     peer.RemoteAddr(),
+		Addrs:    addrsStrs,
 	}
 }
 

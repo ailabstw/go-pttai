@@ -60,6 +60,7 @@ type ProtocolManager interface {
 	SetMasterLog0Hash(theBytes []byte) error
 
 	AddMaster(id *types.PttID, isForce bool) (*Master, *MasterOplog, error)
+	MigrateMaster(id *types.PttID) error
 	TransferMaster(id *types.PttID) error
 
 	IsMaster(id *types.PttID, isLocked bool) bool
@@ -69,7 +70,7 @@ type ProtocolManager interface {
 	// member
 
 	AddMember(id *types.PttID, isForce bool) (*Member, *MemberOplog, error)
-	TransferMember(fromID *types.PttID, toID *types.PttID) error
+	MigrateMember(fromID *types.PttID, toID *types.PttID) error
 	DeleteMember(id *types.PttID) (bool, error)
 
 	// owner-id
@@ -792,8 +793,8 @@ func (pm *BaseProtocolManager) Start() error {
 		log.Warn("Start: I am not the owner", "myID", myID, "entityID", entity.GetID(), "owners", owners)
 		for _, ownerID := range owners {
 			if !reflect.DeepEqual(myID, ownerID) {
-				log.Debug("Start: to TransferMember", "entity", entity.GetID(), "ownerID", ownerID, "myID", myID)
-				err = pm.TransferMember(ownerID, myID)
+				log.Debug("Start: to MigrateMember", "entity", entity.GetID(), "ownerID", ownerID, "myID", myID)
+				err = pm.MigrateMember(ownerID, myID)
 				if err == nil {
 					break
 				}

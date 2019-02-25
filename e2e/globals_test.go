@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
@@ -56,6 +57,7 @@ var (
 	nilPttID           *types.PttID
 	nilSyncInfo        *pkgservice.BaseSyncInfo
 	nilSyncArticleInfo *content.SyncArticleInfo
+	nilProfile         *account.Profile
 
 	TimeSleepRestart = 15 * time.Second
 	TimeSleepDefault = 8 * time.Second

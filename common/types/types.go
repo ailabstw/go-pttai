@@ -127,10 +127,10 @@ const (
 	StatusClassFailed
 	StatusClassInternalDelete
 	StatusClassPendingDelete
-	StatusClassInternalMigrate
-	StatusClassPendingMigrate
+	StatusClassInternalTerminal
+	StatusClassPendingTerminal
 	StatusClassDeleted
-	StatusClassMigrated
+	StatusClassTerminal
 )
 
 var (
@@ -139,15 +139,15 @@ var (
 
 		StatusClassInternalPendingAlive: "class-internal-pending",
 
-		StatusClassPendingAlive:    "class-pending",
-		StatusClassAlive:           "class-alive",
-		StatusClassFailed:          "class-failed",
-		StatusClassInternalDelete:  "class-internal-delete",
-		StatusClassPendingDelete:   "class-pending-delete",
-		StatusClassDeleted:         "class-deleted",
-		StatusClassInternalMigrate: "class-internal-migrate",
-		StatusClassPendingMigrate:  "class-pending-migrate",
-		StatusClassMigrated:        "class-migrated",
+		StatusClassPendingAlive:     "class-pending",
+		StatusClassAlive:            "class-alive",
+		StatusClassFailed:           "class-failed",
+		StatusClassInternalDelete:   "class-internal-delete",
+		StatusClassPendingDelete:    "class-pending-delete",
+		StatusClassDeleted:          "class-deleted",
+		StatusClassInternalTerminal: "class-internal-migrate",
+		StatusClassPendingTerminal:  "class-pending-migrate",
+		StatusClassTerminal:         "class-migrated",
 	}
 )
 
@@ -172,21 +172,21 @@ var statusToStatusClass = map[Status]StatusClass{
 
 	StatusInternalDeleted:  StatusClassInternalDelete,
 	StatusInternalRevoke:   StatusClassInternalDelete,
-	StatusInternalTransfer: StatusClassInternalMigrate, // transfer and migrate is treated the same as delete in pending mode.
-	StatusInternalMigrate:  StatusClassInternalMigrate,
-	StatusInternalTerminal: StatusClassInternalMigrate,
+	StatusInternalTransfer: StatusClassInternalDelete, // transfer and migrate is treated the same as delete in pending mode.
+	StatusInternalMigrate:  StatusClassInternalTerminal,
+	StatusInternalTerminal: StatusClassInternalTerminal,
 
 	StatusPendingDeleted:  StatusClassPendingDelete,
 	StatusPendingRevoke:   StatusClassPendingDelete,
-	StatusPendingTransfer: StatusClassPendingMigrate,
-	StatusPendingMigrate:  StatusClassPendingMigrate,
-	StatusPendingTerminal: StatusClassPendingMigrate,
+	StatusPendingTransfer: StatusClassPendingDelete,
+	StatusPendingMigrate:  StatusClassPendingTerminal,
+	StatusPendingTerminal: StatusClassPendingTerminal,
 
 	StatusDeleted:     StatusClassDeleted,
 	StatusRevoked:     StatusClassDeleted,
-	StatusTransferred: StatusClassMigrated,
-	StatusMigrated:    StatusClassMigrated,
-	StatusTerminal:    StatusClassMigrated,
+	StatusTransferred: StatusClassDeleted,
+	StatusMigrated:    StatusClassTerminal,
+	StatusTerminal:    StatusClassTerminal,
 }
 
 func StatusToStatusClass(status Status) StatusClass {

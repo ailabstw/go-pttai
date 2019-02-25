@@ -35,6 +35,8 @@ func (pm *BaseProtocolManager) handleTransferMasterLog(oplog *BaseOplog, info *P
 
 		pm.MasterMerkle(),
 
+		types.StatusTransferred,
+
 		pm.SetMasterDB,
 		pm.posttransferMaster,
 	)
@@ -52,8 +54,12 @@ func (pm *BaseProtocolManager) posttransferMaster(fromID *types.PttID, toID *typ
 	log.Debug("posttransferMaster: start", "fromID", fromID, "toID", toID)
 
 	newMaster, err := pm.posttransferPerson(
-		toID, oplog, origPerson,
-		pm.NewMaster, nil,
+		toID,
+		oplog,
+		origPerson,
+
+		pm.NewMaster,
+		nil,
 	)
 	log.Debug("posttransferMaster: after posttransferPerson", "e", err)
 	if err != nil {
@@ -116,6 +122,10 @@ func (pm *BaseProtocolManager) handlePendingTransferMasterLog(oplog *BaseOplog, 
 		opData,
 
 		pm.MasterMerkle(),
+
+		types.StatusInternalTransfer,
+		types.StatusPendingTransfer,
+		types.StatusTransferred,
 
 		pm.SetMasterDB,
 	)

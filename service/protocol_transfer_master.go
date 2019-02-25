@@ -32,6 +32,10 @@ func (pm *BaseProtocolManager) TransferMaster(id *types.PttID) error {
 		return types.ErrInvalidID
 	}
 
+	if !pm.IsMember(id, false) {
+		return types.ErrInvalidID
+	}
+
 	// 2. do transfer-person
 	origPerson := NewEmptyMaster()
 	pm.SetMasterObjDB(origPerson)
@@ -47,7 +51,17 @@ func (pm *BaseProtocolManager) TransferMaster(id *types.PttID) error {
 
 		pm.MasterMerkle(),
 
-		pm.SetMasterDB, pm.NewMasterOplog, pm.signMasterOplog, pm.setTransferMasterWithOplog, pm.broadcastMasterOplogCore, pm.posttransferMaster)
+		types.StatusInternalTransfer,
+		types.StatusPendingTransfer,
+		types.StatusTransferred,
+
+		pm.SetMasterDB,
+		pm.NewMasterOplog,
+		pm.signTransferMasterOplog,
+		pm.setTransferMasterWithOplog,
+		pm.broadcastMasterOplogCore,
+		pm.posttransferMaster,
+	)
 	if err != nil {
 		return err
 	}
@@ -55,10 +69,10 @@ func (pm *BaseProtocolManager) TransferMaster(id *types.PttID) error {
 	return nil
 }
 
-func (pm *BaseProtocolManager) signMasterOplog(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error {
+func (pm *BaseProtocolManager) signTransferMasterOplog(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error {
 
 	err := pm.SignOplog(oplog)
-	log.Debug("signMasterOplog: after SignOplog", "e", err)
+	log.Debug("signTransferMasterOplog: after SignOplog", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	if err != nil {
 		return err
@@ -75,13 +89,13 @@ func (pm *BaseProtocolManager) checkTransferMasterSign(oplog *BaseOplog, fromID 
 	// do nothing if I am also the toID
 	mySPM := pm.Ptt().GetMyService().SPM()
 	for id, _ := range mySPM.Entities() {
-		log.Debug("signMasterOplog (in-for-loop)", "id", id, "toID", toID)
-		if reflect.DeepEqual(&id, toID) {
+		log.Debug("signTransferMasterOplog: (in-for-loop)", "id", id, "toID", toID)
+		if reflect.DeepEqual(id[:], toID[:]) {
 			return nil
 		}
 	}
 
-	log.Debug("signMasterOplog after for-loop")
+	log.Debug("signTransferMasterOplog: after for-loop")
 
 	// check master sign
 	masterSigns := oplog.MasterSigns

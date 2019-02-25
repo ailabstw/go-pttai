@@ -34,8 +34,8 @@ func (pm *BaseProtocolManager) processMemberLog(oplog *BaseOplog, processInfo Pr
 		origLogs, err = pm.handleAddMemberLog(oplog, info)
 	case MemberOpTypeDeleteMember:
 		origLogs, err = pm.handleDeleteMemberLog(oplog, info)
-	case MemberOpTypeTransferMember:
-		origLogs, err = pm.handleTransferMemberLog(oplog, info)
+	case MemberOpTypeMigrateMember:
+		origLogs, err = pm.handleMigrateMemberLog(oplog, info)
 	}
 	return
 }
@@ -59,8 +59,8 @@ func (pm *BaseProtocolManager) processPendingMemberLog(oplog *BaseOplog, process
 		isToSign, origLogs, err = pm.handlePendingAddMemberLog(oplog, info)
 	case MemberOpTypeDeleteMember:
 		isToSign, origLogs, err = pm.handlePendingDeleteMemberLog(oplog, info)
-	case MemberOpTypeTransferMember:
-		isToSign, origLogs, err = pm.handlePendingTransferMemberLog(oplog, info)
+	case MemberOpTypeMigrateMember:
+		isToSign, origLogs, err = pm.handlePendingMigrateMemberLog(oplog, info)
 	}
 	return isToSign, origLogs, err
 }
@@ -101,8 +101,8 @@ func (pm *BaseProtocolManager) SetNewestMemberOplog(oplog *BaseOplog) error {
 		isNewer, err = pm.setNewestAddMemberLog(oplog)
 	case MemberOpTypeDeleteMember:
 		isNewer, err = pm.setNewestDeleteMemberLog(oplog)
-	case MemberOpTypeTransferMember:
-		isNewer, err = pm.setNewestTransferMemberLog(oplog)
+	case MemberOpTypeMigrateMember:
+		isNewer, err = pm.setNewestMigrateMemberLog(oplog)
 	}
 
 	if err != nil {
@@ -126,8 +126,8 @@ func (pm *BaseProtocolManager) HandleFailedMemberOplog(oplog *BaseOplog) error {
 		err = pm.handleFailedAddMemberLog(oplog)
 	case MemberOpTypeDeleteMember:
 		err = pm.handleFailedDeleteMemberLog(oplog)
-	case MemberOpTypeTransferMember:
-		err = pm.handleFailedTransferMemberLog(oplog)
+	case MemberOpTypeMigrateMember:
+		err = pm.handleFailedMigrateMemberLog(oplog)
 	}
 
 	return err
@@ -145,8 +145,8 @@ func (pm *BaseProtocolManager) HandleFailedValidMemberOplog(oplog *BaseOplog, pr
 		err = pm.handleFailedValidAddMemberLog(oplog)
 	case MemberOpTypeDeleteMember:
 		err = pm.handleFailedValidDeleteMemberLog(oplog)
-	case MemberOpTypeTransferMember:
-		err = pm.handleFailedValidTransferMemberLog(oplog)
+	case MemberOpTypeMigrateMember:
+		err = pm.handleFailedValidMigrateMemberLog(oplog)
 	}
 
 	return err

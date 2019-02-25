@@ -226,6 +226,7 @@ type conn struct {
 	id    discover.NodeID // valid after the encryption handshake
 	caps  []Cap           // valid after the protocol handshake
 	name  string          // valid after the protocol handshake
+	Addrs []ma.Multiaddr
 }
 
 type transport interface {
@@ -1100,7 +1101,13 @@ func (srv *Server) SetupConn(fd net.Conn, flags connFlag, dialDest *discover.Nod
 	if self == nil {
 		return errors.New("shutdown")
 	}
-	c := &conn{fd: fd, transport: srv.newTransport(fd), flags: flags, cont: make(chan error)}
+
+	var addrs []ma.Multiaddr
+	if dialDest != nil && dialDest.PeerInfo != nil {
+		addrs = dialDest.PeerInfo.Addrs
+	}
+
+	c := &conn{fd: fd, transport: srv.newTransport(fd), flags: flags, cont: make(chan error), Addrs: addrs}
 	err := srv.setupConn(c, flags, dialDest)
 	if err != nil {
 		c.close(err)

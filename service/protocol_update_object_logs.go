@@ -471,11 +471,11 @@ func isReplaceOrigSyncInfo(
 	syncStatusClass := types.StatusToStatusClass(syncInfo.GetStatus())
 
 	switch syncStatusClass {
-	case types.StatusClassInternalMigrate:
+	case types.StatusClassInternalTerminal:
 		syncStatusClass = types.StatusClassInternalDelete
-	case types.StatusClassPendingMigrate:
+	case types.StatusClassPendingTerminal:
 		syncStatusClass = types.StatusClassPendingDelete
-	case types.StatusClassMigrated:
+	case types.StatusClassTerminal:
 		syncStatusClass = types.StatusClassDeleted
 	}
 

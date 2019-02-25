@@ -48,7 +48,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/elastic/gosigar"
-	"gopkg.in/urfave/cli.v1"
+	cli "gopkg.in/urfave/cli.v1"
 )
 
 const (
@@ -62,7 +62,7 @@ var (
 )
 
 func InitApp() *cli.App {
-	println("InitApp: start", "theVersion", theVersion)
+	println("InitApp: start", "theVersion", theVersion, "gitCommit", gitCommit)
 	// The app that holds all commands and flags.
 	app := utils.NewApp(gitCommit, theVersion, "the go-pttai command line interface")
 

@@ -227,8 +227,8 @@ func TestFriend4Account3(t *testing.T) {
 	dataJoinFriend2_7_3 := &pkgservice.BackendJoinRequest{}
 	testCore(t2, bodyString, dataJoinFriend2_7_3, t, isDebug)
 
-	assert.Equal(me2_3.ID, dataJoinFriend2_7_3.CreatorID)
-	assert.Equal(me2_1.NodeID, dataJoinFriend2_7_3.NodeID)
+	assert.Equal(me3_3.ID, dataJoinFriend2_7_3.CreatorID)
+	assert.Equal(me3_1.NodeID, dataJoinFriend2_7_3.NodeID)
 
 	// 3 join 1
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "me_joinFriend", "params": ["%v"]}`, url1_5)

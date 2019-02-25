@@ -46,7 +46,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	// create friend
 
 	theFriend, err := friendSPM.CreateFriend(joinEntity.ID)
-	log.Debug("ApproveJoinFriend: after CreateFriend", "e", err, "theFriend.Status", theFriend.GetStatus())
+	log.Debug("ApproveJoinFriend: after CreateFriend", "e", err)
 	if err != nil {
 		return nil, nil, err
 	}

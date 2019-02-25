@@ -111,7 +111,7 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 	pm.lockOpKeyInfo.Lock()
 	defer pm.lockOpKeyInfo.Unlock()
 	for _, eachKeyInfo := range toExpireOpKeyInfos {
-		pm.ExpireOpKeyInfo(eachKeyInfo, true)
+		pm.ExpireOpKeyInfo(eachKeyInfo, true, false)
 	}
 
 	return opKeyInfos, nil
@@ -269,16 +269,16 @@ func (pm *BaseProtocolManager) getExpireRenewOpKeyTS() (types.Timestamp, error) 
 	return now, nil
 }
 
-func (pm *BaseProtocolManager) ExpireOpKeyInfo(keyInfo *KeyInfo, isLocked bool) error {
+func (pm *BaseProtocolManager) ExpireOpKeyInfo(keyInfo *KeyInfo, isLocked bool, isDeleteHash bool) error {
 	if !isLocked {
 		pm.lockOpKeyInfo.Lock()
 		defer pm.lockOpKeyInfo.Unlock()
 	}
 
-	return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
+	return pm.RemoveOpKeyFromHash(keyInfo.Hash, true, false, true, true)
 }
 
-func (pm *BaseProtocolManager) RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteOplog bool, isDeleteDB bool) error {
+func (pm *BaseProtocolManager) RemoveOpKeyFromHash(hash *common.Address, isLocked bool, isDeleteHash bool, isDeleteOplog bool, isDeleteDB bool) error {
 
 	entityID := pm.Entity().GetID()
 
@@ -289,9 +289,13 @@ func (pm *BaseProtocolManager) RemoveOpKeyFromHash(hash *common.Address, isLocke
 		defer pm.lockOpKeyInfo.Unlock()
 	}
 
-	keyInfo, ok := pm.opKeyInfos[*hash]
-	if !ok {
-		return nil
+	var keyInfo *KeyInfo
+	ok := false
+	if isDeleteHash {
+		keyInfo, ok = pm.opKeyInfos[*hash]
+		if !ok {
+			return nil
+		}
 	}
 
 	// delete pm.opKeyInfos
@@ -409,7 +413,7 @@ func (pm *BaseProtocolManager) CleanOpKey() {
 	defer pm.lockOpKeyInfo.Unlock()
 
 	for _, keyInfo := range pm.opKeyInfos {
-		pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true)
+		pm.RemoveOpKeyFromHash(keyInfo.Hash, true, true, true, true)
 	}
 }
 

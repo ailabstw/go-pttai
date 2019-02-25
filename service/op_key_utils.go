@@ -168,14 +168,17 @@ func (k *KeyInfo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	if k.KeyBytes != nil {
-		k.Key, err = crypto.ToECDSA(k.KeyBytes)
-		if err != nil {
-			return err
-		}
-
-		k.PubKeyBytes = crypto.FromECDSAPub(&k.Key.PublicKey)
+	if k.KeyBytes == nil {
+		log.Error("KeyInfo.Unmarshal: invalid data", "data", data)
+		return ErrInvalidKeyInfo
 	}
+
+	k.Key, err = crypto.ToECDSA(k.KeyBytes)
+	if err != nil {
+		return err
+	}
+
+	k.PubKeyBytes = crypto.FromECDSAPub(&k.Key.PublicKey)
 
 	return nil
 }

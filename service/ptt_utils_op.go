@@ -67,5 +67,5 @@ func (p *BasePtt) RemoveOpHash(hash *common.Address) error {
 		return p.RemoveOpKey(hash, entityID, false)
 	}
 
-	return entity.PM().RemoveOpKeyFromHash(hash, false, true, true, true)
+	return entity.PM().RemoveOpKeyFromHash(hash, false, true, true)
 }

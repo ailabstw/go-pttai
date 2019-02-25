@@ -99,7 +99,7 @@ func (pm *BaseProtocolManager) postdeleteOpKey(
 
 	log.Debug("postdeleteOpKey: to RemoveOpKeyInfoFromHash")
 
-	return pm.RemoveOpKeyFromHash(hash, false, true, false, false)
+	return pm.RemoveOpKeyFromHash(hash, false, false, false)
 }
 
 /**********

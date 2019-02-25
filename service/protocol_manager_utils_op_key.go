@@ -313,7 +313,9 @@ func (pm *BaseProtocolManager) RemoveOpKey(
 
 	// delete pm.opKeyInfos
 	hash := keyInfo.Hash
-	delete(pm.opKeyInfos, *hash)
+	if pm.opKeyInfos != nil {
+		delete(pm.opKeyInfos, *hash)
+	}
 
 	if isDeleteOplog {
 		if keyInfo.LogID != nil {

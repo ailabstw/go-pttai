@@ -42,9 +42,14 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 		return nil
 	}
 
-	e := pm.Entity()
-	if e.GetStatus() != types.StatusAlive {
+	entity := pm.Entity()
+	if entity.GetStatus() != types.StatusAlive {
 		return nil
+	}
+
+	_, err := pm.GetOldestOpKey(false)
+	if err != nil {
+		return pm.Ptt().RequestOpKeyByEntity(entity, peer)
 	}
 
 	toSyncTime, err := merkle.ToSyncTime()

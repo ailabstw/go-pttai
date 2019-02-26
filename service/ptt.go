@@ -67,6 +67,7 @@ type Ptt interface {
 
 	AddOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
 	RemoveOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error
+	RequestOpKeyByEntity(entity Entity, peer *PttPeer) error
 
 	// sync
 

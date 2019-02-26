@@ -43,6 +43,10 @@ func (p *BasePtt) RequestOpKey(hash *common.Address, peer *PttPeer) error {
 		return err
 	}
 
+	return p.RequestOpKeyByEntity(entity, peer)
+}
+
+func (p *BasePtt) RequestOpKeyByEntity(entity Entity, peer *PttPeer) error {
 	opKeys := entity.PM().OpKeyList()
 
 	opKeyOplogs, err := entity.PM().GetOpKeyOplogList(nil, 0, pttdb.ListOrderNext, types.StatusAlive)
@@ -60,6 +64,7 @@ func (p *BasePtt) RequestOpKey(hash *common.Address, peer *PttPeer) error {
 	log.Debug("RequestOpKey: to SendDataToPeer", "entity", entity.GetID(), "service", entity.Service().Name(), "opKeys", opKeys)
 
 	return p.SendDataToPeer(CodeTypeRequestOpKey, data, peer)
+
 }
 
 func (p *BasePtt) HandleRequestOpKey(dataBytes []byte, peer *PttPeer) error {

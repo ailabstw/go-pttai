@@ -111,16 +111,10 @@ func (b *Backend) GetFriendList(startIDBytes []byte, limit int, listOrder pttdb.
 
 }
 
-func (b *Backend) GetFriendListByMsgCreateTS(tsBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
+func (b *Backend) GetFriendListByMsgCreateTS(theTS int64, nanoTS uint32, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
 
-	ts := types.ZeroTimestamp
+	ts := types.Timestamp{Ts: theTS, NanoTs: nanoTS}
 	var err error
-	if len(tsBytes) != 0 {
-		ts, err = types.UnmarshalTimestamp(tsBytes)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	friendList, err := b.SPM().(*ServiceProtocolManager).GetFriendListByMsgCreateTS(ts, limit, listOrder)
 	if err != nil {

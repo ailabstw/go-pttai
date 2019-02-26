@@ -81,6 +81,7 @@ func getFriendByMsgCreateTSIter(startingTS types.Timestamp, listOrder pttdb.List
 
 func getFriendIterMarshalKey(ts types.Timestamp, listOrder pttdb.ListOrder) ([]byte, error) {
 	f := NewEmptyFriend()
+	f.ID = &types.PttID{}
 	if listOrder == pttdb.ListOrderPrev {
 		copy(f.ID[:], types.MaxID[:])
 	}

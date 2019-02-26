@@ -17,6 +17,8 @@
 package service
 
 import (
+	"runtime/debug"
+
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
@@ -32,6 +34,12 @@ func (pm *BaseProtocolManager) RegisterOpKey(keyInfo *KeyInfo, isLocked bool) er
 
 	if keyInfo.Status != types.StatusAlive {
 		return nil
+	}
+
+	if keyInfo.KeyBytes == nil {
+		log.Error("RegisterOpKey: invalid KeyBytes", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "id", keyInfo.ID)
+		debug.PrintStack()
+		return ErrInvalidKeyInfo
 	}
 
 	pm.opKeyInfos[*keyInfo.Hash] = keyInfo
@@ -70,8 +78,6 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 		return nil, err
 	}
 
-	log.Trace("loadOpKeyInfo: to for-loop")
-
 	opKeyInfos := make([]*KeyInfo, 0)
 	toRemoveOpKeys := make([][]byte, 0)
 	toExpireOpKeyInfos := make([]*KeyInfo, 0)
@@ -92,6 +98,10 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 		if keyInfo.UpdateTS.IsLess(expireTS) {
 			log.Warn("loadOpKeyInfo: expire", "key", key, "expireTS", expireTS, "UpdateTS", keyInfo.UpdateTS)
 			toExpireOpKeyInfos = append(toExpireOpKeyInfos, keyInfo)
+			continue
+		}
+
+		if keyInfo.Status != types.StatusAlive {
 			continue
 		}
 
@@ -369,6 +379,10 @@ func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRene
 		return
 	}
 
+	if keyInfo.Status != types.StatusAlive {
+		return
+	}
+
 	if pm.oldestOpKeyInfo == nil || keyInfo.UpdateTS.IsLess(pm.oldestOpKeyInfo.UpdateTS) {
 		pm.oldestOpKeyInfo = keyInfo
 	}
@@ -379,6 +393,10 @@ func (pm *BaseProtocolManager) checkOldestOpKeyInfo(keyInfo *KeyInfo, expireRene
 func (pm *BaseProtocolManager) checkNewestOpKeyInfo(keyInfo *KeyInfo, expireRenewTS types.Timestamp) {
 	if keyInfo.UpdateTS.IsLess(expireRenewTS) {
 		log.Warn("checkNewestOpKeyInfo: key expired renew ts", "key", keyInfo.UpdateTS, "expireTS", expireRenewTS)
+		return
+	}
+
+	if keyInfo.Status != types.StatusAlive {
 		return
 	}
 

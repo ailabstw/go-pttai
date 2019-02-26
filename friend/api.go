@@ -82,9 +82,10 @@ func (api *PrivateAPI) GetFriendListSeen() (types.Timestamp, error) {
 	return api.b.GetFriendListSeen()
 }
 
-func (api *PrivateAPI) GetFriendListByMsgCreateTS(tsBytes []byte, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
+func (api *PrivateAPI) GetFriendListByMsgCreateTS(ts int64, nanoTS uint32, limit int, listOrder pttdb.ListOrder) ([]*BackendGetFriend, error) {
 	return api.b.GetFriendListByMsgCreateTS(
-		tsBytes,
+		ts,
+		nanoTS,
 		limit,
 		listOrder,
 	)

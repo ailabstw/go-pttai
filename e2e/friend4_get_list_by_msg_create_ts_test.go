@@ -197,7 +197,7 @@ func TestFriend4GetListByMsgCreateTs(t *testing.T) {
 	assert.Equal(me1_1.ID, friend3_8.FriendID)
 
 	// 8.1. get-friend-list-by-msg-create-ts
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": ["", 0, 1]}`)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": [0, 0, 0, 1]}`)
 
 	dataGetFriendList1_8_1 := &struct {
 		Result []*friend.BackendGetFriend `json:"result"`
@@ -216,6 +216,15 @@ func TestFriend4GetListByMsgCreateTs(t *testing.T) {
 	assert.Equal(types.StatusAlive, friend1_8_1_0.Status)
 	assert.Equal(me0_1.ID, friend1_8_1_0.FriendID)
 	assert.Equal(friend0_8.ID, friend1_8_0.ID)
+
+	// 8.2. get-friend-list-by-msg-create-ts
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": [%d, %d, 0, 1]}`, friend1_8_1_2.ArticleCreateTS.Ts, friend1_8_1_2.ArticleCreateTS.NanoTs)
+
+	dataGetFriendList1_8_2 := &struct {
+		Result []*friend.BackendGetFriend `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataGetFriendList1_8_2, t, isDebug)
+	assert.Equal(2, len(dataGetFriendList1_8_2.Result))
 
 	// 9. get-raw-friend
 	marshaled, _ = friend0_8.ID.MarshalText()
@@ -402,7 +411,7 @@ func TestFriend4GetListByMsgCreateTs(t *testing.T) {
 	assert.Equal(1, len(dataGetMessageList1_36.Result))
 
 	// 37. get-friend-list-by-msg-create-ts
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": ["", 0, 1]}`)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": [0, 0, 0, 1]}`)
 
 	dataGetFriendList1_37 := &struct {
 		Result []*friend.BackendGetFriend `json:"result"`
@@ -457,7 +466,7 @@ func TestFriend4GetListByMsgCreateTs(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// 40. get-friend-list-by-msg-create-ts
-	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": ["", 0, 1]}`)
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "friend_getFriendListByMsgCreateTS", "params": [0, 0, 0, 1]}`)
 
 	dataGetFriendList1_40 := &struct {
 		Result []*friend.BackendGetFriend `json:"result"`

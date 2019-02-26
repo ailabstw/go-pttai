@@ -343,12 +343,14 @@ func (pm *BaseProtocolManager) RemoveOpKey(
 		keyInfo.Delete(false)
 	}
 
+	// ptt
 	log.Debug("to ptt.RemoveOpKey")
 
-	// ptt
 	entityID := pm.Entity().GetID()
 	ptt := pm.Ptt()
-	ptt.RemoveOpKey(hash, entityID, false)
+	if hash != nil {
+		ptt.RemoveOpKey(hash, entityID, false)
+	}
 
 	pm.getNewestOpKeyFullScan(true)
 	pm.getOldestOpKeyFullScan(true)

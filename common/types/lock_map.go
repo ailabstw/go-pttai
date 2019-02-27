@@ -112,7 +112,7 @@ func (l *LockMap) Lock(id *PttID) error {
 		if err == nil {
 			return nil
 		}
-		log.Warn("Lock: to sleep", "sleepTime", sleepTime)
+		log.Warn("Lock: to sleep", "sleepTime", sleepTime, "id", id)
 		debug.PrintStack()
 		time.Sleep(sleepTime)
 	}
@@ -137,6 +137,8 @@ func (l *LockMap) RLock(id *PttID) error {
 		if err == nil {
 			return nil
 		}
+		log.Warn("RLock: to sleep", "sleepTime", sleepTime, "id", id)
+		debug.PrintStack()
 		time.Sleep(sleepTime)
 	}
 

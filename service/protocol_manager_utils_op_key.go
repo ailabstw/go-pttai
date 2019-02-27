@@ -360,18 +360,10 @@ func (pm *BaseProtocolManager) RemoveOpKey(
 
 func (pm *BaseProtocolManager) removeOpKeyOplog(logID *types.PttID, isLocked bool) error {
 
-	if !isLocked {
-		err := pm.dbOpKeyLock.Lock(logID)
-		if err != nil {
-			return err
-		}
-		defer pm.dbOpKeyLock.Unlock(logID)
-	}
-
 	// delete oplog
 	oplog := &BaseOplog{ID: logID}
 	pm.SetOpKeyDB(oplog)
-	oplog.Delete(false)
+	oplog.Delete(isLocked)
 
 	return nil
 }

@@ -18,6 +18,7 @@ package types
 
 import (
 	"math/rand"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -112,6 +113,7 @@ func (l *LockMap) Lock(id *PttID) error {
 			return nil
 		}
 		log.Warn("Lock: to sleep", "sleepTime", sleepTime)
+		debug.PrintStack()
 		time.Sleep(sleepTime)
 	}
 

@@ -145,7 +145,7 @@ func (db *LDBDatabase) TryPut(key []byte, value []byte, updateTS types.Timestamp
 	}
 
 	if updateTS.IsLess(d.UpdateTS) {
-		log.Warn("updateTS < d.UpdateTS", "updateTS", updateTS, "d.UpdateTS", d.UpdateTS)
+		log.Warn("updateTS < d.UpdateTS", "updateTS", updateTS, "d.UpdateTS", d.UpdateTS, "key", key)
 		return v, ErrInvalidUpdateTS
 	}
 

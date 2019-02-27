@@ -57,7 +57,7 @@ func (pm *BaseProtocolManager) SyncOplogInvalidAck(
 	isToSyncPeer := pm.syncOplogInvalidAckIsToSyncPeer(peer, theirSyncTS, mySyncTS)
 
 	if isToSyncPeer {
-		return pm.ForceSyncOplog(fromSyncTS, toSyncTS, forceSyncOplogMsg, peer)
+		return pm.ForceSyncOplog(fromSyncTS, toSyncTS, merkle, forceSyncOplogMsg, peer)
 	}
 
 	data := &SyncOplogAckInvalid{
@@ -163,7 +163,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogInvalidAck(
 
 	// 1. the peer is PeerTypeMe or the peer is master
 	if isMe || isPeerMaster {
-		return pm.ForceSyncOplog(data.FromTS, data.ToTS, forceSyncOplogMsg, peer)
+		return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, peer)
 	}
 
 	// 2. I am the master and the peer is not master.
@@ -177,7 +177,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogInvalidAck(
 	if lenMasterPeerList > 0 {
 		randIdx := rand.Intn(lenMasterPeerList)
 		masterPeer := masterPeerList[randIdx]
-		return pm.ForceSyncOplog(data.FromTS, data.ToTS, forceSyncOplogMsg, masterPeer)
+		return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, masterPeer)
 	}
 
 	// 4. try to connect the master-node.

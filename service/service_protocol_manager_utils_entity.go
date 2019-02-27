@@ -78,7 +78,7 @@ func (b *BaseServiceProtocolManager) StartEntities() error {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
-	log.Info("StartEntities", "service", b.Service().Name(), "entities", b.entities)
+	// log.Info("StartEntities", "service", b.Service().Name(), "entities", b.entities)
 
 	var err error
 	for _, entity := range b.entities {
@@ -94,7 +94,7 @@ func (b *BaseServiceProtocolManager) PrestartEntities() error {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
-	log.Info("PrestartEntities", "entities", b.entities)
+	// log.Info("PrestartEntities", "entities", b.entities)
 	for _, entity := range b.entities {
 		err := entity.Prestart()
 		if err != nil {

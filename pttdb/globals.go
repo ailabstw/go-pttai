@@ -36,8 +36,7 @@ const (
 )
 
 var (
-	DBMetaPostfix = []byte("mt")
-	dbLastKey     = []byte{255}
+	dbLastKey = []byte{255}
 )
 
 const (

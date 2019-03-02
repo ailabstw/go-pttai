@@ -60,7 +60,7 @@ func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttI
 	prefixIDBytes := prefixID[:]
 
 	dbMerkleMetaPrefix := common.CloneBytes(dbMerklePrefix)
-	copy(dbMerkleMetaPrefix[pttdb.OffsetDBKeyPrefixPostfix:], pttdb.DBMetaPostfix)
+	copy(dbMerkleMetaPrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleMetaPostfix)
 
 	dbMerkleToUpdatePrefix := common.CloneBytes(dbMerklePrefix)
 	copy(dbMerkleToUpdatePrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleToUpdatePostfix)
@@ -269,6 +269,16 @@ func (m *Merkle) GetGenerateTime() (types.Timestamp, error) {
 
 func (m *Merkle) SaveSyncTime(ts types.Timestamp) error {
 	log.Debug("SaveSyncTime: start", "ts", ts, "prefixID", m.PrefixID)
+
+	if ts.IsLess(m.LastSyncTS) {
+		if m.LastSyncTS.Ts-ts.Ts < OffsetMerkleSyncTime {
+			return nil
+		}
+
+		log.Error("SaveSyncTime: ts < m.LastSyncTS", "ts", ts, "lastSyncTS", m.LastSyncTS)
+		return pttdb.ErrInvalidUpdateTS
+	}
+
 	key, err := m.MarshalSyncTimeKey()
 	if err != nil {
 		return err
@@ -281,6 +291,31 @@ func (m *Merkle) SaveSyncTime(ts types.Timestamp) error {
 	}
 
 	_, err = m.db.DB().TryPut(key, marshaled, ts)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("SaveSyncTime: to set ts", "ts", ts, "prefixID", m.PrefixID)
+
+	m.LastSyncTS = ts
+
+	return nil
+}
+
+func (m *Merkle) ForceSaveSyncTime(ts types.Timestamp) error {
+	log.Debug("ForceSaveSyncTime: start", "ts", ts, "prefixID", m.PrefixID)
+	key, err := m.MarshalSyncTimeKey()
+	if err != nil {
+		return err
+	}
+
+	val := &pttdb.DBable{UpdateTS: ts}
+	marshaled, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+
+	err = m.db.DB().Put(key, marshaled)
 	if err != nil {
 		return err
 	}

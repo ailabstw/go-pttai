@@ -291,11 +291,11 @@ func (p *Peer) handle(msg Msg) error {
 	//p.log.Info("handle (msg): start", "msg", msg)
 	switch {
 	case msg.Code == pingMsg:
-		p.log.Info("handle (msg): pingMsg")
+		p.log.Debug("handle (msg): pingMsg")
 		msg.Discard()
 		go SendItems(p.rw, pongMsg)
 	case msg.Code == pongMsg:
-		p.log.Info("handle (msg): pongMsg")
+		p.log.Debug("handle (msg): pongMsg")
 		return msg.Discard()
 	case msg.Code == discMsg:
 		var reason [1]DiscReason

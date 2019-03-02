@@ -109,5 +109,7 @@ func (pm *BaseProtocolManager) postfailedCreateOpKey(theOpKey Object, oplog *Bas
 		return ErrInvalidData
 	}
 
-	return pm.RemoveOpKeyFromHash(opKey.Hash, false, true, true)
+	opKey.Delete(true)
+
+	return pm.RemoveOpKeyFromHash(opKey.Hash, false, false, false)
 }

@@ -194,7 +194,7 @@ func (n *Node) Start() error {
 		// Construct and save the service
 		n.log.Info("in serviceFunc-loop: to constructor", "services", services)
 		service, err := constructor(ctx)
-		n.log.Info("in serviceFunc-loop", "services", services, "service", service, "e", err)
+		// n.log.Info("in serviceFunc-loop", "services", services, "service", service, "e", err)
 		if err != nil {
 			log.Error("in serviceFunc-loop: unable to constructor", "e", err)
 			return err
@@ -224,7 +224,7 @@ func (n *Node) Start() error {
 	started := []reflect.Type{}
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
-		n.log.Info("to service.Start", "kind", kind, "service", service)
+		// n.log.Info("to service.Start", "kind", kind, "service", service)
 
 		if err := service.Start(running); err != nil {
 			n.log.Error("something went wrong with service-starting", "e", err, "service", service)

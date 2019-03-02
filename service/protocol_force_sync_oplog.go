@@ -31,10 +31,14 @@ func (pm *BaseProtocolManager) ForceSyncOplog(
 	fromTS types.Timestamp,
 	toTS types.Timestamp,
 
+	merkle *Merkle,
+
 	forceSyncOplogMsg OpType,
 
 	peer *PttPeer,
 ) error {
+
+	merkle.ForceSaveSyncTime(fromTS)
 
 	data := &ForceSyncOplog{
 		FromTS: fromTS,

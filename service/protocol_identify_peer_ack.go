@@ -122,7 +122,7 @@ HandleIdentifyPeerAck
 func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error {
 
 	if !reflect.DeepEqual(peer.IDChallenge[:], data.AckChallenge[:types.SizeSalt]) {
-		log.Warn("HandleIdentifyPeerAck: unable to match challenge")
+		log.Warn("HandleIdentifyPeerAck: unable to match challenge", "peer", peer.IDChallenge, "data", data.AckChallenge, "peer", peer)
 		return ErrInvalidData
 	}
 

@@ -712,10 +712,11 @@ func (pm *BaseProtocolManager) Prestart() error {
 	// op-key
 	opKeyInfos, err := pm.loadOpKeyInfos()
 	if err != nil {
-		return err
+		log.Error("Prestart: unable to loadOpKeyInfos", "e", err)
+		opKeyInfos = make([]*KeyInfo, 0)
 	}
 
-	log.Debug("Prestart: after loadOpKeyInfos", "opKeyInfos", opKeyInfos)
+	log.Debug("Prestart: after loadOpKeyInfos", "opKeyInfos", opKeyInfos, "e", err)
 
 	pm.registerOpKeys(opKeyInfos, false)
 
@@ -737,6 +738,7 @@ func (pm *BaseProtocolManager) Prestart() error {
 		err = pm.loadMyMemberLog()
 		log.Debug("Prestart: after loadMyMemberLog", "e", err, "service", pm.Entity().Service().Name())
 		if err != nil {
+			log.Error("Prestart: unable to loadMyMemberLog", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			return err
 		}
 	}

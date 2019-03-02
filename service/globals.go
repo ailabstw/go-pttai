@@ -276,8 +276,9 @@ var (
 	DBMerkleGenerateTimePrefix = []byte(".mtgt")
 	DBMerkleSyncTimePrefix     = []byte(".mtst")
 	DBMerkleFailSyncTimePrefix = []byte(".mtft")
-	DBMerkleToUpdatePostfix    = []byte("mt")
-	DBMerkleUpdatingPostfix    = []byte("mT")
+	DBMerkleMetaPostfix        = []byte("mt")
+	DBMerkleToUpdatePostfix    = []byte("Mt")
+	DBMerkleUpdatingPostfix    = []byte("MT")
 
 	OffsetMerkleSyncTime int64 = 3600 // validate until 2-hr ago, and sync with data starting 2-hr ago.
 

@@ -21,6 +21,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 /**********
@@ -145,6 +146,7 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 	}
 
 	// 4. saveUpdateObj
+	log.Debug("handleUpdatePersonLogCore: to saveUpdateObjectWithOplog", "person", origPerson.GetID(), "oplog", oplog.ID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	err = pm.saveUpdateObjectWithOplog(origPerson, oplog, true)
 	if err != nil {
 		return err

@@ -163,6 +163,14 @@ func (api *PrivateAPI) GetMemberList(entityID string, startID string, limit int,
 }
 
 /**********
+ * MyMemberOplog
+ **********/
+
+func (api *PrivateAPI) GetMyMemberLog(entityID string) (*pkgservice.BaseOplog, error) {
+	return api.b.GetMyMemberLog([]byte(entityID))
+}
+
+/**********
  * Op
  **********/
 

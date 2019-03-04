@@ -86,6 +86,7 @@ type Object interface {
 
 	SetLogID(id *types.PttID)
 	GetLogID() *types.PttID
+	GetNewestLogID() *types.PttID
 
 	SetUpdateLogID(id *types.PttID)
 	GetUpdateLogID() *types.PttID
@@ -470,4 +471,12 @@ func (o *BaseObject) CheckIsAllGood() types.Bool {
 	log.Debug("Object.CehckIsAllGood: is all good")
 	o.IsAllGood = true
 	return true
+}
+
+func (o *BaseObject) GetNewestLogID() *types.PttID {
+	if o.Status == types.StatusAlive && o.UpdateLogID != nil {
+		return o.UpdateLogID
+	}
+
+	return o.LogID
 }

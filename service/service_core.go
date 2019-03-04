@@ -413,3 +413,16 @@ func (b *BaseService) ForceOpKey(entityIDBytes []byte) (bool, error) {
 
 	return true, nil
 }
+
+func (b *BaseService) GetMyMemberLog(entityIDBytes []byte) (*BaseOplog, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	myMemberLog := thePM.MyMemberLog()
+	if myMemberLog == nil {
+		return nil, nil
+	}
+
+	return myMemberLog.BaseOplog, nil
+}

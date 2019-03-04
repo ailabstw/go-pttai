@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 )
 
@@ -95,7 +96,9 @@ func (pm *BaseProtocolManager) GetMemberLogByMemberID(id *types.PttID, isLocked 
 	}
 	memberLog := &MemberOplog{BaseOplog: &BaseOplog{}}
 	pm.SetMemberDB(memberLog.BaseOplog)
-	err = memberLog.Get(member.LogID, false)
+	logID := member.GetNewestLogID()
+	log.Debug("GetMemberLogByMemberID: after GetNewestLogID", "id", id, "logID", logID, "entity", pm.Entity().GetID(), "service", pm.entity.Service().Name())
+	err = memberLog.Get(logID, false)
 	if err != nil {
 		return nil, err
 	}

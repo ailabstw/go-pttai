@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func (pm *BaseProtocolManager) UpdatePerson(
@@ -69,6 +70,8 @@ func (pm *BaseProtocolManager) UpdatePerson(
 
 	// 5. update person
 	oplogStatus := oplog.ToStatus()
+
+	log.Debug("UpdatePerson: to handleCore", "status", oplogStatus, "id", id, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 	if oplogStatus == types.StatusAlive {
 		err = pm.handleUpdatePersonLogCore(

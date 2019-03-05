@@ -120,3 +120,21 @@ Linode
     APIPORT=14779
     docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
     ```
+
+Digital Ocean
+-----
+
+1. Create docker-with-ubuntu in One-click Applications.
+2. Install / Update (in root@[IP]):
+
+    ```
+    sudo -s
+    docker pull ailabstw/go-pttai:latest
+    HTTPPORT=9774
+    APIPORT=14779
+    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
+    ```
+
+3. ssh -L 14779:localhost:14779 root@[IP]
+4. ssh -L 9774:localhost:9774 root@[IP]
+5. open browser and connect to http://localhost:9774

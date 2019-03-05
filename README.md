@@ -18,6 +18,12 @@ Install
     ${GOPATH}/bin/gptt
 
 
+License
+-----
+
+All License can be found in docs/
+
+
 Docker Environment
 -----
 

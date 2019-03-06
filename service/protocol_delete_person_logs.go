@@ -65,6 +65,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 		return nil, err
 	}
 
+	log.Debug("HandleDeletePersonLog: start", "oplog.TS", oplog.UpdateTS, "person.UpdateTS", origPerson.GetUpdateTS())
 	if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
 		return nil, ErrNewerOplog
 	}
@@ -102,7 +103,7 @@ func (pm *BaseProtocolManager) HandleDeletePersonLog(
 		merkle,
 
 		setLogDB,
-		postdelete,
+		nil,
 		updateDeleteInfo,
 	)
 

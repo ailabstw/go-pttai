@@ -19,6 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func (pm *BaseProtocolManager) handleAddMemberLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
@@ -28,9 +29,10 @@ func (pm *BaseProtocolManager) handleAddMemberLog(oplog *BaseOplog, info *Proces
 
 	opData := &MemberOpAddMember{}
 
-	log.Debug("handleAddMemberLog: start", "oplog.PreLogID", oplog.PreLogID)
-
-	if oplog.PreLogID == nil {
+	person.SetID(oplog.ObjID)
+	err := person.GetByID(false)
+	log.Debug("handleAddMemberLog: after GetByID", "id", oplog.ObjID, "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	if err == leveldb.ErrNotFound {
 		return pm.HandleCreatePersonLog(
 			oplog,
 			person,
@@ -59,7 +61,10 @@ func (pm *BaseProtocolManager) handlePendingAddMemberLog(oplog *BaseOplog, info 
 
 	opData := &MemberOpAddMember{}
 
-	if oplog.PreLogID == nil {
+	person.SetID(oplog.ObjID)
+	err := person.GetByID(false)
+
+	if err == leveldb.ErrNotFound {
 		return pm.HandlePendingCreatePersonLog(
 			oplog,
 			person,

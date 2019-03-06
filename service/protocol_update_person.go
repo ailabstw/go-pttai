@@ -61,7 +61,7 @@ func (pm *BaseProtocolManager) UpdatePerson(
 		return nil, nil, err
 	}
 	oplog := theOplog.GetBaseOplog()
-	oplog.PreLogID = origPerson.GetLogID()
+	// oplog.PreLogID = origPerson.GetLogID()
 
 	err = pm.SignOplog(oplog)
 	if err != nil {

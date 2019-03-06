@@ -81,11 +81,14 @@ func (pm *BaseProtocolManager) postdeleteMember(
 	if reflect.DeepEqual(myID, oplog.ObjID) {
 		pm.myMemberLog = OplogToMemberOplog(oplog)
 		entity.SetStatus(types.StatusDeleted)
+		entity.SetUpdateTS(pm.myMemberLog.UpdateTS)
 		entity.Save(false)
 
 		if pm.postdelete != nil {
 			pm.postdelete(opData, true)
 		}
+	} else {
+		pm.UnregisterPeerByOtherUserID(oplog.ObjID, true, false)
 	}
 
 	return nil

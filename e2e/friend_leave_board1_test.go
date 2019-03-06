@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -380,27 +381,25 @@ func TestFriendLeaveBoard1(t *testing.T) {
 	marshaled, _ = board1_13_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getMemberList", "params": ["%v", "", 0, 2]}`, string(marshaled))
 
-	/*
-		dataMembers0_19 := &struct {
-			Result []*pkgservice.Member `json:"result"`
-		}{}
-		testListCore(t0, bodyString, dataMembers0_19, t, isDebug)
-		assert.Equal(2, len(dataMembers0_19.Result))
-		member0_19_0 := dataMembers0_19.Result[0]
-		member0_19_1 := dataMembers0_19.Result[1]
-		var member0_19_me *pkgservice.Member
-		var member0_19_other *pkgservice.Member
-		if reflect.DeepEqual(member0_19_0.ID, me0_1.ID) {
-			member0_19_me = member0_19_0
-			member0_19_other = member0_19_1
-		} else {
-			member0_19_me = member0_19_1
-			member0_19_other = member0_19_0
-		}
+	dataMembers0_19 := &struct {
+		Result []*pkgservice.Member `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataMembers0_19, t, isDebug)
+	assert.Equal(2, len(dataMembers0_19.Result))
+	member0_19_0 := dataMembers0_19.Result[0]
+	member0_19_1 := dataMembers0_19.Result[1]
+	var member0_19_me *pkgservice.Member
+	var member0_19_other *pkgservice.Member
+	if reflect.DeepEqual(member0_19_0.ID, me0_1.ID) {
+		member0_19_me = member0_19_0
+		member0_19_other = member0_19_1
+	} else {
+		member0_19_me = member0_19_1
+		member0_19_other = member0_19_0
+	}
 
-		assert.Equal(types.StatusAlive, member0_19_me.Status)
-		assert.Equal(types.StatusDeleted, member0_19_other.Status)
-	*/
+	assert.Equal(types.StatusAlive, member0_19_me.Status)
+	assert.Equal(types.StatusDeleted, member0_19_other.Status)
 
 	dataMembers1_19 := &struct {
 		Result []*pkgservice.Member `json:"result"`
@@ -416,13 +415,11 @@ func TestFriendLeaveBoard1(t *testing.T) {
 	marshaled, _ = board1_13_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getPeers", "params": ["%v"]}`, string(marshaled))
 
-	/*
-		dataPeers0_19 := &struct {
-			Result []*pkgservice.BackendPeer `json:"result"`
-		}{}
-		testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
-		assert.Equal(0, len(dataPeers0_19.Result))
-	*/
+	dataPeers0_19 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
+	assert.Equal(0, len(dataPeers0_19.Result))
 
 	dataPeers1_19 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`

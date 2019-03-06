@@ -65,7 +65,7 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 	pm.CleanMasterOplog()
 
 	// member
-	pm.CleanMember()
+	pm.CleanMember(true)
 	log.Debug("DefaultPostdeleteEntity: to CleanMemberOplog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	pm.CleanMemberOplog(true)
 
@@ -80,8 +80,10 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 }
 
 func (pm *BaseProtocolManager) FullCleanLog() {
-	log.Debug("FullCleanLog: to CleanMemberOplog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("FullCleanLog: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	pm.CleanMember(false)
 	pm.CleanMemberOplog(false)
-	log.Debug("FullCleanLog: to CleanLog0", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	pm.CleanLog0(false)
+
+	log.Debug("FullCleanLog: end", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 }

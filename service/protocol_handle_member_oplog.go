@@ -85,6 +85,12 @@ func (pm *BaseProtocolManager) postprocessMemberOplogs(processInfo ProcessInfo, 
 
 	pm.broadcastMemberOplogsCore(toBroadcastLogs)
 
+	if !isPending {
+		for _, eachLog := range deleteInfos {
+			pm.postdeleteMember(eachLog.ObjID, eachLog, nil, nil)
+		}
+	}
+
 	return nil
 }
 

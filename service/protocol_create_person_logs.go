@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -60,13 +61,16 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 	}
 	defer person.Unlock()
 
+	log.Debug("HandleCreatePersonLog: start", "personID", personID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
 	// 2. get person (should never delete once stored)
 	err = person.GetByID(true)
-	if err == nil {
-		return nil, ErrNewerOplog
-	}
-	if err != leveldb.ErrNotFound {
+	if err != nil && err != leveldb.ErrNotFound {
 		return nil, err
+	}
+
+	if err == nil && oplog.UpdateTS.IsLess(person.GetUpdateTS()) {
+		return nil, ErrNewerOplog
 	}
 
 	// 3. new person

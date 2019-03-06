@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func (pm *BaseProtocolManager) handleAddMasterLog(oplog *BaseOplog, info *ProcessPersonInfo) ([]*BaseOplog, error) {
@@ -27,7 +28,10 @@ func (pm *BaseProtocolManager) handleAddMasterLog(oplog *BaseOplog, info *Proces
 
 	opData := &MasterOpCreateMaster{}
 
-	if oplog.PreLogID == nil {
+	person.SetID(oplog.ObjID)
+	err := person.GetByID(false)
+
+	if err == leveldb.ErrNotFound {
 		return pm.HandleCreatePersonLog(
 			oplog,
 			person,
@@ -57,7 +61,10 @@ func (pm *BaseProtocolManager) handlePendingAddMasterLog(oplog *BaseOplog, info 
 
 	opData := &MasterOpCreateMaster{}
 
-	if oplog.PreLogID == nil {
+	person.SetID(oplog.ObjID)
+	err := person.GetByID(false)
+
+	if err == leveldb.ErrNotFound {
 		return pm.HandlePendingCreatePersonLog(
 			oplog,
 			person,

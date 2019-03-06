@@ -422,7 +422,7 @@ func TestFriendLeaveBoard4(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_14_1, t, isDebug)
-	assert.Equal(1, len(dataPeers0_14_1.Result))
+	assert.Equal(0, len(dataPeers0_14_1.Result))
 
 	dataPeers1_14_1 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -608,7 +608,7 @@ func TestFriendLeaveBoard4(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
-	assert.Equal(1, len(dataPeers0_19.Result))
+	assert.Equal(0, len(dataPeers0_19.Result))
 
 	dataPeers1_19 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -634,6 +634,23 @@ func TestFriendLeaveBoard4(t *testing.T) {
 
 	// sleep
 	time.Sleep(TimeSleepRestart)
+
+	// 22.0. sync.
+	t.Logf("22.0. force sync")
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_forceSync", "params": ["%v"]}`, string(marshaled))
+
+	bool0_22_0 := false
+	testCore(t0, bodyString, &bool0_22_0, t, isDebug)
+	assert.Equal(true, bool0_22_0)
+
+	time.Sleep(TimeSleepDefault)
+
+	bool1_22_0 := false
+	testCore(t1, bodyString, &bool1_22_0, t, isDebug)
+	assert.Equal(true, bool1_22_0)
+
+	time.Sleep(TimeSleepDefault)
 
 	// 23. get board list
 	t.Logf("23. get board list")

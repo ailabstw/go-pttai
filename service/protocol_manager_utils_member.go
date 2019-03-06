@@ -119,13 +119,17 @@ func (pm *BaseProtocolManager) loadMyMemberLog() error {
 	return nil
 }
 
-func (pm *BaseProtocolManager) CleanMember() error {
+func (pm *BaseProtocolManager) CleanMember(isRetainMe bool) error {
 	members, err := pm.GetMemberList(nil, 0, pttdb.ListOrderNext, false)
 	if err != nil {
 		return err
 	}
 
+	myID := pm.Ptt().GetMyEntity().GetID()
 	for _, member := range members {
+		if isRetainMe && reflect.DeepEqual(myID, member.ID) {
+			continue
+		}
 		member.Delete(false)
 	}
 

@@ -83,7 +83,7 @@ func (pm *BaseProtocolManager) DeletePerson(
 		return err
 	}
 	oplog := theOplog.GetBaseOplog()
-	oplog.PreLogID = origPerson.GetLogID()
+	// oplog.PreLogID = origPerson.GetLogID()
 
 	err = pm.SignOplog(oplog)
 	if err != nil {
@@ -117,7 +117,7 @@ func (pm *BaseProtocolManager) DeletePerson(
 			merkle,
 
 			setLogDB,
-			postdelete,
+			nil,
 			nil,
 		)
 	} else {
@@ -150,6 +150,11 @@ func (pm *BaseProtocolManager) DeletePerson(
 	log.Debug("DeletePerson: to broadcastLog", "entity", pm.Entity().GetID())
 
 	broadcastLog(oplog)
+
+	// postdelete
+	if oplogStatus >= types.StatusDeleted && postdelete != nil {
+		postdelete(oplog.ObjID, oplog, origPerson, opData)
+	}
 
 	return nil
 }

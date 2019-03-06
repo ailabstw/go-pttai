@@ -50,6 +50,8 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 	}
 	defer origPerson.Unlock()
 
+	log.Debug("HandleUpdatePersonLog: start", "personID", personID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
 	// 2. get person (should never delete once stored)
 	err = origPerson.GetByID(true)
 	if err != nil {
@@ -68,14 +70,20 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 
 	// 3. check validity
 	origStatus := origPerson.GetStatus()
+	origUpdateTS := origPerson.GetUpdateTS()
 	if origStatus == types.StatusAlive {
-		if oplog.UpdateTS.IsLess(origPerson.GetUpdateTS()) {
-			err = pm.saveUpdateObjectWithOplog(origPerson, oplog, true)
+		if origUpdateTS.IsLess(oplog.UpdateTS) {
+			origPerson.SetSyncInfo(nil)
+			origPerson.SetIsGood(true)
+			origPerson.SetIsAllGood(true)
+			err = pm.saveNewObjectWithOplog(origPerson, oplog, true, true, nil)
 			if err != nil {
 				return nil, err
 			}
+			return nil, nil
+		} else {
+			return nil, ErrNewerOplog
 		}
-		return nil, ErrNewerOplog
 	}
 	if origStatus >= types.StatusMigrated {
 		return nil, ErrNewerOplog
@@ -147,7 +155,11 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 
 	// 4. saveUpdateObj
 	log.Debug("handleUpdatePersonLogCore: to saveUpdateObjectWithOplog", "person", origPerson.GetID(), "oplog", oplog.ID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
-	err = pm.saveUpdateObjectWithOplog(origPerson, oplog, true)
+
+	origPerson.SetSyncInfo(nil)
+	origPerson.SetIsGood(true)
+	origPerson.SetIsAllGood(true)
+	err = pm.saveNewObjectWithOplog(origPerson, oplog, true, true, nil)
 	if err != nil {
 		return err
 	}

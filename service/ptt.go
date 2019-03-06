@@ -45,6 +45,8 @@ type Ptt interface {
 	FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerType bool) error
 	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
+	ResetPeerType(peer *PttPeer, isLocked bool, isResetPeerType bool) error
+
 	NoMorePeers() chan struct{}
 
 	AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType) error

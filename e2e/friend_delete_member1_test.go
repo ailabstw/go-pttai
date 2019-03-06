@@ -415,13 +415,11 @@ func TestFriendDeleteMember1(t *testing.T) {
 	marshaled, _ = board1_13_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getPeers", "params": ["%v"]}`, string(marshaled))
 
-	/*
-		dataPeers0_19 := &struct {
-			Result []*pkgservice.BackendPeer `json:"result"`
-		}{}
-		testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
-		assert.Equal(0, len(dataPeers0_19.Result))
-	*/
+	dataPeers0_19 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
+	assert.Equal(0, len(dataPeers0_19.Result))
 
 	dataPeers1_19 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`

@@ -284,6 +284,22 @@ func TestFriendDeleteMember3(t *testing.T) {
 	assert.Equal(me0_3.BoardID, board1_13_1.ID)
 	assert.Equal(types.StatusAlive, board1_13_1.Status)
 
+	// 14.0. get peers
+	marshaled, _ = board1_13_1.ID.MarshalText()
+	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getPeers", "params": ["%v"]}`, string(marshaled))
+
+	dataPeers0_14_0 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t0, bodyString, dataPeers0_14_0, t, isDebug)
+	assert.Equal(1, len(dataPeers0_14_0.Result))
+
+	dataPeers1_14_0 := &struct {
+		Result []*pkgservice.BackendPeer `json:"result"`
+	}{}
+	testListCore(t1, bodyString, dataPeers1_14_0, t, isDebug)
+	assert.Equal(1, len(dataPeers1_14_0.Result))
+
 	// 14. delete-member
 	t.Logf("14. delete-member")
 	marshaled, _ = board1_13_1.ID.MarshalText()
@@ -304,7 +320,7 @@ func TestFriendDeleteMember3(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_14_1, t, isDebug)
-	assert.Equal(1, len(dataPeers0_14_1.Result))
+	assert.Equal(0, len(dataPeers0_14_1.Result))
 
 	dataPeers1_14_1 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -452,7 +468,7 @@ func TestFriendDeleteMember3(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
-	assert.Equal(1, len(dataPeers0_19.Result))
+	assert.Equal(0, len(dataPeers0_19.Result))
 
 	dataPeers1_19 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`

@@ -141,6 +141,36 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 	return p.SetupPeer(peer, peerType, true)
 }
 
+func (p *BasePtt) ResetPeerType(peer *PttPeer, isLocked bool, isForceReset bool) error {
+
+	if !isLocked {
+		p.peerLock.Lock()
+		defer p.peerLock.Unlock()
+	}
+
+	log.Debug("ResetPeerType", "peer", peer, "userID", peer.UserID)
+
+	if peer.UserID == nil {
+		return ErrPeerUserID
+	}
+
+	if isForceReset {
+		p.SetPeerType(peer, PeerTypeRandom, true, true)
+	}
+
+	peerType, err := p.determinePeerTypeFromAllEntities(peer, true)
+	if err != nil {
+		return err
+	}
+
+	err = p.addPeerKnownUserID(peer, peerType, true)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *BasePtt) determinePeerTypeFromAllEntities(peer *PttPeer, isLocked bool) (PeerType, error) {
 	if !isLocked {
 		p.peerLock.Lock()

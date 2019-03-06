@@ -302,7 +302,7 @@ func TestFriendLeaveBoard3(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_14_1, t, isDebug)
-	assert.Equal(1, len(dataPeers0_14_1.Result))
+	assert.Equal(0, len(dataPeers0_14_1.Result))
 
 	dataPeers1_14_1 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`
@@ -450,7 +450,7 @@ func TestFriendLeaveBoard3(t *testing.T) {
 		Result []*pkgservice.BackendPeer `json:"result"`
 	}{}
 	testListCore(t0, bodyString, dataPeers0_19, t, isDebug)
-	assert.Equal(1, len(dataPeers0_19.Result))
+	assert.Equal(0, len(dataPeers0_19.Result))
 
 	dataPeers1_19 := &struct {
 		Result []*pkgservice.BackendPeer `json:"result"`

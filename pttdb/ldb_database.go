@@ -207,7 +207,7 @@ func (db *LDBDatabase) TryRLockMap(key []byte) error {
 		return ErrBusy
 	}
 
-	log.Debug("after TryRLockMap", "i", i, "ok", ok)
+	log.Debug("after TryRLockMap (pass lock)", "i", i, "ok", ok)
 
 	if !ok {
 		db.lockMap[mapKey] = 0

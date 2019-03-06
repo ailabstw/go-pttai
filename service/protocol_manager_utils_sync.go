@@ -39,8 +39,11 @@ looping:
 				break looping
 			}
 
+			log.Debug("PMSync: NewPeerCh: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
+			log.Debug("PMSync: NewPeerCh: after pm.Sync", "entity", pm.Entity(), "peer", peer, "e", err)
 			if err != nil {
 				log.Error("unable to Sync after newPeer", "e", err, "peer", peer)
 			}

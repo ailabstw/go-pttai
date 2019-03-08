@@ -97,6 +97,10 @@ func (ps *PttPeerSet) IsClosed() bool {
 }
 
 func (ps *PttPeerSet) Register(peer *PttPeer, peerType PeerType, isLocked bool) error {
+	if ps.closed {
+		return ErrClosed
+	}
+
 	if !isLocked {
 		ps.Lock()
 		defer ps.Unlock()

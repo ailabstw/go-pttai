@@ -40,7 +40,7 @@ import (
 func gptt(ctx *cli.Context) error {
 	utils.SetLogging(ctx)
 
-	log.Info("Ptt.ai: Hello world!")
+	log.Info("PTT.ai: Hello world!")
 
 	// Load Config
 	cfg, err := loadConfig(ctx)
@@ -107,7 +107,7 @@ func gptt(ctx *cli.Context) error {
 		return err
 	}
 
-	log.Info("Ptt.ai: see u later～")
+	log.Info("PTT.ai: see u later～")
 
 	return nil
 }

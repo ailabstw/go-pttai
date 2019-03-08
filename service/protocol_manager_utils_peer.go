@@ -92,7 +92,7 @@ func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isForceReset bool, 
 
 	err := pm.peers.Unregister(peer, false)
 
-	log.Info("UnregisterPeer: after peers.Unregister", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Info("UnregisterPeer: after peers.Unregister", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "isForceNotReset", isForceNotReset, "isForceReset", isForceReset, "isPttLocked", isPttLocked)
 	if err != nil {
 		return err
 	}

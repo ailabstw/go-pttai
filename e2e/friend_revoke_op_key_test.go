@@ -392,7 +392,7 @@ func TestFriendRevokeOpKey(t *testing.T) {
 	opKey0_19 := dataOpKeyList0_19.Result[0]
 
 	// 20. restart node 1
-	startNode(t, 1, offsetSecond)
+	startNode(t, 1, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 

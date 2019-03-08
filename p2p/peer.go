@@ -200,12 +200,19 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		reason     DiscReason // sent to the peer
 	)
 	p.wg.Add(2)
+	log.Info("run: after Add", "peer", p)
 	go func() {
-		defer p.wg.Done()
+		defer func() {
+			p.wg.Done()
+			log.Info("run: after readLoop done", "peer", p)
+		}()
 		p.readLoop(readErr)
 	}()
 	go func() {
-		defer p.wg.Done()
+		defer func() {
+			p.wg.Done()
+			log.Info("run: after pingLoop done", "peer", p)
+		}()
 		p.pingLoop()
 	}()
 
@@ -380,16 +387,23 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 		p.log.Debug(fmt.Sprintf("Starting protocol %s/%d", proto.Name, proto.Version))
 
 		p.wg.Add(1)
+		log.Info("startProtocols: after wg.Add", "peer", p)
 		go func() {
-			defer p.wg.Done()
 
 			err := proto.Run(p, rw)
+			p.log.Info("startProtocols: after Run", "e", err, "peer", p)
 			if err == nil {
 				p.log.Debug(fmt.Sprintf("Protocol %s/%d returned", proto.Name, proto.Version))
 				err = errProtocolReturned
 			} else if err != io.EOF {
 				p.log.Debug(fmt.Sprintf("Protocol %s/%d failed", proto.Name, proto.Version), "err", err)
 			}
+
+			// #206 require wg.Done before protoErr <- err to prevent deadlock in protoErr <- err
+			p.wg.Done()
+
+			log.Info("startProtocols: after wg.Done", "peer", p)
+
 			p.protoErr <- err
 		}()
 	}

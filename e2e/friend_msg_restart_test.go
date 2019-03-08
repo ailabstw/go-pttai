@@ -443,7 +443,7 @@ func TestFriendMsgRestart(t *testing.T) {
 	assert.Equal(types.StatusPending, msg1_42.Status)
 
 	// 43. start-node
-	startNode(t, 0, 0)
+	startNode(t, 0, 0, false)
 
 	// wait 15 seconds
 

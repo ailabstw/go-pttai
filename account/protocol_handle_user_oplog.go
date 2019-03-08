@@ -153,7 +153,9 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 	pm.SyncNameCard(SyncUpdateNameCardMsg, updateNameCardIDs, peer)
 
 	// broadcast
-	pm.broadcastUserOplogsCore(toBroadcastLogs)
+	if isPending {
+		pm.broadcastUserOplogsCore(toBroadcastLogs)
+	}
 
 	return
 }

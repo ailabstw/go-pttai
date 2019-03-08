@@ -112,7 +112,7 @@ func readBody(res *http.Response, t *testing.T) ([]byte, error) {
 	return body, err
 }
 
-func startNode(t *testing.T, idx int, offsetSecond int64) {
+func startNode(t *testing.T, idx int, offsetSecond int64, isNewLog bool) {
 	if Ctxs[idx] != nil && Cancels[idx] != nil {
 		Cancels[idx]()
 		Ctxs[idx] = nil
@@ -146,9 +146,20 @@ func startNode(t *testing.T, idx int, offsetSecond int64) {
 		"--e2e",
 	)
 	filename := fmt.Sprintf("./test.out/log.err.%d.txt", idx)
-	stderrs[idx], _ = os.Create(filename)
+	var err error
+	if stderrs[idx] != nil {
+		stderrs[idx].Close()
+	}
+	if isNewLog {
+		stderrs[idx], _ = os.Create(filename)
+	} else {
+		stderrs[idx], err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			t.Errorf("unable to open log-filename: filename: %v e: %v", filename, err)
+		}
+	}
 	Nodes[idx].Stderr = stderrs[idx]
-	err := Nodes[idx].Start()
+	err = Nodes[idx].Start()
 	if err != nil {
 		t.Errorf("unable to start node: i: %v e: %v", idx, err)
 	}
@@ -181,7 +192,7 @@ func setupTest(t *testing.T) {
 	stderrs = make([]*os.File, NNodes)
 
 	for i := 0; i < NNodes; i++ {
-		startNode(t, i, 0)
+		startNode(t, i, 0, true)
 	}
 
 	seconds := 0

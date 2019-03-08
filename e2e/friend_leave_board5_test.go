@@ -856,7 +856,7 @@ func TestFriendLeaveBoard5(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// 32. start
-	startNode(t, 1, 0)
+	startNode(t, 1, 0, false)
 
 	time.Sleep(TimeSleepRestart)
 

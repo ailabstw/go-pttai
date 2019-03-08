@@ -211,6 +211,7 @@ func TestServerTaskScheduling(t *testing.T) {
 	}
 	srv.loopWG.Add(1)
 	go func() {
+		defer srv.loopWG.Done()
 		srv.run(tg)
 		close(returned)
 	}()
@@ -259,18 +260,21 @@ func TestServerManyTasks(t *testing.T) {
 	)
 	defer srv.Stop()
 	srv.loopWG.Add(1)
-	go srv.run(taskgen{
-		newFunc: func(running int, peers map[discover.NodeID]*Peer) []task {
-			start, end = end, end+maxActiveDialTasks+10
-			if end > len(alltasks) {
-				end = len(alltasks)
-			}
-			return alltasks[start:end]
-		},
-		doneFunc: func(tt task) {
-			done <- tt.(*testTask)
-		},
-	})
+	go func() {
+		defer srv.loopWG.Done()
+		srv.run(taskgen{
+			newFunc: func(running int, peers map[discover.NodeID]*Peer) []task {
+				start, end = end, end+maxActiveDialTasks+10
+				if end > len(alltasks) {
+					end = len(alltasks)
+				}
+				return alltasks[start:end]
+			},
+			doneFunc: func(tt task) {
+				done <- tt.(*testTask)
+			},
+		})
+	}()
 
 	doneset := make(map[int]bool)
 	timeout := time.After(2 * time.Second)

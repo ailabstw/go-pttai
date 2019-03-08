@@ -759,7 +759,12 @@ func (srv *Server) Start() (err error) {
 	}
 
 	srv.loopWG.Add(1)
-	go srv.run(dialer)
+	go func() {
+		defer srv.loopWG.Done()
+
+		srv.run(dialer)
+	}()
+
 	srv.running = true
 	return nil
 }
@@ -774,7 +779,11 @@ func (srv *Server) startListening() error {
 	srv.ListenAddr = laddr.String()
 	srv.listener = listener
 	srv.loopWG.Add(1)
-	go srv.listenLoop()
+	go func() {
+		defer srv.loopWG.Done()
+
+		srv.listenLoop()
+	}()
 	// Map the TCP listening port if NAT is configured.
 	if !laddr.IP.IsLoopback() && srv.NAT != nil {
 		srv.loopWG.Add(1)
@@ -795,10 +804,6 @@ type dialer interface {
 }
 
 func (srv *Server) run(dialstate dialer) {
-	defer func() {
-		srv.loopWG.Done()
-		log.Debug("run: done")
-	}()
 	var (
 		peers        = make(map[discover.NodeID]*Peer)
 		inboundCount = 0
@@ -1038,12 +1043,7 @@ type tempError interface {
 // listenLoop runs in its own goroutine and accepts
 // inbound connections.
 func (srv *Server) listenLoop() {
-	defer func() {
-		srv.loopWG.Done()
-		srv.log.Info("RLPx listener done")
-	}()
-
-	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener, srv.ntab))
+	srv.log.Info("srv.listenLoop: start", "self", srv.makeSelf(srv.listener, srv.ntab))
 
 	tokens := defaultMaxPendingPeers
 	if srv.MaxPendingPeers > 0 {

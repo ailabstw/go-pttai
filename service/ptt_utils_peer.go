@@ -281,6 +281,8 @@ func (p *BasePtt) RemovePeer(peer *PttPeer, isLocked bool) error {
 		defer p.peerLock.Unlock()
 	}
 
+	log.Info("RemovePeer: start", "peer", peer)
+
 	peerID := peer.GetID()
 
 	registeredPeer := p.GetPeer(peerID, true)
@@ -299,9 +301,12 @@ func (p *BasePtt) RemovePeer(peer *PttPeer, isLocked bool) error {
 		log.Error("unable to remove peer", "peer", peer, "e", err)
 	}
 
-	peer.Peer.Disconnect(p2p.DiscUselessPeer)
+	node := &discover.Node{ID: peer.ID()}
+	p.server.RemovePeer(node)
 
-	return err
+	log.Info("RemovePeer: done", "peer", peer)
+
+	return nil
 }
 
 /*
@@ -494,7 +499,7 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 		defer p.peerLock.Unlock()
 	}
 
-	log.Debug("RegisterPeerToEntities: start", "peer", peer)
+	log.Info("RegisterPeerToEntities: start", "peer", peer)
 
 	// register to all the existing entities.
 	p.entityLock.RLock()
@@ -517,7 +522,7 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer, isLocked bool) error {
 		}
 	}
 
-	log.Debug("RegisterPeerToEntities: done", "peer", peer)
+	log.Info("RegisterPeerToEntities: done", "peer", peer)
 
 	return nil
 }
@@ -575,7 +580,7 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer, isLocked bool) error
 		defer p.peerLock.Unlock()
 	}
 
-	log.Debug("UnregisterPeerFromEntities: start", "peer", peer)
+	log.Info("UnregisterPeerFromEntities: start", "peer", peer)
 
 	p.entityLock.RLock()
 	defer p.entityLock.RUnlock()
@@ -585,14 +590,16 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer, isLocked bool) error
 	for _, entity := range p.entities {
 		pm = entity.PM()
 
+		log.Info("UnregisterPeerFromEntities (in-for-loop): to pm.UnregisterPeer", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "peer", peer)
 		err = pm.UnregisterPeer(peer, false, true, true)
+		log.Info("UnregisterPeerFromEntities (in-for-loop): after pm.UnregisterPeer", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "peer", peer)
 		if err != nil {
 			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}
 		// peer.RegisterEntity(goEntity, fitPeerType)
 	}
 
-	log.Debug("UnregisterPeerFromEntities: done", "peer", peer)
+	log.Info("UnregisterPeerFromEntities: done", "peer", peer)
 
 	return nil
 }
@@ -656,28 +663,28 @@ func (p *BasePtt) dropAnyPeer(peerType PeerType, isLocked bool) error {
 
 	log.Debug("dropAnyPeer: start", "peerType", peerType)
 	if len(p.randomPeers) != 0 {
-		return p.dropAnyPeerCore(p.randomPeers)
+		return p.dropAnyPeerCore(p.randomPeers, true)
 	}
 	if peerType == PeerTypeRandom {
 		return p2p.DiscTooManyPeers
 	}
 
 	if len(p.pendingPeers) != 0 {
-		return p.dropAnyPeerCore(p.pendingPeers)
+		return p.dropAnyPeerCore(p.pendingPeers, true)
 	}
 	if peerType == PeerTypePending {
 		return p2p.DiscTooManyPeers
 	}
 
 	if len(p.memberPeers) != 0 {
-		return p.dropAnyPeerCore(p.memberPeers)
+		return p.dropAnyPeerCore(p.memberPeers, true)
 	}
 	if peerType == PeerTypeMember {
 		return p2p.DiscTooManyPeers
 	}
 
 	if len(p.importantPeers) != 0 {
-		return p.dropAnyPeerCore(p.importantPeers)
+		return p.dropAnyPeerCore(p.importantPeers, true)
 	}
 
 	if peerType == PeerTypeImportant {
@@ -685,7 +692,7 @@ func (p *BasePtt) dropAnyPeer(peerType PeerType, isLocked bool) error {
 	}
 
 	if len(p.hubPeers) != 0 {
-		return p.dropAnyPeerCore(p.hubPeers)
+		return p.dropAnyPeerCore(p.hubPeers, true)
 	}
 	if peerType == PeerTypeHub {
 		return p2p.DiscTooManyPeers
@@ -694,15 +701,25 @@ func (p *BasePtt) dropAnyPeer(peerType PeerType, isLocked bool) error {
 	return nil
 }
 
-func (p *BasePtt) dropAnyPeerCore(peers map[discover.NodeID]*PttPeer) error {
+func (p *BasePtt) dropAnyPeerCore(peers map[discover.NodeID]*PttPeer, isLocked bool) error {
+
+	if !isLocked {
+		p.peerLock.Lock()
+		defer p.peerLock.Unlock()
+	}
+
 	randIdx := mrand.Intn(len(peers))
 
 	i := 0
-	for eachPeerID, _ := range peers {
+
+looping:
+	for _, peer := range peers {
 		if i == randIdx {
-			node := &discover.Node{ID: eachPeerID}
+			log.Info("dropAnyPeerCore: to disconnect", "peer", peer, "i", i)
+
+			node := &discover.Node{ID: peer.ID()}
 			p.server.RemovePeer(node)
-			break
+			break looping
 		}
 
 		i++
@@ -787,7 +804,7 @@ func (p *BasePtt) checkDialEntity(peer *PttPeer) (Entity, error) {
 	}
 
 	p.entityLock.RLock()
-	p.entityLock.RUnlock()
+	defer p.entityLock.RUnlock()
 
 	entity := p.entities[*entityID]
 
@@ -816,32 +833,38 @@ func (p *BasePtt) ClosePeers() {
 	defer p.peerLock.RUnlock()
 
 	for _, peer := range p.myPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 
 	for _, peer := range p.hubPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 
 	for _, peer := range p.importantPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 
 	for _, peer := range p.memberPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 
 	for _, peer := range p.pendingPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 
 	for _, peer := range p.randomPeers {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
+		node := &discover.Node{ID: peer.ID()}
+		p.server.RemovePeer(node)
 		log.Debug("ClosePeers: disconnect", "peer", peer)
 	}
 }

@@ -43,7 +43,7 @@ func (p *BasePtt) HandleMessageWrapper(peer *PttPeer) error {
 	err = msg.Decode(data)
 	if err != nil {
 		log.Error("HandleMessageWrapper: unable to decode data", "peer", peer, "e", err)
-		return nil
+		return err
 	}
 
 	err = p.HandleMessage(CodeType(msg.Code), data, peer)

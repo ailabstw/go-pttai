@@ -200,15 +200,21 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		reason     DiscReason // sent to the peer
 	)
 	p.wg.Add(2)
-	go p.readLoop(readErr)
-	go p.pingLoop()
+	go func() {
+		defer p.wg.Done()
+		p.readLoop(readErr)
+	}()
+	go func() {
+		defer p.wg.Done()
+		p.pingLoop()
+	}()
 
 	// Start all protocol handlers.
 	log.Debug("Peer.run: to writeStart")
 	writeStart <- struct{}{}
 	log.Debug("Peer.run: after writeStart")
 	p.startProtocols(writeStart, writeErr)
-	log.Debug("Peer.run: after startProtocols")
+	log.Info("Peer.run: to for-loop", "p", p)
 
 	// Wait for an error or disconnect.
 loop:
@@ -246,16 +252,16 @@ loop:
 	close(p.closed)
 	p.rw.close(reason)
 
-	log.Debug("Peer.run: to Wait")
+	log.Info("Peer.run (close): to Wait", "p", p)
 	p.wg.Wait()
-	log.Debug("Peer.run: after Wait")
+	log.Info("Peer.run (close): after Wait", "p", p)
 	return remoteRequested, err
 }
 
 func (p *Peer) pingLoop() {
 	ping := time.NewTimer(pingInterval)
-	defer p.wg.Done()
 	defer ping.Stop()
+
 	for {
 		select {
 		case <-ping.C:
@@ -271,7 +277,6 @@ func (p *Peer) pingLoop() {
 }
 
 func (p *Peer) readLoop(errc chan<- error) {
-	defer p.wg.Done()
 	for {
 		msg, err := p.rw.ReadMsg()
 		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
@@ -363,7 +368,6 @@ outer:
 }
 
 func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error) {
-	p.wg.Add(len(p.running))
 	for _, proto := range p.running {
 		proto := proto
 		proto.closed = p.closed
@@ -374,7 +378,11 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 			rw = newMsgEventer(rw, p.events, p.ID(), proto.Name)
 		}
 		p.log.Debug(fmt.Sprintf("Starting protocol %s/%d", proto.Name, proto.Version))
+
+		p.wg.Add(1)
 		go func() {
+			defer p.wg.Done()
+
 			err := proto.Run(p, rw)
 			if err == nil {
 				p.log.Debug(fmt.Sprintf("Protocol %s/%d returned", proto.Name, proto.Version))
@@ -383,7 +391,6 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 				p.log.Debug(fmt.Sprintf("Protocol %s/%d failed", proto.Name, proto.Version), "err", err)
 			}
 			p.protoErr <- err
-			p.wg.Done()
 		}()
 	}
 }
@@ -425,7 +432,7 @@ func (rw *protoRW) WriteMsg(msg Msg) (err error) {
 		// as well but we don't want to rely on that.
 		rw.werr <- err
 	case <-rw.closed:
-		err = fmt.Errorf("shutting down")
+		err = ErrPeerShutdown
 	}
 	return err
 }

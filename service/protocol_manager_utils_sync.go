@@ -45,7 +45,11 @@ looping:
 			err = pm.Sync(peer)
 			log.Debug("PMSync: NewPeerCh: after pm.Sync", "entity", pm.Entity(), "peer", peer, "e", err)
 			if err != nil {
-				log.Error("unable to Sync after newPeer", "e", err, "peer", peer)
+				log.Error("unable to Sync after newPeer", "e", err, "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+				if err == p2p.ErrPeerShutdown {
+					pm.UnregisterPeer(peer, false, true, false)
+				}
 			}
 		case <-pm.ForceSync():
 			log.Debug("PMSync: ForceSync: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
@@ -60,7 +64,10 @@ looping:
 			err = pm.Sync(peer)
 			log.Debug("PMSync: ForceSync: after Sync", "entity", pm.Entity(), "peer", peer)
 			if err != nil {
-				log.Error("unable to Sync after forceSync", "e", err, "peer", peer)
+				log.Error("unable to Sync after forceSync", "e", err, "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+				if err == p2p.ErrPeerShutdown {
+					pm.UnregisterPeer(peer, false, true, false)
+				}
 			}
 
 		case <-forceSyncTicker.C:
@@ -75,10 +82,13 @@ looping:
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
 			if err != nil {
-				log.Error("unable to Sync after forceSyncTicker", "e", err, "peer", peer)
+				log.Error("unable to Sync after forceSyncTicker", "e", err, "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+				if err == p2p.ErrPeerShutdown {
+					pm.UnregisterPeer(peer, false, true, false)
+				}
 			}
 		case <-pm.QuitSync():
-			log.Debug("PMSync: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Info("PMSync: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 			err = p2p.DiscQuitting
 			break looping
 		}

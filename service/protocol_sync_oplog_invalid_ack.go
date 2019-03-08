@@ -68,7 +68,7 @@ func (pm *BaseProtocolManager) SyncOplogInvalidAck(
 	pm.SendDataToPeer(invalidOplogMsg, data, peer)
 
 	myID := pm.Ptt().GetMyEntity().GetID()
-	if peer.PeerType != PeerTypeMe && !pm.IsMaster(myID, false) {
+	if peer.PeerType != PeerTypeMe && !pm.IsMaster(myID, false) && !pm.IsMaster(peer.UserID, false) {
 
 		pm.UnregisterPeer(peer, false, false, false)
 	}

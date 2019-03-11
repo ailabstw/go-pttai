@@ -162,3 +162,33 @@ AWS
 6. ssh -L 9774:localhost:9774 ec2-user@[IP]
 7. open browser and connect to http://localhost:9774
 
+
+AWS Elastic Beanstalk (On-click deploy)
+-----
+
+1. Setup **Key Pair** in [AWS ec2 console](https://console.aws.amazon.com/ec2/home#KeyPairs). (for SSH use)
+
+    Please remeber where you save the private key in your computer, you will need it at the last step.
+
+2. [Click this link](https://console.aws.amazon.com/elasticbeanstalk/?region=ap-northeast-1#/newApplication?applicationName=My.P.Me&platform=Multi-container%20Docker&sourceBundleUrl=https%3A%2F%2Fs3-ap-northeast-1.amazonaws.com%2Fptt.ai%2Fpme.zip&environmentType=SingleInstance&tierName=WebServer&instanceType=m1.small)
+
+    *This will deploy the pre-build [p.me docker image](https://hub.docker.com/r/secret104278/pme) for you*
+
+3. Click choice option `Upload your code`
+
+    (Note: the code is already uploaded for you, you only have to click this option. This seems to be a bug of AWS.)
+
+![](https://i.imgur.com/UDcDEIJ.png)
+
+4. Click button `Review and Launch`
+
+5. Click `Modify` in the `Security` section
+![](https://i.imgur.com/yqiKjWw.png)
+
+6. Chose the key pair you just setup in `EC2 key pair`，then `Save`
+
+7. Click button `Create app`
+
+8. ssh -L 14779:localhost:14779 ec2-user@[IP]
+9. ssh -L 9774:localhost:9774 ec2-user@[IP]
+10. open browser and connect to http://localhost:9774

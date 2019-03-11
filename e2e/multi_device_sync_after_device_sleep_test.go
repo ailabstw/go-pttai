@@ -124,7 +124,7 @@ func TestMultiDeviceSyncAfterDeviceSleep(t *testing.T) {
 	assert.NotEqual(nil, err0_5_2)
 
 	// 8.4 start-node
-	startNode(t, 0, 0)
+	startNode(t, 0, 0, false)
 
 	// wait 15 seconds
 	time.Sleep(15 * time.Second)

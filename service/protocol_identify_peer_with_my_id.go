@@ -39,7 +39,8 @@ func (p *BasePtt) IdentifyPeerWithMyID(peer *PttPeer) error {
 
 	myID := p.myEntity.GetID()
 
-	salt, err := types.NewSalt()
+	peer.ResetInitID()
+	salt, err := peer.InitID(myID, p.quitSync)
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,6 @@ func (p *BasePtt) IdentifyPeerWithMyID(peer *PttPeer) error {
 	}
 
 	peer.IDEntityID = nil
-	peer.InitID(myID, salt, p.quitSync)
 
 	log.Debug("IdentifyPeerWithMyID: to SendDataToPeer", "peer", peer)
 

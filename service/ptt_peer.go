@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 )
@@ -46,6 +47,8 @@ type PttPeer struct {
 	IDEntityID  *types.PttID
 	IDChallenge *types.Salt
 	IDChan      chan struct{}
+
+	IsToClose bool
 }
 
 func NewPttPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, ptt *BasePtt) (*PttPeer, error) {
@@ -162,17 +165,25 @@ func (p *PttPeer) SendData(data *PttData) error {
 /*
 InitID initializes info for identifying user-id
 */
-func (p *PttPeer) InitID(entityID *types.PttID, salt *types.Salt, quitSync chan struct{}) error {
+func (p *PttPeer) InitID(entityID *types.PttID, quitSync chan struct{}) (*types.Salt, error) {
 	p.lockID.Lock()
 	defer p.lockID.Unlock()
 
 	if p.UserID != nil {
-		return types.ErrAlreadyExists
+		return nil, types.ErrAlreadyExists
 	}
 
 	if p.IDEntityID != nil {
-		return types.ErrAlreadyExists
+		log.Error("InitID: IDEntityID already set", "peer", p, "IDEntityID", p.IDEntityID, "entityID", entityID)
+		return nil, types.ErrAlreadyExists
 	}
+
+	// 1. generate salt
+	salt, err := types.NewSalt()
+	if err != nil {
+		return nil, err
+	}
+
 	p.IDEntityID = entityID
 	p.IDChallenge = salt
 
@@ -189,7 +200,15 @@ func (p *PttPeer) InitID(entityID *types.PttID, salt *types.Salt, quitSync chan 
 		}
 	}(p, entityID)
 
-	return nil
+	return salt, nil
+}
+
+func (p *PttPeer) ResetInitID() {
+	p.lockID.Lock()
+	defer p.lockID.Unlock()
+
+	p.IDEntityID = nil
+	p.IDChallenge = nil
 }
 
 /*
@@ -204,6 +223,7 @@ func (p *PttPeer) FinishID(entityID *types.PttID) {
 	}
 
 	p.IDEntityID = nil
+	p.IDChallenge = nil
 }
 
 func (p *PttPeer) String() string {

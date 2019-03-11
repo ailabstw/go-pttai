@@ -751,12 +751,12 @@ func TestMultiDevice3ForceSyncArticle3(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// 48. restart t0
-	startNode(t, 0, offsetSecond)
+	startNode(t, 0, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 
 	// 48.1. restart t1
-	startNode(t, 1, offsetSecond)
+	startNode(t, 1, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 

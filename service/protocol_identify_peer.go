@@ -74,14 +74,8 @@ func (pm *BaseProtocolManager) HandleIdentifyPeer(dataBytes []byte, peer *PttPee
 
 func (p *BasePtt) IdentifyPeer(entityID *types.PttID, quitSync chan struct{}, peer *PttPeer) (*IdentifyPeer, error) {
 
-	// 1. generate salt
-	salt, err := types.NewSalt()
-	if err != nil {
-		return nil, err
-	}
-
 	// 2. init info in peer
-	err = peer.InitID(entityID, salt, quitSync)
+	salt, err := peer.InitID(entityID, quitSync)
 	if err != nil {
 		return nil, err
 	}

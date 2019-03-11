@@ -435,7 +435,7 @@ func TestFriendForceSyncMember(t *testing.T) {
 	// 22.0 get merkle
 
 	// 21. restart t0
-	startNode(t, 0, offsetSecond)
+	startNode(t, 0, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 

@@ -227,9 +227,9 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 		if err != nil {
 			return
 		}
-	}
 
-	pm.broadcastBoardOplogsCore(toBroadcastLogs)
+		pm.broadcastBoardOplogsCore(toBroadcastLogs)
+	}
 
 	// post-delete-board
 	if !isPending && len(info.BoardInfo) > 0 {

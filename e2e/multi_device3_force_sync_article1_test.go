@@ -739,7 +739,7 @@ func TestMultiDevice3ForceSyncArticle1(t *testing.T) {
 	assert.Equal(article1, dataGetArticleBlockList2_47.Result[1].Buf)
 
 	// 48. restart t0
-	startNode(t, 0, offsetSecond)
+	startNode(t, 0, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 

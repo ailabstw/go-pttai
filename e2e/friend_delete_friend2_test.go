@@ -350,7 +350,7 @@ func TestFriendDeleteFriend2(t *testing.T) {
 	time.Sleep(TimeSleepRestart)
 
 	// 13.1 t1 restart
-	startNode(t, 1, 0)
+	startNode(t, 1, 0, false)
 
 	time.Sleep(TimeSleepRestart)
 

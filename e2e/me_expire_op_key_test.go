@@ -211,7 +211,7 @@ func TestMeExpireOpKey(t *testing.T) {
 
 	// 12. restart
 	offsetSecond := int64(86400 * 8)
-	startNode(t, 0, offsetSecond)
+	startNode(t, 0, offsetSecond, false)
 
 	// 13. test-error
 	err0_13 := testError("http://127.0.0.1:9450")

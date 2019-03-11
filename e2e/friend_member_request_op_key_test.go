@@ -396,7 +396,7 @@ func TestFriendMemberRequestOpKey(t *testing.T) {
 	offsetSecond := int64(86400 * 10)
 
 	// 20. start
-	startNode(t, 1, offsetSecond)
+	startNode(t, 1, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 
@@ -411,7 +411,7 @@ func TestFriendMemberRequestOpKey(t *testing.T) {
 	assert.Equal(0, len(dataGetKeyInfos1_21.Result))
 
 	// 22. start
-	startNode(t, 0, offsetSecond)
+	startNode(t, 0, offsetSecond, false)
 
 	time.Sleep(TimeSleepRestart)
 

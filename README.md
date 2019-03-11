@@ -189,8 +189,6 @@ AWS Elastic Beanstalk (On-click deploy)
 
 7. Click button `Create app`
 
-8. wait for application to deploy, then execute the following command to run the script to setup your login password.
-
-```
-./setup_aws_ssh.sh
-```
+8. ssh -L 14779:localhost:14779 ec2-user@[IP]
+9. ssh -L 9774:localhost:9774 ec2-user@[IP]
+10. open browser and connect to http://localhost:9774

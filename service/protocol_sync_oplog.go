@@ -133,7 +133,7 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 	}
 
 	// 2. validate merkle tree
-	diffTS, isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime)
+	diffTS, isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime, pm, merkle)
 	log.Debug("HandleSyncOplog: after validateMerkleTree", "isValid", isValid, "entity", pm.Entity().GetID())
 	if !isValid {
 		return pm.SyncOplogInvalidAck(

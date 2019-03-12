@@ -109,7 +109,7 @@ func NewProtocolManager(profile *Profile, ptt pkgservice.Ptt) (*ProtocolManager,
 		return nil, err
 	}
 
-	userOplogMerkle, err := pkgservice.NewMerkle(DBUserOplogPrefix, DBUserMerkleOplogPrefix, profile.ID, dbAccount)
+	userOplogMerkle, err := pkgservice.NewMerkle(DBUserOplogPrefix, DBUserMerkleOplogPrefix, profile.ID, dbAccount, "user")
 	if err != nil {
 		return nil, err
 	}

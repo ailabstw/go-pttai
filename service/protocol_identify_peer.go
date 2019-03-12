@@ -34,14 +34,14 @@ IdentifyPeer identifies the peer by providing the op-key of the pm (requester)
 	3. send data to peer
 */
 func (pm *BaseProtocolManager) IdentifyPeer(peer *PttPeer) {
-	log.Debug("IdentifyPeer: start", "entity", pm.Entity().Name(), "service", pm.Entity().Service().Name(), "nodeID", peer.ID(), "userID", peer.UserID)
+	log.Debug("IdentifyPeer: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "nodeID", peer.ID(), "userID", peer.UserID)
 
 	if peer.UserID != nil {
 		return
 	}
 
 	ptt := pm.Ptt()
-	data, err := ptt.IdentifyPeer(pm.Entity().GetID(), pm.QuitSync(), peer)
+	data, err := ptt.IdentifyPeer(pm.Entity().GetID(), pm.QuitSync(), peer, false)
 	if err != nil {
 		log.Warn("IdentifyPeer: unable to ptt.IdentifyPeer", "e", err, "p", peer, "userID", peer.UserID)
 		return
@@ -72,10 +72,10 @@ func (pm *BaseProtocolManager) HandleIdentifyPeer(dataBytes []byte, peer *PttPee
  * Ptt
  **********/
 
-func (p *BasePtt) IdentifyPeer(entityID *types.PttID, quitSync chan struct{}, peer *PttPeer) (*IdentifyPeer, error) {
+func (p *BasePtt) IdentifyPeer(entityID *types.PttID, quitSync chan struct{}, peer *PttPeer, isForce bool) (*IdentifyPeer, error) {
 
 	// 2. init info in peer
-	salt, err := peer.InitID(entityID, quitSync)
+	salt, err := peer.InitID(entityID, quitSync, isForce)
 	if err != nil {
 		return nil, err
 	}

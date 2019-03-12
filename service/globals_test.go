@@ -374,7 +374,7 @@ func setupTest(t *testing.T) {
 	tDefaultOplog2, _ = NewOplog(tDefaultID, tDefaultTimestamp2, tMyID, tDefaultOpType, nil, tDBOplog, tDefaultID, tDBOplogPrefix, tDBOplogIdxPrefix, tDBOplogMerklePrefix, tDBLock)
 	tDefaultOplog2.Sign(tKeyInfoMe)
 	tDefaultOplog2.MasterLogID = tUserIDMe
-	tDefaultMerkle, _ = NewMerkle(tDBOplogPrefix, tDBOplogMerklePrefix, tDefaultID, tDBOplog)
+	tDefaultMerkle, _ = NewMerkle(tDBOplogPrefix, tDBOplogMerklePrefix, tDefaultID, tDBOplog, "default")
 
 	tDefaultSignKey2, _ = crypto.ToECDSA(tDefaultSignKeyBytes2)
 	tDefaultSignHash2 := crypto.PubkeyToAddress(tDefaultSignKey2.PublicKey)

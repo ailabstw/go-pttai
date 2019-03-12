@@ -165,12 +165,17 @@ func (p *PttPeer) SendData(data *PttData) error {
 /*
 InitID initializes info for identifying user-id
 */
-func (p *PttPeer) InitID(entityID *types.PttID, quitSync chan struct{}) (*types.Salt, error) {
+func (p *PttPeer) InitID(entityID *types.PttID, quitSync chan struct{}, isForce bool) (*types.Salt, error) {
 	p.lockID.Lock()
 	defer p.lockID.Unlock()
 
 	if p.UserID != nil {
 		return nil, types.ErrAlreadyExists
+	}
+
+	if isForce && p.IDEntityID != nil {
+		p.IDEntityID = nil
+		p.IDChallenge = nil
 	}
 
 	if p.IDEntityID != nil {

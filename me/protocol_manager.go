@@ -108,7 +108,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 	}
 
 	myID := myInfo.ID
-	meOplogMerkle, err := pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbMe)
+	meOplogMerkle, err := pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbMe, "me")
 	if err != nil {
 		return nil, err
 	}

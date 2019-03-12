@@ -40,7 +40,7 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		return nil, err
 	}
 
-	friendOplogMerkle, err := pkgservice.NewMerkle(DBFriendOplogPrefix, DBFriendMerkleOplogPrefix, f.ID, dbFriend)
+	friendOplogMerkle, err := pkgservice.NewMerkle(DBFriendOplogPrefix, DBFriendMerkleOplogPrefix, f.ID, dbFriend, "friend")
 	if err != nil {
 		return nil, err
 	}

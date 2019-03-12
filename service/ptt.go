@@ -38,7 +38,7 @@ type Ptt interface {
 	ErrChan() *types.Chan
 
 	// peers
-	IdentifyPeer(entityID *types.PttID, quitSync chan struct{}, peer *PttPeer) (*IdentifyPeer, error)
+	IdentifyPeer(entityID *types.PttID, quitSync chan struct{}, peer *PttPeer, isForce bool) (*IdentifyPeer, error)
 	IdentifyPeerAck(challenge *types.Salt, peer *PttPeer) (*IdentifyPeerAck, error)
 	HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error
 

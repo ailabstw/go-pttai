@@ -39,8 +39,7 @@ func (p *BasePtt) IdentifyPeerWithMyID(peer *PttPeer) error {
 
 	myID := p.myEntity.GetID()
 
-	peer.ResetInitID()
-	salt, err := peer.InitID(myID, p.quitSync)
+	salt, err := peer.InitID(myID, p.quitSync, true)
 	if err != nil {
 		return err
 	}

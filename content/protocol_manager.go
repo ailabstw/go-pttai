@@ -97,7 +97,7 @@ func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) 
 		return nil, err
 	}
 
-	boardOplogMerkle, err := pkgservice.NewMerkle(DBBoardOplogPrefix, DBBoardMerkleOplogPrefix, b.ID, dbBoard)
+	boardOplogMerkle, err := pkgservice.NewMerkle(DBBoardOplogPrefix, DBBoardMerkleOplogPrefix, b.ID, dbBoard, "board")
 	if err != nil {
 		return nil, err
 	}

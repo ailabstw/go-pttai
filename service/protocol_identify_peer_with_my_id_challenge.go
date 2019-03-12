@@ -27,7 +27,10 @@ import (
 IdentifyPeerWithMyIDChallenge requests challenge to make sure the user-id (acker)
 */
 func (p *BasePtt) IdentifyPeerWithMyIDChallenge(userID *types.PttID, peer *PttPeer) error {
-	data, err := p.IdentifyPeer(userID, p.quitSync, peer)
+
+	log.Debug("IdentifyPeerWithMyIDChallenge: to IdentifyPeer", "userID", userID, "peer", peer)
+
+	data, err := p.IdentifyPeer(userID, p.quitSync, peer, true)
 	if err != nil {
 		return err
 	}

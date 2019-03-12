@@ -53,9 +53,11 @@ type Merkle struct {
 
 	lockToUpdateTS sync.Mutex
 	toUpdateTS     map[int64]bool
+
+	Name string
 }
 
-func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttID, db *pttdb.LDBBatch) (*Merkle, error) {
+func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttID, db *pttdb.LDBBatch, name string) (*Merkle, error) {
 
 	prefixIDBytes := prefixID[:]
 
@@ -84,6 +86,8 @@ func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttI
 		GenerateSeconds:       GenerateOplogMerkleTreeSeconds,
 		ExpireGenerateSeconds: ExpireGenerateOplogMerkleTreeSeconds,
 		toUpdateTS:            make(map[int64]bool),
+
+		Name: name,
 	}
 
 	lastGenerateTS, err := m.GetGenerateTime()
@@ -552,7 +556,15 @@ func (m *Merkle) GetMerkleIterByKey(startKey []byte, level MerkleTreeLevel, list
 	return m.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
-func ValidateMerkleTree(myNodes []*MerkleNode, theirNodes []*MerkleNode, ts types.Timestamp) (types.Timestamp, bool) {
+func ValidateMerkleTree(
+	myNodes []*MerkleNode,
+	theirNodes []*MerkleNode,
+	ts types.Timestamp,
+
+	pm ProtocolManager,
+	merkle *Merkle,
+
+) (types.Timestamp, bool) {
 	myNodes = validateMerkleTreeTrimNodes(myNodes, ts)
 	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts)
 
@@ -571,7 +583,7 @@ func ValidateMerkleTree(myNodes []*MerkleNode, theirNodes []*MerkleNode, ts type
 	i := 0
 	for pMyNode, pTheirNode := myNodes, theirNodes; i < lenMyNodes && i < lenTheirNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
 		if !reflect.DeepEqual(pMyNode[0].Addr, pTheirNode[0].Addr) {
-			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0])
+			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0], "name", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 
 			diffTS = pMyNode[0].UpdateTS
 			if pTheirNode[0].UpdateTS.IsLess(ts) {

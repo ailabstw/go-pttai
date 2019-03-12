@@ -18,7 +18,6 @@ package service
 
 import (
 	"encoding/json"
-	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
@@ -35,12 +34,6 @@ IdentifyPeerWithMyIDChallengeAck acks IdentifyPeerWithMyIDChallenge (requester)
 func (p *BasePtt) IdentifyPeerWithMyIDChallengeAck(data *IdentifyPeer, peer *PttPeer) error {
 	if p.myEntity == nil {
 		return ErrInvalidEntity
-	}
-
-	myID := p.myEntity.GetID()
-	log.Debug("IdentifyPeerWithMyIDChallengeAck: to compare IDEntityID", "IDEntityID", peer.IDEntityID, "myID", myID)
-	if !reflect.DeepEqual(peer.IDEntityID, myID) {
-		return nil
 	}
 
 	peerAckData, err := p.IdentifyPeerAck(data.Challenge, peer)

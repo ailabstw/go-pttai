@@ -498,7 +498,7 @@ func NewBaseProtocolManager(
 	}
 	dbMasterPrefix := append(DBMasterPrefix, entityID[:]...)
 	dbMasterIdxPrefix := append(DBMasterIdxPrefix, entityID[:]...)
-	masterMerkle, err := NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, entityID, db)
+	masterMerkle, err := NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, entityID, db, "master")
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +510,7 @@ func NewBaseProtocolManager(
 	}
 	dbMemberPrefix := append(DBMemberPrefix, entityID[:]...)
 	dbMemberIdxPrefix := append(DBMemberIdxPrefix, entityID[:]...)
-	memberMerkle, err := NewMerkle(DBMemberOplogPrefix, DBMemberMerkleOplogPrefix, entityID, db)
+	memberMerkle, err := NewMerkle(DBMemberOplogPrefix, DBMemberMerkleOplogPrefix, entityID, db, "member")
 	if err != nil {
 		return nil, err
 	}

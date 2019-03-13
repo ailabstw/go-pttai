@@ -121,7 +121,7 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogAck(
 
 	myNodes = pm.handleSyncOplogAckFilterTS(myNodes, data.StartTS, data.EndTS)
 
-	myNewKeys, theirNewKeys, err := MergeMerkleNodeKeys(myNodes, data.Nodes)
+	myNewKeys, theirNewKeys, err := MergeMerkleKeys(myNodes, data.Nodes)
 	if err != nil {
 		return err
 	}

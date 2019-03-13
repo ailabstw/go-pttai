@@ -507,6 +507,7 @@ func (o *BaseOplog) DBPrefixMaster() []byte {
 MarshalKey: prefixID:TS:OplogID:Op
 */
 func (o *BaseOplog) MarshalMerkleKey() ([]byte, error) {
+	// XXX the ts in Key in MerkleTreeLevelNow is the same as UpdateTS
 	marshaledTS, err := o.UpdateTS.Marshal()
 	if err != nil {
 		return nil, err

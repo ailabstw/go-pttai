@@ -59,11 +59,13 @@ func (pm *BaseProtocolManager) SyncOplogAck(
 
 	offsetHourTS, _ := myToSyncTime.ToHRTimestamp()
 
-	err := pm.ForceSyncOplogAck(toSyncTime, offsetHourTS, merkle, forceSyncOplogAckMsg, peer)
-	log.Debug("SyncOplogAck: after ForceSyncOplogAck", "toSyncTime", toSyncTime, "offsetHourTS", offsetHourTS, "e", err, "entity", pm.Entity().GetID())
-	if err != nil {
-		return err
-	}
+	/*
+		err := pm.ForceSyncOplogAck(toSyncTime, offsetHourTS, merkle, forceSyncOplogAckMsg, peer)
+		log.Debug("SyncOplogAck: after ForceSyncOplogAck", "toSyncTime", toSyncTime, "offsetHourTS", offsetHourTS, "e", err, "entity", pm.Entity().GetID())
+		if err != nil {
+			return err
+		}
+	*/
 
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -260,8 +262,8 @@ func (pm *BaseProtocolManager) HandleSyncOplogAck(
 
 	myNodes = pm.handleSyncOplogAckFilterTS(myNodes, data.StartTS, data.EndTS)
 
-	myNewKeys, theirNewKeys, err := MergeMerkleNodeKeys(myNodes, data.Nodes)
-	log.Debug("HandleSyncOplogAck: after MergeMerkleNodeKeys", "myNewKeys", myNewKeys, "theirNewKeys", theirNewKeys, "myNodes", myNodes, "startTS", data.StartTS, "endTS", data.EndTS, "e", err, "entity", pm.Entity().GetID())
+	myNewKeys, theirNewKeys, err := MergeMerkleKeys(myNodes, data.Nodes)
+	log.Debug("HandleSyncOplogAck: after MergeMerkleNodeKeys", "myNewKeys", myNewKeys, "theirNewKeys", theirNewKeys, "myNodes", myNodes, "startTS", data.StartTS, "endTS", data.EndTS, "e", err, "merkle", merkle.Name, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err
 	}

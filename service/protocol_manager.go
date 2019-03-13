@@ -124,7 +124,10 @@ type ProtocolManager interface {
 
 	HandleForceSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
-	HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByMerkle(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMasterOplogInvalid(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error
@@ -154,7 +157,10 @@ type ProtocolManager interface {
 
 	HandleForceSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
-	HandleSyncMemberOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByMerkle(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMemberOplogInvalid(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error

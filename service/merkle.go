@@ -17,8 +17,10 @@
 package service
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 	"sync"
@@ -50,6 +52,11 @@ type Merkle struct {
 	LastFailSyncTS               types.Timestamp
 	GenerateSeconds              time.Duration
 	ExpireGenerateSeconds        int64
+
+	lockIsBusyForceSync sync.RWMutex
+	isBusyForceSync     bool
+
+	forceSync chan struct{}
 
 	lockToUpdateTS sync.Mutex
 	toUpdateTS     map[int64]bool
@@ -85,7 +92,10 @@ func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttI
 		db:                    db,
 		GenerateSeconds:       GenerateOplogMerkleTreeSeconds,
 		ExpireGenerateSeconds: ExpireGenerateOplogMerkleTreeSeconds,
-		toUpdateTS:            make(map[int64]bool),
+
+		forceSync: make(chan struct{}),
+
+		toUpdateTS: make(map[int64]bool),
 
 		Name: name,
 	}
@@ -187,6 +197,7 @@ func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, n
 	}
 
 	// 3. marshal-key
+	// XXX the ts in Key is the offset-ts, not the update-ts
 	theKey, err := m.MarshalKey(level, ts)
 	if err != nil {
 		return types.ZeroTimestamp, err
@@ -217,6 +228,29 @@ func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, n
 	}
 
 	return newestTS, nil
+}
+
+func (m *Merkle) GetNodeByLevelTS(level MerkleTreeLevel, ts types.Timestamp) (*MerkleNode, error) {
+
+	if level == MerkleTreeLevelNow {
+		return nil, ErrInvalidMerkle
+	}
+
+	key, err := m.MarshalKey(level, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := m.db.DB().Get(key)
+	if err != nil {
+		return nil, err
+	}
+	node := &MerkleNode{}
+	err = node.Unmarshal(val)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
 }
 
 func (m *Merkle) SaveGenerateTime(ts types.Timestamp) error {
@@ -556,63 +590,6 @@ func (m *Merkle) GetMerkleIterByKey(startKey []byte, level MerkleTreeLevel, list
 	return m.db.DB().NewIteratorWithPrefix(startKey, prefix, listOrder)
 }
 
-func ValidateMerkleTree(
-	myNodes []*MerkleNode,
-	theirNodes []*MerkleNode,
-	ts types.Timestamp,
-
-	pm ProtocolManager,
-	merkle *Merkle,
-
-) (types.Timestamp, bool) {
-	myNodes = validateMerkleTreeTrimNodes(myNodes, ts)
-	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts)
-
-	lenMyNodes := len(myNodes)
-	lenTheirNodes := len(theirNodes)
-
-	/*
-		if lenMyNodes != lenTheirNodes {
-			log.Error("ValidateMerkleTree: len", "ts", ts, "lenMyNodes", lenMyNodes, "lenTheirNodes", lenTheirNodes)
-			return false
-		}
-	*/
-
-	var diffTS types.Timestamp
-
-	i := 0
-	for pMyNode, pTheirNode := myNodes, theirNodes; i < lenMyNodes && i < lenTheirNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
-		if !reflect.DeepEqual(pMyNode[0].Addr, pTheirNode[0].Addr) {
-			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0], "name", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
-
-			diffTS = pMyNode[0].UpdateTS
-			if pTheirNode[0].UpdateTS.IsLess(ts) {
-				diffTS = pTheirNode[0].UpdateTS
-			}
-			return diffTS, false
-		}
-	}
-
-	if i < lenMyNodes {
-		return myNodes[i].UpdateTS, false
-	}
-
-	if i < lenTheirNodes {
-		return theirNodes[i].UpdateTS, false
-	}
-
-	return types.ZeroTimestamp, true
-}
-
-func validateMerkleTreeTrimNodes(nodes []*MerkleNode, ts types.Timestamp) []*MerkleNode {
-	nNodes := len(nodes)
-	idx := sort.Search(nNodes, func(i int) bool {
-		return ts.IsLessEqual(nodes[i].UpdateTS)
-	})
-
-	return nodes[:idx]
-}
-
 func (m *Merkle) Clean() {
 	var key []byte
 
@@ -717,7 +694,7 @@ func (m *Merkle) SetUpdateTS(ts types.Timestamp) error {
 	m.lockToUpdateTS.Lock()
 	defer m.lockToUpdateTS.Unlock()
 
-	key := m.MarshalToUpdateTSKey(ts)
+	key := m.MarshalToUpdateTSKey(hrTS)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 
@@ -736,11 +713,11 @@ func (m *Merkle) SetUpdateTS2(ts types.Timestamp, ts2 types.Timestamp) error {
 	m.toUpdateTS[hrTS.Ts] = true
 	m.toUpdateTS[hrTS2.Ts] = true
 
-	key := m.MarshalToUpdateTSKey(ts)
+	key := m.MarshalToUpdateTSKey(hrTS)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 
-	key = m.MarshalToUpdateTSKey(ts2)
+	key = m.MarshalToUpdateTSKey(hrTS2)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 
@@ -868,4 +845,382 @@ func (m *Merkle) ResetUpdatingTSList() error {
 	m.db.DB().Delete(key)
 
 	return nil
+}
+
+func (m *Merkle) ForceSync() chan struct{} {
+	return m.forceSync
+}
+
+func (m *Merkle) TryForceSync(pm ProtocolManager) error {
+	err := m.TrySetBusyForceSync()
+	log.Debug("TryForceSync: after TrySetBusyForceSync", "e", err, "merkle", m.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	if err != nil {
+		return err
+	}
+
+	m.forceSync <- struct{}{}
+
+	m.ResetBusyForceSync()
+
+	log.Debug("TryForceSync: done", "merkle", m.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	return nil
+}
+
+func (m *Merkle) TrySetBusyForceSync() error {
+	m.lockIsBusyForceSync.Lock()
+	defer m.lockIsBusyForceSync.Unlock()
+
+	if m.isBusyForceSync {
+		return ErrBusy
+	}
+
+	m.isBusyForceSync = true
+
+	return nil
+}
+
+func (m *Merkle) ResetBusyForceSync() {
+	m.lockIsBusyForceSync.Lock()
+	defer m.lockIsBusyForceSync.Unlock()
+
+	m.isBusyForceSync = false
+}
+
+func ValidateMerkleTree(
+	myNodes []*MerkleNode,
+	theirNodes []*MerkleNode,
+	ts types.Timestamp,
+
+	pm ProtocolManager,
+	merkle *Merkle,
+
+) (types.Timestamp, bool) {
+	myNodes = validateMerkleTreeTrimNodes(myNodes, ts, pm, merkle)
+	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts, pm, merkle)
+
+	lenMyNodes := len(myNodes)
+	lenTheirNodes := len(theirNodes)
+
+	/*
+		if lenMyNodes != lenTheirNodes {
+			log.Error("ValidateMerkleTree: len", "ts", ts, "lenMyNodes", lenMyNodes, "lenTheirNodes", lenTheirNodes)
+			return false
+		}
+	*/
+
+	var diffTS types.Timestamp
+
+	i := 0
+	for pMyNode, pTheirNode := myNodes, theirNodes; i < lenMyNodes && i < lenTheirNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
+		if !reflect.DeepEqual(pMyNode[0].Addr, pTheirNode[0].Addr) {
+			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0], "name", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+			diffTS = pMyNode[0].UpdateTS
+			if pTheirNode[0].UpdateTS.IsLess(ts) {
+				diffTS = pTheirNode[0].UpdateTS
+			}
+			return diffTS, false
+		}
+	}
+
+	if i < lenMyNodes {
+		return myNodes[i].UpdateTS, false
+	}
+
+	if i < lenTheirNodes {
+		return theirNodes[i].UpdateTS, false
+	}
+
+	return types.ZeroTimestamp, true
+}
+
+func validateMerkleTreeTrimNodes(
+	nodes []*MerkleNode,
+	ts types.Timestamp,
+
+	pm ProtocolManager,
+	merkle *Merkle,
+
+) []*MerkleNode {
+	nNodes := len(nodes)
+
+	for idx, node := range nodes {
+		log.Debug("validateMerkleTreeTrimNodes", "idx", fmt.Sprintf("(%v/%v)", idx, len(nodes)), "node", node, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	}
+
+	idx := sort.Search(nNodes, func(i int) bool {
+		return ts.IsLessEqual(nodes[i].UpdateTS)
+	})
+
+	log.Debug("validateMerkleTreeTrimNodes: end", "idx", idx, "ts", ts, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	return nodes[:idx]
+}
+
+func DiffMerkleTree(
+	myNodes []*MerkleNode,
+	theirNodes []*MerkleNode,
+
+	ts types.Timestamp,
+
+	pm ProtocolManager,
+	merkle *Merkle,
+
+) ([]*MerkleNode, []*MerkleNode, error) {
+
+	myNodes = validateMerkleTreeTrimNodes(myNodes, ts, pm, merkle)
+	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts, pm, merkle)
+
+	lenMyNodes := len(myNodes)
+	lenTheirNodes := len(theirNodes)
+
+	pMyNodes := myNodes
+	pTheirNodes := theirNodes
+
+	var myNode *MerkleNode
+	var theirNode *MerkleNode
+
+	myNewNodes := make([]*MerkleNode, 0, lenTheirNodes)
+	theirNewNodes := make([]*MerkleNode, 0, lenMyNodes)
+
+	log.Debug("DiffMerkleTree: to for-loop", "myNodes", myNodes, "theirNodes", theirNodes, "ts", ts, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	for len(pMyNodes) > 0 && len(pTheirNodes) > 0 {
+		myNode = pMyNodes[0]
+		theirNode = pTheirNodes[0]
+
+		switch {
+		case myNode.UpdateTS.IsLess(theirNode.UpdateTS):
+			log.Error("DiffMerkleTree: myNode.TS", "me", myNode.UpdateTS, "they", theirNode.UpdateTS, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			theirNewNodes = append(theirNewNodes, myNode)
+			pMyNodes = pMyNodes[1:]
+		case theirNode.UpdateTS.IsLess(myNode.UpdateTS):
+			log.Error("DiffMerkleTree: theirNode.TS", "me", myNode.UpdateTS, "they", theirNode.UpdateTS, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			myNewNodes = append(myNewNodes, theirNode)
+			pTheirNodes = pTheirNodes[1:]
+		case myNode.Level > theirNode.Level:
+			log.Error("DiffMerkleTree: myNode.Level", "ts", myNode.UpdateTS, "me", myNode.Level, "they", theirNode.Level, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			theirNewNodes = append(theirNewNodes, myNode)
+			pMyNodes = pMyNodes[1:]
+		case myNode.Level < theirNode.Level:
+			log.Error("DiffMerkleTree: theirNode.Level", "ts", myNode.UpdateTS, "me", myNode.Level, "they", theirNode.Level, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			myNewNodes = append(myNewNodes, theirNode)
+			pTheirNodes = pTheirNodes[1:]
+		default:
+			if !reflect.DeepEqual(myNode.Addr, theirNode.Addr) {
+				log.Error("DiffMerkleTree: Addr", "ts", myNode.UpdateTS, "level", myNode.Level, "me", myNode, "they", theirNode, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+				myNewNodes = append(myNewNodes, theirNode)
+				theirNewNodes = append(theirNewNodes, myNode)
+			}
+
+			pMyNodes = pMyNodes[1:]
+			pTheirNodes = pTheirNodes[1:]
+		}
+	}
+
+	if len(pMyNodes) > 0 {
+		log.Error("DiffMerkleTree: myNodes", "ts", pMyNodes[0].UpdateTS, "level", pMyNodes[0].Level)
+		theirNewNodes = append(theirNewNodes, pMyNodes...)
+	}
+
+	if len(pTheirNodes) > 0 {
+		log.Error("DiffMerkleTree: theirNodes", "ts", pTheirNodes[0].UpdateTS, "level", pTheirNodes[0].Level)
+		myNewNodes = append(myNewNodes, pTheirNodes...)
+	}
+
+	return myNewNodes, theirNewNodes, nil
+}
+
+/*
+Return: myNewKeys: new keys from from their nodes, theirNewKeys: new keys from my nodes
+*/
+func MergeMerkleKeys(
+	myNodes []*MerkleNode,
+	theirNodes []*MerkleNode,
+) ([][]byte, [][]byte, error) {
+	// XXX TODO: refactor. Currently the 4 conditions are enumerated.
+	lenMyNodes := len(myNodes)
+	lenTheirNodes := len(theirNodes)
+
+	/*
+		for i, myNode := range myNodes {
+			log.Debug("MergeMerkleNodeKeys: to for-loop", "idx", fmt.Sprintf("(%d/%d)", i, lenMyNodes), "myNode", myNode)
+		}
+
+		for i, theirNode := range theirNodes {
+			log.Debug("MergeMerkleNodeKeys: to for-loop", "idx", fmt.Sprintf("(%d/%d)", i, lenTheirNodes), "theirNode", theirNode)
+		}
+	*/
+
+	myNewKeys := make([][]byte, 0, lenTheirNodes)
+	theirNewKeys := make([][]byte, 0, lenMyNodes)
+
+	if lenMyNodes == 0 && lenTheirNodes == 0 {
+		return myNewKeys, theirNewKeys, nil
+	}
+
+	var myKey []byte = nil
+	var theirKey []byte = nil
+	if lenTheirNodes == 0 {
+		for pMyNodes, myIdx := myNodes, 0; myIdx < lenMyNodes; pMyNodes, myIdx = pMyNodes[1:], myIdx+1 {
+			myKey = pMyNodes[0].Key
+			theirNewKeys = append(theirNewKeys, myKey)
+		}
+		return myNewKeys, theirNewKeys, nil
+	}
+
+	if lenMyNodes == 0 {
+		for pTheirNodes, theirIdx := theirNodes, 0; theirIdx < lenTheirNodes; pTheirNodes, theirIdx = pTheirNodes[1:], theirIdx+1 {
+			theirKey = pTheirNodes[0].Key
+			myNewKeys = append(myNewKeys, theirKey)
+		}
+		return myNewKeys, theirNewKeys, nil
+	}
+
+	pMyNodes := myNodes
+	myIdx := 0
+	myKey = pMyNodes[0].Key
+
+	pTheirNodes := theirNodes
+	theirIdx := 0
+	theirKey = pTheirNodes[0].Key
+
+	for myIdx < lenMyNodes && theirIdx < lenTheirNodes {
+		cmp := bytes.Compare(myKey, theirKey)
+		//log.Debug("MergeMerkleNodeKeys: after cmp", "idx", fmt.Sprintf("(%d/%d/%d/%d)", myIdx, lenMyNodes, theirIdx, lenTheirNodes), "myKey", myKey, "theirKey", theirKey, "cmp", cmp)
+		if cmp < 0 { // myKey < theirKey
+			theirNewKeys = append(theirNewKeys, myKey)
+			myIdx++
+			if myIdx == lenMyNodes {
+				break
+			}
+			pMyNodes = pMyNodes[1:]
+			myKey = pMyNodes[0].Key
+		} else if cmp > 0 { // myKey > theirKey
+			myNewKeys = append(myNewKeys, theirKey)
+			theirIdx++
+			if theirIdx == lenTheirNodes {
+				break
+			}
+			pTheirNodes = pTheirNodes[1:]
+			theirKey = pTheirNodes[0].Key
+		} else { // myKey == theirKey
+			myIdx++
+			if myIdx < lenMyNodes {
+				pMyNodes = pMyNodes[1:]
+				myKey = pMyNodes[0].Key
+			}
+
+			theirIdx++
+			if theirIdx < lenTheirNodes {
+				pTheirNodes = pTheirNodes[1:]
+				theirKey = pTheirNodes[0].Key
+			}
+		}
+	}
+
+	//log.Debug("MergeMerkleNodeKeys: after for-loop", "myIdx", myIdx, "lenMyNodes", lenMyNodes, "theirNewKeys", theirNewKeys, "theirIdx", theirIdx, "lenTheirNodes", lenTheirNodes, "myNewKeys", myNewKeys)
+
+	for myIdx < lenMyNodes {
+		theirNewKeys = append(theirNewKeys, myKey)
+		myIdx++
+		if myIdx == lenMyNodes {
+			break
+		}
+		pMyNodes = pMyNodes[1:]
+		myKey = pMyNodes[0].Key
+	}
+
+	for theirIdx < lenTheirNodes {
+		myNewKeys = append(myNewKeys, theirKey)
+		theirIdx++
+		if theirIdx == lenTheirNodes {
+			break
+		}
+		pTheirNodes = pTheirNodes[1:]
+		theirKey = pTheirNodes[0].Key
+	}
+
+	//log.Debug("MergeMerkleNodeKeys: after for-loop", "myIdx", myIdx, "lenMyNodes", lenMyNodes, "theirNewKeys", theirNewKeys, "theirIdx", theirIdx, "lenTheirNodes", lenTheirNodes, "myNewKeys", myNewKeys)
+
+	return myNewKeys, theirNewKeys, nil
+}
+
+func (m *Merkle) GetChildKeys(level MerkleTreeLevel, ts types.Timestamp) ([][]byte, error) {
+
+	var startTS types.Timestamp
+	var endTS types.Timestamp
+	switch level {
+	case MerkleTreeLevelHR:
+		startTS, endTS = ts.ToHRTimestamp()
+	case MerkleTreeLevelDay:
+		startTS, endTS = ts.ToDayTimestamp()
+	case MerkleTreeLevelMonth:
+		startTS, endTS = ts.ToMonthTimestamp()
+	case MerkleTreeLevelYear:
+		startTS, endTS = ts.ToYearTimestamp()
+	}
+
+	iter, err := m.GetMerkleIter(level-1, startTS, endTS, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Release()
+
+	keys := make([][]byte, 0)
+	var key []byte
+	for iter.Next() {
+		key = iter.Key()
+		keys = append(keys, common.CloneBytes(key))
+	}
+
+	return keys, nil
+}
+
+func DiffMerkleKeys(
+	myKeys [][]byte,
+	theirKeys [][]byte,
+) ([][]byte, [][]byte, error) {
+
+	lenMyKeys := len(myKeys)
+	lenTheirKeys := len(theirKeys)
+
+	pMyKeys := myKeys
+	pTheirKeys := theirKeys
+
+	var myKey []byte
+	var theirKey []byte
+
+	myNewKeys := make([][]byte, 0, lenTheirKeys)
+	theirNewKeys := make([][]byte, 0, lenMyKeys)
+
+	cmp := 0
+	for len(pMyKeys) > 0 && len(pTheirKeys) > 0 {
+		myKey = pMyKeys[0]
+		theirKey = pTheirKeys[0]
+
+		cmp = bytes.Compare(myKey, theirKey)
+		switch {
+		case cmp < 0:
+			theirNewKeys = append(theirNewKeys, myKey)
+			pMyKeys = pMyKeys[1:]
+		case cmp > 0:
+			myNewKeys = append(myNewKeys, theirKey)
+			pTheirKeys = pTheirKeys[1:]
+		default:
+			pMyKeys = pMyKeys[1:]
+			pTheirKeys = pTheirKeys[1:]
+		}
+	}
+
+	if len(pMyKeys) > 0 {
+		theirNewKeys = append(theirNewKeys, pMyKeys...)
+	}
+
+	if len(pTheirKeys) > 0 {
+		myNewKeys = append(myNewKeys, pTheirKeys...)
+	}
+
+	return myNewKeys, theirNewKeys, nil
 }

@@ -52,10 +52,47 @@ func (pm *BaseProtocolManager) HandleSyncMasterOplog(dataBytes []byte, peer *Ptt
 
 		pm.MasterMerkle(),
 
-		ForceSyncMasterOplogMsg,
-		ForceSyncMasterOplogAckMsg,
+		ForceSyncMasterOplogByMerkleMsg,
+		ForceSyncMasterOplogByMerkleAckMsg,
 		InvalidSyncMasterOplogMsg,
 		SyncMasterOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByMerkle(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkle(
+		dataBytes,
+		peer,
+
+		ForceSyncMasterOplogByMerkleAckMsg,
+		ForceSyncMasterOplogByOplogAckMsg,
+
+		pm.SetMasterDB,
+		pm.SetNewestMasterOplog,
+
+		pm.MasterMerkle(),
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkleAck(
+		dataBytes,
+		peer,
+
+		ForceSyncMasterOplogByMerkleMsg,
+
+		pm.MasterMerkle(),
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByOplogAck(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandleMasterOplogs,
+
+		pm.MasterMerkle(),
 	)
 }
 
@@ -89,14 +126,14 @@ func (pm *BaseProtocolManager) HandleForceSyncMasterOplogAck(dataBytes []byte, p
 	)
 }
 
-func (pm *BaseProtocolManager) HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error {
+func (pm *BaseProtocolManager) HandleSyncMasterOplogInvalid(dataBytes []byte, peer *PttPeer) error {
 
-	return pm.HandleSyncOplogInvalidAck(
+	return pm.HandleSyncOplogInvalid(
 		dataBytes,
 		peer,
 
 		pm.MasterMerkle(),
-		ForceSyncMasterOplogMsg,
+		ForceSyncMasterOplogByMerkleMsg,
 	)
 }
 

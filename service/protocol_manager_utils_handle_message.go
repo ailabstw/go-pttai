@@ -44,12 +44,14 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	case SyncMasterOplogMsg:
 		return pm.HandleSyncMasterOplog(dataBytes, peer)
 
-	case ForceSyncMasterOplogMsg:
-		return pm.HandleForceSyncMasterOplog(dataBytes, peer)
-	case ForceSyncMasterOplogAckMsg:
-		return pm.HandleForceSyncMasterOplogAck(dataBytes, peer)
+	case ForceSyncMasterOplogByMerkleMsg:
+		return pm.HandleForceSyncMasterOplogByMerkle(dataBytes, peer)
+	case ForceSyncMasterOplogByMerkleAckMsg:
+		return pm.HandleForceSyncMasterOplogByMerkleAck(dataBytes, peer)
+	case ForceSyncMasterOplogByOplogAckMsg:
+		return pm.HandleForceSyncMasterOplogByOplogAck(dataBytes, peer)
 	case InvalidSyncMasterOplogMsg:
-		return pm.HandleSyncMasterOplogInvalidAck(dataBytes, peer)
+		return pm.HandleSyncMasterOplogInvalid(dataBytes, peer)
 
 	case SyncMasterOplogAckMsg:
 		return pm.HandleSyncMasterOplogAck(dataBytes, peer)
@@ -75,12 +77,14 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	case SyncMemberOplogMsg:
 		return pm.HandleSyncMemberOplog(dataBytes, peer)
 
-	case ForceSyncMemberOplogMsg:
-		return pm.HandleForceSyncMemberOplog(dataBytes, peer)
-	case ForceSyncMemberOplogAckMsg:
-		return pm.HandleForceSyncMemberOplogAck(dataBytes, peer)
+	case ForceSyncMemberOplogByMerkleMsg:
+		return pm.HandleForceSyncMemberOplogByMerkle(dataBytes, peer)
+	case ForceSyncMemberOplogByMerkleAckMsg:
+		return pm.HandleForceSyncMemberOplogByMerkleAck(dataBytes, peer)
+	case ForceSyncMemberOplogByOplogAckMsg:
+		return pm.HandleForceSyncMemberOplogByOplogAck(dataBytes, peer)
 	case InvalidSyncMemberOplogMsg:
-		return pm.HandleSyncMemberOplogInvalidAck(dataBytes, peer)
+		return pm.HandleSyncMemberOplogInvalid(dataBytes, peer)
 
 	case SyncMemberOplogAckMsg:
 		return pm.HandleSyncMemberOplogAck(dataBytes, peer)

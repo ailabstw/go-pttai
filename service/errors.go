@@ -93,6 +93,8 @@ var (
 	ErrNotAlive = errors.New("not alive")
 
 	ErrInvalidFunc = errors.New("invalid function")
+
+	ErrInvalidMerkle = errors.New("invalid merkle")
 )
 
 func ErrResp(code error, format string, v ...interface{}) error {

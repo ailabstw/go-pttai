@@ -49,10 +49,47 @@ func (pm *ProtocolManager) HandleSyncFriendOplog(dataBytes []byte, peer *pkgserv
 
 		pm.friendOplogMerkle,
 
-		ForceSyncFriendOplogMsg,
-		ForceSyncFriendOplogAckMsg,
+		ForceSyncFriendOplogByMerkleMsg,
+		ForceSyncFriendOplogByMerkleAckMsg,
 		InvalidSyncFriendOplogMsg,
 		SyncFriendOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncFriendOplogByMerkle(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkle(
+		dataBytes,
+		peer,
+
+		ForceSyncFriendOplogByMerkleAckMsg,
+		ForceSyncFriendOplogByOplogAckMsg,
+
+		pm.SetFriendDB,
+		pm.SetNewestFriendOplog,
+
+		pm.friendOplogMerkle,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncFriendOplogByMerkleAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkleAck(
+		dataBytes,
+		peer,
+
+		ForceSyncFriendOplogByMerkleMsg,
+
+		pm.friendOplogMerkle,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncFriendOplogByOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandleFriendOplogs,
+
+		pm.friendOplogMerkle,
 	)
 }
 
@@ -86,14 +123,14 @@ func (pm *ProtocolManager) HandleForceSyncFriendOplogAck(dataBytes []byte, peer 
 	)
 }
 
-func (pm *ProtocolManager) HandleSyncFriendOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+func (pm *ProtocolManager) HandleSyncFriendOplogInvalid(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
-	return pm.HandleSyncOplogInvalidAck(
+	return pm.HandleSyncOplogInvalid(
 		dataBytes,
 		peer,
 
 		pm.friendOplogMerkle,
-		ForceSyncFriendOplogMsg,
+		ForceSyncFriendOplogByMerkleMsg,
 	)
 }
 

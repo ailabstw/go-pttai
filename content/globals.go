@@ -45,12 +45,17 @@ const (
 	AddPendingBoardOplogsMsg
 
 	SyncBoardOplogMsg
-	ForceSyncBoardOplogMsg
-	ForceSyncBoardOplogAckMsg
-	InvalidSyncBoardOplogMsg
 	SyncBoardOplogAckMsg
 	SyncBoardOplogNewOplogsMsg
 	SyncBoardOplogNewOplogsAckMsg
+
+	InvalidSyncBoardOplogMsg
+
+	ForceSyncBoardOplogMsg
+	ForceSyncBoardOplogAckMsg
+	ForceSyncBoardOplogByMerkleMsg
+	ForceSyncBoardOplogByMerkleAckMsg
+	ForceSyncBoardOplogByOplogAckMsg
 
 	SyncPendingBoardOplogMsg
 	SyncPendingBoardOplogAckMsg

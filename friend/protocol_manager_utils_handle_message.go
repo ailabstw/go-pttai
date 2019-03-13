@@ -31,12 +31,14 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case SyncFriendOplogMsg:
 		err = pm.HandleSyncFriendOplog(dataBytes, peer)
 
-	case ForceSyncFriendOplogMsg:
-		err = pm.HandleForceSyncFriendOplog(dataBytes, peer)
-	case ForceSyncFriendOplogAckMsg:
-		err = pm.HandleForceSyncFriendOplogAck(dataBytes, peer)
+	case ForceSyncFriendOplogByMerkleMsg:
+		return pm.HandleForceSyncFriendOplogByMerkle(dataBytes, peer)
+	case ForceSyncFriendOplogByMerkleAckMsg:
+		return pm.HandleForceSyncFriendOplogByMerkleAck(dataBytes, peer)
+	case ForceSyncFriendOplogByOplogAckMsg:
+		return pm.HandleForceSyncFriendOplogByOplogAck(dataBytes, peer)
 	case InvalidSyncFriendOplogMsg:
-		err = pm.HandleSyncFriendOplogInvalidAck(dataBytes, peer)
+		err = pm.HandleSyncFriendOplogInvalid(dataBytes, peer)
 
 	case SyncFriendOplogAckMsg:
 		err = pm.HandleSyncFriendOplogAck(dataBytes, peer)

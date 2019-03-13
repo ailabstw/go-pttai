@@ -98,10 +98,13 @@ const (
 	AddPendingOpKeyOplogsMsg
 
 	SyncOpKeyOplogMsg
+	SyncOpKeyOplogAckMsg
+
+	InvalidSyncOpKeyOplogMsg
+
 	ForceSyncOpKeyOplogMsg
 	ForceSyncOpKeyOplogAckMsg
-	InvalidSyncOpKeyOplogMsg
-	SyncOpKeyOplogAckMsg
+
 	SyncPendingOpKeyOplogMsg
 	SyncPendingOpKeyOplogAckMsg
 
@@ -116,12 +119,17 @@ const (
 	AddPendingMasterOplogsMsg
 
 	SyncMasterOplogMsg
-	ForceSyncMasterOplogMsg
-	ForceSyncMasterOplogAckMsg
-	InvalidSyncMasterOplogMsg
 	SyncMasterOplogAckMsg
 	SyncMasterOplogNewOplogsMsg
 	SyncMasterOplogNewOplogsAckMsg
+
+	InvalidSyncMasterOplogMsg
+
+	ForceSyncMasterOplogMsg
+	ForceSyncMasterOplogAckMsg
+	ForceSyncMasterOplogByMerkleMsg
+	ForceSyncMasterOplogByMerkleAckMsg
+	ForceSyncMasterOplogByOplogAckMsg
 
 	SyncPendingMasterOplogMsg
 	SyncPendingMasterOplogAckMsg
@@ -134,12 +142,17 @@ const (
 	AddPendingMemberOplogsMsg
 
 	SyncMemberOplogMsg
-	ForceSyncMemberOplogMsg
-	ForceSyncMemberOplogAckMsg
-	InvalidSyncMemberOplogMsg
 	SyncMemberOplogAckMsg
 	SyncMemberOplogNewOplogsMsg
 	SyncMemberOplogNewOplogsAckMsg
+
+	InvalidSyncMemberOplogMsg
+
+	ForceSyncMemberOplogMsg
+	ForceSyncMemberOplogAckMsg
+	ForceSyncMemberOplogByMerkleMsg
+	ForceSyncMemberOplogByMerkleAckMsg
+	ForceSyncMemberOplogByOplogAckMsg
 
 	SyncPendingMemberOplogMsg
 	SyncPendingMemberOplogAckMsg
@@ -272,6 +285,9 @@ var (
 	NMerkleTreeMagicAlloc   = 50
 	MerkleTreeOffsetAddr    = SizeMerkleTreeLevel
 	MerkleTreeOffsetTS      = MerkleTreeOffsetAddr + common.AddressLength
+
+	MerkleTreeKeyOffsetLevel    = pttdb.SizeDBKeyPrefix + types.SizePttID
+	MerkleTreeKeyOffsetUpdateTS = MerkleTreeKeyOffsetLevel + SizeMerkleTreeLevel
 
 	DBMerkleGenerateTimePrefix = []byte(".mtgt")
 	DBMerkleSyncTimePrefix     = []byte(".mtst")

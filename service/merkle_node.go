@@ -17,7 +17,6 @@
 package service
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -26,6 +25,11 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
+/*
+MerkleNode
+
+Key: dbMerklePrefix, dbPrefixID, Level, TS, oplogID, opBytes
+*/
 type MerkleNode struct {
 	Level     MerkleTreeLevel `json:"L"`
 	Addr      []byte          `json:"A"`
@@ -101,114 +105,44 @@ func (m *MerkleNode) UnmarshalJSON(b []byte) error {
 	return m.Unmarshal(d)
 }
 
-/*
-Return: myNewKeys: new keys from from their nodes, theirNewKeys: new keys from my nodes
-*/
-func MergeMerkleNodeKeys(myNodes []*MerkleNode, theirNodes []*MerkleNode) ([][]byte, [][]byte, error) {
-	// XXX TODO: refactor. Currently the 4 conditions are enumerated.
-	lenMyNodes := len(myNodes)
-	lenTheirNodes := len(theirNodes)
-
-	/*
-		for i, myNode := range myNodes {
-			log.Debug("MergeMerkleNodeKeys: to for-loop", "idx", fmt.Sprintf("(%d/%d)", i, lenMyNodes), "myNode", myNode)
-		}
-
-		for i, theirNode := range theirNodes {
-			log.Debug("MergeMerkleNodeKeys: to for-loop", "idx", fmt.Sprintf("(%d/%d)", i, lenTheirNodes), "theirNode", theirNode)
-		}
-	*/
-
-	myNewKeys := make([][]byte, 0, lenTheirNodes)
-	theirNewKeys := make([][]byte, 0, lenMyNodes)
-
-	if lenMyNodes == 0 && lenTheirNodes == 0 {
-		return myNewKeys, theirNewKeys, nil
+func (m *MerkleNode) ConstructUpdateTSAndLevelByKey(key []byte) error {
+	level := MerkleTreeLevel(key[MerkleTreeKeyOffsetLevel])
+	updateTS, err := types.UnmarshalTimestamp(key[MerkleTreeKeyOffsetUpdateTS:])
+	if err != nil {
+		return err
 	}
 
-	var myKey []byte = nil
-	var theirKey []byte = nil
-	if lenTheirNodes == 0 {
-		for pMyNodes, myIdx := myNodes, 0; myIdx < lenMyNodes; pMyNodes, myIdx = pMyNodes[1:], myIdx+1 {
-			myKey = pMyNodes[0].Key
-			theirNewKeys = append(theirNewKeys, myKey)
-		}
-		return myNewKeys, theirNewKeys, nil
+	m.Level = level
+	m.UpdateTS = updateTS
+
+	return nil
+}
+
+func (m *MerkleNode) ToKey(merkle *Merkle) []byte {
+	if m.Level == MerkleTreeLevelNow {
+		return m.Key
 	}
 
-	if lenMyNodes == 0 {
-		for pTheirNodes, theirIdx := theirNodes, 0; theirIdx < lenTheirNodes; pTheirNodes, theirIdx = pTheirNodes[1:], theirIdx+1 {
-			theirKey = pTheirNodes[0].Key
-			myNewKeys = append(myNewKeys, theirKey)
-		}
-		return myNewKeys, theirNewKeys, nil
+	ts := m.UpdateTSToTS()
+
+	key, _ := merkle.MarshalKey(m.Level, ts)
+	return key
+}
+
+func (m *MerkleNode) UpdateTSToTS() types.Timestamp {
+	var ts types.Timestamp
+	switch m.Level {
+	case MerkleTreeLevelNow:
+		ts = m.UpdateTS
+	case MerkleTreeLevelHR:
+		ts, _ = m.UpdateTS.ToHRTimestamp()
+	case MerkleTreeLevelDay:
+		ts, _ = m.UpdateTS.ToDayTimestamp()
+	case MerkleTreeLevelMonth:
+		ts, _ = m.UpdateTS.ToMonthTimestamp()
+	case MerkleTreeLevelYear:
+		ts, _ = m.UpdateTS.ToYearTimestamp()
 	}
 
-	pMyNodes := myNodes
-	myIdx := 0
-	myKey = pMyNodes[0].Key
-
-	pTheirNodes := theirNodes
-	theirIdx := 0
-	theirKey = pTheirNodes[0].Key
-
-	for myIdx < lenMyNodes && theirIdx < lenTheirNodes {
-		cmp := bytes.Compare(myKey, theirKey)
-		//log.Debug("MergeMerkleNodeKeys: after cmp", "idx", fmt.Sprintf("(%d/%d/%d/%d)", myIdx, lenMyNodes, theirIdx, lenTheirNodes), "myKey", myKey, "theirKey", theirKey, "cmp", cmp)
-		if cmp < 0 { // myKey < theirKey
-			theirNewKeys = append(theirNewKeys, myKey)
-			myIdx++
-			if myIdx == lenMyNodes {
-				break
-			}
-			pMyNodes = pMyNodes[1:]
-			myKey = pMyNodes[0].Key
-		} else if cmp > 0 { // myKey > theirKey
-			myNewKeys = append(myNewKeys, theirKey)
-			theirIdx++
-			if theirIdx == lenTheirNodes {
-				break
-			}
-			pTheirNodes = pTheirNodes[1:]
-			theirKey = pTheirNodes[0].Key
-		} else { // myKey == theirKey
-			myIdx++
-			if myIdx < lenMyNodes {
-				pMyNodes = pMyNodes[1:]
-				myKey = pMyNodes[0].Key
-			}
-
-			theirIdx++
-			if theirIdx < lenTheirNodes {
-				pTheirNodes = pTheirNodes[1:]
-				theirKey = pTheirNodes[0].Key
-			}
-		}
-	}
-
-	//log.Debug("MergeMerkleNodeKeys: after for-loop", "myIdx", myIdx, "lenMyNodes", lenMyNodes, "theirNewKeys", theirNewKeys, "theirIdx", theirIdx, "lenTheirNodes", lenTheirNodes, "myNewKeys", myNewKeys)
-
-	for myIdx < lenMyNodes {
-		theirNewKeys = append(theirNewKeys, myKey)
-		myIdx++
-		if myIdx == lenMyNodes {
-			break
-		}
-		pMyNodes = pMyNodes[1:]
-		myKey = pMyNodes[0].Key
-	}
-
-	for theirIdx < lenTheirNodes {
-		myNewKeys = append(myNewKeys, theirKey)
-		theirIdx++
-		if theirIdx == lenTheirNodes {
-			break
-		}
-		pTheirNodes = pTheirNodes[1:]
-		theirKey = pTheirNodes[0].Key
-	}
-
-	//log.Debug("MergeMerkleNodeKeys: after for-loop", "myIdx", myIdx, "lenMyNodes", lenMyNodes, "theirNewKeys", theirNewKeys, "theirIdx", theirIdx, "lenTheirNodes", lenTheirNodes, "myNewKeys", myNewKeys)
-
-	return myNewKeys, theirNewKeys, nil
+	return ts
 }

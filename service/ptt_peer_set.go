@@ -286,8 +286,8 @@ func (ps *PttPeerSet) UnregisterPeerByOtherUserID(id *types.PttID, isLocked bool
 
 func (ps *PttPeerSet) PeersToPeerList(peers map[discover.NodeID]*PttPeer, isLocked bool) []*PttPeer {
 	if !isLocked {
-		ps.lock.Lock()
-		defer ps.lock.Unlock()
+		ps.lock.RLock()
+		defer ps.lock.RUnlock()
 	}
 
 	lenPeers := len(peers)

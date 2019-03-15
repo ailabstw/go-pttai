@@ -124,7 +124,7 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 		}
 	*/
 
-	log.Debug("FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
+	log.Info("FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
 
 	if peer.UserID == nil {
 		return ErrPeerUserID
@@ -139,9 +139,17 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 		return err
 	}
 
-	log.Debug("FinishIdentifyPeer: to SetupPeer", "peer", peer, "peerType", peerType)
+	log.Info("FinishIdentifyPeer: to SetupPeer", "peer", peer, "peerType", peerType)
 
-	return p.SetupPeer(peer, peerType, isLocked)
+	err = p.SetupPeer(peer, peerType, isLocked)
+	log.Info("FinishIdentifyPeer: after SetupPeer", "e", err, "peer", peer, "peerType", peerType)
+	if err != nil {
+		return err
+	}
+
+	peer.IsReady = true
+
+	return nil
 }
 
 func (p *BasePtt) ResetPeerType(peer *PttPeer, isLocked bool, isForceReset bool) error {
@@ -172,7 +180,7 @@ func (p *BasePtt) ResetPeerType(peer *PttPeer, isLocked bool, isForceReset bool)
 		return err
 	}
 
-	err = p.addPeerKnownUserID(peer, peerType, true)
+	err = p.addPeerKnownUserID(peer, peerType, isLocked)
 	if err != nil {
 		return err
 	}
@@ -769,8 +777,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 
 		// setup peer with high peer type and check all the entities.
 		if peer.PeerType < peerType {
-			p.SetupPeer(peer, peerType, false)
-			return nil
+			p.ResetPeerType(peer, false, false)
 		}
 
 		// just do the specific entity

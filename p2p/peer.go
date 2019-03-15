@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime/debug"
 	"sort"
 	"sync"
 	"time"
@@ -116,7 +117,7 @@ func NewPeer(id discover.NodeID, name string, caps []Cap) *Peer {
 	pipe, _ := net.Pipe()
 	conn := &conn{fd: pipe, transport: nil, id: id, caps: caps, name: name}
 	peer := newPeer(conn, nil)
-	close(peer.closed) // ensures Disconnect doesn't block
+	// close(peer.closed) // ensures Disconnect doesn't block
 	return peer
 }
 
@@ -232,6 +233,7 @@ loop:
 			// there was no error.
 			if err != nil {
 				p.log.Error("Peer.run: unable to write", "e", err, "p", p)
+				debug.PrintStack()
 				reason = DiscNetworkError
 				break loop
 			}
@@ -286,21 +288,32 @@ func (p *Peer) pingLoop() {
 func (p *Peer) readLoop(errc chan<- error) {
 	for {
 		msg, err := p.rw.ReadMsg()
-		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
+		// log.Info("readLoop: after ReadMsg", "e", err, "peer", p)
 		if err != nil {
-			errc <- err
+			log.Error("Peer.readLoop: unable to ReadMsg", "e", err, "peer", p)
+			select {
+			case errc <- err:
+			case <-p.closed:
+			}
+			log.Info("Peer.readLoop: to return", "e", err, "peer", p)
 			return
 		}
 		msg.ReceivedAt = time.Now()
 		if err = p.handle(msg); err != nil {
-			errc <- err
+			log.Error("Peer.readLoop: unable to handle", "e", err, "peer", p)
+			select {
+			case errc <- err:
+			case <-p.closed:
+			}
+			log.Info("Peer.readLoop: to return", "e", err, "peer", p)
 			return
 		}
+		// log.Info("readLoop: done (in-for-loop)", "e", err, "peer", p)
 	}
 }
 
 func (p *Peer) handle(msg Msg) error {
-	//p.log.Info("handle (msg): start", "msg", msg)
+	// log.Info("handle (msg): start", "msg", msg.Code, "peer", p)
 	switch {
 	case msg.Code == pingMsg:
 		p.log.Debug("handle (msg): pingMsg")
@@ -323,14 +336,16 @@ func (p *Peer) handle(msg Msg) error {
 	default:
 		// it's a subprotocol message
 		proto, err := p.getProto(msg.Code)
-		//p.log.Info("handle (msg): proto", "proto", proto, "e", err)
+		// log.Info("handle: proto", "proto", proto, "e", err, "peer", p)
 		if err != nil {
 			return fmt.Errorf("msg code out of range: %v", msg.Code)
 		}
 		select {
 		case proto.in <- msg:
+			// log.Info("handle: passed msg", "proto", proto, "peer", p)
 			return nil
 		case <-p.closed:
+			log.Error("handle: closed", "proto", proto, "peer", p)
 			return io.EOF
 		}
 	}

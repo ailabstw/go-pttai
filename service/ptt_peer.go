@@ -48,6 +48,7 @@ type PttPeer struct {
 	IDChallenge *types.Salt
 	IDChan      chan struct{}
 
+	IsReady   bool
 	IsToClose bool
 }
 

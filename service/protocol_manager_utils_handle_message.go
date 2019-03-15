@@ -29,7 +29,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	}
 
 	op, dataBytes, err := pm.Ptt().DecryptData(encData, opKeyInfo)
-	log.Debug("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op, "NMsg", NMsg)
+	// log.Info("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op, "NMsg", NMsg, "peer", peer)
 	if err != nil {
 		return err
 	}
@@ -134,9 +134,9 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 
 	}
 
-	log.Debug("PMHandleMessageWrapper: to GetPeerType", "peer", peer, "entity", pm.Entity().GetID())
+	//log.Debug("PMHandleMessageWrapper: to GetPeerType", "peer", peer, "entity", pm.Entity().GetID())
 	fitPeerType := pm.GetPeerType(peer)
-	log.Debug("PMHandleMessageWrapper: after GetPeerType", "peer", peer, "entity", pm.Entity().GetID(), "fitPeerType", fitPeerType)
+	// log.Info("PMHandleMessageWrapper: after GetPeerType", "peer", peer, "entity", pm.Entity().GetID(), "fitPeerType", fitPeerType)
 
 	var origPeer *PttPeer
 	if fitPeerType < PeerTypePending {
@@ -150,8 +150,18 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	origPeer = pm.Peers().GetPeerWithPeerType(peer.GetID(), fitPeerType, false)
 
 	if origPeer == nil {
+		log.Info("PMHandleMessageWrapper: to RegisterPeer", "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "fitPeerType", fitPeerType)
+
 		pm.RegisterPeer(peer, fitPeerType, false)
+		log.Info("PMHandleMessageWrapper: after RegisterPeer", "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 	}
 
-	return pm.HandleMessage(op, dataBytes, peer)
+	err = pm.HandleMessage(op, dataBytes, peer)
+	// log.Info("PMHandleMessageWrapper: after HandleMessage", "e", err, "peer", peer, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -114,7 +114,8 @@ func (pm *BaseProtocolManager) ApproveJoin(
 
 	switch {
 	case peer.PeerType < PeerTypeMember:
-		pm.Ptt().SetupPeer(peer, PeerTypeMember, false)
+		pm.Ptt().ResetPeerType(peer, false, false)
+		pm.RegisterPeer(peer, PeerTypeMember, false)
 	case peer.PeerType == PeerTypeMe:
 		pm.RegisterPeer(peer, PeerTypeMe, false)
 	default:

@@ -104,7 +104,14 @@ func pmSyncPeer(pm ProtocolManager) (*PttPeer, error) {
 		pm.LoadPeers()
 		return nil, nil
 	}
-	peer := RandomPeer(peerList)
+
+	validPeerList := make([]*PttPeer, 0, len(peerList))
+	for _, peer := range peerList {
+		if peer.IsReady {
+			validPeerList = append(validPeerList, peer)
+		}
+	}
+	peer := RandomPeer(validPeerList)
 
 	return peer, nil
 }

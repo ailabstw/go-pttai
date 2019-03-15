@@ -73,7 +73,7 @@ func (pm *BaseProtocolManager) HandleIdentifyPeerAck(dataBytes []byte, peer *Ptt
 		return err
 	}
 
-	log.Debug("HandleIdentifyPeerAck: to ptt.HandleIdentifyPeerAck")
+	log.Info("HandleIdentifyPeerAck: to ptt.HandleIdentifyPeerAck", "peer", peer)
 
 	ptt := pm.Ptt()
 
@@ -142,7 +142,7 @@ func (p *BasePtt) HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPee
 
 	peer.FinishID(entityID)
 
-	log.Debug("HandleIdentifyPeerAck: to FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
+	log.Info("HandleIdentifyPeerAck: to FinishIdentifyPeer", "peer", peer, "userID", peer.UserID)
 
 	return p.FinishIdentifyPeer(peer, false, false)
 }

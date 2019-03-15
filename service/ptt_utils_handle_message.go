@@ -46,7 +46,9 @@ func (p *BasePtt) HandleMessageWrapper(peer *PttPeer) error {
 		return err
 	}
 
+	// log.Info("HandleMessageWrapper: to HandleMessage", "code", msg.Code, "peer", peer)
 	err = p.HandleMessage(CodeType(msg.Code), data, peer)
+	// log.Info("HandleMessageWrapper: after HandleMessage", "e", err, "peer", peer)
 	if err != nil {
 		log.Error("HandleMessageWrapper: unable to handle-msg", "code", msg.Code, "e", err, "peer", peer)
 		return err

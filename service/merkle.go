@@ -1020,12 +1020,12 @@ func DiffMerkleTree(
 	}
 
 	if len(pMyNodes) > 0 {
-		log.Error("DiffMerkleTree: myNodes", "ts", pMyNodes[0].UpdateTS, "level", pMyNodes[0].Level)
+		log.Error("DiffMerkleTree: myNodes", "ts", pMyNodes[0].UpdateTS, "level", pMyNodes[0].Level, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 		theirNewNodes = append(theirNewNodes, pMyNodes...)
 	}
 
 	if len(pTheirNodes) > 0 {
-		log.Error("DiffMerkleTree: theirNodes", "ts", pTheirNodes[0].UpdateTS, "level", pTheirNodes[0].Level)
+		log.Error("DiffMerkleTree: theirNodes", "ts", pTheirNodes[0].UpdateTS, "level", pTheirNodes[0].Level, "merkle", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
 		myNewNodes = append(myNewNodes, pTheirNodes...)
 	}
 

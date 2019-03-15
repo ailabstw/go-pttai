@@ -158,13 +158,13 @@ const (
 	SyncPendingMemberOplogAckMsg
 
 	// peer
-	IdentifyPeerMsg // 37
-	IdentifyPeerAckMsg
+	IdentifyPeerMsg
+	IdentifyPeerAckMsg // 53
 
 	BoardLastSeenMsg
 	ArticleLastSeenMsg
 
-	NMsg
+	NMsg // 56
 )
 
 // member

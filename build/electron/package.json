@@ -2,7 +2,7 @@
   "name": "ptt.ai",
   "description": "ptt.ai electron packaging",
   "author": "Yi-Sheng Hsieh <sammui@ailabs.tw>",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "main": "./app/index.js",
   "scripts": {
     "start": "npm install && cross-env NODE_ENV=dev electron ./app",
@@ -27,11 +27,11 @@
       "contents": [
         {
           "x": 110,
-          "y": 150
+          "y": 200
         },
         {
-          "x": 240,
-          "y": 150,
+          "x": 440,
+          "y": 200,
           "type": "link",
           "path": "/Applications"
         }

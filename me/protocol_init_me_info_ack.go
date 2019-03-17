@@ -29,7 +29,7 @@ type InitMeInfoAck struct {
 }
 
 func (pm *ProtocolManager) InitMeInfoAck(data *InitMeInfo, peer *pkgservice.PttPeer) error {
-	log.Debug("InitMeInfoAck: start")
+	log.Debug("InitMeInfoAck: start", "peer", peer)
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -61,10 +61,10 @@ func (pm *ProtocolManager) InitMeInfoAck(data *InitMeInfo, peer *pkgservice.PttP
 			return err
 		}
 	}
-	log.Debug("InitMeInfoAck: to SendDataToPeer", "myID", myInfo.ID, "Status", myInfo.Status)
+	log.Debug("InitMeInfoAck: to SendDataToPeer", "myID", myInfo.ID, "Status", myInfo.Status, "peer", peer)
 
 	err = pm.SendDataToPeer(InitMeInfoAckMsg, &InitMeInfoAck{Status: myInfo.Status}, peer)
-	log.Debug("InitMeInfoAck: after SendDataToPeer", "e", err)
+	log.Debug("InitMeInfoAck: after SendDataToPeer", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 
 	return err
 }
@@ -96,7 +96,7 @@ func (pm *ProtocolManager) handleInitMeInfoCore(status types.Status, peer *pkgse
 
 	myNode := pm.MyNodes[raftID]
 	if myNode == nil {
-		log.Warn("HandleInitMeInfoAck: possibly not my node", "peer", peer)
+		log.Warn("handleInitMeInfoCore: possibly not my node", "peer", peer)
 		return ErrInvalidNode
 	}
 
@@ -104,7 +104,7 @@ func (pm *ProtocolManager) handleInitMeInfoCore(status types.Status, peer *pkgse
 		return nil
 	}
 
-	log.Debug("HandleInitMeInfoAck: start", "peerID", nodeID, "status", status)
+	log.Debug("handleInitMeInfoCore: start", "peerID", nodeID, "status", status)
 
 	ts, err := types.GetTimestamp()
 	if err != nil {

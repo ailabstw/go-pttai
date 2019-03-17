@@ -31,7 +31,7 @@ func (pm *BaseProtocolManager) handleAddMemberLog(oplog *BaseOplog, info *Proces
 
 	person.SetID(oplog.ObjID)
 	err := person.GetByID(false)
-	log.Debug("handleAddMemberLog: after GetByID", "id", oplog.ObjID, "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("handleAddMemberLog: after GetByID", "id", oplog.ObjID, "e", err, "entity", pm.Entity().IDString())
 	if err == leveldb.ErrNotFound {
 		return pm.HandleCreatePersonLog(
 			oplog,

@@ -48,7 +48,7 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 
 	if len(theirNewKeys) == 0 && len(myNewKeys) == 0 {
 		if myLastNode != nil {
-			log.Debug("SyncOplogNewOplogs: to SaveSyncTime", "ts", myLastNode.UpdateTS, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Debug("SyncOplogNewOplogs: to SaveSyncTime", "ts", myLastNode.UpdateTS, "entity", pm.Entity().IDString())
 			merkle.SaveSyncTime(myLastNode.UpdateTS)
 		}
 
@@ -85,7 +85,7 @@ func (pm *BaseProtocolManager) SyncOplogNewOplogs(
 		MyNewKeys: myNewKeys,
 	}
 
-	log.Debug("SyncOplogNewOplogs: to SendDataToPeer", "oplogs", theirNewLogs, "myNewKeys", len(myNewKeys), "newLogsMsg", newLogsMsg, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("SyncOplogNewOplogs: to SendDataToPeer", "oplogs", theirNewLogs, "myNewKeys", len(myNewKeys), "newLogsMsg", newLogsMsg, "entity", pm.Entity().IDString())
 
 	err = pm.SendDataToPeer(newLogsMsg, data, peer)
 	if err != nil {

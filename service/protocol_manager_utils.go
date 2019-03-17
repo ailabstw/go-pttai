@@ -46,7 +46,7 @@ func PrestartPM(pm ProtocolManager) error {
 	// 3. pre-start
 	err = pm.Prestart()
 	if err == ErrAlreadyPrestarted {
-		log.Warn("PrestartPM: already prestarted", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("PrestartPM: already prestarted", "entity", pm.Entity().IDString())
 		return nil
 	}
 	if err != nil {
@@ -77,7 +77,7 @@ func StartPM(pm ProtocolManager) error {
 	// 2. pm.Start
 	err := pm.Start()
 	if err == ErrAlreadyStarted {
-		log.Warn("StartPM: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("StartPM: already started", "entity", pm.Entity().IDString())
 		return nil
 	}
 	if err != nil {
@@ -95,27 +95,27 @@ func StartPM(pm ProtocolManager) error {
 }
 
 func StopPM(pm ProtocolManager) error {
-	log.Info("Stop PM: to stop", "entity", pm.Entity().Name())
+	log.Info("Stop PM: to stop", "entity", pm.Entity().IDString())
 
 	err := pm.Prestop()
 	if err != nil {
-		log.Warn("Stop PM: unable to prestop", "entity", pm.Entity().Name(), "e", err)
+		log.Warn("Stop PM: unable to prestop", "entity", pm.Entity().IDString(), "e", err)
 		return err
 	}
 
 	err = pm.Stop()
 	if err != nil {
-		log.Warn("Stop PM: unable to stop", "entity", pm.Entity().Name(), "e", err)
+		log.Warn("Stop PM: unable to stop", "entity", pm.Entity().IDString(), "e", err)
 		return err
 	}
 
 	err = pm.Poststop()
 	if err != nil {
-		log.Warn("Stop PM: unable to poststop", "entity", pm.Entity().Name(), "e", err)
+		log.Warn("Stop PM: unable to poststop", "entity", pm.Entity().IDString(), "e", err)
 		return err
 	}
 
-	log.Info("Stop PM: done", "entity", pm.Entity().Name())
+	log.Info("Stop PM: done", "entity", pm.Entity().IDString())
 
 	return nil
 }
@@ -153,12 +153,12 @@ func (pm *BaseProtocolManager) sendDataToPeers(op OpType, data interface{}, peer
 
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		log.Error("sendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
+		log.Error("sendDataToPeers: unable to marshal data", "e", err, "entity", pm.Entity().IDString())
 		return err
 	}
 
 	opKeyInfo, err := pm.GetOldestOpKey(false)
-	log.Debug("sendDataToPeers: after get opKey", "opKey", opKeyInfo, "entity", pm.Entity().GetID(), "e", err)
+	log.Debug("sendDataToPeers: after get opKey", "opKey", opKeyInfo, "entity", pm.Entity().IDString(), "e", err)
 
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func (pm *BaseProtocolManager) sendDataToPeers(op OpType, data interface{}, peer
 		if err == nil {
 			okCount++
 		} else {
-			log.Warn("sendDataToPeers: unable to SendData", "peer", peer, "e", err)
+			log.Warn("sendDataToPeers: unable to SendData", "peer", peer, "entity", pm.Entity().IDString(), "e", err)
 		}
 	}
 	if okCount == 0 {
@@ -208,13 +208,13 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCodeLoop() {
 	for obj := range pm.sendDataToPeerWithCodeSub.Chan() {
 		ev, ok = obj.Data.(*SendDataToPeerWithCodeEvent)
 		if !ok {
-			log.Error("sendDataToPeerWithCodeLoop: unable to get event", "data", obj.Data)
+			log.Error("sendDataToPeerWithCodeLoop: unable to get event", "entity", pm.Entity().IDString())
 			continue
 		}
 
 		err = pm.sendDataToPeerWithCode(ev.Code, ev.Op, ev.Data, ev.Peer)
 		if err != nil {
-			log.Error("sendDataToPeerWithCodeLoop: unable to process data", "e", err)
+			log.Error("sendDataToPeerWithCodeLoop: unable to process data", "e", err, "entity", pm.Entity().IDString())
 		}
 	}
 }
@@ -230,7 +230,7 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		log.Error("sendDataToPeerWithCode: unable to marshal data", "e", err, "entity", pm.Entity().GetID())
+		log.Error("sendDataToPeerWithCode: unable to marshal data", "e", err, "entity", pm.Entity().IDString())
 		return err
 	}
 
@@ -245,7 +245,7 @@ func (pm *BaseProtocolManager) sendDataToPeerWithCode(code CodeType, op OpType, 
 		return err
 	}
 
-	log.Debug("sendDataToPeerWithCode: to MarshalData", "hash", opKeyInfo.Hash, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("sendDataToPeerWithCode: to MarshalData", "hash", opKeyInfo.Hash, "entity", pm.Entity().IDString())
 
 	pttData, err := ptt.MarshalData(code, opKeyInfo.Hash, encData)
 	if err != nil {

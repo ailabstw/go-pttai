@@ -45,7 +45,7 @@ func (pm *BaseProtocolManager) handleDeleteMemberLog(oplog *BaseOplog, info *Pro
 		pm.updateDeleteMemberInfo,
 	)
 
-	log.Debug("handleDeleteMemberLog: after HandleDeletePersonLog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "e", err)
+	log.Debug("handleDeleteMemberLog: after HandleDeletePersonLog", "entity", pm.Entity().IDString(), "e", err)
 
 	if err != nil {
 		return nil, err

@@ -61,7 +61,7 @@ func (pm *BaseProtocolManager) HandleCreatePersonLog(
 	}
 	defer person.Unlock()
 
-	log.Debug("HandleCreatePersonLog: start", "personID", personID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("HandleCreatePersonLog: start", "personID", personID, "entity", pm.Entity().IDString())
 
 	// 2. get person (should never delete once stored)
 	err = person.GetByID(true)

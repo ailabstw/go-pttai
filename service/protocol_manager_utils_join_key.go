@@ -72,7 +72,7 @@ loop:
 		case <-ticker.C:
 			pm.createJoinKey()
 		case <-pm.QuitSync():
-			log.Debug("CreateJoinKeyLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Debug("CreateJoinKeyLoop: QuitSync", "entity", pm.Entity().IDString())
 			break loop
 		}
 	}

@@ -50,7 +50,7 @@ func (pm *BaseProtocolManager) HandleUpdatePersonLog(
 	}
 	defer origPerson.Unlock()
 
-	log.Debug("HandleUpdatePersonLog: start", "personID", personID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("HandleUpdatePersonLog: start", "personID", personID, "entity", pm.Entity().IDString())
 
 	// 2. get person (should never delete once stored)
 	err = origPerson.GetByID(true)
@@ -154,7 +154,7 @@ func (pm *BaseProtocolManager) handleUpdatePersonLogCore(
 	}
 
 	// 4. saveUpdateObj
-	log.Debug("handleUpdatePersonLogCore: to saveUpdateObjectWithOplog", "person", origPerson.GetID(), "oplog", oplog.ID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("handleUpdatePersonLogCore: to saveUpdateObjectWithOplog", "person", origPerson.GetID(), "oplog", oplog.ID, "entity", pm.Entity().IDString())
 
 	origPerson.SetSyncInfo(nil)
 	origPerson.SetIsGood(true)

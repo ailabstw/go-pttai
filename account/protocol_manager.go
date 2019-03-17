@@ -169,7 +169,7 @@ func (pm *ProtocolManager) Stop() error {
 }
 
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
-	log.Debug("Sync: start", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
+	log.Debug("Sync: start", "entity", pm.Entity().IDString(), "peer", peer, "status", pm.Entity().GetStatus())
 	if peer == nil {
 		pm.SyncPendingMasterOplog(peer)
 		pm.SyncPendingMemberOplog(peer)
@@ -179,7 +179,7 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 
 	err := pm.SyncOplog(peer, pm.MasterMerkle(), pkgservice.SyncMasterOplogMsg)
 
-	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "e", err)
+	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 
 	if err != nil {
 		return err

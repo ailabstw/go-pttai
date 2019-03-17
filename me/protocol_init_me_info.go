@@ -31,7 +31,7 @@ type InitMeInfo struct {
 }
 
 func (pm *ProtocolManager) InitMeInfo(peer *pkgservice.PttPeer) error {
-	log.Debug("InitMeInfo: start")
+	log.Debug("InitMeInfo: start", "entity", pm.Entity().IDString(), "peer", peer)
 
 	myInfo := pm.Entity().(*MyInfo)
 
@@ -41,7 +41,7 @@ func (pm *ProtocolManager) InitMeInfo(peer *pkgservice.PttPeer) error {
 		return err
 	}
 
-	log.Debug("InitMeInfo: done")
+	log.Debug("InitMeInfo: done", "entity", pm.Entity().IDString(), "peer", peer)
 
 	return nil
 }

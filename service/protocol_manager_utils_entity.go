@@ -66,11 +66,11 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 
 	// member
 	pm.CleanMember(true)
-	log.Debug("DefaultPostdeleteEntity: to CleanMemberOplog", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("DefaultPostdeleteEntity: to CleanMemberOplog", "entity", pm.Entity().IDString())
 	pm.CleanMemberOplog(true)
 
 	// clean log0
-	log.Debug("DefaultPostdeleteEntity: to CleanLog0", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("DefaultPostdeleteEntity: to CleanLog0", "entity", pm.Entity().IDString())
 	pm.CleanLog0(true)
 
 	// peer
@@ -80,10 +80,10 @@ func (pm *BaseProtocolManager) DefaultPostdeleteEntity(opData OpData, isForce bo
 }
 
 func (pm *BaseProtocolManager) FullCleanLog() {
-	log.Debug("FullCleanLog: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("FullCleanLog: start", "entity", pm.Entity().IDString())
 	pm.CleanMember(false)
 	pm.CleanMemberOplog(false)
 	pm.CleanLog0(false)
 
-	log.Debug("FullCleanLog: end", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("FullCleanLog: end", "entity", pm.Entity().IDString())
 }

@@ -26,7 +26,7 @@ func (pm *ProtocolManager) handleDeleteFriendLogs(oplog *pkgservice.BaseOplog, i
 
 	opData := &FriendOpDeleteFriend{}
 
-	log.Debug("handleDeleteFriendLogs: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("handleDeleteFriendLogs: start", "entity", pm.Entity().IDString())
 
 	return pm.HandleDeleteEntityLog(
 		oplog,

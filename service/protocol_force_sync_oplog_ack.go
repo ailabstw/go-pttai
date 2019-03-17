@@ -58,7 +58,7 @@ func (pm *BaseProtocolManager) ForceSyncOplogAck(
 		}
 	}
 
-	log.Debug("ForceSyncOplogAck: after for-loop", "nodes", nodes, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("ForceSyncOplogAck: after for-loop", "nodes", nodes, "entity", pm.Entity().IDString())
 
 	// deal with the last part of the nodes.
 	if len(nodes) == 0 {

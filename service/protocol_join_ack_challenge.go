@@ -57,7 +57,7 @@ func (p *BasePtt) JoinAckChallenge(keyInfo *KeyInfo, join *Join, peer *PttPeer, 
 		return err
 	}
 
-	log.Debug("JoinAckChallenge: to SendData", "entity", entity.GetID(), "service", entity.Service().Name(), "peer", peer)
+	log.Debug("JoinAckChallenge: to SendData", "entity", entity.IDString(), "peer", peer)
 	pttData.Node = peer.GetID()[:]
 	err = peer.SendData(pttData)
 
@@ -91,7 +91,7 @@ func (p *BasePtt) HandleJoinAckChallenge(dataBytes []byte, hash *common.Address,
 
 	entity, ok := p.entities[*id]
 	if ok && entity.GetStatus() == types.StatusAlive {
-		log.Error("HandleJoinAckChallenge: already registered", "entity", entity.GetID(), "service", entity.Service().Name())
+		log.Error("HandleJoinAckChallenge: already registered", "entity", entity.IDString())
 		return ErrAlreadyRegistered
 	}
 

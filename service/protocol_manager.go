@@ -669,7 +669,7 @@ func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *
 
 func (pm *BaseProtocolManager) Prestart() error {
 	if pm.isPrestart {
-		log.Warn("Prestart: already prestarted", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("Prestart: already prestarted", "entity", pm.Entity().IDString())
 		return ErrAlreadyPrestarted
 	}
 	pm.isPrestart = true
@@ -682,13 +682,13 @@ func (pm *BaseProtocolManager) Prestart() error {
 	go pm.sendDataToPeerWithCodeLoop()
 
 	// master
-	log.Debug("Prestart: to loadMasters", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("Prestart: to loadMasters", "entity", pm.Entity().IDString())
 	masters, err := pm.loadMasters()
 	if err != nil {
 		return err
 	}
 
-	log.Debug("Prestart: after loadMasters", "entity", pm.Entity().GetID(), "masters", len(masters))
+	log.Debug("Prestart: after loadMasters", "entity", pm.Entity().IDString(), "masters", len(masters))
 	for _, master := range masters {
 		log.Debug("Prestart (in-for-loop)", "master", master.ID)
 	}
@@ -734,11 +734,11 @@ func (pm *BaseProtocolManager) Prestart() error {
 	myEntity := pm.Ptt().GetMyEntity().(Entity)
 
 	if service != myService {
-		log.Debug("Prestart: to loadMyMemberLog")
+		log.Debug("Prestart: to loadMyMemberLog", "entity", pm.Entity().IDString())
 		err = pm.loadMyMemberLog()
-		log.Debug("Prestart: after loadMyMemberLog", "e", err, "service", pm.Entity().Service().Name())
+		log.Debug("Prestart: after loadMyMemberLog", "e", err, "entity", pm.Entity().IDString())
 		if err != nil {
-			log.Error("Prestart: unable to loadMyMemberLog", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Error("Prestart: unable to loadMyMemberLog", "e", err, "entity", pm.Entity().IDString())
 			return err
 		}
 	}
@@ -747,7 +747,7 @@ func (pm *BaseProtocolManager) Prestart() error {
 	oplog := &BaseOplog{}
 	pm.SetLog0DB(oplog)
 	oplogs, err := GetOplogList(oplog, nil, 1, pttdb.ListOrderNext, types.StatusAlive, false)
-	log.Debug("Prestart: after GetOplogList", "entity", pm.Entity().GetID(), "e", err, "oplogs", len(oplogs))
+	log.Debug("Prestart: after GetOplogList", "entity", pm.Entity().IDString(), "e", err, "oplogs", len(oplogs))
 	if entity == myEntity && len(oplogs) == 0 {
 		return nil
 	}
@@ -761,13 +761,13 @@ func (pm *BaseProtocolManager) Prestart() error {
 
 func (pm *BaseProtocolManager) Start() error {
 	if pm.isStart {
-		log.Warn("Start: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("Start: already started", "entity", pm.Entity().IDString())
 		return ErrAlreadyStarted
 	}
 
 	pm.isStart = true
 
-	log.Info("Start: to master merkle-tree", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Info("Start: to master merkle-tree", "entity", pm.Entity().IDString())
 
 	syncWG := pm.SyncWG()
 	syncWG.Add(1)
@@ -789,10 +789,10 @@ func (pm *BaseProtocolManager) Start() error {
 	var err error
 	if !entity.IsOwner(myID) {
 		owners := entity.GetOwnerIDs()
-		log.Warn("Start: I am not the owner", "myID", myID, "entityID", entity.GetID(), "owners", owners)
+		log.Warn("Start: I am not the owner", "myID", myID, "entityID", entity.IDString(), "owners", owners)
 		for _, ownerID := range owners {
 			if !reflect.DeepEqual(myID, ownerID) {
-				log.Debug("Start: to MigrateMember", "entity", entity.GetID(), "ownerID", ownerID, "myID", myID)
+				log.Debug("Start: to MigrateMember", "entity", entity.IDString(), "ownerID", ownerID, "myID", myID)
 				err = pm.MigrateMember(ownerID, myID)
 				if err == nil {
 					break
@@ -800,7 +800,7 @@ func (pm *BaseProtocolManager) Start() error {
 			}
 		}
 		if err != nil {
-			log.Warn("Start: I am still not the owner, resetting as new me", "entity", entity.GetID(), "e", err)
+			log.Warn("Start: I am still not the owner, resetting as new me", "entity", entity.IDString(), "e", err)
 			entity.ResetOwnerIDs()
 			entity.AddOwnerID(myID)
 			return entity.Save(false)
@@ -811,7 +811,7 @@ func (pm *BaseProtocolManager) Start() error {
 }
 
 func (pm *BaseProtocolManager) Prestop() error {
-	log.Debug("Prestop: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "isStart", pm.isStart)
+	log.Debug("Prestop: start", "entity", pm.Entity().IDString(), "isStart", pm.isStart)
 	close(pm.quitSync)
 
 	return nil
@@ -833,7 +833,7 @@ func (pm *BaseProtocolManager) Poststop() error {
 
 	pm.eventMux.Stop()
 
-	log.Debug("Stopped", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("Stopped", "entity", pm.Entity().IDString())
 
 	return nil
 }

@@ -71,7 +71,7 @@ func (pm *BaseProtocolManager) UpdatePerson(
 	// 5. update person
 	oplogStatus := oplog.ToStatus()
 
-	log.Debug("UpdatePerson: to handleCore", "status", oplogStatus, "id", id, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("UpdatePerson: to handleCore", "status", oplogStatus, "id", id, "entity", pm.Entity().IDString())
 
 	if oplogStatus == types.StatusAlive {
 		err = pm.handleUpdatePersonLogCore(

@@ -17,8 +17,6 @@
 package service
 
 import (
-	"runtime/debug"
-
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
@@ -37,8 +35,7 @@ func (pm *BaseProtocolManager) RegisterOpKey(keyInfo *KeyInfo, isLocked bool) er
 	}
 
 	if keyInfo.KeyBytes == nil {
-		log.Error("RegisterOpKey: invalid KeyBytes", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "id", keyInfo.ID)
-		debug.PrintStack()
+		log.Error("RegisterOpKey: invalid KeyBytes", "entity", pm.Entity().IDString(), "id", keyInfo.ID)
 		return ErrInvalidKeyInfo
 	}
 

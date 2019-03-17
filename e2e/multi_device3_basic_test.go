@@ -173,7 +173,7 @@ func TestMultiDevice3Basic(t *testing.T) {
 
 	// wait 15
 	t.Logf("wait 15 seconds for hand-shaking")
-	time.Sleep(15 * time.Second)
+	time.Sleep(TimeSleepRestart)
 
 	// 8. me_GetMyNodes
 

@@ -42,7 +42,7 @@ func (pm *ProtocolManager) DeleteBoard() error {
 		pm.broadcastBoardOplogCore,
 		pm.postdeleteBoard,
 	)
-	log.Debug("DeleteBoard: after DeleteEntity", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("DeleteBoard: after DeleteEntity", "e", err, "entity", pm.Entity().IDString())
 
 	return err
 }
@@ -51,7 +51,7 @@ func (pm *ProtocolManager) postdeleteBoard(theOpData pkgservice.OpData, isForce 
 
 	// board-oplog
 
-	log.Debug("postdeleteBoard: to CleanBoardOplog", "entity", pm.Entity().GetID())
+	log.Debug("postdeleteBoard: to CleanBoardOplog", "entity", pm.Entity().IDString())
 
 	pm.CleanObject()
 

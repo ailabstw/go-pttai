@@ -927,9 +927,7 @@ running:
 			err := srv.protoHandshakeChecks(peers, inboundCount, c)
 			if err == nil {
 				// The handshakes are done and it passed all checks.
-				log.Debug("run: to newPeer")
 				p := newPeer(c, srv.Protocols)
-				log.Debug("run: after newPeer")
 				// If message events are enabled, pass the peerFeed
 				// to the peer
 				if srv.EnableMsgEvents {
@@ -937,9 +935,7 @@ running:
 				}
 				name := truncateName(c.name)
 				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
-				log.Debug("run: to runPeer")
 				go srv.runPeer(p)
-				log.Debug("run: after runPeer")
 				peers[c.id] = p
 				if p.Inbound() {
 					inboundCount++
@@ -1201,9 +1197,9 @@ func (srv *Server) runPeer(p *Peer) {
 	})
 
 	// run the protocol
-	log.Debug("runPeer: to p.run")
+	log.Debug("runPeer: to p.run", "peer", p)
 	remoteRequested, err := p.run()
-	log.Debug("runPeer: after p.run")
+	log.Debug("runPeer: after p.run", "peer", p)
 
 	// broadcast peer drop
 	srv.peerFeed.Send(&PeerEvent{

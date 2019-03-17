@@ -43,7 +43,6 @@ type Ptt interface {
 	HandleIdentifyPeerAck(entityID *types.PttID, data *IdentifyPeerAck, peer *PttPeer) error
 
 	FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerType bool) error
-	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
 	ResetPeerType(peer *PttPeer, isLocked bool, isResetPeerType bool) error
 
@@ -107,6 +106,8 @@ type MyPtt interface {
 	MyNodeKey() *ecdsa.PrivateKey
 
 	// SetPeerType
+
+	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
 	SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error
 

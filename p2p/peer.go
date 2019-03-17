@@ -116,7 +116,7 @@ func NewPeer(id discover.NodeID, name string, caps []Cap) *Peer {
 	pipe, _ := net.Pipe()
 	conn := &conn{fd: pipe, transport: nil, id: id, caps: caps, name: name}
 	peer := newPeer(conn, nil)
-	close(peer.closed) // ensures Disconnect doesn't block
+	// close(peer.closed) // ensures Disconnect doesn't block
 	return peer
 }
 
@@ -273,7 +273,10 @@ func (p *Peer) pingLoop() {
 		select {
 		case <-ping.C:
 			if err := SendItems(p.rw, pingMsg); err != nil {
-				p.protoErr <- err
+				select {
+				case p.protoErr <- err:
+				case <-p.closed:
+				}
 				return
 			}
 			ping.Reset(pingInterval)
@@ -288,12 +291,18 @@ func (p *Peer) readLoop(errc chan<- error) {
 		msg, err := p.rw.ReadMsg()
 		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
 		if err != nil {
-			errc <- err
+			select {
+			case errc <- err:
+			case <-p.closed:
+			}
 			return
 		}
 		msg.ReceivedAt = time.Now()
 		if err = p.handle(msg); err != nil {
-			errc <- err
+			select {
+			case errc <- err:
+			case <-p.closed:
+			}
 			return
 		}
 	}
@@ -404,7 +413,10 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 
 			log.Info("startProtocols: after wg.Done", "peer", p)
 
-			p.protoErr <- err
+			select {
+			case p.protoErr <- err:
+			case <-p.closed:
+			}
 		}()
 	}
 }

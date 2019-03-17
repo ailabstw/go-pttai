@@ -212,6 +212,8 @@ func TestNewPeer(t *testing.T) {
 		t.Errorf("Caps mismatch: got %v, expected %v", p.Caps(), caps)
 	}
 
+	close(p.closed)
+
 	p.Disconnect(DiscAlreadyConnected) // Should not hang
 }
 

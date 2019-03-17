@@ -150,13 +150,6 @@ func (p *BasePtt) ResetPeerType(peer *PttPeer, isLocked bool, isForceReset bool)
 		return ErrToClose
 	}
 
-	/*
-		if !isLocked {
-			p.peerLock.Lock()
-			defer p.peerLock.Unlock()
-		}
-	*/
-
 	log.Debug("ResetPeerType", "peer", peer, "userID", peer.UserID)
 
 	if peer.UserID == nil {
@@ -172,7 +165,7 @@ func (p *BasePtt) ResetPeerType(peer *PttPeer, isLocked bool, isForceReset bool)
 		return err
 	}
 
-	err = p.addPeerKnownUserID(peer, peerType, true)
+	err = p.addPeerKnownUserID(peer, peerType, isLocked)
 	if err != nil {
 		return err
 	}
@@ -769,7 +762,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 
 		// setup peer with high peer type and check all the entities.
 		if peer.PeerType < peerType {
-			p.SetupPeer(peer, peerType, false)
+			p.ResetPeerType(peer, false, false)
 			return nil
 		}
 

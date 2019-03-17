@@ -167,12 +167,12 @@ func (pm *ProtocolManager) HandleApproveJoinMe(dataBytes []byte, joinRequest *pk
 	}
 
 	// register peer
-	log.Debug("HandleApproveJoinMe: to RegisterPeer")
+	log.Debug("HandleApproveJoinMe: to RegisterPendingPeer")
 
 	peer.UserID = newMyInfo.ID
 	newPM.RegisterPendingPeer(peer, false)
 
-	log.Debug("HandleApproveJoinMe: after RegisterPeer")
+	log.Debug("HandleApproveJoinMe: after RegisterPendingPeer")
 
 	// add to entities
 	log.Debug("HandleApproveJoinMe: to RegisterEntity")

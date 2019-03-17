@@ -119,8 +119,9 @@ func (pm *ProtocolManager) postprocessMeOplogs(processInfo pkgservice.ProcessInf
 
 	if isPending {
 		toBroadcastLogs = pkgservice.ProcessInfoToBroadcastLogs(info.DeleteMeInfo, toBroadcastLogs)
-		pm.broadcastMeOplogsCore(toBroadcastLogs)
 	}
+
+	pm.broadcastMeOplogsCore(toBroadcastLogs)
 
 	return
 }

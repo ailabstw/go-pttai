@@ -33,11 +33,12 @@ func (p *BasePtt) HandleMessageWrapper(peer *PttPeer) error {
 		log.Error("HandleMessageWrapper: unable ReadMsg", "peer", peer, "e", err)
 		return err
 	}
+	defer msg.Discard()
+
 	if msg.Size > ProtocolMaxMsgSize {
 		log.Error("HandleMessageWrapper: exceed size", "peer", peer, "msg.Size", msg.Size)
 		return ErrMsgTooLarge
 	}
-	defer msg.Discard()
 
 	data := &PttData{}
 	err = msg.Decode(data)

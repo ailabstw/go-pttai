@@ -39,54 +39,62 @@ looping:
 				break looping
 			}
 
-			log.Debug("PMSync: NewPeerCh: start", "entity", pm.Entity().IDString())
+			log.Info("PMSync: NewPeerCh: start", "entity", pm.Entity().IDString(), "peer", peer)
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
 			err = pm.Sync(peer)
-			log.Debug("PMSync: NewPeerCh: after pm.Sync", "entity", pm.Entity(), "peer", peer, "e", err)
+			log.Info("PMSync: NewPeerCh: after pm.Sync", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 			if err != nil {
-				log.Error("unable to Sync after newPeer", "e", err, "peer", peer, "entity", pm.Entity().IDString())
+				log.Error("PMSync: unable to Sync after newPeer", "e", err, "peer", peer, "entity", pm.Entity().IDString())
 
 				if err == p2p.ErrPeerShutdown {
 					pm.UnregisterPeer(peer, false, true, false)
 				}
 			}
+			log.Info("PMSync: NewPeerCh: done", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 		case <-pm.ForceSync():
-			log.Debug("PMSync: ForceSync: start", "entity", pm.Entity().IDString())
+			log.Info("PMSync: ForceSync: start", "entity", pm.Entity().IDString())
 			peer, err = pmSyncPeer(pm)
-			log.Debug("PMSync: ForceSync: after pmSyncPeer", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
+			log.Info("PMSync: ForceSync: after pmSyncPeer", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 			if err != nil {
 				break looping
 			}
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
-			log.Debug("PMSync: ForceSync: to Sync", "entity", pm.Entity().IDString(), "peer", peer)
+			log.Info("PMSync: ForceSync: to Sync", "entity", pm.Entity().IDString(), "peer", peer)
 			err = pm.Sync(peer)
-			log.Debug("PMSync: ForceSync: after Sync", "entity", pm.Entity().IDString(), "peer", peer)
+			log.Info("PMSync: ForceSync: after Sync", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 			if err != nil {
-				log.Error("unable to Sync after forceSync", "e", err, "peer", peer, "entity", pm.Entity().IDString())
+				log.Error("PMSync: unable to Sync after forceSync", "e", err, "peer", peer, "entity", pm.Entity().IDString())
 				if err == p2p.ErrPeerShutdown {
 					pm.UnregisterPeer(peer, false, true, false)
 				}
 			}
+			log.Info("PMSync: ForceSync: done", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 
 		case <-forceSyncTicker.C:
 			forceSyncTicker.Stop()
 			forceSyncTicker = time.NewTicker(pm.ForceSyncCycle())
 
+			log.Info("PMSync: ticker: start", "entity", pm.Entity().IDString())
+
 			peer, err = pmSyncPeer(pm)
+			log.Info("PMSync: ticker: after pmSyncPeer", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 			if err != nil {
 				break looping
 			}
 
 			pm.SyncOpKeyOplog(peer, SyncOpKeyOplogMsg)
+			log.Info("PMSync: ticker: to Sync", "entity", pm.Entity().IDString(), "peer", peer)
 			err = pm.Sync(peer)
+			log.Info("PMSync: ticker: after pm.Sync", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 			if err != nil {
-				log.Error("unable to Sync after forceSyncTicker", "e", err, "peer", peer, "entity", pm.Entity().IDString())
+				log.Error("PMSync: unable to Sync after ticker", "e", err, "peer", peer, "entity", pm.Entity().IDString())
 				if err == p2p.ErrPeerShutdown {
 					pm.UnregisterPeer(peer, false, true, false)
 				}
 			}
+			log.Info("PMSync: ticker: done", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 		case <-pm.QuitSync():
 			log.Info("PMSync: QuitSync", "entity", pm.Entity().IDString())
 			err = p2p.DiscQuitting

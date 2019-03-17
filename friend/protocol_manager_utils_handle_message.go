@@ -21,6 +21,23 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
+func (pm *ProtocolManager) HandleNonRegisteredMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) error {
+
+	log.Debug("friend.HandleNonRegisteredMessage: start", "op", op, "InitFriendInfoMsg", InitFriendInfoMsg)
+
+	err := pkgservice.ErrInvalidMsg
+
+	switch op {
+	// init friend info
+	case InitFriendInfoMsg:
+		err = pm.HandleInitFriendInfo(dataBytes, peer)
+	case InitFriendInfoAckMsg:
+		err = pm.HandleInitFriendInfoAck(dataBytes, peer)
+	}
+
+	return err
+}
+
 func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) error {
 
 	log.Debug("friend.HandleMessage: start", "op", op, "AddFriendOplogMsg", AddFriendOplogMsg)
@@ -57,12 +74,6 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 		err = pm.HandleAddPendingFriendOplog(dataBytes, peer)
 	case AddPendingFriendOplogsMsg:
 		err = pm.HandleAddPendingFriendOplogs(dataBytes, peer)
-
-	// init friend info
-	case InitFriendInfoMsg:
-		err = pm.HandleInitFriendInfo(dataBytes, peer)
-	case InitFriendInfoAckMsg:
-		err = pm.HandleInitFriendInfoAck(dataBytes, peer)
 
 	// message
 	case SyncCreateMessageMsg:

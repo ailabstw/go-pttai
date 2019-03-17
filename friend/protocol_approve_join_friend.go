@@ -38,12 +38,6 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	// friend
 	f := pm.Entity().(*Friend)
 
-	// register pending peer
-	if peer.UserID == nil {
-		peer.UserID = joinEntity.ID
-	}
-	pm.RegisterPendingPeer(peer, false)
-
 	// master
 	oplog := &pkgservice.BaseOplog{}
 	pm.SetMasterDB(oplog)
@@ -56,7 +50,7 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 	log.Debug("ApproveJoinFriend: after master GetOplogList", "masterLogs", masterLogs)
 
 	// member
-	_, _, err = pm.AddMember(peer.UserID, true)
+	_, _, err = pm.AddMember(joinEntity.ID, true)
 	if err != nil {
 		log.Error("ApproveJoinFriend: unable to add member", "e", err, "entity", pm.Entity().GetID())
 		return nil, nil, err

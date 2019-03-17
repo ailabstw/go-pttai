@@ -40,7 +40,7 @@ func (pm *BaseProtocolManager) NoMorePeers() chan struct{} {
 }
 
 func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, isLocked bool) (err error) {
-	log.Debug("RegisterPeer: start", "peer", peer, "peerType", peerType)
+	log.Info("RegisterPeer: start", "peer", peer, "peerType", peerType, "isLocked", isLocked)
 
 	if peerType == PeerTypeRandom {
 		return nil
@@ -53,15 +53,18 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, is
 	// We just primitively check the existence without lock
 	// to avoid the deadlock in chan.
 	// The consequence of entering race-condition is just doing sync multiple-times.
-	origPeer := pm.Peers().Peer(peer.GetID(), true)
-	if origPeer != nil {
-		return pm.Peers().Register(peer, peerType, isLocked)
+	err = pm.checkOrigPeerAndRegister(peer, peerType, isLocked)
+	if err == nil {
+		return nil
+	}
+	if err == ErrAlreadyRegistered {
+		return err
 	}
 	if !pm.isStart {
 		return nil
 	}
 
-	log.Debug("RegisterPeer: to NewPeerCh", "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString(), "status", pm.Entity().GetStatus())
+	log.Info("RegisterPeer: to NewPeerCh", "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString(), "status", pm.Entity().GetStatus())
 
 	select {
 	case pm.NewPeerCh() <- peer:
@@ -70,9 +73,32 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, is
 		err = p2p.DiscQuitting
 	}
 
-	log.Debug("RegisterPeer: after NewPeerCh", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString())
+	log.Info("RegisterPeer: after NewPeerCh", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString())
 
 	return err
+}
+
+func (pm *BaseProtocolManager) checkOrigPeerAndRegister(peer *PttPeer, peerType PeerType, isLocked bool) error {
+
+	log.Info("checkOrigPeerAndRegister: start", "peer", peer, "peerType", peerType, "isLocked", isLocked)
+
+	if !isLocked {
+		pm.Peers().Lock()
+		defer pm.Peers().Unlock()
+	}
+
+	log.Info("checkOrigPeerAndRegister: after lock", "peer", peer, "peerType", peerType, "isLocked", isLocked)
+
+	origPeer := pm.Peers().Peer(peer.GetID(), true)
+	if origPeer == nil {
+		return ErrNotRegistered
+	}
+
+	if origPeer != peer {
+		return ErrAlreadyRegistered
+	}
+
+	return pm.Peers().Register(peer, peerType, true)
 }
 
 func (pm *BaseProtocolManager) RegisterPendingPeer(peer *PttPeer, isLocked bool) error {

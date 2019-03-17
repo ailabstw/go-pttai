@@ -21,10 +21,7 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
-func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) (err error) {
-
-	myInfo := pm.Entity().(*MyInfo)
-	log.Debug("HandleMessage: Received msg", "myID", myInfo.ID, "op", op, "SyncMeOplogMsg", SyncMeOplogMsg, "peer", peer, "peerType", peer.PeerType)
+func (pm *ProtocolManager) HandleNonRegisteredMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) (err error) {
 
 	switch op {
 	// init me info
@@ -39,6 +36,14 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case SendRaftMsgsMsg:
 		return pm.HandleSendRaftMsgs(dataBytes, peer)
 	}
+
+	return pkgservice.ErrInvalidMsg
+}
+
+func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte, peer *pkgservice.PttPeer) (err error) {
+
+	myInfo := pm.Entity().(*MyInfo)
+	log.Debug("HandleMessage: Received msg", "myID", myInfo.ID, "op", op, "SyncMeOplogMsg", SyncMeOplogMsg, "peer", peer, "peerType", peer.PeerType)
 
 	fitPeerType := pm.GetPeerType(peer)
 

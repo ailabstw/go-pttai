@@ -85,6 +85,8 @@ func (p *BasePtt) HandleRequestOpKey(dataBytes []byte, peer *PttPeer) error {
 	}
 	pm := entity.PM()
 
+	log.Debug("HandleRequestOpKey: to check status", "entity", pm.Entity().IDString(), "status", entity.GetStatus())
+
 	if entity.GetStatus() >= types.StatusMigrated {
 		return p.EntityTerminal(entity, pm, peer)
 	}

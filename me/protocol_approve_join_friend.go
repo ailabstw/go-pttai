@@ -62,6 +62,13 @@ func (pm *ProtocolManager) ApproveJoinFriend(joinEntity *pkgservice.JoinEntity, 
 		return nil, nil, err
 	}
 
+	// register pending peer
+	if peer.UserID == nil {
+		peer.UserID = joinEntity.ID
+		friendPM.Ptt().FinishIdentifyPeer(peer, false, false)
+	}
+	friendPM.RegisterPendingPeer(peer, false)
+
 	data := &ApproveJoinFriend{
 		FriendData: friendData.(*friend.ApproveJoin),
 	}
@@ -169,6 +176,7 @@ func (pm *ProtocolManager) HandleApproveJoinFriend(dataBytes []byte, joinRequest
 	// register-peer
 	if peer.UserID == nil {
 		peer.UserID = f.FriendID
+		newPM.Ptt().FinishIdentifyPeer(peer, false, false)
 	}
 	newPM.RegisterPendingPeer(peer, false)
 

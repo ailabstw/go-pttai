@@ -293,6 +293,10 @@ func (pm *BaseProtocolManager) RemoveOpKeyFromHash(
 	isDeleteDB bool,
 ) error {
 
+	if hash == nil {
+		return nil
+	}
+
 	if !isLocked {
 		pm.lockOpKeyInfo.Lock()
 		defer pm.lockOpKeyInfo.Unlock()

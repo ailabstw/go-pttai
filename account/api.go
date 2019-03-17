@@ -66,6 +66,10 @@ func (api *PrivateAPI) RemoveUserNode(entityID string, nodeIDStr string) (types.
 	return api.b.RemoveUserNode([]byte(entityID), []byte(nodeIDStr))
 }
 
+func (api *PrivateAPI) ForceSync(entityID string) (bool, error) {
+	return api.b.ForceSync([]byte(entityID))
+}
+
 /**********
  * Raw Data
  **********/

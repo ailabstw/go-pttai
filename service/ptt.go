@@ -107,9 +107,8 @@ type MyPtt interface {
 
 	// SetPeerType
 
-	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
-
 	SetPeerType(peer *PttPeer, peerType PeerType, isForce bool, isLocked bool) error
+	SetupPeer(peer *PttPeer, peerType PeerType, isLocked bool) error
 
 	GetEntities() map[types.PttID]Entity
 }

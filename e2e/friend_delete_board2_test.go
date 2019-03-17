@@ -667,6 +667,8 @@ func TestFriendDeleteBoard2(t *testing.T) {
 
 	time.Sleep(TimeSleepRestart)
 
+	time.Sleep(TimeSleepRestart)
+
 	// 48. content-get-board
 	marshaledID, _ = board1_16_2.ID.MarshalText()
 

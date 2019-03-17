@@ -710,7 +710,7 @@ func (m *Merkle) SetUpdateTS(ts types.Timestamp) error {
 	m.lockToUpdateTS.Lock()
 	defer m.lockToUpdateTS.Unlock()
 
-	key := m.MarshalToUpdateTSKey(ts)
+	key := m.MarshalToUpdateTSKey(hrTS)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 
@@ -729,11 +729,11 @@ func (m *Merkle) SetUpdateTS2(ts types.Timestamp, ts2 types.Timestamp) error {
 	m.toUpdateTS[hrTS.Ts] = true
 	m.toUpdateTS[hrTS2.Ts] = true
 
-	key := m.MarshalToUpdateTSKey(ts)
+	key := m.MarshalToUpdateTSKey(hrTS)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 
-	key = m.MarshalToUpdateTSKey(ts2)
+	key = m.MarshalToUpdateTSKey(hrTS2)
 
 	m.db.DB().Put(key, merkleToUpdateTSValue)
 

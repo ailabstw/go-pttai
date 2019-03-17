@@ -215,14 +215,31 @@ func (ps *PttPeerSet) Unregister(peer *PttPeer, isLocked bool) error {
 		return ErrNotRegistered
 	}
 
+	var origPeer *PttPeer
 	switch origPeerType {
 	case PeerTypeMe:
+		origPeer, ok = ps.mePeers[id]
+		if !ok || origPeer != peer {
+			return ErrNotRegistered
+		}
 		delete(ps.mePeers, id)
 	case PeerTypeImportant:
+		origPeer, ok = ps.importantPeers[id]
+		if !ok || origPeer != peer {
+			return ErrNotRegistered
+		}
 		delete(ps.importantPeers, id)
 	case PeerTypeMember:
+		origPeer, ok = ps.memberPeers[id]
+		if !ok || origPeer != peer {
+			return ErrNotRegistered
+		}
 		delete(ps.memberPeers, id)
 	case PeerTypePending:
+		origPeer, ok = ps.pendingPeers[id]
+		if !ok || origPeer != peer {
+			return ErrNotRegistered
+		}
 		delete(ps.pendingPeers, id)
 	}
 

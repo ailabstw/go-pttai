@@ -168,7 +168,7 @@ func (p *BasePtt) registerEntityPeers(e Entity, isLocked bool) error {
 
 	// pending-peers
 	toRemovePeers = make([]*discover.NodeID, 0)
-	log.Debug("registerEntityPeers: to pendingPeers")
+	log.Debug("registerEntityPeers: to pendingPeers", "pendingPeers", len(p.pendingPeers))
 	for _, peer = range p.pendingPeers {
 		if pm.IsMyDevice(peer) {
 			pm.RegisterPeer(peer, PeerTypeMe, false)

@@ -97,7 +97,7 @@ func (pm *BaseProtocolManager) GetMemberLogByMemberID(id *types.PttID, isLocked 
 	memberLog := &MemberOplog{BaseOplog: &BaseOplog{}}
 	pm.SetMemberDB(memberLog.BaseOplog)
 	logID := member.GetNewestLogID()
-	log.Debug("GetMemberLogByMemberID: after GetNewestLogID", "id", id, "logID", logID, "entity", pm.Entity().GetID(), "service", pm.entity.Service().Name())
+	log.Debug("GetMemberLogByMemberID: after GetNewestLogID", "id", id, "logID", logID, "entity", pm.Entity().IDString())
 	err = memberLog.Get(logID, false)
 	if err != nil {
 		return nil, err

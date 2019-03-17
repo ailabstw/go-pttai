@@ -48,7 +48,7 @@ type Ptt interface {
 
 	NoMorePeers() chan struct{}
 
-	AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType) error
+	AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType, isAddPeer bool) error
 
 	// entities
 

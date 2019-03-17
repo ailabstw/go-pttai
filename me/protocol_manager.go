@@ -113,7 +113,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		return nil, err
 	}
 
-	log.Debug("NewProtocolManager: start", "myInfo", myInfo.GetID())
+	log.Debug("NewProtocolManager: start", "myInfo", myInfo.IDString())
 
 	pm := &ProtocolManager{
 		myPtt: ptt,
@@ -207,7 +207,7 @@ func (pm *ProtocolManager) Start() error {
 	myInfo := pm.Entity().(*MyInfo)
 
 	// start
-	log.Debug("Start: start", "me", myInfo.GetID())
+	log.Debug("Start: start", "me", myInfo.IDString())
 	err := pm.BaseProtocolManager.Start()
 	if err != nil {
 		log.Error("Start: unable to start BaseProtocolManager", "e", err)
@@ -331,7 +331,7 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 		return nil
 	}
 
-	log.Debug("Sync: Start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("Sync: Start", "entity", pm.Entity().IDString())
 
 	err := pm.SyncOplog(peer, pm.meOplogMerkle, SyncMeOplogMsg)
 	if err != nil {

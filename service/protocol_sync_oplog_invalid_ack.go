@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"math/rand"
-	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
 )
@@ -181,40 +180,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogInvalidAck(
 	}
 
 	// 4. try to connect the master-node.
-	masters := pm.masters
-	pm.lockMaster.RLock()
-	defer pm.lockMaster.RUnlock()
-
-	if len(masters) == 0 {
-		return ErrInvalidMaster0
-	}
-
-	var masterID *types.PttID
-	for _, master := range masters {
-		if !reflect.DeepEqual(myID, master.ID) {
-			masterID = master.ID
-			break
-		}
-	}
-
-	if masterID == nil {
-		return ErrInvalidMaster0
-	}
-
-	userNodeID, err := pm.Ptt().GetMyEntity().GetUserNodeID(masterID)
-	if err != nil {
-		return err
-	}
-	if userNodeID == nil {
-		return ErrInvalidMaster0
-	}
-
-	opKey, err := pm.GetOldestOpKey(false)
-	if err != nil {
-		return err
-	}
-
-	pm.Ptt().AddDial(userNodeID, opKey.Hash, PeerTypeImportant)
+	pm.ConnectMaster()
 
 	return nil
 }

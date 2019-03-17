@@ -71,12 +71,12 @@ func (pm *BaseProtocolManager) Fix138MasterLog() error {
 		eachMaster.SetID(eachLog.ObjID)
 		err = eachMaster.GetByID(false)
 		if err != nil {
-			log.Warn("Fix138MasterLog: unable to get master", "master", eachMaster.ID, "err", err, "log", eachLog.ID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Warn("Fix138MasterLog: unable to get master", "master", eachMaster.ID, "err", err, "log", eachLog.ID, "entity", pm.Entity().IDString())
 			continue
 		}
 
 		if !reflect.DeepEqual(eachMaster.LogID, eachLog.ID) {
-			log.Warn("Fix138MasterLog: unmatched LogID", "master", eachMaster.ID, "masterLog", eachMaster.LogID, "log", eachLog.ID, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Warn("Fix138MasterLog: unmatched LogID", "master", eachMaster.ID, "masterLog", eachMaster.LogID, "log", eachLog.ID, "entity", pm.Entity().IDString())
 			continue
 		}
 

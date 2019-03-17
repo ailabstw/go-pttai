@@ -249,7 +249,7 @@ func (pm *ProtocolManager) publishEntriesAddNode(ent *pb.Entry, cc *pb.ConfChang
 			return err
 		}
 		log.Debug("publishEntriesAddNode: to AddDial", "nodeID", nodeID)
-		ptt.AddDial(nodeID, opKey.Hash, pkgservice.PeerTypeMe)
+		ptt.AddDial(nodeID, opKey.Hash, pkgservice.PeerTypeMe, true)
 	}
 
 	// oplog-save

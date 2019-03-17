@@ -88,8 +88,8 @@ func (p *BasePtt) RegisterEntity(e Entity, isLocked bool, isPeerLocked bool) err
 
 func (p *BasePtt) registerEntityPeers(e Entity, isLocked bool) error {
 	if !isLocked {
-		p.peerLock.Lock()
-		defer p.peerLock.Unlock()
+		p.peerLock.RLock()
+		defer p.peerLock.RUnlock()
 	}
 
 	log.Debug("registerEntityPeers: after lock")

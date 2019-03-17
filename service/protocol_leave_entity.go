@@ -22,7 +22,7 @@ func (pm *BaseProtocolManager) LeaveEntity() (bool, error) {
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 
-	log.Debug("LeaveEntity: to DeleteMember", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("LeaveEntity: to DeleteMember", "entity", pm.Entity().IDString())
 
 	return pm.DeleteMember(myID)
 }

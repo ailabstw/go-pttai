@@ -69,7 +69,7 @@ func (pm *BaseProtocolManager) postdeleteMember(
 	myID := pm.Ptt().GetMyEntity().GetID()
 	entity := pm.Entity()
 
-	log.Debug("postdeleteMember: start", "id", id, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "myID", myID)
+	log.Debug("postdeleteMember: start", "id", id, "entity", pm.Entity().IDString(), "myID", myID)
 
 	if pm.inpostdeleteMember != nil {
 		err = pm.inpostdeleteMember(id, oplog, origObj, opData)

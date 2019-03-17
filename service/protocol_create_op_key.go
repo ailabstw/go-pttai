@@ -24,12 +24,12 @@ import (
 )
 
 func (pm *BaseProtocolManager) CreateOpKeyLoop() error {
-	log.Debug("CreateOpKeyLoop: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("CreateOpKeyLoop: start", "entity", pm.Entity().IDString())
 	err := pm.TryCreateOpKeyInfo()
-	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("CreateOpKeyLoop: after 1st TryCreateOpKeyInfo", "e", err, "entity", pm.Entity().IDString())
 
 	toRenewSeconds := pm.GetToRenewOpKeySeconds()
-	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds, "service", pm.Entity().Service().Name())
+	log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds, "entity", pm.Entity().IDString())
 	ticker := time.NewTimer(time.Duration(toRenewSeconds) * time.Second)
 
 loop:
@@ -44,10 +44,10 @@ loop:
 			log.Debug("CreateOpKeyLoop: after getToRenewSeconds", "toRenewSeconds", toRenewSeconds)
 			ticker = time.NewTimer(time.Duration(toRenewSeconds) * time.Second)
 		case <-pm.ForceOpKey():
-			log.Debug("CreateOpKeyLoop: ForceOpKey", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Debug("CreateOpKeyLoop: ForceOpKey", "entity", pm.Entity().IDString())
 			pm.CreateOpKey()
 		case <-pm.QuitSync():
-			log.Debug("CreateOpKeyLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Debug("CreateOpKeyLoop: QuitSync", "entity", pm.Entity().IDString())
 			break loop
 		}
 	}
@@ -106,7 +106,7 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 	// 1. validate
 	if !pm.IsMaster(myID, false) {
-		log.Warn("CreateOpKeyInfo: not master", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("CreateOpKeyInfo: not master", "entity", pm.Entity().IDString())
 		return nil
 	}
 
@@ -127,9 +127,9 @@ func (pm *BaseProtocolManager) CreateOpKey() error {
 
 		pm.postcreateOpKey,
 	)
-	log.Debug("CreateOpKey: done", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("CreateOpKey: done", "e", err, "entity", pm.Entity().IDString())
 	if err != nil {
-		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("CreateOpKeyInfo: unable to CreateObj", "e", err, "entity", pm.Entity().IDString())
 		return err
 	}
 	return nil

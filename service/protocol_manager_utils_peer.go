@@ -61,7 +61,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, is
 		return nil
 	}
 
-	log.Debug("RegisterPeer: to NewPeerCh", "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
+	log.Debug("RegisterPeer: to NewPeerCh", "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString(), "status", pm.Entity().GetStatus())
 
 	select {
 	case pm.NewPeerCh() <- peer:
@@ -70,7 +70,7 @@ func (pm *BaseProtocolManager) RegisterPeer(peer *PttPeer, peerType PeerType, is
 		err = p2p.DiscQuitting
 	}
 
-	log.Debug("RegisterPeer: after NewPeerCh", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("RegisterPeer: after NewPeerCh", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString())
 
 	return err
 }
@@ -83,11 +83,11 @@ func (pm *BaseProtocolManager) UnregisterPeer(peer *PttPeer, isForceReset bool, 
 
 	peerType := pm.GetPeerType(peer)
 
-	log.Info("UnregisterPeer: to peers.Unregister", "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Info("UnregisterPeer: to peers.Unregister", "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString())
 
 	err := pm.peers.Unregister(peer, false)
 
-	log.Info("UnregisterPeer: after peers.Unregister", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "isForceNotReset", isForceNotReset, "isForceReset", isForceReset, "isPttLocked", isPttLocked)
+	log.Info("UnregisterPeer: after peers.Unregister", "e", err, "peer", peer, "peerType", peerType, "entity", pm.Entity().IDString(), "isForceNotReset", isForceNotReset, "isForceReset", isForceReset, "isPttLocked", isPttLocked)
 	if err != nil {
 		return err
 	}

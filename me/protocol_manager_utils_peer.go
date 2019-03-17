@@ -49,7 +49,7 @@ func (pm *ProtocolManager) IsMyDevice(peer *pkgservice.PttPeer) bool {
 		return false
 	}
 
-	log.Debug("IsMyDevice: to check status", "myNode.Status", myNode.Status)
+	log.Debug("IsMyDevice: to check status", "myNode.Status", myNode.Status, "entity", pm.Entity().IDString(), "peer", peer)
 
 	if myNode.Status < types.StatusSync {
 		return false
@@ -148,7 +148,7 @@ func (pm *ProtocolManager) LoadPeers() error {
 			continue
 		}
 		log.Debug("LoadPeers: to AddDial", "nodeID", myNode.NodeID)
-		ptt.AddDial(myNode.NodeID, opKey.Hash, pkgservice.PeerTypeMe)
+		ptt.AddDial(myNode.NodeID, opKey.Hash, pkgservice.PeerTypeMe, true)
 	}
 	return nil
 }

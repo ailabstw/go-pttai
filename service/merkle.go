@@ -571,19 +571,12 @@ func ValidateMerkleTree(
 	lenMyNodes := len(myNodes)
 	lenTheirNodes := len(theirNodes)
 
-	/*
-		if lenMyNodes != lenTheirNodes {
-			log.Error("ValidateMerkleTree: len", "ts", ts, "lenMyNodes", lenMyNodes, "lenTheirNodes", lenTheirNodes)
-			return false
-		}
-	*/
-
 	var diffTS types.Timestamp
 
 	i := 0
 	for pMyNode, pTheirNode := myNodes, theirNodes; i < lenMyNodes && i < lenTheirNodes; i, pMyNode, pTheirNode = i+1, pMyNode[1:], pTheirNode[1:] {
 		if !reflect.DeepEqual(pMyNode[0].Addr, pTheirNode[0].Addr) {
-			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0], "name", merkle.Name, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Error("ValidateMerkleTree: invalid", "i", i, "len", lenMyNodes, "myNode", pMyNode[0], "theirNode", pTheirNode[0], "name", merkle.Name, "entity", pm.Entity().IDString())
 
 			diffTS = pMyNode[0].UpdateTS
 			if pTheirNode[0].UpdateTS.IsLess(ts) {

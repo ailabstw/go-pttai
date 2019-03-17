@@ -612,13 +612,12 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer) error {
 	for _, entity := range p.entities {
 		pm = entity.PM()
 
-		log.Debug("UnregisterPeerFromEntities (in-for-loop): to pm.UnregisterPeer", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "peer", peer)
+		log.Debug("UnregisterPeerFromEntities (in-for-loop): to pm.UnregisterPeer", "entity", entity.IDString(), "peer", peer)
 		err = pm.UnregisterPeer(peer, false, true, true)
-		log.Debug("UnregisterPeerFromEntities (in-for-loop): after pm.UnregisterPeer", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "peer", peer)
+		log.Debug("UnregisterPeerFromEntities (in-for-loop): after pm.UnregisterPeer", "e", err, "entity", entity.IDString(), "peer", peer)
 		if err != nil {
-			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.Name(), "e", err)
+			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.IDString(), "e", err)
 		}
-		// peer.RegisterEntity(goEntity, fitPeerType)
 	}
 
 	log.Info("UnregisterPeerFromEntities: done", "peer", peer)
@@ -754,7 +753,7 @@ looping:
  * Dail
  **********/
 
-func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType) error {
+func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerType PeerType, isAddPeer bool) error {
 	peer := p.GetPeer(nodeID, false)
 
 	if peer != nil && peer.UserID != nil {
@@ -763,7 +762,6 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 		// setup peer with high peer type and check all the entities.
 		if peer.PeerType < peerType {
 			p.ResetPeerType(peer, false, false)
-			return nil
 		}
 
 		// just do the specific entity
@@ -771,6 +769,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 		if err != nil {
 			return err
 		}
+
 		entity.PM().RegisterPeer(peer, peerType, false)
 		return nil
 	}
@@ -783,6 +782,10 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 	log.Debug("ptt.AddDial: to CheckDialEntityAndIdentifyPeer", "nodeID", nodeID, "peer", peer)
 	if peer != nil {
 		return p.CheckDialEntityAndIdentifyPeer(peer)
+	}
+
+	if !isAddPeer {
+		return nil
 	}
 
 	node, err := discover.NewP2PNodeWithNodeID(*nodeID)

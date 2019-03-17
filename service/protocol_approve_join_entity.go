@@ -42,7 +42,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	keyInfo *KeyInfo,
 	peer *PttPeer,
 ) (*KeyInfo, interface{}, error) {
-	log.Debug("ApproveJoin: start", "name", pm.Entity().Name(), "service", pm.Entity().Service().Name(), "peer", peer, "peerType", peer.PeerType)
+	log.Debug("ApproveJoin: start", "entity", pm.Entity().IDString(), "peer", peer, "peerType", peer.PeerType)
 
 	myID := pm.Ptt().GetMyEntity().GetID()
 
@@ -55,7 +55,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	}
 
 	opKey, err := pm.GetNewestOpKey(false)
-	log.Debug("ApproveJoin: after GetNewestOpKey", "err", err)
+	log.Debug("ApproveJoin: after GetNewestOpKey", "err", err, "entity", pm.Entity().IDString(), "peer", peer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,7 +78,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	oplog := &BaseOplog{}
 	pm.SetMasterDB(oplog)
 	masterLogs, err := GetOplogList(oplog, nil, 0, pttdb.ListOrderNext, types.StatusAlive, false)
-	log.Debug("ApproveJoin: after get master oplogs", "err", err)
+	log.Debug("ApproveJoin: after get master oplogs", "err", err, "entity", pm.Entity().IDString(), "peer", peer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,7 +88,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	var memberLog *MemberOplog
 	memberLogs := make([]*BaseOplog, 0, 2)
 	if !reflect.DeepEqual(myID, joinEntity.ID) {
-		log.Debug("ApproveJoin: peer not me", "joinEntity", joinEntity.ID, "myID", entity.GetCreatorID())
+		log.Debug("ApproveJoin: peer not me", "joinEntity", joinEntity.ID, "myID", entity.GetCreatorID(), "entity", pm.Entity().IDString(), "peer", peer)
 		_, memberLog, err = pm.AddMember(joinEntity.ID, true)
 		log.Debug("ApproveJoin: after AddMember", "e", err)
 		if err == types.ErrAlreadyExists {
@@ -122,7 +122,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 		pm.RegisterPeer(peer, PeerTypeMember, false)
 	}
 
-	log.Debug("ApproveJoinEntity: done", "entity", entity.GetID(), "name", entity.Name(), "peer", peer, "service", entity.Service().Name())
+	log.Debug("ApproveJoinEntity: done", "entity", entity.IDString(), "peer", peer)
 
 	// approve-join
 	approveJoin := &ApproveJoinEntity{

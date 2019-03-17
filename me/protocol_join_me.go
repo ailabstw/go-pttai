@@ -86,7 +86,7 @@ loop:
 		case <-ticker.C:
 			pm.SyncJoinMe()
 		case <-pm.QuitSync():
-			log.Debug("SyncJoinMeLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Debug("SyncJoinMeLoop: QuitSync", "entity", pm.Entity().IDString())
 			break loop
 		}
 	}

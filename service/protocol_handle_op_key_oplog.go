@@ -90,7 +90,7 @@ func (pm *BaseProtocolManager) postprocessOpKeyOplogs(processInfo ProcessInfo, t
 
 	createOpKeyIDList := ProcessInfoToSyncIDList(createOpKeyInfos, OpKeyOpTypeCreateOpKey)
 
-	log.Debug("postprocessOpKeyOplogs: to process create-op-key-ids", "createOpKeyIDList", createOpKeyIDList, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("postprocessOpKeyOplogs: to process create-op-key-ids", "createOpKeyIDList", createOpKeyIDList, "entity", pm.Entity().IDString())
 
 	if isPending {
 		toBroadcastLogs = ProcessInfoToBroadcastLogs(deleteOpKeyInfos, toBroadcastLogs)

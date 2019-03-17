@@ -26,7 +26,7 @@ func (pm *ProtocolManager) handleDeleteBoardLogs(oplog *pkgservice.BaseOplog, in
 
 	opData := &BoardOpDeleteBoard{}
 
-	log.Debug("handleDeleteBoardLogs: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("handleDeleteBoardLogs: start", "entity", pm.Entity().IDString())
 
 	return pm.HandleDeleteEntityLog(
 		oplog,

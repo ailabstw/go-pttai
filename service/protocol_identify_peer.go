@@ -34,7 +34,7 @@ IdentifyPeer identifies the peer by providing the op-key of the pm (requester)
 	3. send data to peer
 */
 func (pm *BaseProtocolManager) IdentifyPeer(peer *PttPeer) {
-	log.Debug("IdentifyPeer: start", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name(), "nodeID", peer.ID(), "userID", peer.UserID)
+	log.Debug("IdentifyPeer: start", "entity", pm.Entity().IDString(), "nodeID", peer.ID(), "userID", peer.UserID)
 
 	if peer.UserID != nil {
 		return

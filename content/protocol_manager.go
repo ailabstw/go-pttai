@@ -126,11 +126,11 @@ func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) 
 func (pm *ProtocolManager) Start() error {
 	err := pm.BaseProtocolManager.Start()
 	if err == pkgservice.ErrAlreadyStarted {
-		log.Warn("Start: already started", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Warn("Start: already started", "entity", pm.Entity().IDString())
 		return nil
 	}
 	if err != nil {
-		log.Error("Start: unable to start BaseProtocolManager", "e", err)
+		log.Error("Start: unable to start BaseProtocolManager", "e", err, "entity", pm.Entity().IDString())
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (pm *ProtocolManager) Start() error {
 		pm.CreateJoinKeyLoop()
 	}()
 
-	log.Debug("Start: to oplog-merkle-tree-loop")
+	log.Debug("Start: to oplog-merkle-tree-loop", "entity", pm.Entity().IDString())
 
 	// oplog-merkle-tree
 	syncWG.Add(1)
@@ -155,12 +155,11 @@ func (pm *ProtocolManager) Start() error {
 }
 
 func (pm *ProtocolManager) Stop() error {
-
 	return nil
 }
 
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
-	log.Debug("Sync: start", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "status", pm.Entity().GetStatus())
+	log.Debug("Sync: start", "entity", pm.Entity().IDString(), "peer", peer, "status", pm.Entity().GetStatus())
 	if peer == nil {
 		pm.SyncPendingMasterOplog(peer)
 		pm.SyncPendingMemberOplog(peer)
@@ -170,7 +169,7 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 
 	err := pm.SyncOplog(peer, pm.MasterMerkle(), pkgservice.SyncMasterOplogMsg)
 
-	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().GetID(), "peer", peer, "service", pm.Entity().Service().Name(), "e", err)
+	log.Debug("Sync: after SyncOplog", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 
 	if err != nil {
 		return err

@@ -275,13 +275,16 @@ func (pm *BaseProtocolManager) ConnectMaster() error {
 	if err != nil {
 		return err
 	}
+	if nodeID == nil {
+		return nil
+	}
 
 	opKey, err := pm.GetOldestOpKey(false)
 	if err != nil {
 		return err
 	}
 
-	pm.Ptt().AddDial(nodeID, opKey.Hash, PeerTypeImportant)
+	pm.Ptt().AddDial(nodeID, opKey.Hash, PeerTypeImportant, true)
 
 	return nil
 }

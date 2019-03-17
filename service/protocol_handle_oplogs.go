@@ -56,7 +56,8 @@ func HandleOplogs(
 	}
 
 	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, pm, merkle, peer)
-	log.Debug("HandleOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+
+	log.Debug("HandleOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs, "entity", pm.Entity().IDString())
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func HandleOplogs(
 	// update-sync-time
 	var err2 error
 	if isUpdateSyncTime && merkle != nil {
-		log.Debug("HandleOplogs: to save sync time", "ts", newestUpdateTS, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+		log.Debug("HandleOplogs: to save sync time", "ts", newestUpdateTS, "entity", pm.Entity().IDString())
 		err2 = merkle.SaveSyncTime(newestUpdateTS)
 		if err2 == pttdb.ErrInvalidUpdateTS {
 			err2 = nil

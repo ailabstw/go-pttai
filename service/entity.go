@@ -104,6 +104,8 @@ type Entity interface {
 
 	SetSyncInfo(syncInfo SyncInfo)
 	GetSyncInfo() SyncInfo
+
+	IDString() string
 }
 
 type BaseEntity struct {
@@ -136,6 +138,8 @@ type BaseEntity struct {
 	dbLock *types.LockMap
 
 	SyncInfo SyncInfo
+
+	idString string
 }
 
 func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.PttID, status types.Status, db *pttdb.LDBBatch, dbLock *types.LockMap) *BaseEntity {
@@ -154,6 +158,8 @@ func NewBaseEntity(id *types.PttID, createTS types.Timestamp, creatorID *types.P
 	}
 	e.OwnerIDs = append(e.OwnerIDs, creatorID)
 
+	e.idString = id.String()
+
 	return e
 }
 
@@ -161,6 +167,7 @@ func (e *BaseEntity) Init(pm ProtocolManager, ptt Ptt, service Service) {
 	e.pm = pm
 	e.ptt = ptt
 	e.service = service
+	e.idString = "(" + e.ID.String() + "/" + service.Name() + ")"
 }
 
 func (e *BaseEntity) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
@@ -170,7 +177,7 @@ func (e *BaseEntity) SetDB(db *pttdb.LDBBatch, dbLock *types.LockMap) {
 
 func (e *BaseEntity) PrestartAndStart() error {
 	err := e.Prestart()
-	log.Debug("PrestartAndStart: after Prestart", "e", err, "entity", e.GetID(), "service", e.Service().Name())
+	log.Debug("PrestartAndStart: after Prestart", "e", err, "entity", e.IDString())
 	if err != nil {
 		return err
 	}
@@ -402,4 +409,8 @@ func (e *BaseEntity) ResetJoinMeta() {}
 
 func (e *BaseEntity) SetJoinTS(ts types.Timestamp) {
 	e.JoinTS = ts
+}
+
+func (e *BaseEntity) IDString() string {
+	return e.idString
 }

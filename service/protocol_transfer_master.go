@@ -72,7 +72,7 @@ func (pm *BaseProtocolManager) TransferMaster(id *types.PttID) error {
 func (pm *BaseProtocolManager) signTransferMasterOplog(oplog *BaseOplog, fromID *types.PttID, toID *types.PttID) error {
 
 	err := pm.SignOplog(oplog)
-	log.Debug("signTransferMasterOplog: after SignOplog", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("signTransferMasterOplog: after SignOplog", "e", err, "entity", pm.Entity().IDString())
 
 	if err != nil {
 		return err

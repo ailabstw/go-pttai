@@ -52,7 +52,7 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 		return pkgservice.ErrInvalidData
 	}
 
-	log.Debug("postdeleteMigrateMe: start")
+	log.Debug("postdeleteMigrateMe: start", "entity", pm.Entity().IDString())
 
 	myInfo := pm.Entity().(*MyInfo)
 	myID := myInfo.ID
@@ -70,16 +70,16 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 			continue
 		}
 
-		log.Debug("postdeleteMigrateMe: (in-for-loop)", "entity", entity.GetID(), "service", entity.Service().Name())
+		log.Debug("postdeleteMigrateMe: (in-for-loop)", "entity", entity.IDString())
 
 		if !entity.IsOwner(myID) {
-			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs()[0])
+			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.IDString(), "owners", entity.GetOwnerIDs()[0])
 			continue
 		}
 
 		entityPM = entity.PM()
 		_, _, err = entityPM.AddMember(newMyID, true)
-		log.Debug("postdeleteMigrateMe: after add member", "entity", entity.GetID(), "e", err)
+		log.Debug("postdeleteMigrateMe: after add member", "entity", entity.IDString(), "e", err)
 		if err != nil {
 			continue
 		}
@@ -98,7 +98,7 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 		}
 
 		if !entity.IsOwner(myID) {
-			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.GetID(), "owners", entity.GetOwnerIDs(), "service", entity.Service().Name())
+			log.Debug("postdeleteMigrateMe: not owner", "entity", entity.IDString(), "owners", entity.GetOwnerIDs())
 			continue
 		}
 
@@ -106,21 +106,21 @@ func (pm *ProtocolManager) postdeleteMigrateMe(theOpData pkgservice.OpData, isFo
 
 		if entityPM.IsMaster(myID, false) {
 			err = entityPM.MigrateMaster(newMyID)
-			log.Debug("postdeleteMigrateMe: after transfer master", "entity", entity.GetID(), "e", err)
+			log.Debug("postdeleteMigrateMe: after transfer master", "entity", entity.IDString(), "e", err)
 			if err != nil {
 				continue
 			}
 		}
 
 		err = entityPM.MigrateMember(myID, newMyID)
-		log.Debug("postdeleteMigrateMe: after migrate member", "entity", entity.GetID(), "e", err, "service", entity.Service().Name())
+		log.Debug("postdeleteMigrateMe: after migrate member", "entity", entity.IDString(), "e", err)
 		if err != nil {
 			continue
 		}
 
 	}
 
-	log.Debug("postdeleteMigrateMe: after for-loop")
+	log.Debug("postdeleteMigrateMe: after for-loop", "entity", pm.Entity().IDString())
 
 	myInfo.AddOwnerID(newMyID)
 

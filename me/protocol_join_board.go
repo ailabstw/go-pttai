@@ -69,7 +69,7 @@ loop:
 		case <-ticker.C:
 			pm.SyncJoinBoard()
 		case <-pm.QuitSync():
-			log.Info("SyncJoinBoardLoop: QuitSync", "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+			log.Info("SyncJoinBoardLoop: QuitSync", "entity", pm.Entity().IDString())
 			break loop
 		}
 	}

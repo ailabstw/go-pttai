@@ -40,7 +40,7 @@ func (pm *ProtocolManager) LoadPeers() error {
 	}
 
 	ptt := pm.Ptt()
-	ptt.AddDial(userNodeID, opKey.Hash, pkgservice.PeerTypeImportant)
+	ptt.AddDial(userNodeID, opKey.Hash, pkgservice.PeerTypeImportant, true)
 
 	return nil
 }

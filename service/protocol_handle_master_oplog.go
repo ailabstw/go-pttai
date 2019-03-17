@@ -16,7 +16,10 @@
 
 package service
 
-import "github.com/ailabstw/go-pttai/common/types"
+import (
+	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
+)
 
 /**********
  * Process Oplog
@@ -150,6 +153,8 @@ func (pm *BaseProtocolManager) postprocessFailedValidMasterOplogs(processInfo Pr
  **********/
 
 func (pm *BaseProtocolManager) postsyncMasterOplogs(peer *PttPeer) error {
+
+	log.Debug("postsyncMasterOplogs: start", "entity", pm.Entity().IDString())
 	pm.SyncPendingMasterOplog(peer)
 	pm.SyncOplog(peer, pm.memberMerkle, SyncMemberOplogMsg)
 

@@ -61,7 +61,7 @@ func (p *BasePtt) RequestOpKeyByEntity(entity Entity, peer *PttPeer) error {
 		OpKeyLogs: oplogs,
 		OpKeys:    opKeys,
 	}
-	log.Debug("RequestOpKey: to SendDataToPeer", "entity", entity.GetID(), "service", entity.Service().Name(), "opKeys", opKeys)
+	log.Debug("RequestOpKey: to SendDataToPeer", "entity", entity.IDString(), "opKeys", opKeys)
 
 	return p.SendDataToPeer(CodeTypeRequestOpKey, data, peer)
 
@@ -91,7 +91,7 @@ func (p *BasePtt) HandleRequestOpKey(dataBytes []byte, peer *PttPeer) error {
 
 	err = pm.HandleOpKeyOplogs(data.OpKeyLogs, peer, false)
 
-	log.Debug("HandleRequestOpKey: after HandleOpKeyOplogs", "e", err, "entity", pm.Entity().GetID(), "service", pm.Entity().Service().Name())
+	log.Debug("HandleRequestOpKey: after HandleOpKeyOplogs", "e", err, "entity", pm.Entity().IDString())
 
 	for _, opKey := range data.OpKeys {
 		pm.HandleSyncCreateOpKeyAckObj(opKey, peer)

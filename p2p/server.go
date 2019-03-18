@@ -881,11 +881,9 @@ running:
 			srv.log.Trace("Removing static node", "node", n)
 			log.Debug("run: Removing static node")
 			dialstate.removeStatic(n)
-			log.Debug("run: Removing static node: to disconnect")
 			if p, ok := peers[n.ID]; ok {
 				p.Disconnect(DiscRequested)
 			}
-			log.Debug("run: Removing static node: done")
 		case op := <-srv.peerOp:
 			// This channel is used by Peers and PeerCount.
 			log.Debug("run: to op", "op", op)
@@ -923,7 +921,7 @@ running:
 		case c := <-srv.addpeer:
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.
-			log.Debug("run: to addpeer")
+			log.Info("run: to addpeer", "conn", c.id)
 			err := srv.protoHandshakeChecks(peers, inboundCount, c)
 			if err == nil {
 				// The handshakes are done and it passed all checks.
@@ -934,7 +932,7 @@ running:
 					p.events = &srv.peerFeed
 				}
 				name := truncateName(c.name)
-				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
+				log.Info("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peer", p, "peers", len(peers)+1)
 				go srv.runPeer(p)
 				peers[c.id] = p
 				if p.Inbound() {
@@ -944,23 +942,23 @@ running:
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or
 			// discarded. Unblock the task last.
-			log.Debug("run: addpeer: to select")
+			log.Info("run: addpeer: to select", "e", err, "conn", c.id)
 			select {
 			case c.cont <- err:
 			case <-srv.quit:
 				break running
 			}
-			log.Debug("run: addpeer: done")
+			log.Info("run: addpeer: done", "conn", c.id)
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
-			log.Debug("run: to delete peer")
+			// log.Info("run: to delete peer", "pd", pd)
 			d := common.PrettyDuration(mclock.Now() - pd.created)
-			pd.log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			log.Info("run: to delete peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
 			}
-			log.Debug("run: delete peer: done")
+			log.Info("run: delete peer: done", "pd", pd)
 		}
 	}
 

@@ -227,9 +227,6 @@ func (pm *ProtocolManager) handleInternalSyncFriendAckNew(
 	}
 
 	// register-peer
-	if peer.UserID == nil {
-		peer.UserID = f.FriendID
-	}
 	friendPM.RegisterPendingPeer(peer, false)
 
 	// add to entity

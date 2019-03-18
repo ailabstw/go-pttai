@@ -18,6 +18,7 @@ package account
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -26,6 +27,8 @@ func (pm *ProtocolManager) handleRemoveUserNodeLog(oplog *pkgservice.BaseOplog, 
 	pm.SetUserNodeDB(obj)
 
 	opData := &UserOpRemoveUserNode{}
+
+	log.Debug("handleRemoveUserNodeLog: to HandleDeleteObjectLog", "entity", pm.Entity().IDString(), "oplog", oplog)
 
 	toBroadcastLogs, err := pm.HandleDeleteObjectLog(
 		oplog,
@@ -42,6 +45,7 @@ func (pm *ProtocolManager) handleRemoveUserNodeLog(oplog *pkgservice.BaseOplog, 
 		pm.postdeleteUserNode,
 		pm.updateDeleteUserNodeInfo,
 	)
+	log.Debug("handleRemoveUserNodeLog: after HandleDeleteObjectLog", "entity", pm.Entity().IDString(), "oplog", oplog, "e", err)
 	if err != nil {
 		return nil, err
 	}

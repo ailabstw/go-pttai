@@ -36,6 +36,7 @@ type ProtocolManager interface {
 	Stop() error
 	Poststop() error
 
+	HandleNonRegisteredMessage(op OpType, dataBytes []byte, peer *PttPeer) error
 	HandleMessage(op OpType, dataBytes []byte, peer *PttPeer) error
 
 	Sync(peer *PttPeer) error
@@ -661,6 +662,10 @@ func NewBaseProtocolManager(
 
 	return pm, nil
 
+}
+
+func (pm *BaseProtocolManager) HandleNonRegisteredMessage(op OpType, dataBytes []byte, peer *PttPeer) error {
+	return types.ErrNotImplemented
 }
 
 func (pm *BaseProtocolManager) HandleMessage(op OpType, dataBytes []byte, peer *PttPeer) error {

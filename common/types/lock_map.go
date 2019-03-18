@@ -44,6 +44,10 @@ func NewLockMap(sleepTime int) (*LockMap, error) {
 }
 
 func (l *LockMap) TryLock(id *PttID) error {
+	if id == nil {
+		return nil
+	}
+
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -57,6 +61,10 @@ func (l *LockMap) TryLock(id *PttID) error {
 }
 
 func (l *LockMap) Unlock(id *PttID) error {
+	if id == nil {
+		return nil
+	}
+
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -70,6 +78,10 @@ func (l *LockMap) Unlock(id *PttID) error {
 }
 
 func (l *LockMap) TryRLock(id *PttID) error {
+	if id == nil {
+		return nil
+	}
+
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -87,6 +99,10 @@ func (l *LockMap) TryRLock(id *PttID) error {
 }
 
 func (l *LockMap) RUnlock(id *PttID) error {
+	if id == nil {
+		return nil
+	}
+
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -107,6 +123,11 @@ func (l *LockMap) RUnlock(id *PttID) error {
 func (l *LockMap) Lock(id *PttID) error {
 	sleepTime := time.Duration((rand.Intn(l.sleepTime) + 1)) * time.Millisecond
 	var err error
+
+	if id == nil {
+		return nil
+	}
+
 	for i := 0; i < NIterLock; i++ {
 		err = l.TryLock(id)
 		if err == nil {
@@ -130,6 +151,10 @@ func (l *LockMap) MustLock(id *PttID) (err error) {
 }
 
 func (l *LockMap) RLock(id *PttID) error {
+	if id == nil {
+		return nil
+	}
+
 	sleepTime := time.Duration((rand.Intn(l.sleepTime) + 1)) * time.Millisecond
 	var err error
 	for i := 0; i < NIterLock; i++ {

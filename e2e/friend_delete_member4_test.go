@@ -637,6 +637,8 @@ func TestFriendDeleteMember4(t *testing.T) {
 	// sleep
 	time.Sleep(TimeSleepRestart)
 
+	time.Sleep(TimeSleepRestart)
+
 	// 23. get board list
 	t.Logf("23. get board list")
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardList", "params": ["", 0, 2]}`)

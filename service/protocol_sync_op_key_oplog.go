@@ -45,6 +45,10 @@ func (pm *BaseProtocolManager) SyncOpKeyOplog(peer *PttPeer, syncMsg OpType) err
 		return nil
 	}
 
+	if !peer.IsRegistered {
+		return nil
+	}
+
 	data := &SyncOpKeyOplog{
 		Oplogs: oplogs,
 	}

@@ -18,8 +18,6 @@ package service
 
 import (
 	"bytes"
-	"encoding/json"
-	"math/rand"
 
 	"github.com/ailabstw/go-pttai/common/types"
 )
@@ -51,28 +49,32 @@ func (pm *BaseProtocolManager) SyncOplogInvalidAck(
 	invalidOplogMsg OpType,
 ) error {
 
+	return types.ErrNotImplemented
+
 	// my devices
+	/*
 
-	isToSyncPeer := pm.syncOplogInvalidAckIsToSyncPeer(peer, theirSyncTS, mySyncTS)
+		isToSyncPeer := pm.syncOplogInvalidAckIsToSyncPeer(peer, theirSyncTS, mySyncTS)
 
-	if isToSyncPeer {
-		return pm.ForceSyncOplog(fromSyncTS, toSyncTS, merkle, forceSyncOplogMsg, peer)
-	}
+		if isToSyncPeer {
+			return pm.ForceSyncOplog(fromSyncTS, toSyncTS, merkle, forceSyncOplogMsg, peer)
+		}
 
-	data := &SyncOplogAckInvalid{
-		FromTS: fromSyncTS,
-		ToTS:   toSyncTS,
-	}
+		data := &SyncOplogAckInvalid{
+			FromTS: fromSyncTS,
+			ToTS:   toSyncTS,
+		}
 
-	pm.SendDataToPeer(invalidOplogMsg, data, peer)
+		pm.SendDataToPeer(invalidOplogMsg, data, peer)
 
-	myID := pm.Ptt().GetMyEntity().GetID()
-	if peer.PeerType != PeerTypeMe && !pm.IsMaster(myID, false) && !pm.IsMaster(peer.UserID, false) {
+		myID := pm.Ptt().GetMyEntity().GetID()
+		if peer.PeerType != PeerTypeMe && !pm.IsMaster(myID, false) && !pm.IsMaster(peer.UserID, false) {
 
-		pm.UnregisterPeer(peer, false, false, false)
-	}
+			pm.UnregisterPeer(peer, false, false, false)
+		}
 
-	return nil
+		return nil
+	*/
 }
 
 /*
@@ -148,39 +150,43 @@ func (pm *BaseProtocolManager) HandleSyncOplogInvalidAck(
 	forceSyncOplogMsg OpType,
 ) error {
 
-	data := &SyncOplogAckInvalid{}
-	err := json.Unmarshal(dataBytes, data)
-	if err != nil {
-		return err
-	}
+	return types.ErrNotImplemented
 
-	myID := pm.Ptt().GetMyEntity().GetID()
+	/*
+		data := &SyncOplogAckInvalid{}
+		err := json.Unmarshal(dataBytes, data)
+		if err != nil {
+			return err
+		}
 
-	isMe := peer.PeerType == PeerTypeMe
-	isMeMaster := pm.IsMaster(myID, false)
-	isPeerMaster := pm.IsMaster(peer.UserID, false)
+		myID := pm.Ptt().GetMyEntity().GetID()
 
-	// 1. the peer is PeerTypeMe or the peer is master
-	if isMe || isPeerMaster {
-		return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, peer)
-	}
+		isMe := peer.PeerType == PeerTypeMe
+		isMeMaster := pm.IsMaster(myID, false)
+		isPeerMaster := pm.IsMaster(peer.UserID, false)
 
-	// 2. I am the master and the peer is not master.
-	if isMeMaster {
-		return ErrInvalidOp
-	}
+		// 1. the peer is PeerTypeMe or the peer is master
+		if isMe || isPeerMaster {
+			return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, peer)
+		}
 
-	// 3. I am connecting to the master.
-	masterPeerList := pm.Peers().ImportantPeerList(false)
-	lenMasterPeerList := len(masterPeerList)
-	if lenMasterPeerList > 0 {
-		randIdx := rand.Intn(lenMasterPeerList)
-		masterPeer := masterPeerList[randIdx]
-		return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, masterPeer)
-	}
+		// 2. I am the master and the peer is not master.
+		if isMeMaster {
+			return ErrInvalidOp
+		}
 
-	// 4. try to connect the master-node.
-	pm.ConnectMaster()
+		// 3. I am connecting to the master.
+		masterPeerList := pm.Peers().ImportantPeerList(false)
+		lenMasterPeerList := len(masterPeerList)
+		if lenMasterPeerList > 0 {
+			randIdx := rand.Intn(lenMasterPeerList)
+			masterPeer := masterPeerList[randIdx]
+			return pm.ForceSyncOplog(data.FromTS, data.ToTS, merkle, forceSyncOplogMsg, masterPeer)
+		}
 
-	return nil
+		// 4. try to connect the master-node.
+		pm.ConnectMaster()
+
+		return nil
+	*/
 }

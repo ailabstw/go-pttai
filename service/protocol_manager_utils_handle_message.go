@@ -23,118 +23,39 @@ import (
 
 func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []byte, peer *PttPeer) error {
 	opKeyInfo, err := pm.GetOpKeyFromHash(hash, false)
-	log.Debug("PMHandleMessageWrapper: after GetOpKeyInfoFromHash", "e", err)
 	if err != nil {
+		log.Error("PMHandleMessageWrapper: unable to GetOpKeyFromHash", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		return err
 	}
 
 	op, dataBytes, err := pm.Ptt().DecryptData(encData, opKeyInfo)
-	log.Debug("PMHandleMessageWrapper: after DecryptData", "e", err, "op", op, "NMsg", NMsg)
 	if err != nil {
+		log.Error("PMHandleMessageWrapper: unable to DecryptData", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		return err
 	}
 
+	// handle identify-peer message
+
 	switch op {
 	case IdentifyPeerMsg:
-		return pm.HandleIdentifyPeer(dataBytes, peer)
+		err = pm.HandleIdentifyPeer(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleIdentifyPeer", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+		return err
 	case IdentifyPeerAckMsg:
-		return pm.HandleIdentifyPeerAck(dataBytes, peer)
-
-	// master oplog
-	case SyncMasterOplogMsg:
-		return pm.HandleSyncMasterOplog(dataBytes, peer)
-
-	case ForceSyncMasterOplogMsg:
-		return pm.HandleForceSyncMasterOplog(dataBytes, peer)
-	case ForceSyncMasterOplogAckMsg:
-		return pm.HandleForceSyncMasterOplogAck(dataBytes, peer)
-	case InvalidSyncMasterOplogMsg:
-		return pm.HandleSyncMasterOplogInvalidAck(dataBytes, peer)
-
-	case SyncMasterOplogAckMsg:
-		return pm.HandleSyncMasterOplogAck(dataBytes, peer)
-	case SyncMasterOplogNewOplogsMsg:
-		return pm.HandleSyncNewMasterOplog(dataBytes, peer)
-	case SyncMasterOplogNewOplogsAckMsg:
-		return pm.HandleSyncNewMasterOplogAck(dataBytes, peer)
-	case SyncPendingMasterOplogMsg:
-		return pm.HandleSyncPendingMasterOplog(dataBytes, peer)
-	case SyncPendingMasterOplogAckMsg:
-		return pm.HandleSyncPendingMasterOplogAck(dataBytes, peer)
-
-	case AddMasterOplogMsg:
-		return pm.HandleAddMasterOplog(dataBytes, peer)
-	case AddMasterOplogsMsg:
-		return pm.HandleAddMasterOplogs(dataBytes, peer)
-	case AddPendingMasterOplogMsg:
-		return pm.HandleAddPendingMasterOplog(dataBytes, peer)
-	case AddPendingMasterOplogsMsg:
-		return pm.HandleAddPendingMasterOplogs(dataBytes, peer)
-
-	// member oplog
-	case SyncMemberOplogMsg:
-		return pm.HandleSyncMemberOplog(dataBytes, peer)
-
-	case ForceSyncMemberOplogMsg:
-		return pm.HandleForceSyncMemberOplog(dataBytes, peer)
-	case ForceSyncMemberOplogAckMsg:
-		return pm.HandleForceSyncMemberOplogAck(dataBytes, peer)
-	case InvalidSyncMemberOplogMsg:
-		return pm.HandleSyncMemberOplogInvalidAck(dataBytes, peer)
-
-	case SyncMemberOplogAckMsg:
-		return pm.HandleSyncMemberOplogAck(dataBytes, peer)
-	case SyncMemberOplogNewOplogsMsg:
-		return pm.HandleSyncNewMemberOplog(dataBytes, peer)
-	case SyncMemberOplogNewOplogsAckMsg:
-		return pm.HandleSyncNewMemberOplogAck(dataBytes, peer)
-	case SyncPendingMemberOplogMsg:
-		return pm.HandleSyncPendingMemberOplog(dataBytes, peer)
-	case SyncPendingMemberOplogAckMsg:
-		return pm.HandleSyncPendingMemberOplogAck(dataBytes, peer)
-
-	case AddMemberOplogMsg:
-		return pm.HandleAddMemberOplog(dataBytes, peer)
-	case AddMemberOplogsMsg:
-		return pm.HandleAddMemberOplogs(dataBytes, peer)
-	case AddPendingMemberOplogMsg:
-		return pm.HandleAddPendingMemberOplog(dataBytes, peer)
-	case AddPendingMemberOplogsMsg:
-		return pm.HandleAddPendingMemberOplogs(dataBytes, peer)
-
-	// op-key-oplog
-	case SyncOpKeyOplogMsg:
-		return pm.HandleSyncOpKeyOplog(dataBytes, peer, SyncOpKeyOplogMsg)
-	case SyncOpKeyOplogAckMsg:
-		return pm.HandleSyncOpKeyOplog(dataBytes, peer, SyncOpKeyOplogAckMsg)
-
-	case SyncPendingOpKeyOplogMsg:
-		return pm.HandleSyncPendingOpKeyOplog(dataBytes, peer)
-	case SyncPendingOpKeyOplogAckMsg:
-		return pm.HandleSyncPendingOpKeyOplogAck(dataBytes, peer)
-
-	case AddOpKeyOplogMsg:
-		return pm.HandleAddOpKeyOplog(dataBytes, peer)
-	case AddOpKeyOplogsMsg:
-		return pm.HandleAddOpKeyOplogs(dataBytes, peer)
-	case AddPendingOpKeyOplogMsg:
-		return pm.HandleAddPendingOpKeyOplog(dataBytes, peer)
-	case AddPendingOpKeyOplogsMsg:
-		return pm.HandleAddPendingOpKeyOplogs(dataBytes, peer)
-
-	// sync create-op-key
-	case SyncCreateOpKeyMsg:
-		return pm.HandleSyncCreateOpKey(dataBytes, peer)
-	case SyncCreateOpKeyAckMsg:
-		return pm.HandleSyncCreateOpKeyAck(dataBytes, peer)
-
+		err = pm.HandleIdentifyPeerAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleIdentifyPeerAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+		return err
 	}
 
-	log.Debug("PMHandleMessageWrapper: to GetPeerType", "peer", peer, "entity", pm.Entity().GetID())
+	// check peer valid with the pm.
 	fitPeerType := pm.GetPeerType(peer)
-	log.Debug("PMHandleMessageWrapper: after GetPeerType", "peer", peer, "entity", pm.Entity().GetID(), "fitPeerType", fitPeerType)
 
 	var origPeer *PttPeer
+
 	if fitPeerType < PeerTypePending {
 		origPeer = pm.Peers().Peer(peer.GetID(), false)
 		if origPeer != nil {
@@ -143,11 +64,186 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 		return ErrInvalidEntity
 	}
 
-	origPeer = pm.Peers().GetPeerWithPeerType(peer.GetID(), fitPeerType, false)
+	// handle non-registtered message
+	err = pm.HandleNonRegisteredMessage(op, dataBytes, peer)
+	if err == nil {
+		return nil
+	}
 
+	// check peer registered
+	if !peer.IsRegistered {
+		return ErrNotRegistered
+	}
+
+	origPeer = pm.Peers().GetPeerWithPeerType(peer.GetID(), fitPeerType, false)
 	if origPeer == nil {
 		pm.RegisterPeer(peer, fitPeerType, false)
 	}
 
-	return pm.HandleMessage(op, dataBytes, peer)
+	// handle message
+
+	switch op {
+	// master oplog
+	case SyncMasterOplogMsg:
+		err = pm.HandleSyncMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case ForceSyncMasterOplogMsg:
+		err = pm.HandleForceSyncMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case ForceSyncMasterOplogAckMsg:
+		err = pm.HandleForceSyncMasterOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case InvalidSyncMasterOplogMsg:
+		err = pm.HandleSyncMasterOplogInvalidAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplogInvalidAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncMasterOplogAckMsg:
+		err = pm.HandleSyncMasterOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncMasterOplogNewOplogsMsg:
+		err = pm.HandleSyncNewMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncNewMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncMasterOplogNewOplogsAckMsg:
+		err = pm.HandleSyncNewMasterOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncNewMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncPendingMasterOplogMsg:
+		err = pm.HandleSyncPendingMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncPendingMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncPendingMasterOplogAckMsg:
+		err = pm.HandleSyncPendingMasterOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncPendingMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddMasterOplogMsg:
+		err = pm.HandleAddMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddMasterOplogsMsg:
+		err = pm.HandleAddMasterOplogs(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddMasterOplogs", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddPendingMasterOplogMsg:
+		err = pm.HandleAddPendingMasterOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddPendingMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddPendingMasterOplogsMsg:
+		err = pm.HandleAddPendingMasterOplogs(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddPendingMasterOplogs", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
+	// member oplog
+	case SyncMemberOplogMsg:
+		err = pm.HandleSyncMemberOplog(dataBytes, peer)
+
+	case ForceSyncMemberOplogMsg:
+		err = pm.HandleForceSyncMemberOplog(dataBytes, peer)
+	case ForceSyncMemberOplogAckMsg:
+		err = pm.HandleForceSyncMemberOplogAck(dataBytes, peer)
+	case InvalidSyncMemberOplogMsg:
+		err = pm.HandleSyncMemberOplogInvalidAck(dataBytes, peer)
+
+	case SyncMemberOplogAckMsg:
+		err = pm.HandleSyncMemberOplogAck(dataBytes, peer)
+	case SyncMemberOplogNewOplogsMsg:
+		err = pm.HandleSyncNewMemberOplog(dataBytes, peer)
+	case SyncMemberOplogNewOplogsAckMsg:
+		err = pm.HandleSyncNewMemberOplogAck(dataBytes, peer)
+	case SyncPendingMemberOplogMsg:
+		err = pm.HandleSyncPendingMemberOplog(dataBytes, peer)
+	case SyncPendingMemberOplogAckMsg:
+		err = pm.HandleSyncPendingMemberOplogAck(dataBytes, peer)
+
+	case AddMemberOplogMsg:
+		err = pm.HandleAddMemberOplog(dataBytes, peer)
+	case AddMemberOplogsMsg:
+		err = pm.HandleAddMemberOplogs(dataBytes, peer)
+	case AddPendingMemberOplogMsg:
+		err = pm.HandleAddPendingMemberOplog(dataBytes, peer)
+	case AddPendingMemberOplogsMsg:
+		err = pm.HandleAddPendingMemberOplogs(dataBytes, peer)
+
+	// op-key-oplog
+	case SyncOpKeyOplogMsg:
+		err = pm.HandleSyncOpKeyOplog(dataBytes, peer, SyncOpKeyOplogMsg)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncOpKeyOplog(Msg)", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncOpKeyOplogAckMsg:
+		err = pm.HandleSyncOpKeyOplog(dataBytes, peer, SyncOpKeyOplogAckMsg)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncOpKeyOplog(Ack)", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
+	case SyncPendingOpKeyOplogMsg:
+		err = pm.HandleSyncPendingOpKeyOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandlePendingSyncOpKeyOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncPendingOpKeyOplogAckMsg:
+		err = pm.HandleSyncPendingOpKeyOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandlePendingSyncOpKeyOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
+	case AddOpKeyOplogMsg:
+		err = pm.HandleAddOpKeyOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddOpKeyOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddOpKeyOplogsMsg:
+		err = pm.HandleAddOpKeyOplogs(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddOpKeyOplogs", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddPendingOpKeyOplogMsg:
+		err = pm.HandleAddPendingOpKeyOplog(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddPendingOpKeyOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case AddPendingOpKeyOplogsMsg:
+		err = pm.HandleAddPendingOpKeyOplogs(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleAddPendingOpKeyOplogs", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
+	// sync create-op-key
+	case SyncCreateOpKeyMsg:
+		err = pm.HandleSyncCreateOpKey(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncCreateOpKey", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case SyncCreateOpKeyAckMsg:
+		err = pm.HandleSyncCreateOpKeyAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncCreateOpKeyAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
+	// default
+	default:
+		err = pm.HandleMessage(op, dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleMessage", "op", op, "NMsg", NMsg, "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	}
+
+	return err
 }

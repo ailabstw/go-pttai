@@ -146,7 +146,7 @@ func (u *UserNode) Save(isLocked bool) error {
 		&pttdb.KeyVal{K: idx2Key, V: key},
 	}
 
-	log.Debug("UserNode.Save: to ForcePutAll", "ID", u.ID)
+	log.Debug("UserNode.Save: to ForcePutAll", "ID", u.ID, "nodeID", u.NodeID, "idx2Key", idx2Key, "key", key)
 
 	_, err = u.DB().ForcePutAll(idxKey, idx, kvs)
 	if err != nil {

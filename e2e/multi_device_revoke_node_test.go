@@ -217,7 +217,7 @@ func TestMultiDeviceRevokeNode(t *testing.T) {
 
 	profile0_9_1 := &account.Profile{}
 	testCore(t0, bodyString, profile0_9_1, t, isDebug)
-	assert.Equal(types.StatusDeleted, profile0_9_1.Status)
+	assert.Equal(types.StatusTerminal, profile0_9_1.Status)
 	assert.Equal(me0_3.ID, profile0_9_1.MyID)
 	assert.Equal(me0_3.ProfileID, profile0_9_1.ID)
 	assert.Equal(false, profile0_9_1.IsOwner(me0_1.ID))

@@ -273,6 +273,7 @@ func (p *Peer) pingLoop() {
 		select {
 		case <-ping.C:
 			if err := SendItems(p.rw, pingMsg); err != nil {
+				log.Error("pingLoop: unable to SendItems", "e", err, "peer", p)
 				select {
 				case p.protoErr <- err:
 				case <-p.closed:
@@ -291,6 +292,7 @@ func (p *Peer) readLoop(errc chan<- error) {
 		msg, err := p.rw.ReadMsg()
 		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
 		if err != nil {
+			log.Error("readLoop: unable to SendItems", "e", err, "peer", p)
 			select {
 			case errc <- err:
 			case <-p.closed:
@@ -405,13 +407,13 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 				p.log.Debug(fmt.Sprintf("Protocol %s/%d returned", proto.Name, proto.Version))
 				err = errProtocolReturned
 			} else if err != io.EOF {
-				p.log.Debug(fmt.Sprintf("Protocol %s/%d failed", proto.Name, proto.Version), "err", err)
+				p.log.Warn(fmt.Sprintf("Protocol %s/%d failed", proto.Name, proto.Version), "err", err)
 			}
 
 			// #206 require wg.Done before protoErr <- err to prevent deadlock in protoErr <- err
 			p.wg.Done()
 
-			log.Info("startProtocols: after wg.Done", "peer", p)
+			log.Info("startProtocols: after wg.Done", "peer", p, "e", err)
 
 			select {
 			case p.protoErr <- err:

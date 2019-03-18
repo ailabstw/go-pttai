@@ -131,7 +131,12 @@ func (p *BasePtt) FinishIdentifyPeer(peer *PttPeer, isLocked bool, isResetPeerTy
 	}
 
 	if isResetPeerType {
+		peer.IsRegistered = false
 		p.SetPeerType(peer, PeerTypeRandom, true, isLocked)
+	}
+
+	if peer.IsRegistered {
+		return nil
 	}
 
 	peerType, err := p.determinePeerTypeFromAllEntities(peer)
@@ -465,40 +470,42 @@ func (p *BasePtt) UnsetPeerType(peer *PttPeer, isLocked bool) error {
 	peerID := peer.ID()
 	peerType := peer.PeerType
 
+	var thePeer *PttPeer
+	ok := false
 	switch peerType {
 	case PeerTypeMe:
-		_, ok := p.myPeers[peerID]
-		if !ok {
+		thePeer, ok = p.myPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.myPeers, peerID)
 	case PeerTypeHub:
-		_, ok := p.hubPeers[peerID]
-		if !ok {
+		thePeer, ok = p.hubPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.hubPeers, peerID)
 	case PeerTypeImportant:
-		_, ok := p.importantPeers[peerID]
-		if !ok {
+		thePeer, ok = p.importantPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.importantPeers, peerID)
 	case PeerTypeMember:
-		_, ok := p.memberPeers[peerID]
-		if !ok {
+		thePeer, ok = p.memberPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.memberPeers, peerID)
 	case PeerTypePending:
-		_, ok := p.pendingPeers[peerID]
-		if !ok {
+		thePeer, ok = p.pendingPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.pendingPeers, peerID)
 	case PeerTypeRandom:
-		_, ok := p.randomPeers[peerID]
-		if !ok {
+		thePeer, ok = p.randomPeers[peerID]
+		if !ok || peer != thePeer {
 			return ErrNotRegistered
 		}
 		delete(p.randomPeers, peerID)
@@ -525,6 +532,10 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer) error {
 	p.entityLock.RLock()
 	defer p.entityLock.RUnlock()
 
+	if peer.IsRegistered {
+		return nil
+	}
+
 	var pm ProtocolManager
 	var err error
 	var fitPeerType PeerType
@@ -536,11 +547,15 @@ func (p *BasePtt) RegisterPeerToEntities(peer *PttPeer) error {
 			continue
 		}
 
+		log.Info("RegisterPeerToEntities (in-for-loop): to RegisterPeer", "entity", pm.Entity().IDString(), "peer", peer, "fitPeerType", fitPeerType)
 		err = pm.RegisterPeer(peer, fitPeerType, false)
+		log.Info("RegisterPeerToEntities (in-for-loop): after RegisterPeer", "entity", pm.Entity().IDString(), "peer", peer, "e", err)
 		if err != nil {
 			log.Warn("RegisterPeerToEntities: unable to register peer to entity", "peer", peer, "entity", entity.Name(), "e", err)
 		}
 	}
+
+	peer.IsRegistered = true
 
 	log.Info("RegisterPeerToEntities: done", "peer", peer)
 
@@ -615,8 +630,8 @@ func (p *BasePtt) UnregisterPeerFromEntities(peer *PttPeer) error {
 		log.Debug("UnregisterPeerFromEntities (in-for-loop): to pm.UnregisterPeer", "entity", entity.IDString(), "peer", peer)
 		err = pm.UnregisterPeer(peer, false, true, true)
 		log.Debug("UnregisterPeerFromEntities (in-for-loop): after pm.UnregisterPeer", "e", err, "entity", entity.IDString(), "peer", peer)
-		if err != nil {
-			log.Warn("UnregisterPeerFromoEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.IDString(), "e", err)
+		if err != nil && err != ErrNotRegistered {
+			log.Warn("UnregisterPeerFromEntities: unable to unregister peer from entity", "peer", peer, "entity", entity.IDString(), "e", err)
 		}
 	}
 

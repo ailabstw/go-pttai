@@ -110,6 +110,7 @@ func (pm *BaseProtocolManager) ApproveJoin(
 	// register-peer
 	if peer.UserID == nil {
 		peer.UserID = joinEntity.ID
+		pm.Ptt().FinishIdentifyPeer(peer, false, false)
 	}
 
 	switch {

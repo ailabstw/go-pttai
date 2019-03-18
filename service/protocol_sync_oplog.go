@@ -36,6 +36,15 @@ Expected merkle-tree-list length: 24 (hour) + 31 (day) + 12 (month) + n (year)
 (should be within the packet-limit)
 */
 func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpType) error {
+
+	if peer == nil {
+		return nil
+	}
+
+	if !peer.IsRegistered {
+		return nil
+	}
+
 	ptt := pm.Ptt()
 	myInfo := ptt.GetMyEntity()
 	if myInfo.GetStatus() != types.StatusAlive {

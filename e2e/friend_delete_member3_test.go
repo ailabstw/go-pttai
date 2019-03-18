@@ -378,6 +378,8 @@ func TestFriendDeleteMember3(t *testing.T) {
 
 	time.Sleep(TimeSleepDefault)
 
+	time.Sleep(TimeSleepDefault)
+
 	// 16. get board-oplog
 	marshaled, _ = board1_13_1.ID.MarshalText()
 	bodyString = fmt.Sprintf(`{"id": "testID", "method": "content_getBoardOplogList", "params": ["%v", "", 0, 2]}`, string(marshaled))

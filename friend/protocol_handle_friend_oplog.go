@@ -112,9 +112,7 @@ func (pm *ProtocolManager) postprocessFriendOplogs(processInfo pkgservice.Proces
 
 	pm.SyncBlock(SyncCreateMessageBlockMsg, blockIDs, peer)
 
-	if isPending {
-		pm.broadcastFriendOplogsCore(toBroadcastLogs)
-	}
+	pm.broadcastFriendOplogsCore(toBroadcastLogs)
 
 	// post-delete-friend
 	if !isPending && len(info.FriendInfo) > 0 {

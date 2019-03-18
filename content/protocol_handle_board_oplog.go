@@ -227,7 +227,9 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 		if err != nil {
 			return
 		}
+	}
 
+	if isPending {
 		pm.broadcastBoardOplogsCore(toBroadcastLogs)
 	}
 

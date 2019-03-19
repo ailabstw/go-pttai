@@ -205,6 +205,16 @@ func (b *Backend) GetFriendOplogMerkleNodeList(entityIDBytes []byte, level pkgse
 	return results, nil
 }
 
+func (b *Backend) ForceSyncFriendMerkle(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.ForceSyncFriendMerkle()
+}
+
 func (b *Backend) CreateMessage(entityIDBytes []byte, message [][]byte, mediaIDStrs []string) (*BackendCreateMessage, error) {
 
 	thePM, err := b.EntityIDToPM(entityIDBytes)

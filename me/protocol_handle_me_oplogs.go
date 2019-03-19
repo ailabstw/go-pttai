@@ -49,10 +49,47 @@ func (pm *ProtocolManager) HandleSyncMeOplog(dataBytes []byte, peer *pkgservice.
 
 		pm.meOplogMerkle,
 
-		ForceSyncMeOplogMsg,
-		ForceSyncMeOplogAckMsg,
+		ForceSyncMeOplogByMerkleMsg,
+		ForceSyncMeOplogByMerkleAckMsg,
 		InvalidSyncMeOplogMsg,
 		SyncMeOplogAckMsg,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncMeOplogByMerkle(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkle(
+		dataBytes,
+		peer,
+
+		ForceSyncMeOplogByMerkleAckMsg,
+		ForceSyncMeOplogByOplogAckMsg,
+
+		pm.SetMeDB,
+		pm.SetNewestMeOplog,
+
+		pm.meOplogMerkle,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncMeOplogByMerkleAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkleAck(
+		dataBytes,
+		peer,
+
+		ForceSyncMeOplogByMerkleMsg,
+
+		pm.meOplogMerkle,
+	)
+}
+
+func (pm *ProtocolManager) HandleForceSyncMeOplogByOplogAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+	return pm.HandleForceSyncOplogByOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandleMeOplogs,
+
+		pm.meOplogMerkle,
 	)
 }
 
@@ -86,9 +123,9 @@ func (pm *ProtocolManager) HandleForceSyncMeOplogAck(dataBytes []byte, peer *pkg
 	)
 }
 
-func (pm *ProtocolManager) HandleSyncMeOplogInvalidAck(dataBytes []byte, peer *pkgservice.PttPeer) error {
+func (pm *ProtocolManager) HandleSyncMeOplogInvalid(dataBytes []byte, peer *pkgservice.PttPeer) error {
 
-	return pm.HandleSyncOplogInvalidAck(
+	return pm.HandleSyncOplogInvalid(
 		dataBytes,
 		peer,
 

@@ -34,13 +34,17 @@ type ProtocolManager struct {
 	dbMessageIdxPrefix []byte
 }
 
-func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error) {
+func NewProtocolManager(f *Friend, ptt pkgservice.Ptt, svc pkgservice.Service) (*ProtocolManager, error) {
 	dbFriendLock, err := types.NewLockMap(pkgservice.SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
 
-	friendOplogMerkle, err := pkgservice.NewMerkle(DBFriendOplogPrefix, DBFriendMerkleOplogPrefix, f.ID, dbFriend, "friend")
+	entityID := f.ID
+	entityIDBytes, _ := entityID.MarshalText()
+	entityIDStr := string(entityIDBytes)
+
+	friendOplogMerkle, err := pkgservice.NewMerkle(DBFriendOplogPrefix, DBFriendMerkleOplogPrefix, f.ID, dbFriend, "("+entityIDStr+"/"+svc.Name()+":friend)")
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +89,7 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 		pm.postdeleteFriend, // postdelete
 
 		f, // entity
+		svc,
 
 		dbFriend, // db
 	)
@@ -94,7 +99,6 @@ func NewProtocolManager(f *Friend, ptt pkgservice.Ptt) (*ProtocolManager, error)
 	pm.BaseProtocolManager = b
 
 	// message
-	entityID := f.ID
 	pm.dbMessagePrefix = append(DBMessagePrefix, entityID[:]...)
 	pm.dbMessageIdxPrefix = append(DBMessageIdxPrefix, entityID[:]...)
 

@@ -56,12 +56,19 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case SyncMeOplogMsg:
 		err = pm.HandleSyncMeOplog(dataBytes, peer)
 
+	case ForceSyncMeOplogByMerkleMsg:
+		return pm.HandleForceSyncMeOplogByMerkle(dataBytes, peer)
+	case ForceSyncMeOplogByMerkleAckMsg:
+		return pm.HandleForceSyncMeOplogByMerkleAck(dataBytes, peer)
+	case ForceSyncMeOplogByOplogAckMsg:
+		return pm.HandleForceSyncMeOplogByOplogAck(dataBytes, peer)
+	case InvalidSyncMeOplogMsg:
+		err = pm.HandleSyncMeOplogInvalid(dataBytes, peer)
+
 	case ForceSyncMeOplogMsg:
 		err = pm.HandleForceSyncMeOplog(dataBytes, peer)
 	case ForceSyncMeOplogAckMsg:
 		err = pm.HandleForceSyncMeOplogAck(dataBytes, peer)
-	case InvalidSyncMeOplogMsg:
-		err = pm.HandleSyncMeOplogInvalidAck(dataBytes, peer)
 
 	case SyncMeOplogAckMsg:
 		err = pm.HandleSyncMeOplogAck(dataBytes, peer)
@@ -79,7 +86,6 @@ func (pm *ProtocolManager) HandleMessage(op pkgservice.OpType, dataBytes []byte,
 	case AddMeOplogsMsg:
 		err = pm.HandleAddMeOplogs(dataBytes, peer)
 	case AddPendingMeOplogMsg:
-		log.Debug("HandleMessage: to AddPendingMeOplogMsg")
 		err = pm.HandleAddPendingMeOplog(dataBytes, peer)
 	case AddPendingMeOplogsMsg:
 		err = pm.HandleAddPendingMeOplogs(dataBytes, peer)

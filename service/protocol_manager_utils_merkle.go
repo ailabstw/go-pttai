@@ -32,7 +32,7 @@ func PMOplogMerkleTreeLoop(pm ProtocolManager, merkle *Merkle) error {
 
 	merkle.LoadToUpdateTSs()
 	tsList, err := merkle.LoadUpdatingTSList()
-	log.Debug("PMOplogMerkleTreeLoop: after LoadUpdatingTSList", "tsList", tsList, "e", err, "entity", pm.Entity().IDString())
+	log.Debug("PMOplogMerkleTreeLoop: after LoadUpdatingTSList", "tsList", tsList, "e", err, "merkle", merkle.Name)
 	if err == nil {
 		for _, sec := range tsList {
 			ts.Ts = sec
@@ -46,9 +46,15 @@ loop:
 	for {
 		select {
 		case <-ticker.C:
+			log.Debug("PMOplogMerkleTreeLoop (ticker): to pmGenerateOplogMerkleTree", "merkle", merkle.Name)
 			pmGenerateOplogMerkleTree(pm, merkle)
+			log.Debug("PMOplogMerkleTreeLoop (ticker): after pmGenerateOplogMerkleTree", "merkle", merkle.Name)
+		case <-merkle.ForceSync():
+			log.Debug("PMOplogMerkleTreeLoop (forceSync): to pmGenerateOplogMerkleTree", "merkle", merkle.Name)
+			pmGenerateOplogMerkleTree(pm, merkle)
+			log.Debug("PMOplogMerkleTreeLoop (forceSync): after pmGenerateOplogMerkleTree", "merkle", merkle.Name)
 		case <-pm.QuitSync():
-			log.Debug("PMOplogMerkleTreeLoop: QuitSync", "entity", pm.Entity().IDString())
+			log.Debug("PMOplogMerkleTreeLoop: QuitSync", "merkle", merkle.Name)
 			break loop
 		}
 	}
@@ -62,7 +68,7 @@ func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 		return nil
 	}
 
-	log.Debug("pmGenerateOplogMerkleTree: start", "entity", pm.Entity().IDString())
+	log.Debug("pmGenerateOplogMerkleTree: start", "merkle", merkle.Name)
 
 	now, err := types.GetTimestamp()
 	if err != nil {
@@ -86,7 +92,7 @@ func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 		return err
 	}
 
-	log.Debug("pmGenerateOplogMerkleTree: to for-loop", "toUpdateTSList", toUpdateTSList, "entity", pm.Entity().IDString())
+	log.Debug("pmGenerateOplogMerkleTree: to for-loop", "toUpdateTSList", toUpdateTSList, "merkle", merkle.Name)
 
 	var ts types.Timestamp
 	for _, sec := range toUpdateTSList {
@@ -101,7 +107,7 @@ func pmGenerateOplogMerkleTree(pm ProtocolManager, merkle *Merkle) error {
 		merkle.ResetUpdatingTSList()
 	}
 
-	log.Debug("pmGenerateOplogMerkleTree: done", "entity", pm.Entity().IDString())
+	log.Debug("pmGenerateOplogMerkleTree: done", "merkle", merkle.Name)
 
 	return nil
 }
@@ -115,11 +121,11 @@ func pmGenerateOplogMerkleTreeIsBusy(merkle *Merkle, now types.Timestamp) bool {
 	expireTimestamp.Ts -= merkle.ExpireGenerateSeconds
 
 	if merkle.BusyGenerateTS.IsLess(expireTimestamp) {
-		log.Warn("GenerateOplogMerkleTree expired", "busy-ts", merkle.BusyGenerateTS, "expire-ts", expireTimestamp)
+		log.Warn("GenerateOplogMerkleTree expired", "busy-ts", merkle.BusyGenerateTS, "expire-ts", expireTimestamp, "merkle", merkle.Name)
 		merkle.BusyGenerateTS = types.ZeroTimestamp
 		return false
 	}
 
-	log.Warn("GenerateOplogMerkleTree is-busy", "busy-ts", merkle.BusyGenerateTS)
+	log.Warn("GenerateOplogMerkleTree is-busy", "busy-ts", merkle.BusyGenerateTS, "merkle", merkle.Name)
 	return true
 }

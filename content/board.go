@@ -88,7 +88,7 @@ func (b *Board) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgserv
 }
 
 func (b *Board) InitPM(ptt pkgservice.Ptt, service pkgservice.Service) error {
-	pm, err := NewProtocolManager(b, ptt)
+	pm, err := NewProtocolManager(b, ptt, service)
 	if err != nil {
 		log.Error("InitPM: unable to NewProtocolManager", "e", err)
 		return err

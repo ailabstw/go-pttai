@@ -190,7 +190,7 @@ func (m *MyInfo) loadMyKey() (*ecdsa.PrivateKey, error) {
 }
 
 func (m *MyInfo) InitPM(ptt pkgservice.MyPtt, service pkgservice.Service) error {
-	pm, err := NewProtocolManager(m, ptt)
+	pm, err := NewProtocolManager(m, ptt, service)
 	if err != nil {
 		log.Error("InitPM: unable to NewProtocolManager", "e", err)
 		return err

@@ -34,3 +34,12 @@ func (pm *ProtocolManager) SyncBoardOplog(peer *pkgservice.PttPeer) error {
 func (pm *ProtocolManager) SyncPendingBoardOplog(peer *pkgservice.PttPeer) error {
 	return pm.SyncPendingOplog(peer, pm.SetBoardDB, pm.HandleFailedBoardOplog, SyncPendingBoardOplogMsg)
 }
+
+func (pm *ProtocolManager) ForceSyncBoardMerkle() (bool, error) {
+	err := pm.boardOplogMerkle.TryForceSync(pm)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

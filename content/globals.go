@@ -37,7 +37,7 @@ var (
 // protocol
 const (
 	_ pkgservice.OpType = iota + pkgservice.NMsg
-	// friend-oplog
+	// board-oplog
 	AddBoardOplogMsg //30
 	AddBoardOplogsMsg
 
@@ -45,12 +45,17 @@ const (
 	AddPendingBoardOplogsMsg
 
 	SyncBoardOplogMsg
-	ForceSyncBoardOplogMsg
-	ForceSyncBoardOplogAckMsg
-	InvalidSyncBoardOplogMsg
 	SyncBoardOplogAckMsg
 	SyncBoardOplogNewOplogsMsg
 	SyncBoardOplogNewOplogsAckMsg
+
+	InvalidSyncBoardOplogMsg
+
+	ForceSyncBoardOplogMsg
+	ForceSyncBoardOplogAckMsg
+	ForceSyncBoardOplogByMerkleMsg
+	ForceSyncBoardOplogByMerkleAckMsg
+	ForceSyncBoardOplogByOplogAckMsg
 
 	SyncPendingBoardOplogMsg
 	SyncPendingBoardOplogAckMsg

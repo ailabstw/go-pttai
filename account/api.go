@@ -50,6 +50,10 @@ func (api *PrivateAPI) GetUserOplogMerkleNodeList(profileID string, level uint8,
 	return api.b.GetUserOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
 }
 
+func (api *PrivateAPI) ForceSyncUserMerkle(entityID string) (bool, error) {
+	return api.b.ForceSyncUserMerkle([]byte(entityID))
+}
+
 /**********
  * UserNode
  **********/
@@ -110,6 +114,10 @@ func (api *PrivateAPI) GetMasterOplogMerkleNodeList(profileID string, level uint
 	return api.b.GetMasterOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
 }
 
+func (api *PrivateAPI) ForceSyncMasterMerkle(entityID string) (bool, error) {
+	return api.b.ForceSyncMasterMerkle([]byte(entityID))
+}
+
 /**********
  * MemberOplog
  **********/
@@ -128,6 +136,10 @@ func (api *PrivateAPI) GetPendingMemberOplogInternalList(profileID string, logID
 
 func (api *PrivateAPI) GetMemberOplogMerkleNodeList(profileID string, level uint8, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*pkgservice.BackendMerkleNode, error) {
 	return api.b.GetMemberOplogMerkleNodeList([]byte(profileID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
+}
+
+func (api *PrivateAPI) ForceSyncMemberMerkle(entityID string) (bool, error) {
+	return api.b.ForceSyncMemberMerkle([]byte(entityID))
 }
 
 /**********

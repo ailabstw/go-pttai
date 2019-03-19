@@ -21,3 +21,12 @@ import pkgservice "github.com/ailabstw/go-pttai/service"
 func (pm *ProtocolManager) SyncPendingMeOplog(peer *pkgservice.PttPeer) error {
 	return pm.SyncPendingOplog(peer, pm.SetMeDB, pm.HandleFailedMeOplog, SyncPendingMeOplogMsg)
 }
+
+func (pm *ProtocolManager) ForceSyncMeMerkle() (bool, error) {
+	err := pm.meOplogMerkle.TryForceSync(pm)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

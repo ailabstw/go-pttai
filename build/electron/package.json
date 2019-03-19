@@ -1,8 +1,8 @@
 {
   "name": "ptt.ai",
-  "description": "ptt.ai electron packaging",
+  "description": "PTT.ai electron packaging",
   "author": "Yi-Sheng Hsieh <sammui@ailabs.tw>",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "main": "./app/index.js",
   "scripts": {
     "start": "npm install && cross-env NODE_ENV=dev electron ./app",
@@ -17,7 +17,7 @@
   "repository": "https://github.com/ailabstw/go-pttai",
   "build": {
     "appId": "ai.ptt.gptt",
-    "productName": "Pttai",
+    "productName": "PTTai",
     "extraResources": [
       "./app/gptt",
       "./app/gptt.exe",

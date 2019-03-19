@@ -104,6 +104,16 @@ func (b *Backend) GetUserOplogMerkleNodeList(entityIDBytes []byte, level pkgserv
 	return results, nil
 }
 
+func (b *Backend) ForceSyncUserMerkle(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.ForceSyncUserMerkle()
+}
+
 /**********
  * User Node
  **********/

@@ -119,11 +119,10 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 	}
 
 	myToSyncTime, err := merkle.ToSyncTime()
+	log.Debug("HandleSyncOplog: after get myToSyncTime", "e", err, "myToSyncTime", myToSyncTime, "data.ToSyncTime", data.ToSyncTime, "merkle", merkle.Name)
 	if err != nil {
 		return err
 	}
-
-	log.Debug("HandleSyncOplog: after get myToSyncTime", "myToSyncTime", myToSyncTime, "data.ToSyncTime", data.ToSyncTime, "entity", pm.Entity().GetID())
 
 	if myToSyncTime.IsLess(data.ToSyncTime) {
 		return nil
@@ -136,28 +135,29 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 
 	// get my merkle-tree-list.
 	myToSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
-	log.Debug("HandleSyncOplog: after getMerkleTreeList", "myToSyncNodes", myToSyncNodes, "data.ToSyncNodes", data.ToSyncNodes, "entity", pm.Entity().GetID())
+	log.Debug("HandleSyncOplog: after getMerkleTreeList", "myToSyncNodes", myToSyncNodes, "data.ToSyncNodes", data.ToSyncNodes, "merkle", merkle.Name)
 	if err != nil {
 		return err
 	}
 
 	// 2. validate merkle tree
-	diffTS, isValid := ValidateMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime, pm, merkle)
-	log.Debug("HandleSyncOplog: after validateMerkleTree", "isValid", isValid, "entity", pm.Entity().GetID())
-	if !isValid {
-		return pm.SyncOplogInvalidAck(
-			peer,
+	myNewNodes, theirNewNodes, err := DiffMerkleTree(myToSyncNodes, data.ToSyncNodes, toSyncTime, pm, merkle)
+	if err != nil {
+		return err
+	}
 
-			data.ToSyncTime,
-			myToSyncTime,
+	if len(myNewNodes) > 0 || len(theirNewNodes) > 0 {
+		log.Warn("HandleSyncOplog: invalid merkle", "myNewNodes", len(myNewNodes), "theirNewNodes", len(theirNewNodes), "merkle", merkle.Name, "peer", peer)
+		return pm.SyncOplogInvalidByMerkle(
+			myNewNodes,
+			theirNewNodes,
 
-			diffTS,
-			toSyncTime,
+			forceSyncOplogMsg,
+			forceSyncOplogAckMsg,
 
 			merkle,
 
-			forceSyncOplogMsg,
-			invalidOplogMsg,
+			peer,
 		)
 	}
 

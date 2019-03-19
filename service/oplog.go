@@ -170,36 +170,6 @@ func (o *BaseOplog) GetDBLock() *types.LockMap {
 	return o.dbLock
 }
 
-func (o *BaseOplog) SaveWithIsSync(isLocked bool) error {
-	if !isLocked {
-		err := o.dbLock.Lock(o.ID)
-		if err != nil {
-			return err
-		}
-		defer o.dbLock.Unlock(o.ID)
-	}
-
-	idxKey, idx, kvs, err := o.SaveCore()
-	if err != nil {
-		return err
-	}
-
-	origO := &BaseOplog{}
-	origO.SetDB(o.db, o.dbPrefixID, o.dbPrefix, o.dbIdxPrefix, o.dbMerklePrefix, o.dbLock)
-	err = origO.Load(kvs[0].K)
-	if err == nil && reflect.DeepEqual(o.Hash, origO.Hash) && bool(origO.IsSync) {
-		o.IsSync = true
-		return nil
-	}
-
-	_, err = o.db.ForcePutAll(idxKey, idx, kvs)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
@@ -229,6 +199,11 @@ func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 }
 
 func (o *BaseOplog) setMerkleUpdateTS(origKeys [][]byte, merkle *Merkle) error {
+	merkleName := ""
+	if merkle != nil {
+		merkleName = merkle.Name
+	}
+	log.Debug("setMerkleUpdateTS: start", "id", o.ID, "MasterLogID", o.MasterLogID, "IsSync", o.IsSync, "merkle", merkleName)
 	if o.MasterLogID == nil || !o.IsSync || merkle == nil {
 		return nil
 	}
@@ -302,7 +277,7 @@ func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
 	kvs := make([]*pttdb.KeyVal, 1, 2)
 	kvs[0] = &pttdb.KeyVal{K: key, V: marshaled}
 
-	if o.IsSync && o.dbMerklePrefix != nil {
+	if o.MasterLogID != nil && o.IsSync && o.dbMerklePrefix != nil {
 		addr := types.HashToAddr(o.Hash)
 		merkleNode := &MerkleNode{
 			Level:     MerkleTreeLevelNow,
@@ -971,13 +946,13 @@ func (o *BaseOplog) SetPreLogID(id *types.PttID) {
 /*
 SelectExisting determines whether we select the new oplog or the original oplog when the oplog is valid. Not integrating the signs.
 
-Return: isToBroadcast, err
+Return: origIsSync, isToBroadcast, err
 */
-func (o *BaseOplog) SelectExisting(isLocked bool, merkle *Merkle) (types.Bool, error) {
+func (o *BaseOplog) SelectExisting(isLocked bool, merkle *Merkle) (types.Bool, types.Bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		defer o.dbLock.Unlock(o.ID)
 	}
@@ -995,41 +970,51 @@ func (o *BaseOplog) SelectExisting(isLocked bool, merkle *Merkle) (types.Bool, e
 
 	err := orig.Get(o.ID, true)
 	if err == leveldb.ErrNotFound {
-		return true, nil
+		return false, true, nil
 	}
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
 	// is-sync
 	status := o.ToStatus()
 	origStatus := orig.ToStatus()
-	if status <= origStatus {
+	if status <= origStatus && orig.IsSync {
 		o.IsSync = orig.IsSync
 	}
 	o.Extra = orig.Extra
 
+	oplogIsSync := o.IsSync
+	defer func() {
+		o.IsSync = oplogIsSync
+	}()
+
+	if orig.IsSync {
+		o.IsSync = orig.IsSync
+	}
+
 	// same
 	cmp := bytes.Compare(o.Hash, orig.Hash)
 	if cmp == 0 {
-		return false, nil
+		return orig.IsSync, false, nil
 	}
 
 	// require o is valid
 	if o.MasterLogID == nil {
-		return false, ErrInvalidOplog
+		return orig.IsSync, false, ErrInvalidOplog
 	}
 
 	// orig is not valid
 	if orig.MasterLogID == nil {
 		o.ForceSave(true, merkle)
-		return true, nil
+		return orig.IsSync, true, nil
 	}
 
 	// both are valid
 	// 1. cmp update-ts
 	// 2. cmp hash
 	isToBroadcast := false
+
 	switch {
 	case o.UpdateTS.IsLess(orig.UpdateTS):
 		isToBroadcast = true
@@ -1053,16 +1038,16 @@ func (o *BaseOplog) SelectExisting(isLocked bool, merkle *Merkle) (types.Bool, e
 		err = nil
 	}
 
-	return types.Bool(isToBroadcast), err
+	return orig.IsSync, types.Bool(isToBroadcast), err
 }
 
 // IntegrateExisting integrates with existing oplog.
 // Return: is-to-re-sign, error
-func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, error) {
+func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (types.Bool, bool, error) {
 	if !isLocked {
 		err := o.dbLock.Lock(o.ID)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		defer o.dbLock.Unlock(o.ID)
 	}
@@ -1079,10 +1064,10 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, erro
 	// no orig-log
 	err := orig.Get(o.ID, true)
 	if err == leveldb.ErrNotFound {
-		return false, nil
+		return false, false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
 	// is-sync
@@ -1095,13 +1080,13 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, erro
 
 	// same
 	if reflect.DeepEqual(o.Hash, orig.Hash) {
-		return false, nil
+		return orig.IsSync, false, nil
 	}
 
 	// o valid
 	if o.MasterLogID != nil {
-		_, err = o.SelectExisting(true, merkle)
-		return false, err
+		_, _, err = o.SelectExisting(true, merkle)
+		return orig.IsSync, false, err
 	}
 
 	// orig valid
@@ -1111,19 +1096,19 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, erro
 		o.MasterLogID = orig.MasterLogID
 		o.MasterSigns = orig.MasterSigns
 		o.InternalSigns = orig.InternalSigns
-		return false, nil
+		return orig.IsSync, false, nil
 	}
 
 	// both not valid
 	newMasterSigns, isAllMasters, isAllOrigMasters, err := integrateSignInfos(o.MasterSigns, orig.MasterSigns)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	o.MasterSigns = newMasterSigns
 
 	newInternalSigns, isAllInternals, isAllOrigInternals, err := integrateSignInfos(o.InternalSigns, orig.InternalSigns)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	o.InternalSigns = newInternalSigns
 
@@ -1131,26 +1116,26 @@ func (o *BaseOplog) IntegrateExisting(isLocked bool, merkle *Merkle) (bool, erro
 		o.UpdateTS = orig.UpdateTS
 		o.Hash = orig.Hash
 
-		return false, nil
+		return orig.IsSync, false, nil
 	}
 
 	if isAllMasters && isAllInternals {
 		err = o.ForceSave(true, merkle)
-		return false, err
+		return orig.IsSync, false, err
 	}
 
 	// new-sign
 	o.Hash, err = o.SignsHash()
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
 	o.UpdateTS, err = types.GetTimestamp()
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
-	return true, nil
+	return orig.IsSync, true, nil
 }
 
 func integrateSignInfos(signInfos []*SignInfo, origSignInfos []*SignInfo) ([]*SignInfo, bool, bool, error) {

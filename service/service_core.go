@@ -92,6 +92,14 @@ func (svc *BaseService) GetMasterOplogMerkleNodeList(entityIDBytes []byte, level
 	return results, nil
 }
 
+func (svc *BaseService) ForceSyncMasterMerkle(entityIDBytes []byte) (bool, error) {
+	pm, err := svc.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	return pm.ForceSyncMasterMerkle()
+}
+
 /**********
  * Master List
  **********/
@@ -188,6 +196,14 @@ func (svc *BaseService) GetMemberOplogMerkleNodeList(entityIDBytes []byte, level
 	}
 
 	return results, nil
+}
+
+func (svc *BaseService) ForceSyncMemberMerkle(entityIDBytes []byte) (bool, error) {
+	pm, err := svc.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	return pm.ForceSyncMemberMerkle()
 }
 
 /**********

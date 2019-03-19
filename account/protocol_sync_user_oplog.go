@@ -39,3 +39,12 @@ func (pm *ProtocolManager) SyncUserOplog(peer *pkgservice.PttPeer) error {
 func (pm *ProtocolManager) SyncPendingUserOplog(peer *pkgservice.PttPeer) error {
 	return pm.SyncPendingOplog(peer, pm.SetUserDB, pm.HandleFailedUserOplog, SyncPendingUserOplogMsg)
 }
+
+func (pm *ProtocolManager) ForceSyncUserMerkle() (bool, error) {
+	err := pm.userOplogMerkle.TryForceSync(pm)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

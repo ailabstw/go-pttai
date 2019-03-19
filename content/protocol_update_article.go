@@ -56,6 +56,8 @@ func (pm *ProtocolManager) UpdateArticle(articleID *types.PttID, articleBytes []
 		return nil, err
 	}
 
+	log.Debug("UpdateArticle: done", "entity", pm.Entity().IDString())
+
 	return origObj, nil
 }
 

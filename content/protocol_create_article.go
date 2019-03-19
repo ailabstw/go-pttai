@@ -70,6 +70,8 @@ func (pm *ProtocolManager) CreateArticle(title []byte, articleBytes [][]byte, me
 		return nil, pkgservice.ErrInvalidData
 	}
 
+	log.Debug("CreateArticle: done", "entity", pm.Entity().IDString())
+
 	return article, nil
 }
 

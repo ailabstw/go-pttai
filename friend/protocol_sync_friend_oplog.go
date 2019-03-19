@@ -34,3 +34,12 @@ func (pm *ProtocolManager) SyncFriendOplog(peer *pkgservice.PttPeer) error {
 func (pm *ProtocolManager) SyncPendingFriendOplog(peer *pkgservice.PttPeer) error {
 	return pm.SyncPendingOplog(peer, pm.SetFriendDB, pm.HandleFailedFriendOplog, SyncPendingFriendOplogMsg)
 }
+
+func (pm *ProtocolManager) ForceSyncFriendMerkle() (bool, error) {
+	err := pm.friendOplogMerkle.TryForceSync(pm)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

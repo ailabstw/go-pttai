@@ -372,6 +372,10 @@ func (api *PrivateAPI) GetMeOplogMerkleNodeList(entityID string, level uint8, st
 	return api.b.GetMeOplogMerkleNodeList([]byte(entityID), pkgservice.MerkleTreeLevel(level), startKey, limit, listOrder)
 }
 
+func (api *PrivateAPI) ForceSyncMeMerkle(entityID string) (bool, error) {
+	return api.b.ForceSyncMeMerkle([]byte(entityID))
+}
+
 /**********
  * MasterOplog
  **********/

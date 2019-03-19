@@ -609,6 +609,16 @@ func (b *Backend) GetMeOplogMerkleNodeList(entityIDBytes []byte, level pkgservic
 	return results, nil
 }
 
+func (b *Backend) ForceSyncMeMerkle(entityIDBytes []byte) (bool, error) {
+	thePM, err := b.EntityIDToPM(entityIDBytes)
+	if err != nil {
+		return false, err
+	}
+	pm := thePM.(*ProtocolManager)
+
+	return pm.ForceSyncMeMerkle()
+}
+
 /**********
  * MasterOplog
  **********/

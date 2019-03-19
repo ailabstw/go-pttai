@@ -71,12 +71,17 @@ const (
 	AddPendingFriendOplogsMsg
 
 	SyncFriendOplogMsg
-	ForceSyncFriendOplogMsg
-	ForceSyncFriendOplogAckMsg
-	InvalidSyncFriendOplogMsg
 	SyncFriendOplogAckMsg
 	SyncFriendOplogNewOplogsMsg
 	SyncFriendOplogNewOplogsAckMsg
+
+	InvalidSyncFriendOplogMsg
+
+	ForceSyncFriendOplogMsg
+	ForceSyncFriendOplogAckMsg
+	ForceSyncFriendOplogByMerkleMsg
+	ForceSyncFriendOplogByMerkleAckMsg
+	ForceSyncFriendOplogByOplogAckMsg
 
 	SyncPendingFriendOplogMsg
 	SyncPendingFriendOplogAckMsg

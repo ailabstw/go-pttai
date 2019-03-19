@@ -83,7 +83,7 @@ func (p *Profile) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgse
 }
 
 func (p *Profile) InitPM(ptt pkgservice.Ptt, service pkgservice.Service) error {
-	pm, err := NewProtocolManager(p, ptt)
+	pm, err := NewProtocolManager(p, ptt, service)
 	if err != nil {
 		log.Error("InitPM: unable to NewProtocolManager", "e", err)
 		return err

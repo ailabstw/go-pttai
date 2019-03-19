@@ -153,7 +153,10 @@ func (pm *ProtocolManager) postprocessUserOplogs(processInfo pkgservice.ProcessI
 	pm.SyncNameCard(SyncUpdateNameCardMsg, updateNameCardIDs, peer)
 
 	// broadcast
-	pm.broadcastUserOplogsCore(toBroadcastLogs)
+	myID := pm.Ptt().GetMyEntity().GetID()
+	if isPending || pm.IsMaster(myID, false) {
+		pm.broadcastUserOplogsCore(toBroadcastLogs)
+	}
 
 	return
 }

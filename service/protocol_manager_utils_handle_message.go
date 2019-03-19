@@ -89,6 +89,28 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 		if err != nil {
 			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplog", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		}
+
+	case ForceSyncMasterOplogByMerkleMsg:
+		err = pm.HandleForceSyncMasterOplogByMerkle(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplogByMerkle", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case ForceSyncMasterOplogByMerkleAckMsg:
+		err = pm.HandleForceSyncMasterOplogByMerkleAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplogByMerkleAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case ForceSyncMasterOplogByOplogAckMsg:
+		err = pm.HandleForceSyncMasterOplogByOplogAck(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplogByOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+	case InvalidSyncMasterOplogMsg:
+		err = pm.HandleSyncMasterOplogInvalid(dataBytes, peer)
+		if err != nil {
+			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplogInvalidAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
+		}
+
 	case ForceSyncMasterOplogMsg:
 		err = pm.HandleForceSyncMasterOplog(dataBytes, peer)
 		if err != nil {
@@ -99,11 +121,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 		if err != nil {
 			log.Error("PMHandleMessageWrapper: unable to HandleForceSyncMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		}
-	case InvalidSyncMasterOplogMsg:
-		err = pm.HandleSyncMasterOplogInvalidAck(dataBytes, peer)
-		if err != nil {
-			log.Error("PMHandleMessageWrapper: unable to HandleSyncMasterOplogInvalidAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
-		}
+
 	case SyncMasterOplogAckMsg:
 		err = pm.HandleSyncMasterOplogAck(dataBytes, peer)
 		if err != nil {
@@ -119,6 +137,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 		if err != nil {
 			log.Error("PMHandleMessageWrapper: unable to HandleSyncNewMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		}
+
 	case SyncPendingMasterOplogMsg:
 		err = pm.HandleSyncPendingMasterOplog(dataBytes, peer)
 		if err != nil {
@@ -129,6 +148,7 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 		if err != nil {
 			log.Error("PMHandleMessageWrapper: unable to HandleSyncPendingMasterOplogAck", "e", err, "entity", pm.Entity().IDString(), "peer", peer)
 		}
+
 	case AddMasterOplogMsg:
 		err = pm.HandleAddMasterOplog(dataBytes, peer)
 		if err != nil {
@@ -154,12 +174,19 @@ func PMHandleMessageWrapper(pm ProtocolManager, hash *common.Address, encData []
 	case SyncMemberOplogMsg:
 		err = pm.HandleSyncMemberOplog(dataBytes, peer)
 
+	case ForceSyncMemberOplogByMerkleMsg:
+		err = pm.HandleForceSyncMemberOplogByMerkle(dataBytes, peer)
+	case ForceSyncMemberOplogByMerkleAckMsg:
+		err = pm.HandleForceSyncMemberOplogByMerkleAck(dataBytes, peer)
+	case ForceSyncMemberOplogByOplogAckMsg:
+		err = pm.HandleForceSyncMemberOplogByOplogAck(dataBytes, peer)
+	case InvalidSyncMemberOplogMsg:
+		err = pm.HandleSyncMemberOplogInvalid(dataBytes, peer)
+
 	case ForceSyncMemberOplogMsg:
 		err = pm.HandleForceSyncMemberOplog(dataBytes, peer)
 	case ForceSyncMemberOplogAckMsg:
 		err = pm.HandleForceSyncMemberOplogAck(dataBytes, peer)
-	case InvalidSyncMemberOplogMsg:
-		err = pm.HandleSyncMemberOplogInvalidAck(dataBytes, peer)
 
 	case SyncMemberOplogAckMsg:
 		err = pm.HandleSyncMemberOplogAck(dataBytes, peer)

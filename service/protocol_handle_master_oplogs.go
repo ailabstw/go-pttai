@@ -52,10 +52,47 @@ func (pm *BaseProtocolManager) HandleSyncMasterOplog(dataBytes []byte, peer *Ptt
 
 		pm.MasterMerkle(),
 
-		ForceSyncMasterOplogMsg,
-		ForceSyncMasterOplogAckMsg,
+		ForceSyncMasterOplogByMerkleMsg,
+		ForceSyncMasterOplogByMerkleAckMsg,
 		InvalidSyncMasterOplogMsg,
 		SyncMasterOplogAckMsg,
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByMerkle(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkle(
+		dataBytes,
+		peer,
+
+		ForceSyncMasterOplogByMerkleAckMsg,
+		ForceSyncMasterOplogByOplogAckMsg,
+
+		pm.SetMasterDB,
+		pm.SetNewestMasterOplog,
+
+		pm.MasterMerkle(),
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByMerkleAck(
+		dataBytes,
+		peer,
+
+		ForceSyncMasterOplogByMerkleMsg,
+
+		pm.MasterMerkle(),
+	)
+}
+
+func (pm *BaseProtocolManager) HandleForceSyncMasterOplogByOplogAck(dataBytes []byte, peer *PttPeer) error {
+	return pm.HandleForceSyncOplogByOplogAck(
+		dataBytes,
+		peer,
+
+		pm.HandleMasterOplogs,
+
+		pm.MasterMerkle(),
 	)
 }
 
@@ -89,9 +126,9 @@ func (pm *BaseProtocolManager) HandleForceSyncMasterOplogAck(dataBytes []byte, p
 	)
 }
 
-func (pm *BaseProtocolManager) HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error {
+func (pm *BaseProtocolManager) HandleSyncMasterOplogInvalid(dataBytes []byte, peer *PttPeer) error {
 
-	return pm.HandleSyncOplogInvalidAck(
+	return pm.HandleSyncOplogInvalid(
 		dataBytes,
 		peer,
 
@@ -278,7 +315,7 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 
 	// integrate
 	// after integrate-me-oplog: oplog saved if orig exists and not new-signed.
-	isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
+	origIsSync, isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
 	if err != nil {
 		return false, nil, err
 	}
@@ -358,7 +395,10 @@ func (pm *BaseProtocolManager) handlePendingMasterOplog(
 	}
 
 	// save oplog
-	err = oplog.SaveWithIsSync(true)
+	if origIsSync {
+		oplog.IsSync = origIsSync
+	}
+	err = oplog.Save(true, merkle)
 	if err == pttdb.ErrInvalidUpdateTS {
 		err = nil
 	}

@@ -172,6 +172,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectCore(
 
 	// prelog
 	if !reflect.DeepEqual(origObj.GetLogID(), oplog.PreLogID) {
+		log.Warn("handleUpdateObjectCore: not fit PreLogID", "obj.LogID", origObj.GetLogID(), "PreLogID", oplog.PreLogID, "entity", pm.Entity().IDString())
+
 		return ErrInvalidPreLog
 	}
 
@@ -327,7 +329,7 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 
 	syncLogID := syncInfo.GetLogID()
 	if reflect.DeepEqual(syncLogID, oplog.ID) {
-		err = pm.handleUpdateObjectSameLog(obj, newSyncInfo, oplog, postupdate)
+		err = pm.handleUpdateObjectSameLog(obj, syncInfo, oplog, postupdate)
 		return nil, err
 	}
 
@@ -355,7 +357,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectWithNewSyncInfo(
 
 func (pm *BaseProtocolManager) handleUpdateObjectSameLog(
 	obj Object,
-	newSyncInfo SyncInfo,
+
+	origSyncInfo SyncInfo,
 
 	oplog *BaseOplog,
 
@@ -364,7 +367,9 @@ func (pm *BaseProtocolManager) handleUpdateObjectSameLog(
 
 	obj.SetSyncInfo(nil)
 
-	return pm.handleUpdateObjectNewLog(obj, newSyncInfo, oplog, postupdate)
+	log.Debug("handleUpdateObjectSameLog: to handleUpdateObjectNewLog", "entity", pm.Entity().IDString(), "oplog", oplog.ID)
+
+	return pm.handleUpdateObjectNewLog(obj, origSyncInfo, oplog, postupdate)
 
 }
 
@@ -422,6 +427,8 @@ func (pm *BaseProtocolManager) handleUpdateObjectNewLog(
 	isAllGood := newSyncInfo.CheckIsAllGood()
 
 	status := oplog.ToStatus()
+
+	log.Debug("handleUpdateObjectNewLog: to check", "isAllGood", isAllGood, "status", status, "entity", pm.Entity().IDString(), "oplog", oplog.ID)
 
 	if isAllGood && status == types.StatusAlive {
 		err = newSyncInfo.ToObject(obj)

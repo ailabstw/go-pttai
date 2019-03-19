@@ -23,3 +23,12 @@ type SyncMemberOplog struct {
 func (pm *BaseProtocolManager) SyncPendingMemberOplog(peer *PttPeer) error {
 	return pm.SyncPendingOplog(peer, pm.SetMemberDB, pm.HandleFailedMemberOplog, SyncPendingMemberOplogMsg)
 }
+
+func (pm *BaseProtocolManager) ForceSyncMemberMerkle() (bool, error) {
+	err := pm.memberMerkle.TryForceSync(pm)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

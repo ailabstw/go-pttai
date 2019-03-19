@@ -85,7 +85,7 @@ type ProtocolManager interface {
 	SignOplog(oplog *BaseOplog) error
 	ForceSignOplog(oplog *BaseOplog) error
 
-	IntegrateOplog(oplog *BaseOplog, isLocked bool, merkle *Merkle) (bool, error)
+	IntegrateOplog(oplog *BaseOplog, isLocked bool, merkle *Merkle) (types.Bool, bool, error)
 	InternalSign(oplog *BaseOplog) (bool, error)
 
 	// peers
@@ -125,7 +125,10 @@ type ProtocolManager interface {
 
 	HandleForceSyncMasterOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
-	HandleSyncMasterOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByMerkle(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMasterOplogByOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMasterOplogInvalid(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMasterOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMasterOplog(dataBytes []byte, peer *PttPeer) error
@@ -138,6 +141,8 @@ type ProtocolManager interface {
 	GetMasterOplogList(logID *types.PttID, limit int, listOrder pttdb.ListOrder, status types.Status) ([]*MasterOplog, error)
 
 	GetMasterOplogMerkleNodeList(level MerkleTreeLevel, startKey []byte, limit int, listOrder pttdb.ListOrder) ([]*MerkleNode, error)
+
+	ForceSyncMasterMerkle() (bool, error)
 
 	// member
 
@@ -155,7 +160,10 @@ type ProtocolManager interface {
 
 	HandleForceSyncMemberOplog(dataBytes []byte, peer *PttPeer) error
 	HandleForceSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
-	HandleSyncMemberOplogInvalidAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByMerkle(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByMerkleAck(dataBytes []byte, peer *PttPeer) error
+	HandleForceSyncMemberOplogByOplogAck(dataBytes []byte, peer *PttPeer) error
+	HandleSyncMemberOplogInvalid(dataBytes []byte, peer *PttPeer) error
 
 	HandleSyncMemberOplogAck(dataBytes []byte, peer *PttPeer) error
 	HandleSyncNewMemberOplog(dataBytes []byte, peer *PttPeer) error
@@ -172,6 +180,8 @@ type ProtocolManager interface {
 	GetMemberLogByMemberID(id *types.PttID, isLocked bool) (*MemberOplog, error)
 
 	MyMemberLog() *MemberOplog
+
+	ForceSyncMemberMerkle() (bool, error)
 
 	// log0
 	SetLog0DB(oplog *BaseOplog)
@@ -473,6 +483,7 @@ func NewBaseProtocolManager(
 
 	// entity
 	e Entity,
+	svc Service,
 
 	// db
 	db *pttdb.LDBBatch,
@@ -480,6 +491,8 @@ func NewBaseProtocolManager(
 ) (*BaseProtocolManager, error) {
 
 	entityID := e.GetID()
+	entityIDBytes, _ := entityID.MarshalText()
+	entityIDStr := string(entityIDBytes)
 
 	peers, err := NewPttPeerSet()
 	if err != nil {
@@ -499,7 +512,7 @@ func NewBaseProtocolManager(
 	}
 	dbMasterPrefix := append(DBMasterPrefix, entityID[:]...)
 	dbMasterIdxPrefix := append(DBMasterIdxPrefix, entityID[:]...)
-	masterMerkle, err := NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, entityID, db, "master")
+	masterMerkle, err := NewMerkle(DBMasterOplogPrefix, DBMasterMerkleOplogPrefix, entityID, db, "("+entityIDStr+"/"+svc.Name()+":master)")
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +524,7 @@ func NewBaseProtocolManager(
 	}
 	dbMemberPrefix := append(DBMemberPrefix, entityID[:]...)
 	dbMemberIdxPrefix := append(DBMemberIdxPrefix, entityID[:]...)
-	memberMerkle, err := NewMerkle(DBMemberOplogPrefix, DBMemberMerkleOplogPrefix, entityID, db, "member")
+	memberMerkle, err := NewMerkle(DBMemberOplogPrefix, DBMemberMerkleOplogPrefix, entityID, db, "("+entityIDStr+"/"+svc.Name()+":member)")
 	if err != nil {
 		return nil, err
 	}

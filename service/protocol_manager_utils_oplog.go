@@ -371,17 +371,19 @@ func (pm *BaseProtocolManager) GetPendingOplogs(setDB func(oplog *BaseOplog), pe
 	failedLogs := make([]*BaseOplog, 0, lenLogs)
 
 	for _, log := range pendingLogs {
-		if log.CreateTS.IsLess(expireTime) {
+		switch {
+		case log.CreateTS.IsLess(expireTime):
 			failedLogs = append(failedLogs, log)
-		} else if isMasterPeer || isGetAll {
+		case isMasterPeer || isGetAll:
 			logs = append(logs, log)
 		}
 	}
 
 	for _, log := range internalPendingLogs {
-		if log.CreateTS.IsLess(expireTime) {
+		switch {
+		case log.CreateTS.IsLess(expireTime):
 			failedLogs = append(failedLogs, log)
-		} else if isMyPeer || isGetAll {
+		case isMyPeer || isGetAll:
 			logs = append(logs, log)
 		}
 	}
@@ -394,34 +396,42 @@ func (pm *BaseProtocolManager) IntegrateOplog(
 	isLocked bool,
 
 	merkle *Merkle,
-) (bool, error) {
+) (types.Bool, bool, error) {
 	if !isLocked {
 		err := oplog.Lock()
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		defer oplog.Unlock()
 	}
 
-	isToSign, err := oplog.IntegrateExisting(true, merkle)
+	origIsSync, isToSign, err := oplog.IntegrateExisting(true, merkle)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	if !isToSign {
-		return false, nil
+		return origIsSync, false, nil
 	}
 
 	err = pm.ValidateIntegrateSign(oplog, true)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
+	oplogIsSync := oplog.IsSync
+	defer func() {
+		oplog.IsSync = oplogIsSync
+	}()
+
+	if origIsSync {
+		oplog.IsSync = origIsSync
+	}
 	err = oplog.Save(true, merkle)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 
-	return true, nil
+	return origIsSync, true, nil
 }
 
 func (pm *BaseProtocolManager) ValidateIntegrateSign(oplog *BaseOplog, isLocked bool) error {

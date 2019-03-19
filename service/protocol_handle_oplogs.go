@@ -174,8 +174,8 @@ func handleOplog(
 	defer oplog.Unlock()
 
 	// select
-	isToBroadcast, err := oplog.SelectExisting(true, merkle)
-	log.Debug("handleOplog: after SelectExisting", "oplog", oplog, "e", err, "IsSync", oplog.IsSync)
+	origIsSync, isToBroadcast, err := oplog.SelectExisting(true, merkle)
+	log.Debug("handleOplog: after SelectExisting", "oplog", oplog, "e", err, "IsSync", oplog.IsSync, "origIsSync", origIsSync)
 	if err != nil {
 		return false, nil, err
 	}
@@ -197,7 +197,10 @@ func handleOplog(
 	}
 
 	// save oplog
-	err = oplog.SaveWithIsSync(true)
+	if origIsSync {
+		oplog.IsSync = origIsSync
+	}
+	err = oplog.Save(true, merkle)
 	if err != nil && err != pttdb.ErrInvalidUpdateTS {
 		return false, nil, err
 	}
@@ -347,7 +350,7 @@ func handlePendingOplog(
 
 	// integrate
 	// after integrate-me-oplog: oplog saved if orig exists and not new-signed.
-	isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
+	origIsSync, isNewSign, err := pm.IntegrateOplog(oplog, true, merkle)
 	if err != nil {
 		return false, nil, err
 	}
@@ -397,7 +400,10 @@ func handlePendingOplog(
 	}
 
 	// save oplog
-	err = oplog.SaveWithIsSync(true)
+	if origIsSync {
+		oplog.IsSync = origIsSync
+	}
+	err = oplog.Save(true, merkle)
 	if err == pttdb.ErrInvalidUpdateTS {
 		err = nil
 	}

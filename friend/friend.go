@@ -142,7 +142,7 @@ func (f *Friend) Init(ptt pkgservice.Ptt, service pkgservice.Service, spm pkgser
 }
 
 func (f *Friend) InitPM(ptt pkgservice.Ptt, service pkgservice.Service) error {
-	pm, err := NewProtocolManager(f, ptt)
+	pm, err := NewProtocolManager(f, ptt, service)
 	if err != nil {
 		return err
 	}

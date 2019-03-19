@@ -18,6 +18,7 @@ package content
 
 import (
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -26,6 +27,8 @@ func (pm *ProtocolManager) handleUpdateArticleLogs(oplog *pkgservice.BaseOplog, 
 	pm.SetArticleDB(obj)
 
 	opData := &BoardOpUpdateArticle{}
+
+	log.Debug("handleUpdateArticleLogs: to HandleUpdateObjectLog", "entity", pm.Entity().IDString(), "IsSync", oplog.IsSync)
 
 	return pm.HandleUpdateObjectLog(
 		oplog,
@@ -48,6 +51,8 @@ func (pm *ProtocolManager) handlePendingUpdateArticleLogs(oplog *pkgservice.Base
 	pm.SetArticleDB(obj)
 
 	opData := &BoardOpUpdateArticle{}
+
+	log.Debug("handlePendingUpdateArticleLogs: to HandlePendingUpdateObjectLog", "entity", pm.Entity().IDString())
 
 	return pm.HandlePendingUpdateObjectLog(
 		oplog,

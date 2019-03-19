@@ -42,7 +42,7 @@ type ProtocolManager struct {
 	dbCommentIdxPrefix []byte
 }
 
-func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgservice.Entity) *pkgservice.BaseProtocolManager {
+func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgservice.Entity, svc pkgservice.Service) *pkgservice.BaseProtocolManager {
 
 	b, err := pkgservice.NewBaseProtocolManager(
 		ptt,
@@ -81,6 +81,7 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 		pm.postdeleteBoard, // postdelete
 
 		entity, // entity
+		svc,
 
 		dbBoard, //db
 	)
@@ -91,13 +92,17 @@ func newBaseProtocolManager(pm *ProtocolManager, ptt pkgservice.Ptt, entity pkgs
 	return b
 }
 
-func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) {
+func NewProtocolManager(b *Board, ptt pkgservice.Ptt, svc pkgservice.Service) (*ProtocolManager, error) {
 	dbBoardLock, err := types.NewLockMap(pkgservice.SleepTimeLock)
 	if err != nil {
 		return nil, err
 	}
 
-	boardOplogMerkle, err := pkgservice.NewMerkle(DBBoardOplogPrefix, DBBoardMerkleOplogPrefix, b.ID, dbBoard, "board")
+	entityID := b.ID
+	entityIDBytes, _ := entityID.MarshalText()
+	entityIDStr := string(entityIDBytes)
+
+	boardOplogMerkle, err := pkgservice.NewMerkle(DBBoardOplogPrefix, DBBoardMerkleOplogPrefix, b.ID, dbBoard, "("+entityIDStr+"/"+svc.Name()+":board)")
 	if err != nil {
 		return nil, err
 	}
@@ -105,14 +110,13 @@ func NewProtocolManager(b *Board, ptt pkgservice.Ptt) (*ProtocolManager, error) 
 		dbBoardLock:      dbBoardLock,
 		boardOplogMerkle: boardOplogMerkle,
 	}
-	pm.BaseProtocolManager = newBaseProtocolManager(pm, ptt, b)
+	pm.BaseProtocolManager = newBaseProtocolManager(pm, ptt, b, svc)
 
 	// title
 	pm.dbTitlePrefix = DBTitlePrefix
 	pm.dbTitleIdxPrefix = DBTitleIdxPrefix
 
 	// article
-	entityID := b.ID
 	pm.dbArticlePrefix = append(DBArticlePrefix, entityID[:]...)
 	pm.dbArticleIdxPrefix = append(DBArticleIdxPrefix, entityID[:]...)
 

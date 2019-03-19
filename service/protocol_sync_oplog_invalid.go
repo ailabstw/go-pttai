@@ -34,7 +34,7 @@ SyncOplogAckInvalid: I (The receiver) Issuing that the sync-oplog is invalid (Va
 	2. if isToSyncPeer: ResyncOplog (with resyncOp. I become the requester.)
 	3. Send invalidOp to the peer (notify it that the oplog is invalid. the peer needs to do some action and resync the oplog.)
 */
-func (pm *BaseProtocolManager) SyncOplogInvalidAck(
+func (pm *BaseProtocolManager) SyncOplogInvalid(
 	peer *PttPeer,
 
 	theirSyncTS types.Timestamp,
@@ -86,7 +86,7 @@ syncOplogAckInvalidIsToSyncPeer checks whether I should sync with the peer.
 	4. => cmp sync-ts.
 	5. => cmp id.
 */
-func (pm *BaseProtocolManager) syncOplogInvalidAckIsToSyncPeer(
+func (pm *BaseProtocolManager) syncOplogInvalidIsToSyncPeer(
 	peer *PttPeer,
 	theirSyncTS types.Timestamp,
 	mySyncTS types.Timestamp,
@@ -142,7 +142,7 @@ HandleSyncOplogAckInvalid: I (the requester) received the msg that my oplogs are
     3.1. if I am connecting to the master => get the master-peer and resync with the master.
     4. Try to connect to the master.
 */
-func (pm *BaseProtocolManager) HandleSyncOplogInvalidAck(
+func (pm *BaseProtocolManager) HandleSyncOplogInvalid(
 	dataBytes []byte,
 	peer *PttPeer,
 	merkle *Merkle,

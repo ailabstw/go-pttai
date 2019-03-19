@@ -146,6 +146,7 @@ func (spm *BaseServiceProtocolManager) CreateJoinEntity(
 	// 8. oplog0
 	log.Debug("CreateJoinEntity: to SetLog0DB", "oplog0", oplog0)
 	pm.SetLog0DB(oplog0)
+	oplog0.IsSync = true
 	err = oplog0.Save(false, pm.Log0Merkle())
 	if err != nil {
 		return nil, err

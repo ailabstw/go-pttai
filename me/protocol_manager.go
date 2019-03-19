@@ -95,7 +95,7 @@ type ProtocolManager struct {
 	lockRaft sync.Mutex
 }
 
-func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager, error) {
+func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt, svc pkgservice.Service) (*ProtocolManager, error) {
 
 	dbMeLock, err := types.NewLockMap(SleepTimeMeLock)
 	if err != nil {
@@ -108,7 +108,10 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 	}
 
 	myID := myInfo.ID
-	meOplogMerkle, err := pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbMe, "me")
+	entityIDBytes, _ := myID.MarshalText()
+	entityIDStr := string(entityIDBytes)
+
+	meOplogMerkle, err := pkgservice.NewMerkle(DBMeOplogPrefix, DBMeMerkleOplogPrefix, myID, dbMe, "("+entityIDStr+"/"+svc.Name()+":me)")
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +181,7 @@ func NewProtocolManager(myInfo *MyInfo, ptt pkgservice.MyPtt) (*ProtocolManager,
 		nil, // postdelete
 
 		myInfo, // entity
+		svc,
 
 		dbMe, // db
 	)

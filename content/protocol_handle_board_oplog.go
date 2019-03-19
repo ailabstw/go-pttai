@@ -229,7 +229,8 @@ func (pm *ProtocolManager) postprocessBoardOplogs(processInfo pkgservice.Process
 		}
 	}
 
-	if isPending {
+	myID := pm.Ptt().GetMyEntity().GetID()
+	if isPending || pm.IsMaster(myID, false) {
 		pm.broadcastBoardOplogsCore(toBroadcastLogs)
 	}
 

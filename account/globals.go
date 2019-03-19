@@ -42,12 +42,17 @@ const (
 	AddPendingUserOplogsMsg
 
 	SyncUserOplogMsg
-	ForceSyncUserOplogMsg
-	ForceSyncUserOplogAckMsg
-	InvalidSyncUserOplogMsg
 	SyncUserOplogAckMsg
 	SyncUserOplogNewOplogsMsg
 	SyncUserOplogNewOplogsAckMsg
+
+	InvalidSyncUserOplogMsg
+
+	ForceSyncUserOplogMsg
+	ForceSyncUserOplogAckMsg
+	ForceSyncUserOplogByMerkleMsg
+	ForceSyncUserOplogByMerkleAckMsg
+	ForceSyncUserOplogByOplogAckMsg
 
 	SyncPendingUserOplogMsg // 50
 	SyncPendingUserOplogAckMsg

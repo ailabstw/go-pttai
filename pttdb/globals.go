@@ -37,6 +37,7 @@ const (
 
 var (
 	dbLastKey = []byte{255}
+	ValueTrue = []byte{1}
 )
 
 const (

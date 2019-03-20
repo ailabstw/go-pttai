@@ -66,7 +66,7 @@ func (pm *BaseProtocolManager) SyncOplog(peer *PttPeer, merkle *Merkle, op OpTyp
 		return err
 	}
 
-	toSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
+	toSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime, false)
 	if err != nil {
 		return err
 	}
@@ -118,8 +118,10 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 		return err
 	}
 
+	merkleName := GetMerkleName(merkle, pm)
+
 	myToSyncTime, err := merkle.ToSyncTime()
-	log.Debug("HandleSyncOplog: after get myToSyncTime", "e", err, "myToSyncTime", myToSyncTime, "data.ToSyncTime", data.ToSyncTime, "merkle", merkle.Name)
+	log.Debug("HandleSyncOplog: after get myToSyncTime", "e", err, "myToSyncTime", myToSyncTime, "data.ToSyncTime", data.ToSyncTime, "merkle", merkleName)
 	if err != nil {
 		return err
 	}
@@ -134,8 +136,8 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 	}
 
 	// get my merkle-tree-list.
-	myToSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime)
-	log.Debug("HandleSyncOplog: after getMerkleTreeList", "myToSyncNodes", myToSyncNodes, "data.ToSyncNodes", data.ToSyncNodes, "merkle", merkle.Name)
+	myToSyncNodes, _, err := merkle.GetMerkleTreeList(toSyncTime, false)
+	log.Debug("HandleSyncOplog: after getMerkleTreeList", "myToSyncNodes", myToSyncNodes, "data.ToSyncNodes", data.ToSyncNodes, "merkle", merkleName)
 	if err != nil {
 		return err
 	}
@@ -147,7 +149,7 @@ func (pm *BaseProtocolManager) HandleSyncOplog(
 	}
 
 	if len(myNewNodes) > 0 || len(theirNewNodes) > 0 {
-		log.Warn("HandleSyncOplog: invalid merkle", "myNewNodes", len(myNewNodes), "theirNewNodes", len(theirNewNodes), "merkle", merkle.Name, "peer", peer)
+		log.Warn("HandleSyncOplog: invalid merkle", "myNewNodes", len(myNewNodes), "theirNewNodes", len(theirNewNodes), "merkle", merkleName, "peer", peer)
 		return pm.SyncOplogInvalidByMerkle(
 			myNewNodes,
 			theirNewNodes,

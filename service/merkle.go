@@ -131,10 +131,6 @@ func (m *Merkle) SaveMerkleTree(ts types.Timestamp) error {
 		return err
 	}
 
-	if newestTS.IsEqual(types.ZeroTimestamp) {
-		return nil
-	}
-
 	// level2 - day
 	offsetTS, nextTS = ts.ToDayTimestamp()
 	_, err = m.SaveMerkleTreeCore(MerkleTreeLevelDay, offsetTS, nextTS, ts)
@@ -164,10 +160,10 @@ func (m *Merkle) SaveMerkleTree(ts types.Timestamp) error {
 	return nil
 }
 
-func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, nextTS types.Timestamp, updateTS types.Timestamp) (types.Timestamp, error) {
+func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, offsetTS types.Timestamp, nextTS types.Timestamp, updateTS types.Timestamp) (types.Timestamp, error) {
 	// 1. get iter
 	childLevel := level - 1
-	iter, err := m.GetMerkleIter(childLevel, ts, nextTS, pttdb.ListOrderNext)
+	iter, err := m.GetMerkleIter(childLevel, offsetTS, nextTS, pttdb.ListOrderNext)
 	if err != nil {
 		return types.ZeroTimestamp, err
 	}
@@ -188,12 +184,10 @@ func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, n
 	theAddr := types.Addr(addrBytes)
 
 	// 3. marshal-key
-	theKey, err := m.MarshalKey(level, ts)
+	theKey, err := m.MarshalKey(level, offsetTS)
 	if err != nil {
 		return types.ZeroTimestamp, err
 	}
-
-	log.Debug("SaveMerkleTreeCore: to check nChildren", "nChildren", nChildren, "merkle", m.Name)
 
 	if nChildren == 0 { // no children
 		m.db.DB().Delete(theKey)
@@ -204,7 +198,7 @@ func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, n
 	merkleNode := &MerkleNode{
 		Level:     level,
 		Addr:      theAddr,
-		UpdateTS:  updateTS,
+		UpdateTS:  offsetTS,
 		NChildren: nChildren,
 	}
 
@@ -213,7 +207,6 @@ func (m *Merkle) SaveMerkleTreeCore(level MerkleTreeLevel, ts types.Timestamp, n
 		return types.ZeroTimestamp, err
 	}
 
-	log.Debug("SaveMerkleTreeCore: to save", "merkleNode", merkleNode, "merkle", m.Name)
 	err = m.db.DB().Put(theKey, theVal)
 	if err != nil {
 		return types.ZeroTimestamp, err
@@ -474,7 +467,7 @@ func (m *Merkle) MarshalKey(level MerkleTreeLevel, ts types.Timestamp) ([]byte, 
 /*
 Given the ts, retrieve the merkle until ts.
 */
-func (m *Merkle) GetMerkleTreeList(ts types.Timestamp) ([]*MerkleNode, []*MerkleNode, error) {
+func (m *Merkle) GetMerkleTreeList(ts types.Timestamp, isNow bool) ([]*MerkleNode, []*MerkleNode, error) {
 	// year
 	offsetYearTS, _ := ts.ToYearTimestamp()
 
@@ -511,13 +504,6 @@ func (m *Merkle) GetMerkleTreeList(ts types.Timestamp) ([]*MerkleNode, []*Merkle
 		return nil, nil, err
 	}
 
-	//now
-	nowMerkleTreeList, err := m.GetMerkleTreeListCore(MerkleTreeLevelNow, offsetHourTS, ts)
-	//log.Debug("GetMerkleTreeList: after now", "offsetHourTS", offsetHourTS, "ts", ts, "now", len(nowMerkleTreeList), "e", err)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	lenList := len(yearMerkleTreeList) + len(monthMerkleTreeList) + len(dayMerkleTreeList) + len(hrMerkleTreeList)
 
 	merkleTreeList := make([]*MerkleNode, 0, lenList)
@@ -525,6 +511,16 @@ func (m *Merkle) GetMerkleTreeList(ts types.Timestamp) ([]*MerkleNode, []*Merkle
 	merkleTreeList = append(merkleTreeList, monthMerkleTreeList...)
 	merkleTreeList = append(merkleTreeList, dayMerkleTreeList...)
 	merkleTreeList = append(merkleTreeList, hrMerkleTreeList...)
+
+	if !isNow {
+		return merkleTreeList, nil, nil
+	}
+
+	//now
+	nowMerkleTreeList, err := m.GetMerkleTreeListCore(MerkleTreeLevelNow, offsetHourTS, ts)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return merkleTreeList, nowMerkleTreeList, nil
 }
@@ -534,7 +530,6 @@ func (m *Merkle) GetMerkleTreeListByLevel(level MerkleTreeLevel, ts types.Timest
 }
 
 func (m *Merkle) GetMerkleTreeListCore(level MerkleTreeLevel, ts types.Timestamp, nextTS types.Timestamp) ([]*MerkleNode, error) {
-	//log.Debug("GetMerkleTreeListCore: start", "level", level, "ts", ts, "nextTS", nextTS)
 	iter, err := m.GetMerkleIter(level, ts, nextTS, pttdb.ListOrderNext)
 	if err != nil {
 		return nil, err
@@ -557,12 +552,25 @@ func (m *Merkle) GetMerkleTreeListCore(level MerkleTreeLevel, ts types.Timestamp
 
 	/*
 		for i, result := range results {
-			//log.Debug("GetMerkleTreeListCore (after-loop)", "idx", fmt.Sprintf("(%d/%d)", i, len(results)), "result", result)
+			log.Debug("GetMerkleTreeListCore (after-loop)", "idx", fmt.Sprintf("(%d/%d)", i, len(results)), "result", result)
 		}
 	*/
 
 	//log.Debug("GetMerkleTreeListCore: end", "level", level, "ts", ts, "nextTS", nextTS, "results", len(results))
 	return results, nil
+}
+
+func (m *Merkle) GetNodeByKey(key []byte) (*MerkleNode, error) {
+	val, err := m.db.DB().Get(key)
+	if err != nil {
+		return nil, err
+	}
+	node := &MerkleNode{}
+	err = node.Unmarshal(val)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
 }
 
 func (m *Merkle) GetMerkleIter(level MerkleTreeLevel, ts types.Timestamp, nextTS types.Timestamp, listOrder pttdb.ListOrder) (iterator.Iterator, error) {
@@ -683,8 +691,6 @@ func (m *Merkle) ResetUpdateTS() error {
 	return nil
 }
 
-var merkleToUpdateTSValue = []byte("1")
-
 func (m *Merkle) SetUpdateTS(ts types.Timestamp) error {
 	hrTS, _ := ts.ToHRTimestamp()
 
@@ -695,7 +701,7 @@ func (m *Merkle) SetUpdateTS(ts types.Timestamp) error {
 
 	key := m.MarshalToUpdateTSKey(hrTS)
 
-	m.db.DB().Put(key, merkleToUpdateTSValue)
+	m.db.DB().Put(key, pttdb.ValueTrue)
 
 	m.toUpdateTS[hrTS.Ts] = true
 
@@ -716,7 +722,7 @@ func (m *Merkle) SetUpdateTS2(ts types.Timestamp, ts2 types.Timestamp) error {
 
 	key := m.MarshalToUpdateTSKey(hrTS)
 
-	m.db.DB().Put(key, merkleToUpdateTSValue)
+	m.db.DB().Put(key, pttdb.ValueTrue)
 
 	if hrTS.IsEqual(hrTS2) {
 		return nil
@@ -724,7 +730,7 @@ func (m *Merkle) SetUpdateTS2(ts types.Timestamp, ts2 types.Timestamp) error {
 
 	key = m.MarshalToUpdateTSKey(hrTS2)
 
-	m.db.DB().Put(key, merkleToUpdateTSValue)
+	m.db.DB().Put(key, pttdb.ValueTrue)
 
 	return nil
 }

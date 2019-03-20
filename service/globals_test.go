@@ -191,7 +191,7 @@ var (
 			204, 99, 169, 130, 205, 128, 96, 0, 2, 125,
 			192, 198, 207, 136, 119, 152, 20, 207, 118, 168,
 		},
-		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
+		UpdateTS:  types.Timestamp{Ts: 1234483200, NanoTs: 0},
 		NChildren: 1,
 		Key:       []byte{},
 	}
@@ -202,7 +202,7 @@ var (
 			175, 138, 104, 31, 200, 172, 68, 11, 101, 23,
 			0, 182, 43, 40, 66, 255, 173, 90, 227, 26,
 		},
-		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
+		UpdateTS:  types.Timestamp{Ts: 1233446400, NanoTs: 0},
 		NChildren: 1,
 		Key:       []byte{},
 	}
@@ -213,7 +213,7 @@ var (
 			104, 254, 151, 251, 87, 216, 126, 172, 249, 32,
 			67, 2, 36, 209, 51, 142, 133, 53, 58, 70,
 		},
-		UpdateTS:  types.Timestamp{Ts: 1234567890, NanoTs: 0},
+		UpdateTS:  types.Timestamp{Ts: 1230768000, NanoTs: 0},
 		NChildren: 1,
 		Key:       []byte{},
 	}

@@ -75,12 +75,13 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByMerkleAck(
 		return err
 	}
 
-	log.Debug("HandleForceSyncOplogByMerkleAck: to for-loop", "keys", data.Keys, "merkle", merkle.Name)
+	merkleName := GetMerkleName(merkle, pm)
+	log.Debug("HandleForceSyncOplogByMerkleAck: to for-loop", "keys", data.Keys, "merkle", merkleName)
 
 	node := &MerkleNode{}
 	for _, key := range data.Keys {
 		node.ConstructUpdateTSAndLevelByKey(key)
-		log.Debug("HandleForceSyncOplogByMerkleAck: (in-for-loop)", "level", node.Level, "updateTS", node.UpdateTS, "merkle", merkle.Name)
+		log.Debug("HandleForceSyncOplogByMerkleAck: (in-for-loop)", "level", node.Level, "updateTS", node.UpdateTS, "merkle", merkleName)
 		pm.ForceSyncOplogByMerkle(node, forceSyncOplogMsg, merkle, peer)
 	}
 

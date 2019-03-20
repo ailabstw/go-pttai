@@ -692,6 +692,13 @@ func (pm *BaseProtocolManager) Prestart() error {
 	}
 	pm.isPrestart = true
 
+	// XXX fix-190
+	err := pm.Fix190Merkle()
+	if err != nil {
+		log.Error("Prestart: unable to fix #190", "entity", pm.Entity().IDString())
+		return err
+	}
+
 	// send-data-to-peer sub
 	pm.sendDataToPeersSub = pm.eventMux.Subscribe(&SendDataToPeersEvent{})
 	go pm.sendDataToPeersLoop()

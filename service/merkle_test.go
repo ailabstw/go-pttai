@@ -148,7 +148,7 @@ func TestMerkle_GetMerkleTreeList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := tt.m
-			got, got1, err := m.GetMerkleTreeList(tt.args.ts)
+			got, got1, err := m.GetMerkleTreeList(tt.args.ts, true)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Merkle.GetMerkleTreeList() error = %v, wantErr %v", err, tt.wantErr)
 				return

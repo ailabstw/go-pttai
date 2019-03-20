@@ -31,8 +31,10 @@ func (pm *BaseProtocolManager) SyncOplogInvalidByMerkle(
 
 ) error {
 
+	merkleName := GetMerkleName(merkle, pm)
+
 	var err error
-	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkle", "myNewNodes", myNewNodes, "merkle", merkle.Name, "peer", peer)
+	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkle", "myNewNodes", myNewNodes, "merkle", merkleName, "peer", peer)
 	for _, node := range myNewNodes {
 		err = pm.ForceSyncOplogByMerkle(
 			node,
@@ -58,7 +60,7 @@ func (pm *BaseProtocolManager) SyncOplogInvalidByMerkle(
 		theirNewKeys = append(theirNewKeys, theirNewKey)
 	}
 
-	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkleAck", "theirNewkeys", theirNewKeys, "merkle", merkle.Name, "peer", peer)
+	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkleAck", "theirNewkeys", theirNewKeys, "merkle", merkleName, "peer", peer)
 
 	err = pm.ForceSyncOplogByMerkleAck(
 		theirNewKeys,

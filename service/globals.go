@@ -321,6 +321,11 @@ var (
 	IsPrivateAsPublic = false
 )
 
+// fix
+var (
+	DBFix190Prefix = []byte(".f04H") // 190 in base58
+)
+
 func InitService(dataDir string) error {
 	dbOplogCore, err := pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
 	if err != nil {

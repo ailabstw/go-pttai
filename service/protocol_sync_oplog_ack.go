@@ -254,7 +254,7 @@ func (pm *BaseProtocolManager) HandleSyncOplogAck(
 
 	myNodes = pm.handleSyncOplogAckFilterTS(myNodes, data.StartTS, data.EndTS)
 
-	myNewKeys, theirNewKeys, err := MergeMerkleKeys(myNodes, data.Nodes)
+	myNewKeys, theirNewKeys, err := MergeKeysInMerkleNodes(myNodes, data.Nodes)
 	log.Debug("HandleSyncOplogAck: after MergeMerkleNodeKeys", "myNewKeys", myNewKeys, "theirNewKeys", theirNewKeys, "myNodes", myNodes, "startTS", data.StartTS, "endTS", data.EndTS, "e", err, "entity", pm.Entity().GetID())
 	if err != nil {
 		return err

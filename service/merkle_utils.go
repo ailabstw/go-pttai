@@ -117,11 +117,11 @@ func DiffMerkleTree(
 
 		switch {
 		case myNode.UpdateTS.IsLess(theirNode.UpdateTS):
-			log.Error("DiffMerkleTree: myNode.TS", "me", myNode.UpdateTS, "they", theirNode.UpdateTS, "merkle", merkle.Name)
+			log.Error("DiffMerkleTree: myNode.TS", "me", myNode.UpdateTS, "me.level", myNode.Level, "they", theirNode.UpdateTS, "they.level", theirNode.Level, "merkle", merkle.Name)
 			theirNewNodes = append(theirNewNodes, myNode)
 			pMyNodes = pMyNodes[1:]
 		case theirNode.UpdateTS.IsLess(myNode.UpdateTS):
-			log.Error("DiffMerkleTree: theirNode.TS", "me", myNode.UpdateTS, "they", theirNode.UpdateTS, "merkle", merkle.Name)
+			log.Error("DiffMerkleTree: theirNode.TS", "me", myNode.UpdateTS, "me.level", myNode.Level, "they", theirNode.UpdateTS, "they.level", theirNode.Level, "merkle", merkle.Name)
 			myNewNodes = append(myNewNodes, theirNode)
 			pTheirNodes = pTheirNodes[1:]
 		case myNode.Level > theirNode.Level:
@@ -170,7 +170,7 @@ func DiffMerkleTree(
 /*
 Return: myNewKeys: new keys from from their nodes, theirNewKeys: new keys from my nodes
 */
-func MergeMerkleKeys(myNodes []*MerkleNode, theirNodes []*MerkleNode) ([][]byte, [][]byte, error) {
+func MergeKeysInMerkleNodes(myNodes []*MerkleNode, theirNodes []*MerkleNode) ([][]byte, [][]byte, error) {
 	// XXX TODO: refactor. Currently the 4 conditions are enumerated.
 	lenMyNodes := len(myNodes)
 	lenTheirNodes := len(theirNodes)
@@ -324,4 +324,34 @@ func DiffMerkleKeys(
 	}
 
 	return myNewKeys, theirNewKeys, nil
+}
+
+func getKeysFromMerkleKeys(merkle *Merkle, merkleKeys [][]byte) ([][]byte, error) {
+	keys := make([][]byte, 0, len(merkleKeys))
+
+	var err error
+	var merkleNode *MerkleNode
+	for _, key := range merkleKeys {
+		merkleNode, err = merkle.GetNodeByKey(key)
+		if err != nil {
+			continue
+		}
+
+		if merkleNode.Level != MerkleTreeLevelNow {
+			log.Warn("getKeysFromMerkleKeys: wrong level", "key", key, "level", merkleNode.Level, "ts", merkleNode.UpdateTS, "merkle", merkle.Name)
+			continue
+		}
+
+		keys = append(keys, merkleNode.Key)
+	}
+
+	return keys, nil
+}
+
+func GetMerkleName(merkle *Merkle, pm ProtocolManager) string {
+	if merkle != nil {
+		return merkle.Name
+	}
+
+	return pm.Entity().IDString()
 }

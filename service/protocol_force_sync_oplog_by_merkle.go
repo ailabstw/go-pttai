@@ -41,22 +41,30 @@ func (pm *BaseProtocolManager) ForceSyncOplogByMerkle(
 
 	myNode, _ := merkle.GetNodeByLevelTS(myNewNode.Level, myNewNode.UpdateTS)
 
-	log.Debug("ForceSyncOplogByMerkle: to GetChildKeys", "myNode", myNode, "myNewNode", myNewNode, "merkle", merkle.Name)
-
 	keys, err := merkle.GetChildKeys(myNewNode.Level, myNewNode.UpdateTS)
-	log.Debug("ForceSyncOplogByMerkle: after GetChildKeys", "e", err, "level", myNewNode.Level, "TS", myNewNode.UpdateTS, "keys", keys, "merkle", merkle.Name)
 	if err != nil {
 		return err
 	}
 
+	merkleName := GetMerkleName(merkle, pm)
 	if myNode != nil && len(keys) != int(myNode.NChildren) {
-		log.Warn("ForceSyncOplogByMerkle: len != NChildren", "len", len(keys), "children", myNode.NChildren, "merkle", merkle.Name)
-		return merkle.TryForceSync(pm)
+		log.Warn("ForceSyncOplogByMerkle: len != NChildren", "len", len(keys), "children", myNode.NChildren, "merkle", merkleName)
+		err = merkle.TryForceSync(pm)
+		if err != nil {
+			log.Error("ForceSyncOplogByMerkle: len != NChildren (unable to sync)", "len", len(keys), "children", myNode.NChildren, "merkle", merkleName)
+			return err
+		}
+		return nil
 	}
 
 	if myNode == nil && len(keys) != 0 {
-		log.Warn("ForceSyncOplogByMerkle: len != 0", "len", len(keys), "merkle", merkle.Name)
-		return merkle.TryForceSync(pm)
+		log.Warn("ForceSyncOplogByMerkle: len != 0", "len", len(keys), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
+		err = merkle.TryForceSync(pm)
+		if err != nil {
+			log.Error("ForceSyncOplogByMerkle: len != 0 (unable to sync)", "len", len(keys), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
+			return err
+		}
+		return nil
 	}
 
 	data := &ForceSyncOplogByMerkle{
@@ -103,16 +111,12 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByMerkle(
 		return err
 	}
 
-	log.Debug("HandleForceSyncOplogByMerkle: to GetChildKeys", "level", data.Level, "TS", data.UpdateTS, "merkle", merkle.Name, "peer", peer)
-
 	keys, err := merkle.GetChildKeys(data.Level, data.UpdateTS)
-	log.Debug("HandleForceSyncOplogByMerkle: after GetChildKeys", "level", data.Level, "TS", data.UpdateTS, "keys", keys, "e", err, "merkle", merkle.Name, "peer", peer)
 	if err != nil {
 		return err
 	}
 
-	myNewKeys, theirNewKeys, err := DiffMerkleKeys(keys, data.Keys)
-	log.Debug("HandleForceSyncOplogByMerkle: after DiffMerkleKeys", "myNewKeys", myNewKeys, "theirNewKeys", theirNewKeys, "e", err, "merkle", merkle.Name, "peer", peer)
+	_, theirNewKeys, err := DiffMerkleKeys(keys, data.Keys)
 	if err != nil {
 		return err
 	}

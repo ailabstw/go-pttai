@@ -199,11 +199,7 @@ func (o *BaseOplog) Save(isLocked bool, merkle *Merkle) error {
 }
 
 func (o *BaseOplog) setMerkleUpdateTS(origKeys [][]byte, merkle *Merkle) error {
-	merkleName := ""
-	if merkle != nil {
-		merkleName = merkle.Name
-	}
-	log.Debug("setMerkleUpdateTS: start", "id", o.ID, "MasterLogID", o.MasterLogID, "IsSync", o.IsSync, "merkle", merkleName)
+
 	if o.MasterLogID == nil || !o.IsSync || merkle == nil {
 		return nil
 	}
@@ -224,31 +220,7 @@ func (o *BaseOplog) setMerkleUpdateTS(origKeys [][]byte, merkle *Merkle) error {
 }
 
 func (o *BaseOplog) ForceSave(isLocked bool, merkle *Merkle) error {
-	if !isLocked {
-		err := o.dbLock.Lock(o.ID)
-		if err != nil {
-			return err
-		}
-		defer o.dbLock.Unlock(o.ID)
-	}
-
-	idxKey, idx, kvs, err := o.SaveCore()
-	if err != nil {
-		return err
-	}
-
-	// XXX need to do verify before save
-	origKeys, err := o.db.ForcePutAll(idxKey, idx, kvs)
-	if err != nil {
-		return err
-	}
-
-	err = o.setMerkleUpdateTS(origKeys, merkle)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return o.Save(isLocked, merkle)
 }
 
 func (o *BaseOplog) SaveCore() ([]byte, *pttdb.Index, []*pttdb.KeyVal, error) {
@@ -436,7 +408,7 @@ func (o *BaseOplog) Load(key []byte) error {
 	}
 	err = json.Unmarshal(marshaled, o)
 	if err != nil {
-		log.Error("Oplog.Load: unable to Unmarshal", "marshaled", marshaled, "o", o)
+		log.Error("Oplog.Load: unable to Unmarshal", "key", key, "marshaled", marshaled, "o", o)
 		return err
 	}
 

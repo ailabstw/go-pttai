@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/log"
 )
 
 type ForceSyncOplogByOplogAck struct {
@@ -40,8 +39,12 @@ func (pm *BaseProtocolManager) ForceSyncOplogByOplogAck(
 	merkle *Merkle,
 ) error {
 
-	theirNewLogs, err := getOplogsFromKeys(setDB, theirNewKeys)
-	log.Debug("ForceSyncOplogByOplogAck: after get theirNewLogs", "theirNewLogs", len(theirNewLogs), "e", err, "merkle", merkle.Name)
+	keys, err := getKeysFromMerkleKeys(merkle, theirNewKeys)
+	if err != nil {
+		return err
+	}
+
+	theirNewLogs, err := getOplogsFromKeys(setDB, keys)
 	if err != nil {
 		return err
 	}
@@ -94,8 +97,6 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByOplogAck(
 	if err != nil {
 		return err
 	}
-
-	log.Debug("HandleForceSyncOplogByOplogAck: to handleOplogs", "oplogs", data.Oplogs, "merkle", merkle.Name)
 
 	err = handleOplogs(data.Oplogs, peer, true)
 	if err != nil {

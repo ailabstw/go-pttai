@@ -55,7 +55,17 @@ func HandleOplogs(
 		return nil
 	}
 
-	oplogs, err = preprocessOplogs(oplogs, setDB, isUpdateSyncTime, pm, merkle, peer)
+	oplogs, err = preprocessOplogs(
+		oplogs,
+		setDB,
+		isUpdateSyncTime,
+
+		false,
+
+		pm,
+		merkle,
+		peer,
+	)
 
 	log.Debug("HandleOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs, "entity", pm.Entity().IDString())
 	if err != nil {
@@ -234,7 +244,17 @@ func HandlePendingOplogs(
 	}
 
 	log.Debug("HandlePendingOplogs: to preprocessOplogs", "e", err, "oplogs", oplogs)
-	oplogs, err = preprocessOplogs(oplogs, setDB, false, pm, nil, peer)
+	oplogs, err = preprocessOplogs(
+		oplogs,
+		setDB,
+		false,
+
+		true,
+
+		pm,
+		nil,
+		peer,
+	)
 	log.Debug("HandlePendingOplogs: after preprocessOplogs", "e", err, "oplogs", oplogs)
 	if err != nil {
 		return err
@@ -473,6 +493,8 @@ func preprocessOplogs(
 	setDB func(oplog *BaseOplog),
 	isUpdateSyncTime bool,
 
+	isPending bool,
+
 	pm ProtocolManager,
 	merkle *Merkle,
 	peer *PttPeer,
@@ -499,19 +521,22 @@ func preprocessOplogs(
 	}
 
 	// expire-ts: start-idx
-	startIdx := len(oplogs)
-	for i, oplog := range oplogs {
-		if expireTS.IsLess(oplog.UpdateTS) {
-			startIdx = i
-			break
+	startIdx := 0
+	if isPending {
+		startIdx = len(oplogs)
+		for i, oplog := range oplogs {
+			if expireTS.IsLess(oplog.UpdateTS) {
+				startIdx = i
+				break
+			}
 		}
-	}
-	if startIdx != 0 {
-		expiredLog := oplogs[0]
-		log.Warn("preprocessOplogs: received expired oplogs", "e", pm.Entity().GetID(), "expiredLog", expiredLog.ID, "expiredTS", expiredLog.UpdateTS, "expireTS", expireTS, "peer", peer)
-		oplogs = oplogs[startIdx:]
-	}
+		if startIdx != 0 {
+			expiredLog := oplogs[0]
+			log.Warn("preprocessOplogs: received expired oplogs", "e", pm.Entity().GetID(), "log0", expiredLog.ID, "log0.TS", expiredLog.UpdateTS, "expireTS", expireTS, "peer", peer)
+			oplogs = oplogs[startIdx:]
+		}
 
+	}
 	log.Debug("preprocessOplogs: after startIdx", "startIdx", startIdx, "oplogs", oplogs, "entity", pm.Entity().GetID())
 
 	// future-ts: end-idx

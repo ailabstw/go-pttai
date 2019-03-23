@@ -53,17 +53,10 @@ func (pm *BaseProtocolManager) SyncOplogInvalidByMerkle(
 		return nil
 	}
 
-	theirNewKeys := make([][]byte, 0, len(theirNewNodes))
-	var theirNewKey []byte
-	for _, node := range theirNewNodes {
-		theirNewKey = node.ToKey(merkle)
-		theirNewKeys = append(theirNewKeys, theirNewKey)
-	}
-
-	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkleAck", "theirNewkeys", theirNewKeys, "merkle", merkleName, "peer", peer)
+	log.Debug("SyncOplogInvalidByMerkle: to ForceSyncOplogByMerkleAck", "theirNodes", theirNewNodes, "merkle", merkleName, "peer", peer)
 
 	err = pm.ForceSyncOplogByMerkleAck(
-		theirNewKeys,
+		theirNewNodes,
 
 		forceSyncOplogAckMsg,
 

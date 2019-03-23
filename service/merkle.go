@@ -928,3 +928,39 @@ func (m *Merkle) GetChildKeys(level MerkleTreeLevel, ts types.Timestamp) ([][]by
 
 	return keys, nil
 }
+
+func (m *Merkle) GetChildNodes(level MerkleTreeLevel, ts types.Timestamp) ([]*MerkleNode, error) {
+
+	var startTS types.Timestamp
+	var endTS types.Timestamp
+	switch level {
+	case MerkleTreeLevelHR:
+		startTS, endTS = ts.ToHRTimestamp()
+	case MerkleTreeLevelDay:
+		startTS, endTS = ts.ToDayTimestamp()
+	case MerkleTreeLevelMonth:
+		startTS, endTS = ts.ToMonthTimestamp()
+	case MerkleTreeLevelYear:
+		startTS, endTS = ts.ToYearTimestamp()
+	}
+
+	iter, err := m.GetMerkleIter(level-1, startTS, endTS, pttdb.ListOrderNext)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Release()
+
+	nodes := make([]*MerkleNode, 0, NMerkleTreeMagicAlloc)
+	var val []byte
+	for iter.Next() {
+		val = iter.Value()
+		node := &MerkleNode{}
+		err = node.Unmarshal(val)
+		if err != nil {
+			continue
+		}
+		nodes = append(nodes, node)
+	}
+
+	return nodes, nil
+}

@@ -26,7 +26,7 @@ import (
 type ForceSyncOplogByMerkle struct {
 	UpdateTS types.Timestamp `json:"UT"`
 	Level    MerkleTreeLevel `json:"L"`
-	Keys     [][]byte        `json:"K"`
+	Nodes    []*MerkleNode   `json:"K"`
 }
 
 func (pm *BaseProtocolManager) ForceSyncOplogByMerkle(
@@ -41,27 +41,27 @@ func (pm *BaseProtocolManager) ForceSyncOplogByMerkle(
 
 	myNode, _ := merkle.GetNodeByLevelTS(myNewNode.Level, myNewNode.UpdateTS)
 
-	keys, err := merkle.GetChildKeys(myNewNode.Level, myNewNode.UpdateTS)
+	nodes, err := merkle.GetChildNodes(myNewNode.Level, myNewNode.UpdateTS)
 	if err != nil {
 		return err
 	}
 
 	merkleName := GetMerkleName(merkle, pm)
-	if myNode != nil && len(keys) != int(myNode.NChildren) {
-		log.Warn("ForceSyncOplogByMerkle: len != NChildren", "len", len(keys), "children", myNode.NChildren, "merkle", merkleName)
+	if myNode != nil && len(nodes) != int(myNode.NChildren) {
+		log.Warn("ForceSyncOplogByMerkle: len != NChildren", "len", len(nodes), "children", myNode.NChildren, "merkle", merkleName)
 		err = merkle.TryForceSync(pm)
 		if err != nil {
-			log.Error("ForceSyncOplogByMerkle: len != NChildren (unable to sync)", "len", len(keys), "children", myNode.NChildren, "merkle", merkleName)
+			log.Error("ForceSyncOplogByMerkle: len != NChildren (unable to sync)", "len", len(nodes), "children", myNode.NChildren, "merkle", merkleName)
 			return err
 		}
 		return nil
 	}
 
-	if myNode == nil && len(keys) != 0 {
-		log.Warn("ForceSyncOplogByMerkle: len != 0", "len", len(keys), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
+	if myNode == nil && len(nodes) != 0 {
+		log.Warn("ForceSyncOplogByMerkle: len != 0", "len", len(nodes), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
 		err = merkle.TryForceSync(pm)
 		if err != nil {
-			log.Error("ForceSyncOplogByMerkle: len != 0 (unable to sync)", "len", len(keys), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
+			log.Error("ForceSyncOplogByMerkle: len != 0 (unable to sync)", "len", len(nodes), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
 			return err
 		}
 		return nil
@@ -70,8 +70,10 @@ func (pm *BaseProtocolManager) ForceSyncOplogByMerkle(
 	data := &ForceSyncOplogByMerkle{
 		UpdateTS: myNewNode.UpdateTS,
 		Level:    myNewNode.Level,
-		Keys:     keys,
+		Nodes:    nodes,
 	}
+
+	log.Debug("ForceSyncOplogByMerkle: to SendDataToPeer", "children", len(nodes), "level", myNewNode.Level, "ts", myNewNode.UpdateTS, "merkle", merkleName)
 
 	err = pm.SendDataToPeer(forceSyncOplogMsg, data, peer)
 	if err != nil {
@@ -111,23 +113,27 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByMerkle(
 		return err
 	}
 
-	keys, err := merkle.GetChildKeys(data.Level, data.UpdateTS)
+	merkleName := GetMerkleName(merkle, pm)
+
+	nodes, err := merkle.GetChildNodes(data.Level, data.UpdateTS)
+	log.Debug("HandleForceSyncOplogByMerkle: after GetChildKeys", "children", len(nodes), "they", len(data.Nodes), "level", data.Level, "ts", data.UpdateTS, "merkle", merkleName)
 	if err != nil {
 		return err
 	}
 
-	_, theirNewKeys, err := DiffMerkleKeys(keys, data.Keys)
+	myNewNodes, theirNewNodes, err := DiffMerkleTree(nodes, data.Nodes, types.ZeroTimestamp, pm, merkle)
+	log.Debug("HandleForceSyncOplogByMerkle: after DiffMerkleKeys", "myNewKeys", myNewNodes, "theirNewNodes", theirNewNodes, "level", data.Level, "ts", data.UpdateTS, "merkle", merkleName)
 	if err != nil {
 		return err
 	}
 
-	if len(theirNewKeys) == 0 {
+	if len(theirNewNodes) == 0 {
 		return nil
 	}
 
 	if data.Level == MerkleTreeLevelHR {
 		return pm.ForceSyncOplogByOplogAck(
-			theirNewKeys,
+			theirNewNodes,
 			forceSyncOplogByOplogAckMsg,
 			setDB,
 			setNewestOplog,
@@ -137,7 +143,7 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByMerkle(
 	}
 
 	return pm.ForceSyncOplogByMerkleAck(
-		theirNewKeys,
+		theirNewNodes,
 		forceSyncOplogAckMsg,
 		merkle,
 		peer,

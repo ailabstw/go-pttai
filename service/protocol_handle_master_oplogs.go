@@ -232,7 +232,17 @@ func (pm *BaseProtocolManager) HandlePendingMasterOplogs(oplogs []*BaseOplog, pe
 
 	info := NewProcessPersonInfo()
 
-	oplogs, err := preprocessOplogs(oplogs, pm.SetMasterDB, false, pm, nil, peer)
+	oplogs, err := preprocessOplogs(
+		oplogs,
+		pm.SetMasterDB,
+		false,
+
+		true,
+
+		pm,
+		nil,
+		peer,
+	)
 	if err != nil {
 		return err
 	}

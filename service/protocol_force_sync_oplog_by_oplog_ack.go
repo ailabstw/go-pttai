@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 type ForceSyncOplogByOplogAck struct {
@@ -27,7 +28,7 @@ type ForceSyncOplogByOplogAck struct {
 }
 
 func (pm *BaseProtocolManager) ForceSyncOplogByOplogAck(
-	theirNewKeys [][]byte,
+	theirNewNodes []*MerkleNode,
 
 	forceSyncOplogByOplogAckMsg OpType,
 
@@ -39,12 +40,15 @@ func (pm *BaseProtocolManager) ForceSyncOplogByOplogAck(
 	merkle *Merkle,
 ) error {
 
-	keys, err := getKeysFromMerkleKeys(merkle, theirNewKeys)
-	if err != nil {
-		return err
+	keys := make([][]byte, 0, len(theirNewNodes))
+	for _, node := range theirNewNodes {
+		keys = append(keys, node.Key)
 	}
 
+	merkleName := GetMerkleName(merkle, pm)
+
 	theirNewLogs, err := getOplogsFromKeys(setDB, keys)
+	log.Debug("ForceSyncOplogByOplogAck: after getOplogsFromKeys", "keys", len(keys), "theirNewLogs", theirNewLogs, "e", err, "merkle", merkleName, "peer", peer)
 	if err != nil {
 		return err
 	}
@@ -97,6 +101,9 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByOplogAck(
 	if err != nil {
 		return err
 	}
+
+	merkleName := GetMerkleName(merkle, pm)
+	log.Debug("HandleForceSyncOplogByOplogAck: to handleOplogs", "oplogs", data.Oplogs, "merkle", merkleName, "peer", peer)
 
 	err = handleOplogs(data.Oplogs, peer, true)
 	if err != nil {

@@ -24,11 +24,11 @@ import (
 )
 
 type ForceSyncOplogByMerkleAck struct {
-	Keys [][]byte `json:"K"`
+	Nodes []*MerkleNode `json:"K"`
 }
 
 func (pm *BaseProtocolManager) ForceSyncOplogByMerkleAck(
-	keys [][]byte,
+	nodes []*MerkleNode,
 
 	forceSyncOplogAckMsg OpType,
 	merkle *Merkle,
@@ -38,7 +38,7 @@ func (pm *BaseProtocolManager) ForceSyncOplogByMerkleAck(
 ) error {
 
 	data := &ForceSyncOplogByMerkleAck{
-		Keys: keys,
+		Nodes: nodes,
 	}
 
 	err := pm.SendDataToPeer(forceSyncOplogAckMsg, data, peer)
@@ -76,11 +76,9 @@ func (pm *BaseProtocolManager) HandleForceSyncOplogByMerkleAck(
 	}
 
 	merkleName := GetMerkleName(merkle, pm)
-	log.Debug("HandleForceSyncOplogByMerkleAck: to for-loop", "keys", data.Keys, "merkle", merkleName)
+	log.Debug("HandleForceSyncOplogByMerkleAck: to for-loop", "nodes", data.Nodes, "merkle", merkleName)
 
-	node := &MerkleNode{}
-	for _, key := range data.Keys {
-		node.ConstructUpdateTSAndLevelByKey(key)
+	for _, node := range data.Nodes {
 		log.Debug("HandleForceSyncOplogByMerkleAck: (in-for-loop)", "level", node.Level, "updateTS", node.UpdateTS, "merkle", merkleName)
 		pm.ForceSyncOplogByMerkle(node, forceSyncOplogMsg, merkle, peer)
 	}

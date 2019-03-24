@@ -94,8 +94,10 @@ func DiffMerkleTree(
 
 ) ([]*MerkleNode, []*MerkleNode, error) {
 
-	myNodes = validateMerkleTreeTrimNodes(myNodes, ts, pm, merkle)
-	theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts, pm, merkle)
+	if !ts.IsEqual(types.ZeroTimestamp) {
+		myNodes = validateMerkleTreeTrimNodes(myNodes, ts, pm, merkle)
+		theirNodes = validateMerkleTreeTrimNodes(theirNodes, ts, pm, merkle)
+	}
 
 	lenMyNodes := len(myNodes)
 	lenTheirNodes := len(theirNodes)

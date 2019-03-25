@@ -34,10 +34,13 @@ import (
 
 	direct "github.com/backkem/go-libp2p-webrtc-direct"
 	"github.com/pions/webrtc"
+	logging "github.com/whyrusleeping/go-logging"
 	mplex "github.com/whyrusleeping/go-smux-multiplex"
 )
 
 func main() {
+	logging.SetLevel(logging.DEBUG, "swarm2")
+
 	var (
 		listenAddr  = flag.String("addr", "/ip4/0.0.0.0/tcp/9487/http/p2p-webrtc-direct", "listen address")
 		genKey      = flag.String("genkey", "", "generate a node key")

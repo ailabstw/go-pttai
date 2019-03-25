@@ -40,6 +40,10 @@ import (
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	inet "github.com/libp2p/go-libp2p-net"
 	ma "github.com/multiformats/go-multiaddr"
+
+	direct "github.com/backkem/go-libp2p-webrtc-direct"
+	"github.com/pions/webrtc"
+	mplex "github.com/whyrusleeping/go-smux-multiplex"
 )
 
 const (
@@ -312,11 +316,20 @@ func (srv *Server) InitP2P() error {
 		return err
 	}
 
-	p2pserver, err := libp2p.New(
-		p2pctx,
-		libp2p.Identity(privKey),
-		libp2p.ListenAddrStrings(cfg.P2PListenAddr),
+	transport := direct.NewTransport(
+		webrtc.Configuration{},
+		new(mplex.Transport),
 	)
+
+	opts := []libp2p.Option{
+		libp2p.ListenAddrStrings(cfg.P2PListenAddr),
+		libp2p.Identity(privKey),
+		libp2p.DisableRelay(),
+		libp2p.Transport(transport),
+		libp2p.NoSecurity,
+	}
+
+	p2pserver, err := libp2p.New(p2pctx, opts...)
 	if err != nil {
 		return err
 	}

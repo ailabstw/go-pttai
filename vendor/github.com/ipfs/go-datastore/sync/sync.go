@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"io"
 	"sync"
 
 	ds "github.com/ipfs/go-datastore"
@@ -16,8 +15,8 @@ type MutexDatastore struct {
 	child ds.Datastore
 }
 
-// MutexWrap constructs a datastore with a coarse lock around
-// the entire datastore, for every single operation
+// MutexWrap constructs a datastore with a coarse lock around the entire
+// datastore, for every single operation.
 func MutexWrap(d ds.Datastore) *MutexDatastore {
 	return &MutexDatastore{child: d}
 }
@@ -26,9 +25,6 @@ func MutexWrap(d ds.Datastore) *MutexDatastore {
 func (d *MutexDatastore) Children() []ds.Datastore {
 	return []ds.Datastore{d.child}
 }
-
-// IsThreadSafe implements ThreadSafeDatastore
-func (d *MutexDatastore) IsThreadSafe() {}
 
 // Put implements Datastore.Put
 func (d *MutexDatastore) Put(key ds.Key, value []byte) (err error) {
@@ -93,10 +89,7 @@ func (d *MutexDatastore) Batch() (ds.Batch, error) {
 func (d *MutexDatastore) Close() error {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
-	if c, ok := d.child.(io.Closer); ok {
-		return c.Close()
-	}
-	return nil
+	return d.child.Close()
 }
 
 // DiskUsage implements the PersistentDatastore interface.

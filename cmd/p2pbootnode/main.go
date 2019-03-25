@@ -31,6 +31,10 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+
+	direct "github.com/backkem/go-libp2p-webrtc-direct"
+	"github.com/pions/webrtc"
+	mplex "github.com/whyrusleeping/go-smux-multiplex"
 )
 
 func main() {
@@ -126,10 +130,20 @@ func main() {
 
 	addrStr := addr.String()
 
-	h, err := libp2p.New(ctx,
-		libp2p.Identity(privKey),
-		libp2p.ListenAddrStrings(addrStr),
+	transport := direct.NewTransport(
+		webrtc.Configuration{},
+		new(mplex.Transport),
 	)
+
+	opts := []libp2p.Option{
+		libp2p.ListenAddrStrings(addrStr),
+		libp2p.Identity(privKey),
+		libp2p.DisableRelay(),
+		libp2p.Transport(transport),
+		libp2p.NoSecurity,
+	}
+
+	h, err := libp2p.New(ctx, opts...)
 	if err != nil {
 		log.Error("P2PBootnode: unable to new host", "e", err)
 	}

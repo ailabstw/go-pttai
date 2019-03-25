@@ -117,7 +117,7 @@ func NewMyPeerInfo(peerID peer.ID, ip net.IP, tcpPort uint64) (*pstore.PeerInfo,
 
 func NewMyMultiaddr(ip net.IP, tcpPort uint64) (ma.Multiaddr, error) {
 	tcpStr := strconv.Itoa(int(tcpPort))
-	maStr := "/ip4/" + ip.String() + "/tcp/" + tcpStr
+	maStr := "/ip4/" + ip.String() + "/tcp/" + tcpStr + "/http/p2p-webrtc-direct"
 
 	m, err := ma.NewMultiaddr(maStr)
 	if err != nil {

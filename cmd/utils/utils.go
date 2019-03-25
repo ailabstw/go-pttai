@@ -322,7 +322,7 @@ func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
 // line flags.
 func setP2PListenAddress(ctx *cli.Context, cfg *p2p.Config) {
 	if ctx.GlobalIsSet(P2PListenPortFlag.Name) {
-		cfg.P2PListenAddr = fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", ctx.GlobalInt(P2PListenPortFlag.Name))
+		cfg.P2PListenAddr = fmt.Sprintf("/ip4/0.0.0.0/tcp/%d/http/p2p-webrtc-direct", ctx.GlobalInt(P2PListenPortFlag.Name))
 	}
 }
 

@@ -1,7 +1,6 @@
 package relay
 
 import (
-	"fmt"
 	"net"
 
 	pb "github.com/libp2p/go-libp2p-circuit/pb"
@@ -34,7 +33,7 @@ func (l *RelayListener) Accept() (manet.Conn, error) {
 		}
 
 		// TODO: Pretty print.
-		log.Infof("accepted relay connection: %s", c)
+		log.Infof("accepted relay connection: %q", c)
 
 		return c, nil
 	case <-l.ctx.Done():
@@ -50,11 +49,7 @@ func (l *RelayListener) Addr() net.Addr {
 }
 
 func (l *RelayListener) Multiaddr() ma.Multiaddr {
-	a, err := ma.NewMultiaddr(fmt.Sprintf("/p2p-circuit/ipfs/%s", l.self.Pretty()))
-	if err != nil {
-		panic(err)
-	}
-	return a
+	return ma.Cast(ma.CodeToVarint(P_CIRCUIT))
 }
 
 func (l *RelayListener) Close() error {

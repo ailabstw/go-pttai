@@ -9,22 +9,22 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "QmWqdfNRLm397vpdWh9SP8id8U2yRW5oFdKN6nMtXJSEhL",
-      "name": "go-multiplex",
-      "version": "0.2.23"
+      "hash": "QmVtV1y2e8W4eQgzsP6qfSpCCZ6zWYE4m6NzJjB7iswwrT",
+      "name": "go-stream-muxer",
+      "version": "3.1.0"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmY9JXR3FupnYAYJWK9aMr9bCpqWKcToQ1tz8DVGTrHpHw",
-      "name": "go-stream-muxer",
-      "version": "3.0.0"
+      "hash": "QmWGQQ6Tz8AdUpxktLf3zgnVN9Vy8fcWVezZJSU3ZmiANj",
+      "name": "go-mplex",
+      "version": "0.2.35"
     }
   ],
   "gxVersion": "0.7.0",
   "language": "go",
-  "license": "",
+  "license": "MIT",
   "name": "go-smux-multiplex",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "3.0.10"
+  "version": "3.0.19"
 }
 

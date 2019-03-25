@@ -20,5 +20,5 @@ then
     ./build/bin/p2pbootnode --genkey ${BOOTNODE_FILE}
 fi
 
-./build/bin/p2pbootnode --nodekey ${BOOTNODE_FILE} --addr "/ip4/0.0.0.0/tcp/${PORT}"
+./build/bin/p2pbootnode --nodekey ${BOOTNODE_FILE} --addr "/ip4/0.0.0.0/tcp/${PORT}/http/p2p-webrtc-direct"
 

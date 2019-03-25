@@ -39,7 +39,7 @@ import (
 
 func main() {
 	var (
-		listenAddr  = flag.String("addr", "/ip4/0.0.0.0/tcp/9487", "listen address")
+		listenAddr  = flag.String("addr", "/ip4/0.0.0.0/tcp/9487/http/p2p-webrtc-direct", "listen address")
 		genKey      = flag.String("genkey", "", "generate a node key")
 		writeAddr   = flag.Bool("writeaddress", false, "write out the node's pubkey hash and quit")
 		nodeKeyFile = flag.String("nodekey", "", "private key filename")
@@ -119,6 +119,7 @@ func main() {
 		log.Error("P2PBootnode: invalid peerInfo", "addrWithPeerInfos", addrWithPeerInfos)
 	}
 	addrWithPeerInfo := addrWithPeerInfos[0]
+	log.Info("P2PBootnode: to check writeAddr", "addrWithPeerInfos", addrWithPeerInfos, "addrWithPeerInfo", addrWithPeerInfo)
 	if *writeAddr {
 		fmt.Printf("%v\n", addrWithPeerInfo)
 		os.Exit(0)
@@ -128,7 +129,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	addrStr := addr.String()
+	addrStr := *listenAddr
+	log.Info("P2PBootnode: to libp2p.New", "listenAddr", *listenAddr, "addrStr", addrStr)
 
 	transport := direct.NewTransport(
 		webrtc.Configuration{},
@@ -140,7 +142,6 @@ func main() {
 		libp2p.Identity(privKey),
 		libp2p.DisableRelay(),
 		libp2p.Transport(transport),
-		libp2p.NoSecurity,
 	}
 
 	h, err := libp2p.New(ctx, opts...)

@@ -27,6 +27,7 @@ import (
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/log"
 )
 
 func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, error) {
@@ -54,16 +55,19 @@ func VerifyData(bytesWithSalt []byte, expectedHash []byte, sig []byte, pubKeyByt
 
 	isValidKey := verifyDataCheckKey(pubKeyBytes, doerID, extra)
 	if !isValidKey {
+		log.Error("VerifyData: not valid key", "pubKeyBytes", pubKeyBytes, "doerID", doerID)
 		return ErrInvalidKey
 	}
 
 	hash := crypto.Keccak256(bytesWithSalt)
 	if !reflect.DeepEqual(hash, expectedHash) {
+		log.Error("VerifyData: hash not the same", "bytesWithSalt", bytesWithSalt, "hash", hash, "expectedHash", expectedHash)
 		return ErrInvalidData
 	}
 
 	isGood := crypto.VerifySignature(pubKeyBytes, hash, sig[:64])
 	if !isGood {
+		log.Error("VerifyData: unable to VerifySignature", "pubKeyBytes", pubKeyBytes, "hash", hash, "sig", sig)
 		return ErrInvalidData
 	}
 	return nil

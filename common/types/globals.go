@@ -73,6 +73,9 @@ var (
 	//     https://en.wikipedia.org/wiki/Bopomofo
 	//     jia3, i3, bim3, ding1, wu4, chi3, gen1, shin1, jen2, kue3
 	// myAlphabet = base58.NewAlphabet("零壹二三四五六七八九十ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ甲乙丙丁戊己庚辛壬癸")
+	// BitcoinAlphabet:
+	// (0123456789012345678901234567890123456789012345678901234567)
+	//  123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
 	myAlphabet = base58.BitcoinAlphabet
 
 	NIterLock = 100

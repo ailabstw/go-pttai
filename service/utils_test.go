@@ -107,6 +107,10 @@ func TestVerifyData(t *testing.T) {
 			args:    args{bytesWithSalt: tDefaultBytesWithSalt2, hash: tDefaultHash2, sig: tDefaultSig2, keyBytes: tDefaultPubBytes2, doerID: tDefaultSignKeyInfo2.CreatorID},
 			wantErr: false,
 		},
+		{
+			args:    args{bytesWithSalt: tDefaultBytesWithSalt4, hash: tDefaultHash4, sig: tDefaultSig4, keyBytes: tDefaultPubBytes4, doerID: tDefaultDoerID4},
+			wantErr: false,
+		},
 	}
 
 	// run test

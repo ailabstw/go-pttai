@@ -298,7 +298,7 @@ var (
 		109, 198,
 	}
 
-	tDefaultBytesWithSalt3 = append(tDefaultBytes3, tDefaultSalt2...)
+	tDefaultBytesWithSalt3 = append(tDefaultBytes3, tDefaultSalt3...)
 
 	tDefaultSig3 = []byte{
 		41, 236, 233, 222, 219, 250, 200, 133, 246, 13,
@@ -318,6 +318,82 @@ var (
 		173, 52, 213, 29, 218, 90, 28, 38, 56, 8,
 		25, 110, 212, 97, 196, 115, 26, 5, 7, 229,
 		6, 72, 100, 168, 43,
+	}
+
+	tDefaultBytes4 = []byte(`{"V":2,"ID":"4UCUTWaPy1cY6x1yLcrVoL9Ee9Mp9HxCUaQwwHaXsmkRCKhrH2Kjuf6","CID":"UjyjA6W1GqF1xEQUX12QEUnxkHN1jvnYwJ7PkMZ3Tsrypd9eS1mmVE","CT":{"T":1551933027,"NT":564188767},"OID":"9pC8vTZkqNiFYutRKJC5ejZPGwejv6Lvq1YHzGQJvM2Fc7m2Qz89iJo","O":6,"D":{"BID":"3VaJvs24k3ZEvoRdttDNm98nU7YtYY7J84W5XpadUc12Qt555tqNEVh","H":[["JPqKXbHc102G5x9IC8KAhcqdDDZ3ELEfRGcSeIDSOBg=","RVfiPh27UhJOMjA+m89PJNJAGt3V92oviRezc+NSb+s="],["cPACVkCQuLJalXbpXr883ZIO1S11yHpm1IN2legnaCI=","KC3mGeH469HC5gRCSFEocAxNS2xJn57wiU0Y7ovbhCE="]],"NB":2,"th":"fHBGiGWLHupWfaqsvtRhIEd1BGo="},"s":"11111111111111111111111111111111","UT":{"T":0,"NT":0},"y":0}`)
+
+	tDefaultSalt4 = []byte{
+		206, 141, 120, 239, 75, 12, 176, 227, 67, 3,
+		171, 171, 231, 10, 80, 97, 238, 34, 168, 214,
+		232, 33, 212, 87, 121, 110, 35, 79, 205, 150,
+		106, 98,
+	}
+
+	tDefaultBytesWithSalt4 = append(tDefaultBytes4, tDefaultSalt4...)
+
+	tDefaultHash4 = []byte{
+		54, 150, 125, 2, 35, 238, 75, 190, 241, 244,
+		85, 61, 141, 250, 119, 55, 151, 184, 170, 20,
+		178, 245, 10, 49, 55, 46, 43, 0, 65, 172,
+		176, 2,
+	}
+
+	tDefaultSig4 = []byte{
+		161, 187, 4, 84, 22, 149, 231, 143, 86, 68,
+		90, 161, 11, 50, 225, 62, 115, 244, 167, 202,
+		45, 2, 175, 185, 238, 41, 187, 245, 60, 198,
+		46, 228, 22, 22, 32, 34, 10, 211, 67, 28,
+		124, 107, 190, 173, 111, 205, 136, 21, 17, 238,
+		237, 66, 201, 111, 210, 0, 125, 208, 163, 195,
+		6, 2, 79, 84, 0,
+	}
+
+	tDefaultPubBytes4 = []byte{
+		4, 106, 78, 173, 229, 144, 41, 189, 35, 235,
+		160, 58, 58, 93, 7, 70, 182, 234, 226, 235,
+		89, 66, 145, 108, 208, 221, 71, 118, 219, 153,
+		27, 212, 186, 75, 201, 213, 6, 193, 21, 15,
+		42, 166, 195, 35, 133, 129, 234, 245, 83, 85,
+		99, 207, 147, 251, 98, 204, 242, 69, 40, 43,
+		49, 129, 169, 113, 186,
+	}
+
+	tDefaultDoerID4 *types.PttID
+
+	tDefaultBuf = [][]byte{
+		[]byte("12345"),
+		[]byte("6789"),
+	}
+	tDefaultScrambleBuf = [][]byte{
+		[]byte{169, 250, 3, 58, 179, 16, 112, 182, 133, 3, 220, 116},
+		[]byte{208, 150, 36, 13, 206, 37, 111, 207, 237, 28, 163, 88},
+	}
+
+	tDefaultBuf2 = [][]byte{
+		[]byte("1"),
+		[]byte(""),
+	}
+	tDefaultScrambleBuf2 = [][]byte{
+		[]byte{169, 62, 147, 183, 253, 71},
+		[]byte{208, 48, 252, 196, 157, 122},
+	}
+
+	tDefaultBuf3 = [][]byte{
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		[]byte(""),
+	}
+	tDefaultScrambleBuf3 = [][]byte{
+		[]byte{111, 228, 65, 65, 185, 185, 135, 155, 135, 135, 121, 195},
+		[]byte{117, 135, 65, 65, 197, 197, 228, 246, 228, 228, 101, 130},
+	}
+
+	tDefaultBuf4 = [][]byte{
+		[]byte{},
+		[]byte{},
+	}
+	tDefaultScrambleBuf4 = [][]byte{
+		[]byte{169, 34, 220, 116},
+		[]byte{208, 34, 163, 88},
 	}
 )
 
@@ -391,45 +467,12 @@ func setupTest(t *testing.T) {
 	ts, _ = types.GetTimestamp()
 	t.Logf("after setup: GetTimestamp: %v", ts)
 
+	pubKey, _ := crypto.UnmarshalPubkey(tDefaultPubBytes4)
+	addr := crypto.PubkeyToAddress(*pubKey)
+	tDefaultDoerID4 = &types.PttID{}
+	copy(tDefaultDoerID4[:], addr[:])
+
 }
-
-var (
-	tDefaultBuf = [][]byte{
-		[]byte("12345"),
-		[]byte("6789"),
-	}
-	tDefaultScrambleBuf = [][]byte{
-		[]byte{169, 250, 3, 58, 179, 16, 112, 182, 133, 3, 220, 116},
-		[]byte{208, 150, 36, 13, 206, 37, 111, 207, 237, 28, 163, 88},
-	}
-
-	tDefaultBuf2 = [][]byte{
-		[]byte("1"),
-		[]byte(""),
-	}
-	tDefaultScrambleBuf2 = [][]byte{
-		[]byte{169, 62, 147, 183, 253, 71},
-		[]byte{208, 48, 252, 196, 157, 122},
-	}
-
-	tDefaultBuf3 = [][]byte{
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		[]byte(""),
-	}
-	tDefaultScrambleBuf3 = [][]byte{
-		[]byte{111, 228, 65, 65, 185, 185, 135, 155, 135, 135, 121, 195},
-		[]byte{117, 135, 65, 65, 197, 197, 228, 246, 228, 228, 101, 130},
-	}
-
-	tDefaultBuf4 = [][]byte{
-		[]byte{},
-		[]byte{},
-	}
-	tDefaultScrambleBuf4 = [][]byte{
-		[]byte{169, 34, 220, 116},
-		[]byte{208, 34, 163, 88},
-	}
-)
 
 func teardownTest(t *testing.T) {
 	log.Root().SetHandler(origHandler)

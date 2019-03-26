@@ -123,21 +123,11 @@ func InitApp() *cli.App {
 }
 
 func main() {
-	//f, _ := os.OpenFile("/tmp/log.gptt.err", os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0666)
+    app := InitApp()
+    err := app.Run(os.Args)
 
-	//os.Stderr = f
-
-running:
-	for {
-		app := InitApp()
-		err := app.Run(os.Args)
-
-		switch {
-		case err == nil:
-			break running
-		default:
-			fmt.Fprintf(os.Stderr, "something went wrong with app: cmd: %v e: %v\n", os.Args, err)
-			os.Exit(1)
-		}
-	}
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "something went wrong with app: cmd: %v e: %v\n", os.Args, err)
+        os.Exit(1)
+    }
 }

@@ -26,9 +26,10 @@ const (
 	SleepTimeSecondAnnounceP2P = 120
 	TimeoutSecondAnnounceP2P   = 10
 
+	TimeoutSecondConnectP2P = 5
 	TimeoutSecondResolveP2P = 10
 
-	PTTAI_STREAM_PATH = "/pttai/0.1.0"
+	PTTAI_STREAM_PATH = "/pttai/0.2.0"
 )
 
 var (

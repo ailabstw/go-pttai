@@ -8,11 +8,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
-- Added missing runtime import for FreeBSD. #104
-
 ### Changed
 
 ### Deprecated
+
+## [0.10.0]
+
+### Added
+- List filesystems on Windows that have an access path but not an assigned letter. #112
+
+### Fixed
+- Added missing runtime import for FreeBSD. #104
+- Handle nil command line in Windows processes. #110
 
 ## [0.9.0]
 

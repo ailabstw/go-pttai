@@ -1,4 +1,26 @@
 
+v3.0.2 / 2018-09-18
+===================
+
+  * Merge pull request #23 from bobisme/master
+  * take an interface instead of *testing.T
+
+v3.0.1 / 2018-09-14
+===================
+
+  * Merge pull request #24 from abdelrahmanbadr/master
+  * Update expect.go
+  * Update expect.go
+  * Update expect.go
+  * return http response with Done method
+  * Merge pull request #22 from Vehsamrak/patch-1
+  * Version link correction in README
+  * fix(examples): basic
+  * fix(header):
+  * fix(travis): use string notation for matrix items
+  * faet(travis): add Go 1.10 runtime
+  * refactor(docs): remove codesponsor
+
 v3.0.0 / 2017-10-24
 ===================
 

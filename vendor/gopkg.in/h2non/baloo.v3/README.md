@@ -21,14 +21,10 @@ Take a look to the [examples](#examples) to get started.
 - Middleware-oriented via gentleman's [middleware layer](https://github.com/h2non/gentleman#middleware).
 - Extensible and hackable API.
 
-## Sponsor
-
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/1MpD3pzt63uUeG43NP4tDHPY/h2non/baloo'>  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/1MpD3pzt63uUeG43NP4tDHPY/h2non/baloo.svg' /></a>
-
 ## Versions
 
 - [v3](https://github.com/h2non/baloo) - Latest stable version with better JSON assertion. Uses `gentleman@v2`. Recommended.
-- [v2](https://github.com/h2non/baloo) - Stable version. Uses `gentleman@v2`.
+- [v2](https://github.com/h2non/baloo/tree/v2.0.0) - Stable version. Uses `gentleman@v2`.
 - [v1](https://github.com/h2non/baloo/tree/v1) - First version. Stable. Uses `gentleman@v1`. Actively maintained.
 
 ## Installation

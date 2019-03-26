@@ -3,9 +3,9 @@ package baloo
 import (
 	"fmt"
 	"net/http"
-	"testing"
 
 	"gopkg.in/h2non/baloo.v3/assert"
+	"gopkg.in/h2non/gentleman.v2"
 )
 
 // Assertions stores global assertion functions by alias name.
@@ -24,10 +24,15 @@ func FlushAssertFuncs() {
 	Assertions = make(map[string]assert.Func)
 }
 
+// TestingT implements part of the same interface as testing.T
+type TestingT interface {
+	Error(args ...interface{})
+}
+
 // Expect represents the HTTP expectation suite who is
 // able to define multiple assertion functions to match the response.
 type Expect struct {
-	test       *testing.T
+	test       TestingT
 	request    *Request
 	assertions []assert.Func
 }
@@ -40,7 +45,7 @@ func NewExpect(req *Request) *Expect {
 // BindTest binds the Go testing instance to the current suite.
 // In the future multiple testing interfaces can
 // be supported via adapters.
-func (e *Expect) BindTest(t *testing.T) *Expect {
+func (e *Expect) BindTest(t TestingT) *Expect {
 	e.test = t
 	return e
 }
@@ -216,4 +221,23 @@ func (e *Expect) run(res *http.Response, req *http.Request) error {
 		}
 	}
 	return err
+}
+
+// Send does the same as `Done()`, but it also returns the `*http.Response` along with the `error`.
+func (e *Expect) Send() (*gentleman.Response, error) {
+	// Perform the HTTP request
+	res, err := e.request.Send()
+	if err != nil {
+		err = fmt.Errorf("request error: %s", err)
+		e.test.Error(err)
+		return res, err
+	}
+
+	// Run assertions
+	err = e.run(res.RawResponse, res.RawRequest)
+	if err != nil {
+		e.test.Error(err)
+	}
+
+	return res, err
 }

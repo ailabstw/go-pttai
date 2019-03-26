@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"io"
 	"log"
 
 	dsq "github.com/ipfs/go-datastore/query"
@@ -14,7 +13,9 @@ type MapDatastore struct {
 	values map[Key][]byte
 }
 
-// NewMapDatastore constructs a MapDatastore
+// NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
+// default, wrap using sync.MutexWrap if you need thread safety (the answer here
+// is usually yes).
 func NewMapDatastore() (d *MapDatastore) {
 	return &MapDatastore{
 		values: make(map[Key][]byte),
@@ -244,10 +245,7 @@ func (d *LogBatch) Commit() (err error) {
 
 func (d *LogDatastore) Close() error {
 	log.Printf("%s: Close\n", d.Name)
-	if cds, ok := d.child.(io.Closer); ok {
-		return cds.Close()
-	}
-	return nil
+	return d.child.Close()
 }
 
 func (d *LogDatastore) Check() error {

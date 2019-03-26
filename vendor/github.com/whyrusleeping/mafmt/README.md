@@ -1,3 +1,6 @@
+# DEPRECATED
+Please use https://github.com/multiformats/go-multiaddr-fmt instead.
+
 # multiaddr format
 A validation checker for multiaddrs. Some basic validators for common address
 types are provided, but creating your own combinations is easy.

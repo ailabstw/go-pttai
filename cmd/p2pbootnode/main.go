@@ -126,7 +126,8 @@ func main() {
 
 	addrStr := addr.String()
 
-	h, err := libp2p.New(ctx,
+	h, err := libp2p.New(
+		ctx,
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(addrStr),
 	)

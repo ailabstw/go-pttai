@@ -474,6 +474,7 @@ func (srv *Server) ResolveP2P(node *discover.Node) *discover.Node {
 
 	peerInfo, err := srv.p2pKadDHT.FindPeer(tctx, node.PeerID)
 	if err != nil {
+		log.Warn("ResolveP2P: unable to find info", "peerID", node.PeerID, "e", err)
 		return nil
 	}
 
@@ -490,9 +491,23 @@ func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
 		addrs = node.PeerInfo.Addrs
 	}
 
-	stream, err := srv.p2pserver.NewStream(srv.p2pctx, node.PeerID, PTTAI_STREAM_PATH)
-	log.Debug("DialP2P: after NewStream", "peerID", node.PeerID, "addrs", addrs, "e", err)
+	if node.PeerInfo == nil {
+		log.Warn("DialP2P: PeerInfo is nil", "nodeID", node.ID)
+		return nil, ErrInvalidP2P
+	}
+
+	tctx, cancel := context.WithTimeout(srv.p2pctx, TimeoutSecondConnectP2P*time.Second)
+	defer cancel()
+
+	err := srv.p2pserver.Connect(tctx, *node.PeerInfo)
 	if err != nil {
+		log.Warn("DialP2P: unable to connect", "peerID", node.PeerID, "e", err)
+		return nil, err
+	}
+
+	stream, err := srv.p2pserver.NewStream(srv.p2pctx, node.PeerID, PTTAI_STREAM_PATH)
+	if err != nil {
+		log.Warn("DialP2P: unable to NewStream", "peerID", node.PeerID, "addrs", addrs, "e", err)
 		return nil, err
 	}
 

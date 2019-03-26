@@ -26,7 +26,7 @@ import (
 	"sync/atomic"
 
 	"github.com/ailabstw/go-pttai/log"
-	"gopkg.in/fatih/set.v0"
+	set "gopkg.in/fatih/set.v0"
 )
 
 const MetadataApi = "rpc"

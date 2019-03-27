@@ -57,7 +57,7 @@ const template = [
     submenu: [
       {
         label: 'Learn More',
-        click () { require('electron').shell.openExternal('https://electronjs.org') }
+        click () { require('electron').shell.openExternal('http://ptt.ai') }
       }
     ]
   }
@@ -171,6 +171,14 @@ function open_window () {
         gptt_win = new BrowserWindow({
           width: 414,
           height: 1000,
+        })
+
+        gptt_win.on('page-title-updated', (e, title) => {
+          if (title !== 'PTT.ai') {
+            app.dock.setBadge('•')
+          } else {
+            app.dock.setBadge('')
+          }
         })
 
         // Continue to handle mainWindow "close" event here

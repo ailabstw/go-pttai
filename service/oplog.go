@@ -771,16 +771,18 @@ func (o *BaseOplog) SetMasterLogID(oplogID *types.PttID, weight uint32) error {
 
 func (o *BaseOplog) Verify() error {
 	if o.UpdateTS.IsLess(o.CreateTS) {
+		log.Error("Verify: invalid ts", "updateTS", o.UpdateTS, "createTS", o.CreateTS, "id", o.ID, "objID", o.ObjID)
 		return ErrInvalidOplog
 	}
 
 	hash, err := o.SignsHash()
 	if err != nil {
+		log.Error("Verify: unable to sign hash", "e", err, "id", o.ID, "objID", o.ObjID)
 		return err
 	}
 
 	if !reflect.DeepEqual(o.Hash, hash) {
-		log.Warn("Verify: hash not equal")
+		log.Error("Verify: hash not equal", "o.Hash", o.Hash, "hash", hash, "id", o.ID, "objID", o.ObjID)
 		return ErrInvalidData
 	}
 
@@ -823,7 +825,7 @@ func (o *BaseOplog) Verify() error {
 
 	err = VerifyData(bytesWithSalt, origCreatorHash, origSig, origPubBytes, o.CreatorID, origKeyExtra)
 	if err != nil {
-		log.Warn("Verify (sign)", "bytesWithSalt", bytesWithSalt, "origSig", origSig, "origPubBytes", origPubBytes)
+		log.Error("Verify (sign)", "bytesWithSalt", bytesWithSalt, "origSig", origSig, "origPubBytes", origPubBytes, "id", o.ID, "objID", o.ObjID)
 		return err
 	}
 
@@ -845,7 +847,7 @@ func (o *BaseOplog) Verify() error {
 
 			err = VerifyData(bytesWithSalt, masterSign.Hash, masterSign.Sig, masterSign.Pubkey, masterSign.ID, masterSign.Extra)
 			if err != nil {
-				log.Warn("Verify (master-sign)", "masterSign", masterSign)
+				log.Error("Verify (master-sign)", "bytesWithSalt", bytesWithSalt, "sig", masterSign.Sig, "pubBytes", masterSign.Pubkey, "id", o.ID, "objID", o.ObjID)
 				return err
 			}
 		}
@@ -862,7 +864,7 @@ func (o *BaseOplog) Verify() error {
 
 			err = VerifyData(bytesWithSalt, internalSign.Hash, internalSign.Sig, internalSign.Pubkey, internalSign.ID, internalSign.Extra)
 			if err != nil {
-				log.Warn("Verify (internal-sign)", "internalSign", internalSign)
+				log.Error("Verify (internal-sign)", "bytesWithSalt", bytesWithSalt, "sig", internalSign.Sig, "pubBytes", internalSign.Pubkey, "id", o.ID, "objID", o.ObjID)
 				return err
 			}
 		}

@@ -38,7 +38,7 @@ var (
 const (
 	_ pkgservice.OpType = iota + pkgservice.NMsg
 	// board-oplog
-	AddBoardOplogMsg //30
+	AddBoardOplogMsg //57
 	AddBoardOplogsMsg
 
 	AddPendingBoardOplogMsg
@@ -140,6 +140,11 @@ var (
 	DBMediaIdxPrefix               = []byte(".maix")
 	DBTitlePrefix                  = []byte(".tldb")
 	DBTitleIdxPrefix               = []byte(".tlix")
+)
+
+// fix
+var (
+	DBFix237Prefix = []byte(".f056") // 237 in base58
 )
 
 // max-masters

@@ -575,7 +575,7 @@ func preprocessOplogs(
 
 		err = oplog.Verify()
 		if err != nil {
-			log.Debug("preprocessOplogs: unable to verify oplog", "op", oplog.Op, "e", err)
+			log.Warn("preprocessOplogs: unable to verify oplog", "op", oplog.Op, "e", err)
 			return nil, err
 		}
 	}
@@ -595,7 +595,7 @@ func preprocessOplogs(
 		}
 	}
 
-	log.Debug("preprocessOplogs: after for-loop", "badIdx", badIdx)
+	log.Info("preprocessOplogs: after for-loop", "badIdx", badIdx)
 
 	return oplogs[:badIdx], nil
 }

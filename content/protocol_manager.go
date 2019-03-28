@@ -138,6 +138,14 @@ func (pm *ProtocolManager) Start() error {
 		return err
 	}
 
+	// XXX #237
+	err = pm.Fix237PrelogInCreateArticle()
+	if err != nil {
+		log.Error("Start: unable to Fix237PrelogInCreateArticle", "e", err, "entity", pm.Entity().IDString())
+		return err
+	}
+
+	// sync-wg
 	syncWG := pm.SyncWG()
 
 	syncWG.Add(1)

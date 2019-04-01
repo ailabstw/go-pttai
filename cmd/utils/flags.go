@@ -62,15 +62,15 @@ var (
 	}
 	TestP2PFlag = cli.BoolFlag{
 		Name:  "testp2p",
-		Usage: "Test p2p-network: pre-configured Ptt.ai test p2p-network",
+		Usage: "Test p2p-network: pre-configured PTT.ai test p2p-network",
 	}
 	IPFSP2PFlag = cli.BoolFlag{
 		Name:  "ipfsp2p",
-		Usage: "IPFS network: pre-configured Ptt.ai ipfs p2p-network",
+		Usage: "IPFS network: pre-configured PTT.ai ipfs p2p-network",
 	}
 	DevP2PFlag = cli.BoolFlag{
 		Name:  "devp2p",
-		Usage: "Dev p2p-network: pre-configured Ptt.ai dev p2p-network",
+		Usage: "Dev p2p-network: pre-configured PTT.ai dev p2p-network",
 	}
 
 	E2EFlag = cli.BoolFlag{

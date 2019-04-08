@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package e2e
+package params
 
-const ()
-
-var ()
-
-func init() {
-}
+var P2PRelays = []string{}

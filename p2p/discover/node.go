@@ -255,7 +255,7 @@ func parseP2PComplete(rawurl string) (*Node, error) {
 	}
 
 	peerID, err = peer.IDB58Decode(u.User.String())
-	log.Debug("parseP2Complete: after ID", "peerID", peerID, "len", len(peerID), "e", err)
+	log.Debug("parseP2PComplete: after ID", "peerID", peerID, "len", len(peerID), "e", err)
 	if err != nil {
 		return nil, ErrInvalidURL
 	}

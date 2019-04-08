@@ -24,6 +24,10 @@ p2pbootnode:
 	build/env.sh go run build/ci.go install ./cmd/p2pbootnode
 	@echo "Done building."
 
+p2prelay:
+	build/env.sh go run build/ci.go install ./cmd/p2prelay
+	@echo "Done building."
+
 all:
 	build/env.sh go run build/ci.go install
 

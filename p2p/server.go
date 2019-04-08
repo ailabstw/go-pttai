@@ -39,6 +39,7 @@ import (
 	host "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	inet "github.com/libp2p/go-libp2p-net"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -153,6 +154,8 @@ type Config struct {
 
 	P2PListenAddr string
 	P2PBootnodes  []*discover.Node
+
+	P2PRelays []*discover.Node
 }
 
 // Server manages all peer connections.
@@ -316,6 +319,7 @@ func (srv *Server) InitP2P() error {
 		p2pctx,
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(cfg.P2PListenAddr),
+		libp2p.EnableRelay(),
 	)
 	if err != nil {
 		return err
@@ -349,6 +353,9 @@ func (srv *Server) handleP2PStream(stream inet.Stream) {
 func (srv *Server) startP2P() error {
 	// init bootnodes
 	srv.startP2PBootnodes()
+
+	// init relays
+	srv.startP2PRelays()
 
 	err := srv.startP2PAnnounceLoop()
 	if err != nil {
@@ -389,6 +396,42 @@ func (srv *Server) startP2PBootnodes() error {
 	if !ok {
 		log.Warn("startP2PBootnodes: no p2p bootnodes")
 		return ErrNoP2PBootnodes
+	}
+
+	return nil
+}
+
+func (srv *Server) startP2PRelays() error {
+	if srv.p2pctx == nil {
+		return nil
+	}
+
+	cfg := srv.Config
+	if len(cfg.P2PRelays) == 0 {
+		return nil
+	}
+
+	var err error
+	ok := false
+	for _, node := range cfg.P2PRelays {
+		if node.PeerInfo == nil {
+			log.Warn("startP2PRelays: peerInfo is nil", "node", node)
+			continue
+		}
+		log.Debug("startP2PRelays: to connect", "peerID", node.PeerInfo.ID, "addrs", node.PeerInfo.Addrs)
+		err = srv.p2pserver.Connect(srv.p2pctx, *node.PeerInfo)
+		if err != nil {
+			log.Warn("startP2PRelays: Unable to connect to the bootnode", "node", node, "addrs", node.PeerInfo.Addrs, "e", err)
+			continue
+		}
+
+		log.Info("relay connected", "peerID", node.PeerInfo.ID, "addrs", node.PeerInfo.Addrs)
+		ok = true
+	}
+
+	if !ok {
+		log.Warn("startP2PRelays: no p2p relays")
+		return ErrNoP2PRelays
 	}
 
 	return nil
@@ -499,10 +542,10 @@ func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
 	tctx, cancel := context.WithTimeout(srv.p2pctx, TimeoutSecondConnectP2P*time.Second)
 	defer cancel()
 
-	err := srv.p2pserver.Connect(tctx, *node.PeerInfo)
+	err := srv.mustConnect(tctx, node)
 	if err != nil {
-		log.Warn("DialP2P: unable to connect", "peerID", node.PeerID, "e", err)
-		return nil, err
+		log.Warn("DialP2P: unable to mustConnect", "nodeID", node.ID, "e", err)
+		return nil, ErrInvalidP2P
 	}
 
 	stream, err := srv.p2pserver.NewStream(srv.p2pctx, node.PeerID, PTTAI_STREAM_PATH)
@@ -516,6 +559,66 @@ func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
 	streamConn := &P2PStreamConn{Stream: stream}
 
 	return streamConn, nil
+}
+
+func (srv *Server) mustConnect(tctx context.Context, node *discover.Node) error {
+	err := srv.p2pserver.Connect(tctx, *node.PeerInfo)
+	if err == nil {
+		return nil
+	}
+
+	relayedAddr, err := srv.constructRelayedAddr(srv.P2PRelays, node)
+	if err != nil {
+		return err
+	}
+
+	relayedInfo := pstore.PeerInfo{
+		ID:    node.PeerID,
+		Addrs: []ma.Multiaddr{relayedAddr},
+	}
+
+	err = srv.p2pserver.Connect(tctx, relayedInfo)
+	log.Debug("mustConnect: after connect relayedInfo", "e", err, "relayedInfo", relayedInfo, "relayedAddr", relayedAddr)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (srv *Server) constructRelayedAddr(p2pRelays []*discover.Node, node *discover.Node) (ma.Multiaddr, error) {
+
+	if len(p2pRelays) < 1 {
+		return nil, ErrInvalidP2P
+	}
+
+	relay := p2pRelays[0]
+
+	addr := ""
+
+	addrs := relay.PeerInfo.Addrs
+
+looping:
+	for _, eachAddr := range addrs {
+		eachAddrStr := eachAddr.String()
+		protocols := eachAddr.Protocols()
+
+		log.Debug("constructRelayedAddr: (in-for-loop)", "eachAddr", eachAddr, "str", eachAddrStr, "protocols", protocols)
+
+		for _, eachProto := range protocols {
+			if eachProto.Code == ma.P_IP4 {
+				addr += eachAddrStr
+				break looping
+			}
+		}
+	}
+
+	addr += "/p2p-circuit/ipfs/" + node.PeerID.Pretty()
+
+	log.Info("constructRelayedAddr: done", "addr", addr)
+
+	return ma.NewMultiaddr(addr)
 }
 
 // PeerCount returns the number of connected peers.

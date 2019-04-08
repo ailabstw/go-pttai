@@ -16,9 +16,34 @@
 
 package e2e
 
-const ()
+import (
+	"testing"
+	"time"
 
-var ()
+	"github.com/stretchr/testify/assert"
+	baloo "gopkg.in/h2non/baloo.v3"
+)
 
-func init() {
+func TestRelayBasic(t *testing.T) {
+	NNodes = 2
+	isDebug := true
+
+	var bodyString string
+	assert := assert.New(t)
+
+	setupTest(t)
+	defer teardownTest(t)
+
+	t0 := baloo.New("http://127.0.0.1:9450")
+
+	// 1. ptt-shutdown
+	bodyString = `{"id": "testID", "method": "ptt_shutdown", "params": []}`
+
+	resultBytes := append([]byte(`{"jsonrpc":"2.0","id":"testID","result":true}`), '\n')
+
+	_, body := testCore(t0, bodyString, nil, t, isDebug)
+
+	assert.Equal(resultBytes, body)
+
+	time.Sleep(5 * time.Second)
 }

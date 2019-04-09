@@ -315,8 +315,6 @@ func setP2PRelays(ctx *cli.Context, cfg *p2p.Config) {
 	switch {
 	case ctx.GlobalIsSet(P2PRelaysFlag.Name):
 		urls = strings.Split(ctx.GlobalString(P2PRelaysFlag.Name), ",")
-	case ctx.GlobalBool(TestP2PFlag.Name):
-		urls = params.TestP2PRelays
 	}
 
 	cfg.P2PRelays = make([]*discover.Node, 0, len(urls))

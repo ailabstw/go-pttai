@@ -16,8 +16,4 @@
 
 package params
 
-var MainP2PRelays = []string{}
-
-var TestP2PRelays = []string{
-	"pnode://16Uiu2HAmBnH6A6fBUbKVWsAwKE3FwASmQyRu93K3ZugZL1yzVpZt@3.1.79.86:9487",
-}
+var P2PRelays = []string{}

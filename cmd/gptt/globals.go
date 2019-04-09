@@ -138,7 +138,6 @@ var (
 		utils.NetrestrictFlag,
 
 		utils.P2PBootnodesFlag,
-		utils.P2PRelaysFlag,
 		utils.P2PListenPortFlag,
 	}
 

@@ -310,25 +310,6 @@ func setP2PBootnodes(ctx *cli.Context, cfg *p2p.Config) {
 	log.Info("setP2PBootnodes: done", "P2PBootnodes", len(cfg.P2PBootnodes))
 }
 
-func setP2PRelays(ctx *cli.Context, cfg *p2p.Config) {
-	var urls []string
-	switch {
-	case ctx.GlobalIsSet(P2PRelaysFlag.Name):
-		urls = strings.Split(ctx.GlobalString(P2PRelaysFlag.Name), ",")
-	}
-
-	cfg.P2PRelays = make([]*discover.Node, 0, len(urls))
-	for _, url := range urls {
-		node, err := discover.ParseP2PNode(url)
-		if err != nil {
-			log.Error("Bootstrap P2P URL invalid", "pnode", url, "e", err)
-			continue
-		}
-		cfg.P2PRelays = append(cfg.P2PRelays, node)
-	}
-	log.Info("setP2PRelays: done", "P2PRelays", len(cfg.P2PRelays))
-}
-
 // setListenAddress creates a TCP listening address string from set command
 // line flags.
 func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
@@ -454,7 +435,6 @@ func setP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setBootstrapNodes(ctx, cfg)
 	setP2PListenAddress(ctx, cfg)
 	setP2PBootnodes(ctx, cfg)
-	setP2PRelays(ctx, cfg)
 
 	if ctx.GlobalIsSet(MaxPeersFlag.Name) {
 		cfg.MaxPeers = ctx.GlobalInt(MaxPeersFlag.Name)

@@ -16,9 +16,11 @@
 
 package e2e
 
-const ()
+const (
+)
 
-var ()
+var (
+)
 
 func init() {
 }

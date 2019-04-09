@@ -39,7 +39,7 @@ import (
 	"github.com/ailabstw/go-pttai/me"
 	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/node"
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 )
 
 // These are all the command line flags we support.
@@ -340,12 +340,7 @@ var (
 	}
 	P2PBootnodesFlag = cli.StringFlag{
 		Name:  "p2pbootnodes",
-		Usage: "Comma separated enode URLs for libp2p bootnodes",
-		Value: "",
-	}
-	P2PRelaysFlag = cli.StringFlag{
-		Name:  "p2prelays",
-		Usage: "Comma separated enode URLs for libp2p relays",
+		Usage: "Comma separated enode URLs for libp2p bootstrap",
 		Value: "",
 	}
 	NodeKeyFileFlag = cli.StringFlag{

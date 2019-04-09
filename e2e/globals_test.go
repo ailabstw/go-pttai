@@ -40,11 +40,9 @@ import (
 const ()
 
 var (
-	ctx        context.Context    = nil
-	cancel     context.CancelFunc = nil
-	tBootnode  *exec.Cmd          = nil
-	tBootnode2 *exec.Cmd          = nil
-	tRelay     *exec.Cmd          = nil
+	ctx       context.Context    = nil
+	cancel    context.CancelFunc = nil
+	tBootnode *exec.Cmd          = nil
 
 	Ctxs    []context.Context    = nil
 	Cancels []context.CancelFunc = nil
@@ -128,18 +126,6 @@ func startNode(t *testing.T, idx int, offsetSecond int64, isNewLog bool) {
 	httpaddr := fmt.Sprintf("127.0.0.1:%d", 9700+idx)
 
 	Ctxs[idx], Cancels[idx] = context.WithTimeout(context.Background(), TimeoutSeconds)
-
-	bootnode1 := "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489"
-	bootnode2 := "pnode://16Uiu2HAmUAdwMjy9Yzj8dUz7E7NFuk2es6D8QDKhtcFnEQCw1LKS@127.0.0.1:9481"
-
-	bootnode := ""
-	switch idx % 2 {
-	case 0:
-		bootnode = bootnode1
-	case 1:
-		bootnode = bootnode2
-	}
-
 	Nodes[idx] = exec.CommandContext(
 		Ctxs[idx],
 		"../build/bin/gptt",
@@ -151,8 +137,7 @@ func startNode(t *testing.T, idx int, offsetSecond int64, isNewLog bool) {
 		"--rpcport", rpcport,
 		"--port", port,
 		"--p2pport", p2pport,
-		"--p2pbootnodes", bootnode,
-		"--p2prelays", "pnode://16Uiu2HAmA5rsmctBMeeVKHMTfSETDP2X1ZhXjmKY1NDDqZXNnpnA@127.0.0.1:9490",
+		"--p2pbootnodes", "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489",
 		"--ipcdisable",
 		"--friendmaxsync", "7",
 		"--friendminsync", "5",
@@ -196,18 +181,6 @@ func setupTest(t *testing.T) {
 	err := tBootnode.Start()
 	if err != nil {
 		t.Errorf("unable to start tBootnode, e: %v", err)
-	}
-
-	tBootnode2 = exec.CommandContext(ctx, "../build/bin/p2pbootnode", "--nodekeyhex", "204e02d2d00f55d2120e777d6010e37bff5330c404098898e16e59425782d874", "--addr", "/ip4/127.0.0.1/tcp/9491")
-	err = tBootnode2.Start()
-	if err != nil {
-		t.Errorf("unable to start tBootnode2, e: %v", err)
-	}
-
-	tRelay = exec.CommandContext(ctx, "../build/bin/p2prelay", "--nodekeyhex", "8c4619a29a1837da99a88182d3a6563c18ce33090870b9d017ec88cd8cd2c600", "--addr", "/ip4/127.0.0.1/tcp/9490")
-	err = tRelay.Start()
-	if err != nil {
-		t.Errorf("unable to start tRelay, e: %v", err)
 	}
 
 	origHandler = log.Root().GetHandler()

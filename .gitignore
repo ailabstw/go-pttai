@@ -13,3 +13,4 @@ test.out
 /build/electron/deploy_token.txt
 /bootnode.local
 log.tmp.txt
+.vscode

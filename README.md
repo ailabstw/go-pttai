@@ -30,6 +30,7 @@ Docker Environment
     ./scripts/docker_build.sh
     ./scripts/docker.sh
     ./scripts/docker_stop.sh
+    ./scripts/docker_push.sh
 
 
 Docker with customized storage / ports
@@ -37,6 +38,13 @@ Docker with customized storage / ports
 
     ./scripts/docker_with_storage.sh -p [http-port in local-machine] -a [api-port in local-machine] -q [p2p-port in local-machine] -e [optional external http/https addr] -b [optional external api addr] -s [dir]
 
+
+Docker for p2pbootnode
+-----
+
+    ./scripts/docker_build_p2pbootnode.sh
+    ./scripts/docker_p2pbootnode.sh
+    ./scripts/docker_push_p2pbootnode.sh
 
 Unit-Test
 -----

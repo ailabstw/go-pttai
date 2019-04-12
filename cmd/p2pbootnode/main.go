@@ -31,9 +31,18 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
+	logging "github.com/whyrusleeping/go-logging"
 )
 
 func main() {
+	logging.SetLevel(logging.DEBUG, "swarm2")
+	logging.SetLevel(logging.DEBUG, "relay")
+	logging.SetLevel(logging.DEBUG, "discovery")
+	logging.SetLevel(logging.DEBUG, "transport")
+	logging.SetLevel(logging.DEBUG, "autonat")
+	logging.SetLevel(logging.DEBUG, "dht")
+	logging.SetLevel(logging.DEBUG, "nat")
+
 	var (
 		listenAddr  = flag.String("addr", "/ip4/0.0.0.0/tcp/9487", "listen address")
 		genKey      = flag.String("genkey", "", "generate a node key")

@@ -55,6 +55,7 @@ type ExtendedKey struct {
 	isPrivate bool
 }
 
+// originated from https://github.com/btcsuite/btcutil/blob/master/hdkeychain/extendedkey.go
 func (k *ExtendedKey) Child(idx uint32) (*ExtendedKey, error) {
 	pubBytes := k.PubkeyBytes()
 	keyLen := 33

@@ -26,7 +26,7 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
 )
 

@@ -21,8 +21,9 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/bip32"
+	"github.com/ailabstw/go-pttai/key"
+	"github.com/ailabstw/go-pttai/key/bip32"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // KeyInfo
@@ -124,7 +125,7 @@ func keyInfoHashToID(hash *common.Address) *types.PttID {
 }
 
 func deriveJoinKey() (*ecdsa.PrivateKey, error) {
-	return crypto.GenerateKey()
+	return key.GenerateKey()
 }
 
 func deriveOpKey(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraInfo, error) {

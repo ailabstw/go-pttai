@@ -27,8 +27,8 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/mclock"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (

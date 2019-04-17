@@ -25,12 +25,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/docker/docker/pkg/reexec"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Node represents a node in a simulation network which is created by a
@@ -168,7 +169,7 @@ func (n *NodeConfig) UnmarshalJSON(data []byte) error {
 // RandomNodeConfig returns node configuration with a randomly generated ID and
 // PrivateKey
 func RandomNodeConfig() *NodeConfig {
-	key, err := crypto.GenerateKey()
+	key, err := key.GenerateKey()
 	if err != nil {
 		panic("unable to generate key")
 	}

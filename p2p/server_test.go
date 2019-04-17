@@ -25,10 +25,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/sha3"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"golang.org/x/crypto/sha3"
 )
 
 func init() {
@@ -47,8 +47,8 @@ func newTestTransport(id discover.NodeID, fd net.Conn) transport {
 	wrapped.rw = newRLPXFrameRW(fd, secrets{
 		MAC:        zero16,
 		AES:        zero16,
-		IngressMAC: sha3.NewKeccak256(),
-		EgressMAC:  sha3.NewKeccak256(),
+		IngressMAC: sha3.NewLegacyKeccak256(),
+		EgressMAC:  sha3.NewLegacyKeccak256(),
 	})
 	return &testTransport{id: id, rlpx: wrapped}
 }
@@ -493,7 +493,7 @@ func (c *setupTransport) ReadMsg() (Msg, error) {
 }
 
 func newkey() *ecdsa.PrivateKey {
-	key, err := crypto.GenerateKey()
+	key, err := key.GenerateKey()
 	if err != nil {
 		panic("couldn't generate key: " + err.Error())
 	}

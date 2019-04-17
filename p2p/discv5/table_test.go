@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
 )
 
 type nullTransport struct{}
@@ -329,7 +329,7 @@ func gen(typ interface{}, rand *rand.Rand) interface{} {
 }
 
 func newkey() *ecdsa.PrivateKey {
-	key, err := crypto.GenerateKey()
+	key, err := key.GenerateKey()
 	if err != nil {
 		panic("couldn't generate key: " + err.Error())
 	}

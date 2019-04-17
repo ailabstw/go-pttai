@@ -30,7 +30,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/fdlimit"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"

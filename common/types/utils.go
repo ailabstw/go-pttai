@@ -20,7 +20,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func GetBoolFromInterface(v interface{}, name string) bool {

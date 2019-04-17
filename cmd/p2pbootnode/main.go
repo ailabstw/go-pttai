@@ -24,8 +24,9 @@ import (
 	"os"
 
 	"github.com/ailabstw/go-pttai/cmd/utils"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/crypto"
 	libp2p "github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -66,7 +67,7 @@ func main() {
 	// key
 	switch {
 	case *genKey != "":
-		nodeKey, err = crypto.GenerateKey()
+		nodeKey, err = key.GenerateKey()
 		if err != nil {
 			utils.Fatalf("could not generate key: %v", err)
 		}

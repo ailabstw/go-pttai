@@ -26,8 +26,9 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Config struct {
@@ -124,7 +125,7 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 
 	// Generate ephemeral key if no datadir is being used.
 	if c.DataDir == "" {
-		key, err := crypto.GenerateKey()
+		key, err := key.GenerateKey()
 		if err != nil {
 			log.Crit(fmt.Sprintf("Failed to generate ephemeral node key: %v", err))
 			return nil, "", nil, ErrInvalidMe
@@ -155,7 +156,7 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 
 	log.Warn(fmt.Sprintf("Failed to load key: %v. create a new one.", err))
 	// No persistent key found, generate and store a new one.
-	key, err = crypto.GenerateKey()
+	key, err = key.GenerateKey()
 	if err != nil {
 		log.Crit(fmt.Sprintf("Failed to generate node key: %v", err))
 		return nil, "", nil, ErrInvalidMe

@@ -33,9 +33,9 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/p2p/netutil"
+	"github.com/ethereum/go-ethereum/p2p/netutil"
 )
 
 const (

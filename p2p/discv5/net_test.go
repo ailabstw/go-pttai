@@ -23,11 +23,12 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestNetwork_Lookup(t *testing.T) {
-	key, _ := crypto.GenerateKey()
+	key, _ := key.GenerateKey()
 	network, err := newNetwork(lookupTestnet, key.PublicKey, "", nil)
 	if err != nil {
 		t.Fatal(err)

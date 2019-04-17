@@ -22,7 +22,7 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/shengdoushi/base58"
 )

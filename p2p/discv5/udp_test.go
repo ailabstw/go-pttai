@@ -26,9 +26,9 @@ import (
 	"testing"
 
 	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/rlp"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func init() {

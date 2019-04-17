@@ -30,19 +30,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/ecies"
-	"github.com/ailabstw/go-pttai/crypto/sha3"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/simulations/pipes"
 	"github.com/ailabstw/go-pttai/rlp"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestSharedSecret(t *testing.T) {
-	prv0, _ := crypto.GenerateKey() // = ecdsa.GenerateKey(crypto.S256(), rand.Reader)
+	prv0, _ := key.GenerateKey() // = ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 	pub0 := &prv0.PublicKey
-	prv1, _ := crypto.GenerateKey()
+	prv1, _ := key.GenerateKey()
 	pub1 := &prv1.PublicKey
 
 	ss0, err := ecies.ImportECDSA(prv0).GenerateShared(ecies.ImportECDSAPublic(pub1), sskLen, sskLen)
@@ -85,8 +86,8 @@ func testEncHandshake(token []byte) error {
 		err  error
 	}
 	var (
-		prv0, _  = crypto.GenerateKey()
-		prv1, _  = crypto.GenerateKey()
+		prv0, _  = key.GenerateKey()
+		prv1, _  = key.GenerateKey()
 		fd0, fd1 = net.Pipe()
 		c0, c1   = newRLPX(fd0).(*rlpx), newRLPX(fd1).(*rlpx)
 		output   = make(chan result)
@@ -149,11 +150,11 @@ func testEncHandshake(token []byte) error {
 
 func TestProtocolHandshake(t *testing.T) {
 	var (
-		prv0, _ = crypto.GenerateKey()
+		prv0, _ = key.GenerateKey()
 		node0   = &discover.Node{ID: discover.PubkeyID(&prv0.PublicKey), IP: net.IP{1, 2, 3, 4}, TCP: 33}
 		hs0     = &protoHandshake{Version: 3, ID: node0.ID, Caps: []Cap{{"a", 0}, {"b", 2}}}
 
-		prv1, _ = crypto.GenerateKey()
+		prv1, _ = key.GenerateKey()
 		node1   = &discover.Node{ID: discover.PubkeyID(&prv1.PublicKey), IP: net.IP{5, 6, 7, 8}, TCP: 44}
 		hs1     = &protoHandshake{Version: 3, ID: node1.ID, Caps: []Cap{{"c", 1}, {"d", 3}}}
 
@@ -337,8 +338,8 @@ func TestRLPXFrameRW(t *testing.T) {
 	s1 := secrets{
 		AES:        aesSecret,
 		MAC:        macSecret,
-		EgressMAC:  sha3.NewKeccak256(),
-		IngressMAC: sha3.NewKeccak256(),
+		EgressMAC:  sha3.NewLegacyKeccak256(),
+		IngressMAC: sha3.NewLegacyKeccak256(),
 	}
 	s1.EgressMAC.Write(egressMACinit)
 	s1.IngressMAC.Write(ingressMACinit)
@@ -347,8 +348,8 @@ func TestRLPXFrameRW(t *testing.T) {
 	s2 := secrets{
 		AES:        aesSecret,
 		MAC:        macSecret,
-		EgressMAC:  sha3.NewKeccak256(),
-		IngressMAC: sha3.NewKeccak256(),
+		EgressMAC:  sha3.NewLegacyKeccak256(),
+		IngressMAC: sha3.NewLegacyKeccak256(),
 	}
 	s2.EgressMAC.Write(ingressMACinit)
 	s2.IngressMAC.Write(egressMACinit)

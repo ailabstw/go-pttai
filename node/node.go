@@ -43,7 +43,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"

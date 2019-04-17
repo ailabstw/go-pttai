@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rpc"

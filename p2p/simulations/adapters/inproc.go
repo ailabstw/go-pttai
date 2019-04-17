@@ -23,7 +23,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/p2p"

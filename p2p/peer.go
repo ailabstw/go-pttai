@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rlp"

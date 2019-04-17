@@ -846,7 +846,7 @@ func (m *Merkle) LoadUpdatingTSList() ([]int64, error) {
 	}
 
 	var toUpdateTSList []int64
-	err = json.Unmarshal(val, toUpdateTSList)
+	err = json.Unmarshal(val, &toUpdateTSList)
 	if err != nil {
 		return nil, err
 	}

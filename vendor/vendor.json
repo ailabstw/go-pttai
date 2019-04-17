@@ -243,8 +243,8 @@
 		{
 			"checksumSHA1": "X3WxB77ML6EjA5p0kZsLg2qR57M=",
 			"path": "github.com/ethereum/go-ethereum/rlp",
-			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
-			"revisionTime": "2019-04-16T14:44:11Z"
+			"revision": "921b3160db1359cf13b379dee22e6b02fcfeda89",
+			"revisionTime": "2019-04-17T07:57:53Z"
 		},
 		{
 			"checksumSHA1": "g1GqReUmWfDkyiPvRFfNvPwAR94=",

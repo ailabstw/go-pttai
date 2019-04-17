@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"

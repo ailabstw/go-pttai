@@ -37,7 +37,7 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/simulations"
 	"github.com/ailabstw/go-pttai/p2p/simulations/adapters"
-	"github.com/ailabstw/go-pttai/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )

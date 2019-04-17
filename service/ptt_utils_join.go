@@ -19,10 +19,10 @@ package service
 import (
 	"crypto/ecdsa"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func joinKeyToKeyInfo(key *ecdsa.PrivateKey) *KeyInfo {

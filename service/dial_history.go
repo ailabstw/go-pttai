@@ -20,9 +20,9 @@ import (
 	"container/heap"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type DialHistory struct {

@@ -21,8 +21,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/common"
+	pttcommon "github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type MerkleNode struct {
@@ -42,7 +43,7 @@ func (m *MerkleNode) Marshal() ([]byte, error) {
 	childrenBytes := make([]byte, SizeMerkleTreeNChildren)
 	binary.BigEndian.PutUint32(childrenBytes, m.NChildren)
 
-	return common.Concat([][]byte{[]byte{uint8(m.Level)}, m.Addr, tsBytes, childrenBytes, m.Key})
+	return pttcommon.Concat([][]byte{[]byte{uint8(m.Level)}, m.Addr, tsBytes, childrenBytes, m.Key})
 }
 
 func (m *MerkleNode) Unmarshal(b []byte) error {
@@ -68,7 +69,7 @@ func (m *MerkleNode) Unmarshal(b []byte) error {
 	nChildren := binary.BigEndian.Uint32(b[offset:])
 
 	offset += SizeMerkleTreeNChildren
-	key := common.CloneBytes(b[offset:])
+	key := common.CopyBytes(b[offset:])
 
 	m.Level = level
 	m.Addr = addr

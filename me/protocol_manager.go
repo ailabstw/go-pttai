@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/ailabstw/go-pttai/account"
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/event"
 	"github.com/ailabstw/go-pttai/log"
@@ -28,6 +27,7 @@ import (
 	"github.com/ailabstw/go-pttai/raft"
 	pb "github.com/ailabstw/go-pttai/raft/raftpb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type ProtocolManager struct {

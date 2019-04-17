@@ -20,7 +20,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 /*

@@ -19,9 +19,9 @@ package me
 import (
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
 
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )

@@ -141,6 +141,12 @@
 			"revisionTime": "2019-04-16T14:44:11Z"
 		},
 		{
+			"checksumSHA1": "2Qb34Xxqyy9adepNbm/YqsxODkA=",
+			"path": "github.com/ethereum/go-ethereum/common/fdlimit",
+			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
+			"revisionTime": "2019-04-16T14:44:11Z"
+		},
+		{
 			"checksumSHA1": "tvdkin+xdCuyH0IPqxbrHYGL1gc=",
 			"path": "github.com/ethereum/go-ethereum/common/hexutil",
 			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
@@ -163,6 +169,10 @@
 			"path": "github.com/ethereum/go-ethereum/common/prque",
 			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
 			"revisionTime": "2019-04-16T14:44:11Z"
+		},
+		{
+			"path": "github.com/ethereum/go-ethereum/common/types",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "sRglClkK+0EUNII7wGC6jajBBPI=",

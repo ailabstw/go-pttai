@@ -19,10 +19,10 @@ package me
 import (
 	"encoding/binary"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *ProtocolManager) CreateMasterOplog(raftIdx uint64, ts types.Timestamp, op pkgservice.OpType, data interface{}) (*MasterOplog, error) {

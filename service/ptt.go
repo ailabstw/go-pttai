@@ -20,13 +20,13 @@ import (
 	"crypto/ecdsa"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 /*

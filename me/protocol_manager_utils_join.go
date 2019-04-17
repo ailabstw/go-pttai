@@ -19,8 +19,8 @@ package me
 import (
 	"sync"
 
-	"github.com/ailabstw/go-pttai/common"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *ProtocolManager) GetJoinRequest(hash *common.Address) (*pkgservice.JoinRequest, error) {

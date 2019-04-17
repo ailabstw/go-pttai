@@ -17,9 +17,9 @@
 package me
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *ProtocolManager) ApproveJoin(joinEntity *pkgservice.JoinEntity, keyInfo *pkgservice.KeyInfo, peer *pkgservice.PttPeer) (*pkgservice.KeyInfo, interface{}, error) {

@@ -36,19 +36,18 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 
-	"github.com/ailabstw/go-pttai/event"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
-	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/oklog/oklog/pkg/flock"
 )
 
@@ -76,7 +75,6 @@ type Node struct {
 	httpWhitelist []string     // HTTP RPC modules to allow through this endpoint
 	httpListener  net.Listener // HTTP RPC listener socket to server API requests
 	httpHandler   *rpc.Server  // HTTP RPC request handler to process the API requests
-	httpServer    *http.Server
 
 	wsEndpoint string       // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
 	wsListener net.Listener // Websocket RPC listener socket to server API requests
@@ -489,7 +487,7 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	if endpoint == "" {
 		return nil
 	}
-	listener, handler, httpServer, err := rpc.StartHTTPEndpoint(endpoint, apis, modules, cors, vhosts)
+	listener, handler, err := rpc.StartHTTPEndpoint(endpoint, apis, modules, cors, vhosts, rpc.DefaultHTTPTimeouts)
 	if err != nil {
 		return err
 	}
@@ -498,7 +496,6 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	n.httpEndpoint = endpoint
 	n.httpListener = listener
 	n.httpHandler = handler
-	n.httpServer = httpServer
 
 	return nil
 }
@@ -514,11 +511,6 @@ func (n *Node) stopHTTP() {
 	if n.httpHandler != nil {
 		n.httpHandler.Stop()
 		n.httpHandler = nil
-	}
-
-	if n.httpServer != nil {
-		n.httpServer.Close()
-		n.httpServer = nil
 	}
 }
 

@@ -33,8 +33,6 @@ import (
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/me"
-	"github.com/ailabstw/go-pttai/metrics"
-	"github.com/ailabstw/go-pttai/metrics/influxdb"
 	"github.com/ailabstw/go-pttai/node"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
@@ -45,6 +43,8 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/ethereum/go-ethereum/common/fdlimit"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/metrics/influxdb"
 	logging "github.com/whyrusleeping/go-logging"
 	cli "gopkg.in/urfave/cli.v1"
 )

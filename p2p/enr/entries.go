@@ -22,7 +22,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/ailabstw/go-pttai/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

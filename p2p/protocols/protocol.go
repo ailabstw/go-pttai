@@ -37,8 +37,8 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/p2p"
+	"github.com/ethereum/go-ethereum/metrics"
 )
 
 // error codes used by this  protocol scheme

@@ -20,7 +20,7 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
-	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 

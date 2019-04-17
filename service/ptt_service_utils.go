@@ -21,7 +21,7 @@ import (
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 func (p *BasePtt) GenerateProtocols() []p2p.Protocol {

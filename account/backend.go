@@ -17,7 +17,7 @@
 package account
 
 import (
-	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 

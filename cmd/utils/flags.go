@@ -37,7 +37,6 @@ import (
 
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/me"
-	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/node"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -176,7 +175,7 @@ var (
 		Usage: "Reporting URL of a pttstats service (nodename:secret@host:port)",
 	}
 	MetricsEnabledFlag = cli.BoolFlag{
-		Name:  metrics.MetricsEnabledFlag,
+		Name:  "metrics",
 		Usage: "Enable metrics collection and reporting",
 	}
 	MetricsEnableInfluxDBFlag = cli.BoolFlag{

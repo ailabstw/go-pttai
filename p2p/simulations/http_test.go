@@ -27,11 +27,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/simulations/adapters"
-	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 

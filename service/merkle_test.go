@@ -165,3 +165,42 @@ func TestMerkle_GetMerkleTreeList(t *testing.T) {
 
 	// teardown test
 }
+
+func TestMerkle_LoadUpdatingTSList(t *testing.T) {
+	setupTest(t)
+	defer teardownTest(t)
+
+	ts := types.Timestamp{1234567890, 0}
+
+	m := tDefaultMerkle
+	m.ResetUpdateTS()
+	m.SetUpdateTS(ts)
+	m.GetAndResetToUpdateTSList()
+
+	tests := []struct {
+		name    string
+		m       *Merkle
+		want    []int64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			m:       m,
+			want:    []int64{1234566000},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := tt.m
+			got, err := m.LoadUpdatingTSList()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Merkle.LoadUpdatingTSList() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Merkle.LoadUpdatingTSList() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

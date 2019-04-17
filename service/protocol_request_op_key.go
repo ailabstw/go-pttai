@@ -19,10 +19,10 @@ package service
 import (
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type RequestOpKey struct {

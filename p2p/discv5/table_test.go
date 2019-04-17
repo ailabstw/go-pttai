@@ -27,8 +27,8 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type nullTransport struct{}
@@ -329,7 +329,7 @@ func gen(typ interface{}, rand *rand.Rand) interface{} {
 }
 
 func newkey() *ecdsa.PrivateKey {
-	key, err := crypto.GenerateKey()
+	key, err := key.GenerateKey()
 	if err != nil {
 		panic("couldn't generate key: " + err.Error())
 	}

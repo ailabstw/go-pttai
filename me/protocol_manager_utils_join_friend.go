@@ -20,10 +20,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *ProtocolManager) GetJoinFriendKeyFromHash(hash *common.Address) (*pkgservice.KeyInfo, error) {

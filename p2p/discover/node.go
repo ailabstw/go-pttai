@@ -32,10 +32,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/secp256k1"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
@@ -608,7 +609,7 @@ func hashAtDistance(a common.Hash, n int) (b common.Hash) {
 
 func GenerateNodeKey() (*ecdsa.PrivateKey, error) {
 	for i := 0; i < NGenerateNodeKey; i++ {
-		key, err := crypto.GenerateKey()
+		key, err := key.GenerateKey()
 		if err != nil {
 			continue
 		}
@@ -650,7 +651,7 @@ func PeerIDToNodeID(peerID peer.ID) (NodeID, error) {
 		return NodeID{}, err
 	}
 
-	pubKey, err := crypto.P2PPubkeyToPubkey(p2pPubKey)
+	pubKey, err := key.P2PPubkeyToPubkey(p2pPubKey)
 	if err != nil {
 		return NodeID{}, err
 	}
@@ -664,7 +665,7 @@ func NodeIDToPeerID(nodeID NodeID) (peer.ID, error) {
 		return "", err
 	}
 
-	p2pPubKey, err := crypto.PubKeyToP2PPubkey(pubKey)
+	p2pPubKey, err := key.PubKeyToP2PPubkey(pubKey)
 	if err != nil {
 		return "", err
 	}

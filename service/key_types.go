@@ -21,8 +21,8 @@ import (
 	"reflect"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/bip32"
+	"github.com/ailabstw/go-pttai/key/bip32"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type KeyType uint8

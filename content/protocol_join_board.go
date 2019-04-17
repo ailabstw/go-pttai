@@ -17,8 +17,8 @@
 package content
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *ProtocolManager) GetJoinType(hash *common.Address) (pkgservice.JoinType, error) {

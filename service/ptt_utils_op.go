@@ -17,9 +17,9 @@
 package service
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (p *BasePtt) AddOpKey(hash *common.Address, entityID *types.PttID, isLocked bool) error {

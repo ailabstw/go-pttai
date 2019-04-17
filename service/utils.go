@@ -24,10 +24,11 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/ailabstw/go-pttai/common"
+	pttcommon "github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, error) {
@@ -36,7 +37,7 @@ func SignData(bytes []byte, keyInfo *KeyInfo) ([]byte, []byte, []byte, []byte, e
 		return nil, nil, nil, nil, err
 	}
 
-	bytesWithSalt, err := common.Concat([][]byte{bytes, salt[:]})
+	bytesWithSalt, err := pttcommon.Concat([][]byte{bytes, salt[:]})
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -86,7 +87,7 @@ func verifyDataCheckKey(pubKeyBytes []byte, doerID *types.PttID, extra *KeyExtra
 }
 
 func DBPrefix(dbPrefix []byte, id *types.PttID) ([]byte, error) {
-	return common.Concat([][]byte{dbPrefix, id[:]})
+	return pttcommon.Concat([][]byte{dbPrefix, id[:]})
 }
 
 func GenChallenge() []byte {

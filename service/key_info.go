@@ -19,10 +19,11 @@ package service
 import (
 	"crypto/ecdsa"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
-	"github.com/ailabstw/go-pttai/crypto/bip32"
+	"github.com/ailabstw/go-pttai/key"
+	"github.com/ailabstw/go-pttai/key/bip32"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // KeyInfo
@@ -78,7 +79,7 @@ func NewSignKeyInfo(doerID *types.PttID, masterKey *ecdsa.PrivateKey) (*KeyInfo,
 
 func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *types.PttID, doerID *types.PttID) (*KeyInfo, error) {
 
-	key, err := extendedKey.ToPrivkey()
+	privKey, err := extendedKey.ToPrivkey()
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 		return nil, err
 	}
 	pubBytes := extendedKey.PubkeyBytes()
-	hash := crypto.PubkeyBytesToAddress(pubBytes)
+	hash := key.PubkeyBytesToAddress(pubBytes)
 
 	ts, err := types.GetTimestamp()
 	if err != nil {
@@ -101,7 +102,7 @@ func newKeyInfo(extendedKey *bip32.ExtendedKey, extra *KeyExtraInfo, entityID *t
 		BaseObject: NewObject(id, ts, doerID, entityID, nil, types.StatusInvalid),
 
 		Hash:        &hash,
-		Key:         key,
+		Key:         privKey,
 		KeyBytes:    privBytes,
 		PubKeyBytes: pubBytes,
 		UpdateTS:    ts,
@@ -124,7 +125,7 @@ func keyInfoHashToID(hash *common.Address) *types.PttID {
 }
 
 func deriveJoinKey() (*ecdsa.PrivateKey, error) {
-	return crypto.GenerateKey()
+	return key.GenerateKey()
 }
 
 func deriveOpKey(masterKey *ecdsa.PrivateKey) (*bip32.ExtendedKey, *KeyExtraInfo, error) {

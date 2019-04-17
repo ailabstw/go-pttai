@@ -19,8 +19,8 @@ package types
 import (
 	"testing"
 
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const ()

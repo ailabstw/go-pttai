@@ -25,10 +25,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ailabstw/go-pttai/common/mclock"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (

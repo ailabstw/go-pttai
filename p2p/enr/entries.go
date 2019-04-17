@@ -22,8 +22,8 @@ import (
 	"io"
 	"net"
 
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/rlp"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Entry is implemented by known node record entry types.

@@ -27,10 +27,8 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/account"
-	"github.com/ailabstw/go-pttai/common/fdlimit"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
-	"github.com/ailabstw/go-pttai/crypto"
 	"github.com/ailabstw/go-pttai/friend"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
@@ -45,6 +43,8 @@ import (
 	"github.com/ailabstw/go-pttai/params"
 	"github.com/ailabstw/go-pttai/raft"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/common/fdlimit"
+	"github.com/ethereum/go-ethereum/crypto"
 	logging "github.com/whyrusleeping/go-logging"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -418,7 +418,7 @@ func makeDatabaseHandles() int {
 		Fatalf("Failed to retrieve file descriptor allowance: %v", err)
 	}
 	if limit < 2048 {
-		if err := fdlimit.Raise(2048); err != nil {
+		if _, err := fdlimit.Raise(2048); err != nil {
 			Fatalf("Failed to raise file descriptor allowance: %v", err)
 		}
 	}

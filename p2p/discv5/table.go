@@ -29,7 +29,7 @@ import (
 	"net"
 	"sort"
 
-	"github.com/ailabstw/go-pttai/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (

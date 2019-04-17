@@ -19,8 +19,8 @@ package service
 import (
 	"sync"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 /*

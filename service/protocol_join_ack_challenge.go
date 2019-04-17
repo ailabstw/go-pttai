@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 /*

@@ -24,10 +24,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Config struct {
@@ -124,7 +125,7 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 
 	// Generate ephemeral key if no datadir is being used.
 	if c.DataDir == "" {
-		key, err := crypto.GenerateKey()
+		key, err := key.GenerateKey()
 		if err != nil {
 			log.Crit(fmt.Sprintf("Failed to generate ephemeral node key: %v", err))
 			return nil, "", nil, ErrInvalidMe
@@ -142,26 +143,26 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 
 	// retrieve key / id from file
 	keyfile := c.ResolvePath(DataDirPrivateKey)
-	key, err := crypto.LoadECDSA(keyfile)
+	privKey, err := crypto.LoadECDSA(keyfile)
 	postfixBytes, err2 := ioutil.ReadFile(keyfile + ".postfix")
 	if err == nil && err2 == nil {
-		id, err := types.NewPttIDFromKeyPostfix(key, postfixBytes)
+		id, err := types.NewPttIDFromKeyPostfix(privKey, postfixBytes)
 		if err != nil {
 			return nil, "", nil, ErrInvalidMe
 		}
 
-		return key, string(postfixBytes), id, nil
+		return privKey, string(postfixBytes), id, nil
 	}
 
 	log.Warn(fmt.Sprintf("Failed to load key: %v. create a new one.", err))
 	// No persistent key found, generate and store a new one.
-	key, err = crypto.GenerateKey()
+	privKey, err = key.GenerateKey()
 	if err != nil {
 		log.Crit(fmt.Sprintf("Failed to generate node key: %v", err))
 		return nil, "", nil, ErrInvalidMe
 	}
 
-	id, err := types.NewPttIDFromKey(key)
+	id, err := types.NewPttIDFromKey(privKey)
 	if err != nil {
 		return nil, "", nil, ErrInvalidMe
 	}
@@ -172,12 +173,12 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 		return nil, "", nil, err
 	}
 
-	err = c.saveKeyFile(DataDirPrivateKey, key, postfix, id)
+	err = c.saveKeyFile(DataDirPrivateKey, privKey, postfix, id)
 	if err != nil {
 		return nil, "", nil, err
 	}
 
-	return key, postfix, id, err
+	return privKey, postfix, id, err
 }
 
 func (c *Config) GetDataPrivateKeyByID(myID *types.PttID) (*ecdsa.PrivateKey, error) {

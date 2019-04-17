@@ -17,10 +17,10 @@
 package service
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (pm *BaseProtocolManager) RegisterOpKey(keyInfo *KeyInfo, isLocked bool) error {
@@ -86,7 +86,7 @@ func (pm *BaseProtocolManager) loadOpKeyInfos() ([]*KeyInfo, error) {
 		err = keyInfo.Unmarshal(val)
 		if err != nil {
 			log.Warn("loadOpKeyInfo: unable to unmarshal", "key", key, "e", err)
-			toRemoveOpKeys = append(toRemoveOpKeys, common.CloneBytes(key))
+			toRemoveOpKeys = append(toRemoveOpKeys, common.CopyBytes(key))
 			continue
 		}
 

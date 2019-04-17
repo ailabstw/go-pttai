@@ -19,7 +19,7 @@ package service
 import (
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type SyncCreateOpKeyAck struct {

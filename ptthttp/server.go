@@ -30,7 +30,7 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/node"
-	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/gorilla/mux"
 )

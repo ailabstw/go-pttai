@@ -19,7 +19,7 @@ package service
 import (
 	"reflect"
 
-	"github.com/ailabstw/go-pttai/event"
+	"github.com/ethereum/go-ethereum/event"
 )
 
 type ServiceContext struct {

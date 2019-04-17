@@ -46,8 +46,8 @@ import (
 	"github.com/ailabstw/go-pttai/cmd/utils"
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/elastic/gosigar"
+	"github.com/ethereum/go-ethereum/metrics"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -123,11 +123,11 @@ func InitApp() *cli.App {
 }
 
 func main() {
-    app := InitApp()
-    err := app.Run(os.Args)
+	app := InitApp()
+	err := app.Run(os.Args)
 
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "something went wrong with app: cmd: %v e: %v\n", os.Args, err)
-        os.Exit(1)
-    }
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "something went wrong with app: cmd: %v e: %v\n", os.Args, err)
+		os.Exit(1)
+	}
 }

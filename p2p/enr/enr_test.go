@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ailabstw/go-pttai/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

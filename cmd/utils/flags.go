@@ -1,4 +1,4 @@
-// Copyright 2018 The go-pttai Authors
+// Copyright 2019 The go-pttai Authors
 // This file is part of go-pttai.
 //
 // go-pttai is free software: you can redistribute it and/or modify

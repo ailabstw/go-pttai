@@ -217,6 +217,12 @@
 			"revisionTime": "2019-04-16T14:44:11Z"
 		},
 		{
+			"checksumSHA1": "IerbxS2MlQWccalbecumB1Btu4s=",
+			"path": "github.com/ethereum/go-ethereum/metrics/influxdb",
+			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
+			"revisionTime": "2019-04-16T14:44:11Z"
+		},
+		{
 			"checksumSHA1": "/TixkH5j7wvV11dYSkAb3BR416c=",
 			"path": "github.com/ethereum/go-ethereum/p2p/netutil",
 			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",

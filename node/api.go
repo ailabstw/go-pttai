@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ailabstw/go-pttai/metrics"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/rpc"
+	"github.com/ethereum/go-ethereum/metrics"
 )
 
 // PrivateAdminAPI is the collection of administrative API methods exposed only

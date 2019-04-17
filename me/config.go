@@ -143,26 +143,26 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 
 	// retrieve key / id from file
 	keyfile := c.ResolvePath(DataDirPrivateKey)
-	key, err := crypto.LoadECDSA(keyfile)
+	privKey, err := crypto.LoadECDSA(keyfile)
 	postfixBytes, err2 := ioutil.ReadFile(keyfile + ".postfix")
 	if err == nil && err2 == nil {
-		id, err := types.NewPttIDFromKeyPostfix(key, postfixBytes)
+		id, err := types.NewPttIDFromKeyPostfix(privKey, postfixBytes)
 		if err != nil {
 			return nil, "", nil, ErrInvalidMe
 		}
 
-		return key, string(postfixBytes), id, nil
+		return privKey, string(postfixBytes), id, nil
 	}
 
 	log.Warn(fmt.Sprintf("Failed to load key: %v. create a new one.", err))
 	// No persistent key found, generate and store a new one.
-	key, err = key.GenerateKey()
+	privKey, err = key.GenerateKey()
 	if err != nil {
 		log.Crit(fmt.Sprintf("Failed to generate node key: %v", err))
 		return nil, "", nil, ErrInvalidMe
 	}
 
-	id, err := types.NewPttIDFromKey(key)
+	id, err := types.NewPttIDFromKey(privKey)
 	if err != nil {
 		return nil, "", nil, ErrInvalidMe
 	}
@@ -173,12 +173,12 @@ func (c *Config) myKey() (*ecdsa.PrivateKey, string, *types.PttID, error) {
 		return nil, "", nil, err
 	}
 
-	err = c.saveKeyFile(DataDirPrivateKey, key, postfix, id)
+	err = c.saveKeyFile(DataDirPrivateKey, privKey, postfix, id)
 	if err != nil {
 		return nil, "", nil, err
 	}
 
-	return key, postfix, id, err
+	return privKey, postfix, id, err
 }
 
 func (c *Config) GetDataPrivateKeyByID(myID *types.PttID) (*ecdsa.PrivateKey, error) {

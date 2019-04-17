@@ -19,7 +19,7 @@ package service
 import (
 	"encoding/json"
 
-	"github.com/ailabstw/go-pttai/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type IdentifyPeerFail struct {

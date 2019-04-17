@@ -90,7 +90,7 @@ func main() {
 	}
 
 	// we got key
-	privKey, err := crypto.PrivateKeyToP2PPrivKey(nodeKey)
+	privKey, err := key.PrivateKeyToP2PPrivKey(nodeKey)
 
 	if err != nil {
 		log.Error("P2PBootnode: unable to get privKey", "e", err)

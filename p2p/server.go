@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/event"
+	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/p2p/discv5"
@@ -34,7 +35,6 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
 	libp2p "github.com/libp2p/go-libp2p"
 	host "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -307,7 +307,7 @@ func (srv *Server) InitP2P() error {
 	srv.p2pctx = p2pctx
 	srv.p2pcancel = p2pcancel
 
-	privKey, err := crypto.PrivateKeyToP2PPrivKey(cfg.PrivateKey)
+	privKey, err := key.PrivateKeyToP2PPrivKey(cfg.PrivateKey)
 	if err != nil {
 		return err
 	}

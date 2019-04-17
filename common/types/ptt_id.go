@@ -21,9 +21,10 @@ import (
 	"crypto/rand"
 	"reflect"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	pttcommon "github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/shengdoushi/base58"
 )
 
@@ -182,7 +183,7 @@ func (p *PttID) UnmarshalText(b []byte) error {
 
 func (p *PttID) MarshalJSON() ([]byte, error) {
 	marshaled := []byte(base58.Encode(p[:], myAlphabet))
-	return common.Concat([][]byte{quoteBytes, marshaled, quoteBytes})
+	return pttcommon.Concat([][]byte{quoteBytes, marshaled, quoteBytes})
 }
 
 func (p *PttID) UnmarshalJSON(b []byte) error {

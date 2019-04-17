@@ -32,9 +32,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p/netutil"
 )
 

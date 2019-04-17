@@ -27,8 +27,8 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/key"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type nullTransport struct{}

@@ -418,7 +418,7 @@ func makeDatabaseHandles() int {
 		Fatalf("Failed to retrieve file descriptor allowance: %v", err)
 	}
 	if limit < 2048 {
-		if err := fdlimit.Raise(2048); err != nil {
+		if _, err := fdlimit.Raise(2048); err != nil {
 			Fatalf("Failed to raise file descriptor allowance: %v", err)
 		}
 	}

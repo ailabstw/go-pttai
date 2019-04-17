@@ -27,8 +27,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ailabstw/go-pttai/common"
+	pttcommon "github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -223,7 +224,7 @@ func (p *BasePtt) checksumData(bytes []byte) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	bytesWithSalt, err := common.Concat([][]byte{bytes, salt[:]})
+	bytesWithSalt, err := pttcommon.Concat([][]byte{bytes, salt[:]})
 	if err != nil {
 		return nil, nil, err
 	}

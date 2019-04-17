@@ -19,9 +19,9 @@ package service
 import (
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // default config

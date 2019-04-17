@@ -22,10 +22,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common"
+	pttcommon "github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -64,15 +67,15 @@ func NewMerkle(dbOplogPrefix []byte, dbMerklePrefix []byte, prefixID *types.PttI
 
 	prefixIDBytes := prefixID[:]
 
-	dbMerkleMetaPrefix := common.CloneBytes(dbMerklePrefix)
+	dbMerkleMetaPrefix := common.CopyBytes(dbMerklePrefix)
 	copy(dbMerkleMetaPrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleMetaPostfix)
 
-	dbMerkleToUpdatePrefix := common.CloneBytes(dbMerklePrefix)
+	dbMerkleToUpdatePrefix := common.CopyBytes(dbMerklePrefix)
 	copy(dbMerkleToUpdatePrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleToUpdatePostfix)
 
 	dbMerkleToUpdatePrefixWithID := append(dbMerkleToUpdatePrefix, prefixIDBytes...)
 
-	dbMerkleUpdatingPrefix := common.CloneBytes(dbMerklePrefix)
+	dbMerkleUpdatingPrefix := common.CopyBytes(dbMerklePrefix)
 	copy(dbMerkleUpdatingPrefix[pttdb.OffsetDBKeyPrefixPostfix:], DBMerkleUpdatingPostfix)
 
 	dbMerkleUpdatingPrefixWithID := append(dbMerkleUpdatingPrefix, prefixIDBytes...)
@@ -439,16 +442,16 @@ func (m *Merkle) GetFailSyncTime() (types.Timestamp, error) {
 
 func (m *Merkle) MarshalGenerateTimeKey() ([]byte, error) {
 	log.Debug("MarshalGenerateTimeKey: start", "m", m)
-	return common.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleGenerateTimePrefix, m.PrefixID[:]})
+	return pttcommon.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleGenerateTimePrefix, m.PrefixID[:]})
 }
 
 func (m *Merkle) MarshalSyncTimeKey() ([]byte, error) {
 	log.Debug("MarshalSyncTimeKey: to concat", "m", m)
-	return common.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleSyncTimePrefix, m.PrefixID[:]})
+	return pttcommon.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleSyncTimePrefix, m.PrefixID[:]})
 }
 
 func (m *Merkle) MarshalFailSyncTimeKey() ([]byte, error) {
-	return common.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleFailSyncTimePrefix, m.PrefixID[:]})
+	return pttcommon.Concat([][]byte{m.dbMerkleMetaPrefix, DBMerkleFailSyncTimePrefix, m.PrefixID[:]})
 }
 
 func (m *Merkle) DBPrefix() []byte {
@@ -461,7 +464,7 @@ func (m *Merkle) MarshalKey(level MerkleTreeLevel, ts types.Timestamp) ([]byte, 
 		return nil, err
 	}
 
-	return common.Concat([][]byte{m.DBMerklePrefix, m.PrefixID[:], []byte{uint8(level)}, tsBytes})
+	return pttcommon.Concat([][]byte{m.DBMerklePrefix, m.PrefixID[:], []byte{uint8(level)}, tsBytes})
 }
 
 /*
@@ -740,7 +743,7 @@ func (m *Merkle) MarshalToUpdateTSKey(ts types.Timestamp) []byte {
 	tsBytes := make([]byte, 8) // int64
 	binary.BigEndian.PutUint64(tsBytes, uint64(ts.Ts))
 
-	theBytes, _ := common.Concat([][]byte{m.dbMerkleToUpdatePrefixWithID, tsBytes})
+	theBytes, _ := pttcommon.Concat([][]byte{m.dbMerkleToUpdatePrefixWithID, tsBytes})
 
 	return theBytes
 }
@@ -923,7 +926,7 @@ func (m *Merkle) GetChildKeys(level MerkleTreeLevel, ts types.Timestamp) ([][]by
 	var key []byte
 	for iter.Next() {
 		key = iter.Key()
-		keys = append(keys, common.CloneBytes(key))
+		keys = append(keys, common.CopyBytes(key))
 	}
 
 	return keys, nil

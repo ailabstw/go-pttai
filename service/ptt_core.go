@@ -17,10 +17,10 @@
 package service
 
 import (
-	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (p *BasePtt) GetVersion() (string, error) {

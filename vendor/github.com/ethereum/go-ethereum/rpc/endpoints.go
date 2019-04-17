@@ -18,13 +18,12 @@ package rpc
 
 import (
 	"net"
-	"net/http"
 
-	"github.com/ailabstw/go-pttai/log"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
-func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string, vhosts []string) (net.Listener, *Server, *http.Server, error) {
+func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string, vhosts []string, timeouts HTTPTimeouts) (net.Listener, *Server, error) {
 	// Generate the whitelist based on the allowed modules
 	whitelist := make(map[string]bool)
 	for _, module := range modules {
@@ -35,7 +34,7 @@ func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []str
 	for _, api := range apis {
 		if whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
 			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-				return nil, nil, nil, err
+				return nil, nil, err
 			}
 			log.Debug("HTTP registered", "namespace", api.Namespace)
 		}
@@ -46,12 +45,10 @@ func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []str
 		err      error
 	)
 	if listener, err = net.Listen("tcp", endpoint); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	log.Debug("StartHTTPEndpoint: to NewHTTPServer", "endpoint", endpoint, "handler.run", handler.run, "handler", handler)
-	httpServer := NewHTTPServer(cors, vhosts, handler)
-	go httpServer.Serve(listener)
-	return listener, handler, httpServer, err
+	go NewHTTPServer(cors, vhosts, timeouts, handler).Serve(listener)
+	return listener, handler, err
 }
 
 // StartWSEndpoint starts a websocket endpoint

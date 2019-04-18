@@ -45,6 +45,14 @@
 			"revisionTime": "2017-01-16T20:05:12Z"
 		},
 		{
+			"checksumSHA1": "ZG6MyzWT8rhRta8owTJFoBGfn9E=",
+			"path": "github.com/ailabstw/pttai-signal-server",
+			"revision": "c5cd77ccfdd3d69d030fb44caaed21a34ecd6b0a",
+			"revisionTime": "2019-04-18T16:39:49Z",
+			"version": "signal",
+			"versionExact": "signal"
+		},
+		{
 			"checksumSHA1": "8skJYOdQytXjimcDPLRW4tonX3A=",
 			"path": "github.com/allegro/bigcache",
 			"revision": "e24eb225f15679bbe54f91bfa7da3b00e59b9768",
@@ -73,6 +81,12 @@
 			"path": "github.com/cespare/cp",
 			"revision": "db1407d84ae423533fe1d25510c1c4c4d831f0fc",
 			"revisionTime": "2018-12-20T00:00:49Z"
+		},
+		{
+			"checksumSHA1": "PYXuf7wvcj492uWhjvmXlyyQUYc=",
+			"path": "github.com/cheekybits/genny/generic",
+			"revision": "d2cf3cdd35ce0d789056c4bc02a4d6349c947caf",
+			"revisionTime": "2018-08-30T15:03:46Z"
 		},
 		{
 			"checksumSHA1": "jwncg9LLGxanKj01xEyYtoG+6aU=",
@@ -233,6 +247,18 @@
 			"path": "github.com/ethereum/go-ethereum/metrics/influxdb",
 			"revision": "c9d9a2d48ac00c2c7ad746bf7454bb73d7534bee",
 			"revisionTime": "2019-04-16T14:44:11Z"
+		},
+		{
+			"checksumSHA1": "phvYHEZJywWTa2Isv6jujG4Nv2w=",
+			"path": "github.com/ethereum/go-ethereum/p2p/discv5",
+			"revision": "78ec90717aaa34c6ac981e791ca7fb04077cca33",
+			"revisionTime": "2019-04-17T12:50:41Z"
+		},
+		{
+			"checksumSHA1": "yxPyWqeh3YWrnJ8BWdaNNui4fpI=",
+			"path": "github.com/ethereum/go-ethereum/p2p/nat",
+			"revision": "78ec90717aaa34c6ac981e791ca7fb04077cca33",
+			"revisionTime": "2019-04-17T12:50:41Z"
 		},
 		{
 			"checksumSHA1": "/TixkH5j7wvV11dYSkAb3BR416c=",
@@ -1028,6 +1054,66 @@
 			"revisionTime": "2019-03-02T00:00:45Z"
 		},
 		{
+			"checksumSHA1": "ekK9LoQwWto+Bdt4OBTzl8gQBF8=",
+			"path": "github.com/lucas-clemente/quic-go",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "4DwjzT6ZmfSTZe4CilqxAXlAxLU=",
+			"path": "github.com/lucas-clemente/quic-go/internal/ackhandler",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "S88pE/UIJ2FI6DQ9qKe9hMBddlE=",
+			"path": "github.com/lucas-clemente/quic-go/internal/congestion",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "HDkX616FVT7b8nZ0H5poD3xzD2I=",
+			"path": "github.com/lucas-clemente/quic-go/internal/flowcontrol",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "Zs2bf7GOpDQKj+79a0dGUjXLc70=",
+			"path": "github.com/lucas-clemente/quic-go/internal/handshake",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "8EtEAg65QcTv5A7E/RCvrPU1ObM=",
+			"path": "github.com/lucas-clemente/quic-go/internal/protocol",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "kB8TwXRmGt8iX5UYQqylttlnBoY=",
+			"path": "github.com/lucas-clemente/quic-go/internal/qerr",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "JWKlW3U21t2ozm9AZOYAEv7USCA=",
+			"path": "github.com/lucas-clemente/quic-go/internal/utils",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "QUfPZlsCVPfK/+u8X94WuhDcksk=",
+			"path": "github.com/lucas-clemente/quic-go/internal/wire",
+			"revision": "ae685f9d424124ea3f82efb2062ad65693c6ee66",
+			"revisionTime": "2019-04-16T11:55:54Z"
+		},
+		{
+			"checksumSHA1": "lVlMU1vyM9Svh642UFG1haNui8Q=",
+			"path": "github.com/marten-seemann/qtls",
+			"revision": "65ca381cd298d7e0aef0de8ba523a870ec5a96fe",
+			"revisionTime": "2019-03-29T07:59:07Z"
+		},
+		{
 			"checksumSHA1": "HR/f0Ivx47ri0Jy7FnMeLnH8s9Q=",
 			"path": "github.com/maruel/panicparse/stack",
 			"revision": "f20d4c4d746f810c9110e21928d4135e1f2a3efa",
@@ -1188,6 +1274,142 @@
 			"path": "github.com/peterh/liner",
 			"revision": "6f820f8f90ce9482ffbd40bb15f9ea9932f4942d",
 			"revisionTime": "2019-03-05T03:26:35Z"
+		},
+		{
+			"checksumSHA1": "iPpsas+xPO/4ipvkGqfmzaJi5Bg=",
+			"path": "github.com/pion/datachannel",
+			"revision": "3404fd785c6d88ff80f03f17f717e4abc4677963",
+			"revisionTime": "2019-04-06T22:33:35Z"
+		},
+		{
+			"checksumSHA1": "EM3ECFwfiQpj6mavWtvDWkBm7BM=",
+			"path": "github.com/pion/dtls",
+			"revision": "035a26f794f333b598055053463694320f865182",
+			"revisionTime": "2019-04-10T11:28:55Z"
+		},
+		{
+			"checksumSHA1": "as5Le9d1tqjsKSftwYNlHHHTbb0=",
+			"path": "github.com/pion/dtls/internal/udp",
+			"revision": "035a26f794f333b598055053463694320f865182",
+			"revisionTime": "2019-04-10T11:28:55Z"
+		},
+		{
+			"checksumSHA1": "ip3p++32uUoZ0+YGbBsuoOYrIBQ=",
+			"path": "github.com/pion/ice",
+			"revision": "f5e8cc510d580984bcca6b200be9868a2ddfeabe",
+			"revisionTime": "2019-04-16T05:29:11Z"
+		},
+		{
+			"checksumSHA1": "5N8DbsZtiTNGpMQaoVrBfYpcDh8=",
+			"path": "github.com/pion/logging",
+			"revision": "3c79a8accd0a2eba01e9c1e23869e7b48707f02b",
+			"revisionTime": "2019-04-04T20:13:48Z"
+		},
+		{
+			"checksumSHA1": "Nq6cbwau08N0m5Et+LKEOMN1SyQ=",
+			"path": "github.com/pion/quic",
+			"revision": "366cba4719fcefb9e481c47a67fa37f0bb5ee35d",
+			"revisionTime": "2019-04-06T20:16:39Z"
+		},
+		{
+			"checksumSHA1": "Vs6uX6IbPj+/fAH6X6AhygdErzw=",
+			"path": "github.com/pion/quic/internal/wrapper",
+			"revision": "366cba4719fcefb9e481c47a67fa37f0bb5ee35d",
+			"revisionTime": "2019-04-06T20:16:39Z"
+		},
+		{
+			"checksumSHA1": "WxmQzfoxbPYwhotGY8PvzK4HI7w=",
+			"path": "github.com/pion/rtcp",
+			"revision": "ccb640d6429623c8dadad9e06a073c3b2aaa885b",
+			"revisionTime": "2019-04-10T12:59:47Z"
+		},
+		{
+			"checksumSHA1": "a8OuoSvEW02CRxxyBAI5GB9bvRs=",
+			"path": "github.com/pion/rtp",
+			"revision": "077732c6c8b8425d9f2b6081c974cfda9c3dfd2a",
+			"revisionTime": "2019-04-05T18:18:44Z"
+		},
+		{
+			"checksumSHA1": "QDX6zyPYR9DptkhmL4o+vQpY3XM=",
+			"path": "github.com/pion/rtp/codecs",
+			"revision": "077732c6c8b8425d9f2b6081c974cfda9c3dfd2a",
+			"revisionTime": "2019-04-05T18:18:44Z"
+		},
+		{
+			"checksumSHA1": "wJhDWRjkx6GnAvNPffx5caMDrOc=",
+			"path": "github.com/pion/sctp",
+			"revision": "1738620281158f1094625ef3152eb60b714c82fc",
+			"revisionTime": "2019-04-06T18:12:27Z"
+		},
+		{
+			"checksumSHA1": "ho6awo7NY0QkB0I5ih0C1BkxUNM=",
+			"path": "github.com/pion/sdp",
+			"revision": "f62505e46962e403e15d1db62d62090cf7c2f507",
+			"revisionTime": "2019-04-07T02:29:53Z"
+		},
+		{
+			"checksumSHA1": "Mnfm4Pn1i9pGPBZi7du53GdtZJE=",
+			"path": "github.com/pion/srtp",
+			"revision": "14c6585e3ec0aad8fe8a2caaf151f44542c00ab3",
+			"revisionTime": "2019-04-11T22:47:25Z"
+		},
+		{
+			"checksumSHA1": "f41iI/9UZxkWAsjJWxhUHm6hNIo=",
+			"path": "github.com/pion/stun",
+			"revision": "e9c5388360b3a90b00af342e117c92e4e198de3b",
+			"revisionTime": "2019-04-06T09:41:11Z"
+		},
+		{
+			"checksumSHA1": "FgJZQGK/u2Rd//CE/JqNBz20fj0=",
+			"path": "github.com/pion/transport/packetio",
+			"revision": "32f73e3d5e8176bcbbbe590a8427d7f143f82208",
+			"revisionTime": "2019-04-04T20:08:23Z"
+		},
+		{
+			"checksumSHA1": "96aj8B2RBxUZqH3fG59jKUs31nI=",
+			"path": "github.com/pion/webrtc",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da",
+			"revisionTime": "2019-04-18T04:20:57Z"
+		},
+		{
+			"checksumSHA1": "xf4GpCgkMxmzOCQuyrp3HoGFIGI=",
+			"path": "github.com/pion/webrtc/internal/mux",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da",
+			"revisionTime": "2019-04-18T04:20:57Z"
+		},
+		{
+			"checksumSHA1": "q3JS+NaU2dUt1FfP8Yi9CFn5YFA=",
+			"path": "github.com/pion/webrtc/internal/util",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da",
+			"revisionTime": "2019-04-18T04:20:57Z"
+		},
+		{
+			"checksumSHA1": "IaKtfIHZAgaOGIqIz7VkTGPYJ7E=",
+			"path": "github.com/pion/webrtc/pkg/media",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da",
+			"revisionTime": "2019-04-18T04:20:57Z"
+		},
+		{
+			"checksumSHA1": "4k5+P8ElrHekm+aviWWwBJkYaFU=",
+			"path": "github.com/pion/webrtc/pkg/rtcerr",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da",
+			"revisionTime": "2019-04-18T04:20:57Z"
+		},
+		{
+			"path": "github.com/pion/webrtc/v2/internal/mux",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da"
+		},
+		{
+			"path": "github.com/pion/webrtc/v2/internal/util",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da"
+		},
+		{
+			"path": "github.com/pion/webrtc/v2/pkg/media",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da"
+		},
+		{
+			"path": "github.com/pion/webrtc/v2/pkg/rtcerr",
+			"revision": "0c5f0e088bb1f51e20d049c95455bc3c23bb01da"
 		},
 		{
 			"checksumSHA1": "I7hloldMJZTqUx6hbVDp5nk9fZQ=",
@@ -1490,6 +1712,24 @@
 			"revisionTime": "2019-03-25T14:57:12Z"
 		},
 		{
+			"checksumSHA1": "lti8heEDFEXVoSUCfs53pnRVtAg=",
+			"path": "golang.org/x/crypto/chacha20poly1305",
+			"revision": "f416ebab96af27ca70b6e5c23d6a0747530da626",
+			"revisionTime": "2018-05-02T16:52:23Z"
+		},
+		{
+			"checksumSHA1": "1ezNasqd516o9HG59beqc5s+2Ro=",
+			"path": "golang.org/x/crypto/cryptobyte",
+			"revision": "f416ebab96af27ca70b6e5c23d6a0747530da626",
+			"revisionTime": "2018-05-02T16:52:23Z"
+		},
+		{
+			"checksumSHA1": "YEoV2AiZZPDuF7pMVzDt7buS9gc=",
+			"path": "golang.org/x/crypto/cryptobyte/asn1",
+			"revision": "f416ebab96af27ca70b6e5c23d6a0747530da626",
+			"revisionTime": "2018-05-02T16:52:23Z"
+		},
+		{
 			"checksumSHA1": "JjkVVfbdvjH+FbVgKPrv0+WtpFw=",
 			"path": "golang.org/x/crypto/curve25519",
 			"revision": "a5d413f7728c81fb97d96a2b722368945f651e78",
@@ -1506,6 +1746,12 @@
 			"path": "golang.org/x/crypto/ed25519/internal/edwards25519",
 			"revision": "a5d413f7728c81fb97d96a2b722368945f651e78",
 			"revisionTime": "2019-03-25T14:57:12Z"
+		},
+		{
+			"checksumSHA1": "ELSEW2KG0p3oua5lIxl1xW2oFBo=",
+			"path": "golang.org/x/crypto/hkdf",
+			"revision": "f416ebab96af27ca70b6e5c23d6a0747530da626",
+			"revisionTime": "2018-05-02T16:52:23Z"
 		},
 		{
 			"checksumSHA1": "iRA5GH0qX7eKM1FHf5gSQ3lUXEE=",

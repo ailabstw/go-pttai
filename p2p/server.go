@@ -23,10 +23,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
@@ -35,6 +35,7 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/event"
 	libp2p "github.com/libp2p/go-libp2p"
 	host "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -153,6 +154,10 @@ type Config struct {
 
 	P2PListenAddr string
 	P2PBootnodes  []*discover.Node
+
+	// webrtc
+
+	signalServerURL url.URL
 }
 
 // Server manages all peer connections.

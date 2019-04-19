@@ -40,7 +40,7 @@ type writeSignal struct {
 	Extra []byte
 }
 
-type writeInfo struct {
+type offerConnInfo struct {
 	PeerConn  *webrtc.PeerConnection
 	offerID   string
 	OfferChan chan *WebrtcInfo
@@ -76,8 +76,8 @@ type Webrtc struct {
 	config webrtc.Configuration
 	api    *webrtc.API
 
-	writeMapLock sync.RWMutex
-	writeMap     map[discv5.NodeID]*writeInfo
+	offerConnMapLock sync.RWMutex
+	offerConnMap     map[discv5.NodeID]*offerConnInfo
 
 	handleAnswerChannel func(info *WebrtcInfo)
 }
@@ -120,7 +120,7 @@ func NewWebrtc(
 		config: config,
 		api:    api,
 
-		writeMap: make(map[discv5.NodeID]*writeInfo),
+		offerConnMap: make(map[discv5.NodeID]*offerConnInfo),
 
 		handleAnswerChannel: h,
 	}
@@ -142,14 +142,14 @@ func (w *Webrtc) Close() error {
 
 	w.client.Close()
 
-	w.writeMapLock.Lock()
-	defer w.writeMapLock.Unlock()
+	w.offerConnMapLock.Lock()
+	defer w.offerConnMapLock.Unlock()
 
-	for _, info := range w.writeMap {
+	for _, info := range w.offerConnMap {
 		info.PeerConn.Close()
 	}
 
-	w.writeMap = make(map[discv5.NodeID]*writeInfo)
+	w.offerConnMap = make(map[discv5.NodeID]*offerConnInfo)
 
 	return nil
 }
@@ -162,6 +162,10 @@ CreateOffer actively create a new offer for nodeID.
 */
 
 func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
+	if w.isClosed != 0 {
+		return nil, ErrInvalidWebrtc
+	}
+
 	// XXX we may need the unified nodeID type.
 	var tmpNodeID discv5.NodeID
 	copy(tmpNodeID[:], nodeID[:])
@@ -187,7 +191,7 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
 	}
 
 	if info == nil {
-		w.removeFromWriteMap(tmpNodeID, peerConn)
+		w.removeFromOfferConnMap(tmpNodeID, peerConn)
 		peerConn.Close()
 		return nil, ErrInvalidWebrtcOffer
 	}
@@ -225,20 +229,20 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcInfo) (
 		}
 	}()
 
-	info := &writeInfo{
+	info := &offerConnInfo{
 		PeerConn:  peerConnection,
 		offerID:   offerID,
 		OfferChan: offerChan,
 	}
 
-	err = w.addWriteMap(nodeID, info)
+	err = w.addToOfferConnMap(nodeID, info)
 	if err != nil {
 		peerConnection.Close()
 		return nil, err
 	}
 	defer func() {
 		if err != nil {
-			w.removeFromWriteMap(nodeID, peerConnection)
+			w.removeFromOfferConnMap(nodeID, peerConnection)
 		}
 	}()
 
@@ -266,6 +270,9 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcInfo) (
 	return peerConnection, nil
 }
 
+/*
+receiveOffer receives offer from fromID and we need to create the corresponding answer.
+*/
 func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescription) error {
 
 	offerID, err := w.parseOfferID(offer)
@@ -330,12 +337,12 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescription, offerID string) error {
 
-	writeInfo, err := w.tryGetWriteInfo(fromID, offerID)
+	offerInfo, err := w.tryGetOfferInfo(fromID, offerID)
 	if err != nil {
 		return err
 	}
 
-	peerConn := writeInfo.PeerConn
+	peerConn := offerInfo.PeerConn
 
 	dataChannel, err := peerConn.CreateDataChannel("data", nil)
 	if err != nil {
@@ -350,7 +357,7 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 		}
 
 		select {
-		case writeInfo.OfferChan <- info:
+		case offerInfo.OfferChan <- info:
 		case <-w.quitChan:
 		}
 	})
@@ -393,37 +400,37 @@ func (w *Webrtc) parseOfferID(offer webrtc.SessionDescription) (string, error) {
 	return "", types.ErrNotImplemented
 }
 
-func (w *Webrtc) addWriteMap(nodeID discv5.NodeID, info *writeInfo) error {
+func (w *Webrtc) addToOfferConnMap(nodeID discv5.NodeID, info *offerConnInfo) error {
 
-	w.writeMapLock.Lock()
-	defer w.writeMapLock.Unlock()
+	w.offerConnMapLock.Lock()
+	defer w.offerConnMapLock.Unlock()
 
-	if writeInfo, ok := w.writeMap[nodeID]; ok {
+	if writeInfo, ok := w.offerConnMap[nodeID]; ok {
 		writeInfo.PeerConn.Close()
 	}
 
-	w.writeMap[nodeID] = info
+	w.offerConnMap[nodeID] = info
 
 	return nil
 }
 
-func (w *Webrtc) removeFromWriteMap(nodeID discv5.NodeID, peerConn *webrtc.PeerConnection) error {
-	w.writeMapLock.Lock()
-	defer w.writeMapLock.Unlock()
+func (w *Webrtc) removeFromOfferConnMap(nodeID discv5.NodeID, peerConn *webrtc.PeerConnection) error {
+	w.offerConnMapLock.Lock()
+	defer w.offerConnMapLock.Unlock()
 
-	if writeInfo, ok := w.writeMap[nodeID]; ok && writeInfo.PeerConn == peerConn {
-		delete(w.writeMap, nodeID)
+	if writeInfo, ok := w.offerConnMap[nodeID]; ok && writeInfo.PeerConn == peerConn {
+		delete(w.offerConnMap, nodeID)
 	}
 
 	return nil
 }
 
-func (w *Webrtc) tryGetWriteInfo(fromID discv5.NodeID, offerID string) (*writeInfo, error) {
-	w.writeMapLock.Lock()
-	defer w.writeMapLock.Unlock()
+func (w *Webrtc) tryGetOfferInfo(fromID discv5.NodeID, offerID string) (*offerConnInfo, error) {
+	w.offerConnMapLock.Lock()
+	defer w.offerConnMapLock.Unlock()
 
-	if writeInfo, ok := w.writeMap[fromID]; ok {
-		delete(w.writeMap, fromID)
+	if writeInfo, ok := w.offerConnMap[fromID]; ok {
+		delete(w.offerConnMap, fromID)
 
 		return writeInfo, nil
 	}

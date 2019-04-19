@@ -17,22 +17,39 @@
 package webrtc
 
 import (
-	"github.com/ailabstw/go-pttai/common/types"
+	"strings"
+
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/discv5"
 	"github.com/pion/webrtc"
 )
 
+// https://godoc.org/github.com/pion/sdp#SessionDescription
+
+// https://godoc.org/github.com/pion/sdp#SessionDescription
 func parseOfferID(offer *webrtc.SessionDescription) (string, error) {
-	return "", types.ErrNotImplemented
+	desc := offer.SDP
+	descList := strings.Split(desc, "\r\n")
+	log.Debug("parseOfferID: to for-loop", "descList", descList)
+	for _, eachDesc := range descList {
+		log.Debug("parseOfferID (in-for-loop)", "eachDesc", eachDesc, "OfferIDPrefix", OfferIDPrefix)
+		if strings.HasPrefix(eachDesc, OfferIDPrefix) {
+			return eachDesc[OfferIDOffset:], nil
+		}
+	}
+
+	return "", ErrInvalidWebrtcOffer
 }
 
-func parseWebrtcAddr(session *webrtc.SessionDescription) (*webrtcAddr, error) {
-	return nil, types.ErrNotImplemented
+func parseWebrtcAddr(nodeID discv5.NodeID) *webrtcAddr {
+
+	return &webrtcAddr{addr: nodeID.String()}
 }
 
 func dataChannelToWebrtcConn(
 	dataChannel *webrtc.DataChannel,
+	localID discv5.NodeID,
 	fromID discv5.NodeID,
 	peerConn *webrtc.PeerConnection,
 ) (*WebrtcConn, error) {
@@ -53,7 +70,10 @@ func dataChannelToWebrtcConn(
 		DataConn: dataConn,
 	}
 
-	conn := &WebrtcConn{info: info}
+	conn, err := NewWebrtcConn(localID, fromID, info)
+	if err != nil {
+		return nil, err
+	}
 
 	return conn, nil
 }

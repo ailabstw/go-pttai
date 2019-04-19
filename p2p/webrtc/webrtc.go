@@ -29,7 +29,6 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	signalserver "github.com/ailabstw/pttai-signal-server"
 	"github.com/ethereum/go-ethereum/p2p/discv5"
-	"github.com/pion/datachannel"
 	"github.com/pion/webrtc"
 )
 
@@ -43,25 +42,6 @@ type offerConnInfo struct {
 	PeerConn  *webrtc.PeerConnection
 	offerID   string
 	OfferChan chan *WebrtcConn
-}
-
-type webrtcInfo struct {
-	NodeID discover.NodeID
-
-	isClosed int32
-
-	PeerConn *webrtc.PeerConnection
-	DataConn datachannel.ReadWriteCloser
-}
-
-func (info *webrtcInfo) Close() {
-	isSwapped := atomic.CompareAndSwapInt32(&info.isClosed, 0, 1)
-	if !isSwapped {
-		return
-	}
-
-	info.DataConn.Close()
-	info.PeerConn.Close()
 }
 
 type Webrtc struct {
@@ -79,6 +59,8 @@ type Webrtc struct {
 	offerConnMap     map[discv5.NodeID]*offerConnInfo
 
 	handleAnswerChannel func(conn *WebrtcConn)
+
+	nodeID discv5.NodeID
 }
 
 func NewWebrtc(
@@ -122,6 +104,8 @@ func NewWebrtc(
 		offerConnMap: make(map[discv5.NodeID]*offerConnInfo),
 
 		handleAnswerChannel: h,
+
+		nodeID: tmpNodeID,
 	}
 
 	go w.ReadLoop()
@@ -195,6 +179,8 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcConn, error) {
 		return nil, ErrInvalidWebrtcOffer
 	}
 
+	log.Debug("CreateOffer: done", "conn", conn)
+
 	return conn, nil
 }
 
@@ -206,7 +192,7 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (
 	}
 
 	peerConn.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		log.Info("CreateConn: ICE Connection State has changed", "nodeID", nodeID, "state", connectionState)
+		log.Info("createOffer: ICE Connection State has changed", "nodeID", nodeID, "state", connectionState)
 	})
 
 	var offer webrtc.SessionDescription
@@ -290,7 +276,8 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 	peerConn.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			conn, err := dataChannelToWebrtcConn(d, fromID, peerConn)
+			log.Info("receiveOffer: channel created", "fromID", fromID, "peerConn", peerConn)
+			conn, err := dataChannelToWebrtcConn(d, w.nodeID, fromID, peerConn)
 			if err != nil {
 				return
 
@@ -350,7 +337,9 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	}
 
 	dataChannel.OnOpen(func() {
-		conn, err := dataChannelToWebrtcConn(dataChannel, fromID, peerConn)
+		log.Info("receiveAnswer: channel created", "fromID", fromID, "peerConn", peerConn)
+
+		conn, err := dataChannelToWebrtcConn(dataChannel, w.nodeID, fromID, peerConn)
 		if err != nil {
 			return
 		}

@@ -97,6 +97,8 @@ var (
 		utils.IPFSP2PFlag,
 		utils.DevP2PFlag,
 
+		utils.TestWebrtcFlag,
+
 		utils.E2EFlag,
 		utils.PrivateAsPublicFlag,
 		utils.OffsetSecondFlag,
@@ -139,6 +141,8 @@ var (
 
 		utils.P2PBootnodesFlag,
 		utils.P2PListenPortFlag,
+
+		utils.WebrtcSignalServerFlag,
 	}
 
 	// flags that configure rpc

@@ -17,111 +17,64 @@
 package webrtc
 
 import (
-	"reflect"
-	"sync"
+	"net/http"
+	"net/url"
 	"testing"
 
-	"github.com/ailabstw/go-pttai/p2p/discover"
 	signalserver "github.com/ailabstw/pttai-signal-server"
-	"github.com/ethereum/go-ethereum/p2p/discv5"
-	"github.com/pion/webrtc"
+
+	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestWebrtc_CreateOffer(t *testing.T) {
-	type fields struct {
-		isClosed            int32
-		client              *signalserver.Client
-		writeChan           chan *writeSignal
-		quitChan            chan struct{}
-		config              webrtc.Configuration
-		api                 *webrtc.API
-		offerConnMapLock    sync.RWMutex
-		offerConnMap        map[discv5.NodeID]*offerConnInfo
-		handleAnswerChannel func(conn *WebrtcConn)
-	}
-	type args struct {
-		nodeID discover.NodeID
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *WebrtcConn
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := &Webrtc{
-				isClosed:            tt.fields.isClosed,
-				client:              tt.fields.client,
-				writeChan:           tt.fields.writeChan,
-				quitChan:            tt.fields.quitChan,
-				config:              tt.fields.config,
-				api:                 tt.fields.api,
-				offerConnMapLock:    tt.fields.offerConnMapLock,
-				offerConnMap:        tt.fields.offerConnMap,
-				handleAnswerChannel: tt.fields.handleAnswerChannel,
-			}
-			got, err := w.CreateOffer(tt.args.nodeID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Webrtc.CreateOffer() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Webrtc.CreateOffer() = %v, want %v", got, tt.want)
-			}
-		})
+func handleWebrtcWithTest(t *testing.T) func(conn *WebrtcConn) {
+	return func(conn *WebrtcConn) {
+		t.Logf("handleWebrtc: start: conn: %v", conn)
 	}
 }
 
-func TestWebrtc_createOffer(t *testing.T) {
-	type fields struct {
-		isClosed            int32
-		client              *signalserver.Client
-		writeChan           chan *writeSignal
-		quitChan            chan struct{}
-		config              webrtc.Configuration
-		api                 *webrtc.API
-		offerConnMapLock    sync.RWMutex
-		offerConnMap        map[discv5.NodeID]*offerConnInfo
-		handleAnswerChannel func(conn *WebrtcConn)
+func TestWebrtc(t *testing.T) {
+	setupTest(t)
+	defer teardownTest(t)
+
+	addr := "127.0.0.1:9488"
+	go func() {
+		server := signalserver.NewServer()
+
+		srv := &http.Server{Addr: addr}
+		r := mux.NewRouter()
+		r.HandleFunc("/signal", server.SignalHandler)
+		srv.Handler = r
+
+		srv.ListenAndServe()
+	}()
+
+	url := url.URL{Scheme: "ws", Host: addr, Path: "/signal"}
+
+	handle := handleWebrtcWithTest(t)
+
+	key1, err := crypto.GenerateKey()
+	if err != nil {
+		t.Errorf("failed generate key1: %v", err)
 	}
-	type args struct {
-		nodeID    discv5.NodeID
-		offerChan chan *WebrtcConn
+	nodeID1 := discover.PubkeyID(&key1.PublicKey)
+
+	key2, err := crypto.GenerateKey()
+	if err != nil {
+		t.Errorf("failed generate key2: %v", err)
 	}
-	tests := []struct {
-		name               string
-		fields             fields
-		args               args
-		wantPeerConnection *webrtc.PeerConnection
-		wantErr            bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := &Webrtc{
-				isClosed:            tt.fields.isClosed,
-				client:              tt.fields.client,
-				writeChan:           tt.fields.writeChan,
-				quitChan:            tt.fields.quitChan,
-				config:              tt.fields.config,
-				api:                 tt.fields.api,
-				offerConnMapLock:    tt.fields.offerConnMapLock,
-				offerConnMap:        tt.fields.offerConnMap,
-				handleAnswerChannel: tt.fields.handleAnswerChannel,
-			}
-			gotPeerConnection, err := w.createOffer(tt.args.nodeID, tt.args.offerChan)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Webrtc.createOffer() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotPeerConnection, tt.wantPeerConnection) {
-				t.Errorf("Webrtc.createOffer() = %v, want %v", gotPeerConnection, tt.wantPeerConnection)
-			}
-		})
-	}
+	nodeID2 := discover.PubkeyID(&key2.PublicKey)
+
+	c1, err := NewWebrtc(nodeID1, key1, url, handle)
+	t.Logf("TestClientSendReceive: after c1: e: %v", err)
+	assert.NoError(t, err)
+
+	_, err = NewWebrtc(nodeID2, key2, url, handle)
+	t.Logf("TestClientSendReceive: after c2: e: %v", err)
+	assert.NoError(t, err)
+
+	_, err = c1.CreateOffer(nodeID2)
+	assert.NoError(t, err)
 }

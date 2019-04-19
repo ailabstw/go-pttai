@@ -16,14 +16,24 @@
 
 package webrtc
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ailabstw/go-pttai/log"
+)
 
 const ()
 
-var ()
+var (
+	origHandler log.Handler
+)
 
 func setupTest(t *testing.T) {
+	origHandler = log.Root().GetHandler()
+	log.Root().SetHandler(log.Must.FileHandler("log.tmp.txt", log.TerminalFormat(true)))
+	log.LogLevel = log.LvlDebug
 }
 
 func teardownTest(t *testing.T) {
+	log.Root().SetHandler(origHandler)
 }

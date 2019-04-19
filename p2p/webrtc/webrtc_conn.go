@@ -18,9 +18,14 @@ package webrtc
 
 import (
 	"net"
+	"sync/atomic"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common/types"
+	"github.com/ethereum/go-ethereum/p2p/discv5"
+
+	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/pion/datachannel"
+	"github.com/pion/webrtc"
 )
 
 type webrtcAddr struct {
@@ -35,23 +40,36 @@ func (addr *webrtcAddr) String() string {
 	return addr.addr
 }
 
+type webrtcInfo struct {
+	NodeID discover.NodeID
+
+	isClosed int32
+
+	PeerConn *webrtc.PeerConnection
+	DataConn datachannel.ReadWriteCloser
+}
+
+func (info *webrtcInfo) Close() {
+	isSwapped := atomic.CompareAndSwapInt32(&info.isClosed, 0, 1)
+	if !isSwapped {
+		return
+	}
+
+	info.DataConn.Close()
+	info.PeerConn.Close()
+}
+
 type WebrtcConn struct {
 	info       *webrtcInfo
 	localAddr  *webrtcAddr
 	remoteAddr *webrtcAddr
 }
 
-func NewWebrtcConn(info *webrtcInfo) (*WebrtcConn, error) {
+func NewWebrtcConn(nodeID discv5.NodeID, fromID discv5.NodeID, info *webrtcInfo) (*WebrtcConn, error) {
 
-	localAddr, err := parseWebrtcAddr(info.PeerConn.CurrentLocalDescription())
-	if err != nil {
-		return nil, err
-	}
+	localAddr := parseWebrtcAddr(nodeID)
 
-	remoteAddr, err := parseWebrtcAddr(info.PeerConn.CurrentRemoteDescription())
-	if err != nil {
-		return nil, err
-	}
+	remoteAddr := parseWebrtcAddr(fromID)
 
 	conn := &WebrtcConn{
 		info:       info,
@@ -63,11 +81,11 @@ func NewWebrtcConn(info *webrtcInfo) (*WebrtcConn, error) {
 }
 
 func (w *WebrtcConn) Read(b []byte) (int, error) {
-	return 0, types.ErrNotImplemented
+	return w.info.DataConn.Read(b)
 }
 
 func (w *WebrtcConn) Write(b []byte) (int, error) {
-	return 0, types.ErrNotImplemented
+	return w.info.DataConn.Write(b)
 }
 
 func (w *WebrtcConn) Close() error {

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	golog "log"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -310,6 +311,20 @@ func setP2PBootnodes(ctx *cli.Context, cfg *p2p.Config) {
 	log.Info("setP2PBootnodes: done", "P2PBootnodes", len(cfg.P2PBootnodes))
 }
 
+func setSignalServerURL(ctx *cli.Context, cfg *p2p.Config) {
+
+	addr := params.TestSignalServerAddr
+
+	switch {
+	case ctx.GlobalIsSet(WebrtcSignalServerFlag.Name):
+		addr = ctx.GlobalString(WebrtcSignalServerFlag.Name)
+	case ctx.GlobalBool(TestWebrtcFlag.Name):
+		addr = params.TestSignalServerAddr
+	}
+
+	cfg.SignalServerURL = url.URL{Scheme: "ws", Host: addr, Path: "/signal"}
+}
+
 // setListenAddress creates a TCP listening address string from set command
 // line flags.
 func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
@@ -435,6 +450,7 @@ func setP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setBootstrapNodes(ctx, cfg)
 	setP2PListenAddress(ctx, cfg)
 	setP2PBootnodes(ctx, cfg)
+	setSignalServerURL(ctx, cfg)
 
 	if ctx.GlobalIsSet(MaxPeersFlag.Name) {
 		cfg.MaxPeers = ctx.GlobalInt(MaxPeersFlag.Name)

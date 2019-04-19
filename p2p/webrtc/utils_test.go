@@ -16,14 +16,34 @@
 
 package webrtc
 
-const (
-	TimeoutSecondConnectWebrtc = 30
+import (
+	"testing"
 
-	OfferIDPrefix = "a=fingerprint:"
-	OfferIDOffset = len(OfferIDPrefix)
+	"github.com/pion/webrtc"
 )
 
-var ()
-
-func init() {
+func Test_parseOfferID(t *testing.T) {
+	type args struct {
+		offer *webrtc.SessionDescription
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseOfferID(tt.args.offer)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseOfferID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("parseOfferID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

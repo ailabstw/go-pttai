@@ -47,10 +47,8 @@
 		{
 			"checksumSHA1": "ZG6MyzWT8rhRta8owTJFoBGfn9E=",
 			"path": "github.com/ailabstw/pttai-signal-server",
-			"revision": "c5cd77ccfdd3d69d030fb44caaed21a34ecd6b0a",
-			"revisionTime": "2019-04-18T16:39:49Z",
-			"version": "signal",
-			"versionExact": "signal"
+			"revision": "0a6b9d439ddf45424a8ef117d1a68c2b00202f91",
+			"revisionTime": "2019-04-19T01:52:08Z"
 		},
 		{
 			"checksumSHA1": "8skJYOdQytXjimcDPLRW4tonX3A=",

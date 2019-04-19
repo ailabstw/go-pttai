@@ -23,21 +23,43 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 )
 
-type WebrtcAddr struct {
-	net  string
+type webrtcAddr struct {
 	addr string
 }
 
-func (addr *WebrtcAddr) Network() string {
-	return addr.net
+func (addr *webrtcAddr) Network() string {
+	return "webrtc"
 }
 
-func (addr *WebrtcAddr) String() string {
+func (addr *webrtcAddr) String() string {
 	return addr.addr
 }
 
 type WebrtcConn struct {
-	info *WebrtcInfo
+	info       *webrtcInfo
+	localAddr  *webrtcAddr
+	remoteAddr *webrtcAddr
+}
+
+func NewWebrtcConn(info *webrtcInfo) (*WebrtcConn, error) {
+
+	localAddr, err := parseWebrtcAddr(info.PeerConn.CurrentLocalDescription())
+	if err != nil {
+		return nil, err
+	}
+
+	remoteAddr, err := parseWebrtcAddr(info.PeerConn.CurrentRemoteDescription())
+	if err != nil {
+		return nil, err
+	}
+
+	conn := &WebrtcConn{
+		info:       info,
+		localAddr:  localAddr,
+		remoteAddr: remoteAddr,
+	}
+
+	return conn, nil
 }
 
 func (w *WebrtcConn) Read(b []byte) (int, error) {
@@ -54,11 +76,11 @@ func (w *WebrtcConn) Close() error {
 }
 
 func (w *WebrtcConn) LocalAddr() net.Addr {
-	return &WebrtcAddr{}
+	return w.localAddr
 }
 
 func (w *WebrtcConn) RemoteAddr() net.Addr {
-	return &WebrtcAddr{}
+	return w.remoteAddr
 }
 
 /*

@@ -324,7 +324,9 @@ func (t *dialTask) Do(srv *Server) {
 // discovery network with useless queries for nodes that don't exist.
 // The backoff delay resets when the node is found.
 func (t *dialTask) resolve(srv *Server) bool {
-	return true
+	if t.dest.IsWebrtc {
+		return true
+	}
 
 	isResolved := false
 	if t.dest.IsP2P {
@@ -397,7 +399,21 @@ type dialError struct {
 
 // dial performs the actual connection attempt.
 func (t *dialTask) dial(srv *Server, dest *discover.Node) error {
-	return t.dialWebrtc(srv, dest)
+	if dest.IsWebrtc {
+		return t.dialWebrtc(srv, dest)
+	}
+
+	if dest.IsP2P {
+		return t.dialP2P(srv, dest)
+	}
+
+	fd, err := srv.Dialer.Dial(dest)
+	if err != nil {
+		return &dialError{err}
+	}
+
+	mfd := newMeteredConn(fd, false)
+	return srv.SetupConn(mfd, t.flags, dest)
 }
 
 func (t *dialTask) dialP2P(srv *Server, dest *discover.Node) error {

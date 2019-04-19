@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	signalserver "github.com/ailabstw/pttai-signal-server"
@@ -46,7 +45,7 @@ type offerConnInfo struct {
 	OfferChan chan *WebrtcConn
 }
 
-type WebrtcInfo struct {
+type webrtcInfo struct {
 	NodeID discover.NodeID
 
 	isClosed int32
@@ -55,7 +54,7 @@ type WebrtcInfo struct {
 	DataConn datachannel.ReadWriteCloser
 }
 
-func (info *WebrtcInfo) Close() {
+func (info *webrtcInfo) Close() {
 	isSwapped := atomic.CompareAndSwapInt32(&info.isClosed, 0, 1)
 	if !isSwapped {
 		return
@@ -199,67 +198,67 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcConn, error) {
 	return conn, nil
 }
 
-func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (peerConnection *webrtc.PeerConnection, err error) {
+func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (peerConn *webrtc.PeerConnection, err error) {
 
-	peerConnection, err = w.api.NewPeerConnection(w.config)
+	peerConn, err = w.api.NewPeerConnection(w.config)
 	if err != nil {
 		return nil, err
 	}
 
-	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+	peerConn.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		log.Info("CreateConn: ICE Connection State has changed", "nodeID", nodeID, "state", connectionState)
 	})
 
 	var offer webrtc.SessionDescription
-	offer, err = peerConnection.CreateOffer(nil)
+	offer, err = peerConn.CreateOffer(nil)
 	if err != nil {
-		peerConnection.Close()
+		peerConn.Close()
 		return nil, err
 	}
 
 	var offerID string
-	offerID, err = w.parseOfferID(offer)
+	offerID, err = parseOfferID(&offer)
 	if err != nil {
-		peerConnection.Close()
+		peerConn.Close()
 		return nil, err
 	}
 	defer func() {
 		if err != nil {
-			peerConnection.Close()
+			peerConn.Close()
 		}
 	}()
 
 	info := &offerConnInfo{
-		PeerConn:  peerConnection,
+		PeerConn:  peerConn,
 		offerID:   offerID,
 		OfferChan: offerChan,
 	}
 
 	err = w.addToOfferConnMap(nodeID, info)
 	if err != nil {
-		peerConnection.Close()
+		peerConn.Close()
 		return nil, err
 	}
 	defer func() {
 		if err != nil {
-			w.removeFromOfferConnMap(nodeID, peerConnection)
+			w.removeFromOfferConnMap(nodeID, peerConn)
 		}
 	}()
 
-	err = peerConnection.SetLocalDescription(offer)
+	err = peerConn.SetLocalDescription(offer)
 	if err != nil {
 		return nil, err
 	}
 
 	//
-	marshaled, err := json.Marshal(offer)
+	marshalled, err := json.Marshal(offer)
 	if err != nil {
 		return nil, err
 	}
 
 	sig := &writeSignal{
 		ToID: nodeID,
-		Msg:  marshaled,
+		Msg:  marshalled,
 	}
 
 	err = w.tryPassWriteChan(sig)
@@ -267,7 +266,7 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (
 		return nil, err
 	}
 
-	return peerConnection, nil
+	return peerConn, nil
 }
 
 /*
@@ -275,7 +274,7 @@ receiveOffer receives offer from fromID and we need to create the corresponding 
 */
 func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescription) error {
 
-	offerID, err := w.parseOfferID(offer)
+	offerID, err := parseOfferID(&offer)
 	if err != nil {
 		return err
 	}
@@ -369,37 +368,6 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	}
 
 	return nil
-}
-
-func dataChannelToWebrtcConn(
-	dataChannel *webrtc.DataChannel,
-	fromID discv5.NodeID,
-	peerConn *webrtc.PeerConnection,
-) (*WebrtcConn, error) {
-
-	dataConn, err := dataChannel.Detach()
-	if err != nil {
-		return nil, err
-	}
-
-	// XXX we may need the unified nodeID type.
-	var nodeID discover.NodeID
-	copy(nodeID[:], fromID[:])
-
-	info := &WebrtcInfo{
-		NodeID: nodeID,
-
-		PeerConn: peerConn,
-		DataConn: dataConn,
-	}
-
-	conn := &WebrtcConn{info: info}
-
-	return conn, nil
-}
-
-func (w *Webrtc) parseOfferID(offer webrtc.SessionDescription) (string, error) {
-	return "", types.ErrNotImplemented
 }
 
 func (w *Webrtc) addToOfferConnMap(nodeID discv5.NodeID, info *offerConnInfo) error {

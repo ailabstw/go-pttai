@@ -27,7 +27,7 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/me"
 	pkgservice "github.com/ailabstw/go-pttai/service"
-	"github.com/ethereum/go-etherum/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	baloo "gopkg.in/h2non/baloo.v3"
 )

@@ -29,6 +29,8 @@ const (
 	TimeoutSecondConnectP2P = 5
 	TimeoutSecondResolveP2P = 10
 
+	TimeoutSecondConnectWebrtc = 30
+
 	PTTAI_STREAM_PATH = "/pttai/0.2.0"
 )
 

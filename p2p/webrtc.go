@@ -17,11 +17,13 @@
 package p2p
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"encoding/json"
 	"net/url"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
@@ -39,8 +41,9 @@ type writeSignal struct {
 }
 
 type writeInfo struct {
-	PeerConn *webrtc.PeerConnection
-	offerID  string
+	PeerConn  *webrtc.PeerConnection
+	offerID   string
+	OfferChan chan *WebrtcInfo
 }
 
 type WebrtcInfo struct {
@@ -63,6 +66,8 @@ func (info *WebrtcInfo) Close() {
 }
 
 type Webrtc struct {
+	isClosed int32
+
 	client *signalserver.Client
 
 	writeChan chan *writeSignal
@@ -74,10 +79,15 @@ type Webrtc struct {
 	writeMapLock sync.RWMutex
 	writeMap     map[discv5.NodeID]*writeInfo
 
-	handleChannel func(info *WebrtcInfo)
+	handleAnswerChannel func(info *WebrtcInfo)
 }
 
-func NewWebrtc(nodeID discover.NodeID, privKey *ecdsa.PrivateKey, url url.URL) (*Webrtc, error) {
+func NewWebrtc(
+	nodeID discover.NodeID,
+	privKey *ecdsa.PrivateKey,
+	url url.URL,
+	h func(info *WebrtcInfo),
+) (*Webrtc, error) {
 
 	// XXX we may need the unified nodeID type.
 	var tmpNodeID discv5.NodeID
@@ -102,10 +112,17 @@ func NewWebrtc(nodeID discover.NodeID, privKey *ecdsa.PrivateKey, url url.URL) (
 	}
 
 	w := &Webrtc{
-		client:   client,
-		config:   config,
-		api:      api,
-		quitChan: make(chan struct{}),
+		client: client,
+
+		writeChan: make(chan *writeSignal),
+		quitChan:  make(chan struct{}),
+
+		config: config,
+		api:    api,
+
+		writeMap: make(map[discv5.NodeID]*writeInfo),
+
+		handleAnswerChannel: h,
 	}
 
 	go w.ReadLoop()
@@ -115,13 +132,24 @@ func NewWebrtc(nodeID discover.NodeID, privKey *ecdsa.PrivateKey, url url.URL) (
 	return w, nil
 }
 
-func (w *Webrtc) SetChannelHandler(h func(info *WebrtcInfo)) {
-	w.handleChannel = h
-}
-
 func (w *Webrtc) Close() error {
+	isSwapped := atomic.CompareAndSwapInt32(&w.isClosed, 0, 1)
+	if !isSwapped {
+		return nil
+	}
+
 	close(w.quitChan)
+
 	w.client.Close()
+
+	w.writeMapLock.Lock()
+	defer w.writeMapLock.Unlock()
+
+	for _, info := range w.writeMap {
+		info.PeerConn.Close()
+	}
+
+	w.writeMap = make(map[discv5.NodeID]*writeInfo)
 
 	return nil
 }
@@ -132,67 +160,110 @@ CreateOffer actively create a new offer for nodeID.
 2. create data-channel.
 3. provide offer
 */
-func (w *Webrtc) CreateOffer(nodeID discover.NodeID) error {
 
+func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
 	// XXX we may need the unified nodeID type.
 	var tmpNodeID discv5.NodeID
 	copy(tmpNodeID[:], nodeID[:])
 
-	peerConnection, err := w.api.NewPeerConnection(w.config)
+	offerChan := make(chan *WebrtcInfo)
+
+	peerConn, err := w.createOffer(tmpNodeID, offerChan)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	tctx, cancel := context.WithTimeout(context.Background(), TimeoutSecondConnectWebrtc*time.Second)
+	defer cancel()
+
+	var info *WebrtcInfo
+	select {
+	case tmp, ok := <-offerChan:
+		if ok {
+			info = tmp
+		}
+	case <-w.quitChan:
+	case <-tctx.Done():
+	}
+
+	if info == nil {
+		w.removeFromWriteMap(tmpNodeID, peerConn)
+		peerConn.Close()
+		return nil, ErrInvalidWebrtcOffer
+	}
+
+	return info, nil
+}
+
+func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcInfo) (peerConnection *webrtc.PeerConnection, err error) {
+
+	peerConnection, err = w.api.NewPeerConnection(w.config)
+	if err != nil {
+		return nil, err
 	}
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		log.Info("CreateConn: ICE Connection State has changed", "nodeID", nodeID, "state", connectionState)
 	})
 
-	offer, err := peerConnection.CreateOffer(nil)
+	var offer webrtc.SessionDescription
+	offer, err = peerConnection.CreateOffer(nil)
 	if err != nil {
 		peerConnection.Close()
-		return err
+		return nil, err
 	}
 
-	offerID, err := w.parseOfferID(offer)
+	var offerID string
+	offerID, err = w.parseOfferID(offer)
 	if err != nil {
 		peerConnection.Close()
-		return err
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			peerConnection.Close()
+		}
+	}()
+
+	info := &writeInfo{
+		PeerConn:  peerConnection,
+		offerID:   offerID,
+		OfferChan: offerChan,
 	}
 
-	err = w.addWriteMap(tmpNodeID, peerConnection, offerID)
+	err = w.addWriteMap(nodeID, info)
 	if err != nil {
 		peerConnection.Close()
-		return err
+		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			w.removeFromWriteMap(nodeID, peerConnection)
+		}
+	}()
 
 	err = peerConnection.SetLocalDescription(offer)
 	if err != nil {
-		w.removeFromWriteMap(tmpNodeID, peerConnection, offerID)
-		peerConnection.Close()
-		return err
+		return nil, err
 	}
 
 	//
 	marshaled, err := json.Marshal(offer)
 	if err != nil {
-		w.removeFromWriteMap(tmpNodeID, peerConnection, offerID)
-		peerConnection.Close()
-		return err
+		return nil, err
 	}
 
 	sig := &writeSignal{
-		ToID: tmpNodeID,
+		ToID: nodeID,
 		Msg:  marshaled,
 	}
 
 	err = w.tryPassWriteChan(sig)
 	if err != nil {
-		w.removeFromWriteMap(tmpNodeID, peerConnection, offerID)
-		peerConnection.Close()
-		return err
+		return nil, err
 	}
 
-	return nil
+	return peerConnection, nil
 }
 
 func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescription) error {
@@ -213,23 +284,32 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 	peerConn.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			w.onConnect(d, fromID, peerConn)
+			info, err := dataChannelToWebrtcInfo(d, fromID, peerConn)
+			if err != nil {
+				return
+
+			}
+
+			w.handleAnswerChannel(info)
 		})
 	})
 
 	err = peerConn.SetRemoteDescription(offer)
 	if err != nil {
+		peerConn.Close()
 		return err
 	}
 
 	answer, err := peerConn.CreateAnswer(nil)
 	if err != nil {
+		peerConn.Close()
 		return err
 	}
 
 	// try pass write chan
 	marshalled, err := json.Marshal(answer)
 	if err != nil {
+		peerConn.Close()
 		return err
 	}
 
@@ -241,6 +321,7 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 	err = w.tryPassWriteChan(sig)
 	if err != nil {
+		peerConn.Close()
 		return err
 	}
 
@@ -263,7 +344,15 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	}
 
 	dataChannel.OnOpen(func() {
-		w.onConnect(dataChannel, fromID, peerConn)
+		info, err := dataChannelToWebrtcInfo(dataChannel, fromID, peerConn)
+		if err != nil {
+			return
+		}
+
+		select {
+		case writeInfo.OfferChan <- info:
+		case <-w.quitChan:
+		}
 	})
 
 	err = peerConn.SetRemoteDescription(answer)
@@ -275,11 +364,15 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	return nil
 }
 
-func (w *Webrtc) onConnect(dataChannel *webrtc.DataChannel, fromID discv5.NodeID, peerConn *webrtc.PeerConnection) {
+func dataChannelToWebrtcInfo(
+	dataChannel *webrtc.DataChannel,
+	fromID discv5.NodeID,
+	peerConn *webrtc.PeerConnection,
+) (*WebrtcInfo, error) {
 
 	dataConn, err := dataChannel.Detach()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// XXX we may need the unified nodeID type.
@@ -293,27 +386,57 @@ func (w *Webrtc) onConnect(dataChannel *webrtc.DataChannel, fromID discv5.NodeID
 		DataConn: dataConn,
 	}
 
-	w.handleChannel(info)
+	return info, nil
 }
 
 func (w *Webrtc) parseOfferID(offer webrtc.SessionDescription) (string, error) {
 	return "", types.ErrNotImplemented
 }
 
-func (w *Webrtc) addWriteMap(nodeID discv5.NodeID, peerConn *webrtc.PeerConnection, offerID string) error {
-	return types.ErrNotImplemented
+func (w *Webrtc) addWriteMap(nodeID discv5.NodeID, info *writeInfo) error {
+
+	w.writeMapLock.Lock()
+	defer w.writeMapLock.Unlock()
+
+	if writeInfo, ok := w.writeMap[nodeID]; ok {
+		writeInfo.PeerConn.Close()
+	}
+
+	w.writeMap[nodeID] = info
+
+	return nil
 }
 
-func (w *Webrtc) removeFromWriteMap(nodeID discv5.NodeID, peerConn *webrtc.PeerConnection, offerID string) error {
-	return types.ErrNotImplemented
+func (w *Webrtc) removeFromWriteMap(nodeID discv5.NodeID, peerConn *webrtc.PeerConnection) error {
+	w.writeMapLock.Lock()
+	defer w.writeMapLock.Unlock()
+
+	if writeInfo, ok := w.writeMap[nodeID]; ok && writeInfo.PeerConn == peerConn {
+		delete(w.writeMap, nodeID)
+	}
+
+	return nil
 }
 
 func (w *Webrtc) tryGetWriteInfo(fromID discv5.NodeID, offerID string) (*writeInfo, error) {
-	return nil, types.ErrNotImplemented
+	w.writeMapLock.Lock()
+	defer w.writeMapLock.Unlock()
+
+	if writeInfo, ok := w.writeMap[fromID]; ok {
+		delete(w.writeMap, fromID)
+
+		return writeInfo, nil
+	}
+
+	return nil, ErrInvalidWebrtcOffer
 }
 
 func (w *Webrtc) tryPassWriteChan(sig *writeSignal) error {
-	w.writeChan <- sig
+	select {
+	case w.writeChan <- sig:
+	case <-w.quitChan:
+		return ErrInvalidWebrtc
+	}
 
 	return nil
 }
@@ -327,9 +450,13 @@ func (w *Webrtc) ReadLoop() error {
 
 		err = w.processSignal(sig)
 		if err != nil {
-			return err
+			log.Warn("ReadLoop: unable to processSignal", "e", err, "sig", sig)
 		}
 	}
+
+	w.Close()
+
+	return nil
 }
 
 func (w *Webrtc) WriteLoop() error {
@@ -348,6 +475,8 @@ looping:
 			break looping
 		}
 	}
+
+	w.Close()
 
 	return nil
 }

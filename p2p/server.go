@@ -27,6 +27,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ailabstw/go-pttai/p2p/webrtc"
+
 	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
@@ -198,7 +200,7 @@ type Server struct {
 	// webrtc
 
 	webrtcServerLock sync.RWMutex
-	webrtcServer     *Webrtc
+	webrtcServer     *webrtc.Webrtc
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -536,7 +538,7 @@ func (srv *Server) InitWebrtc(isLocked bool) error {
 
 	nodeID := discover.PubkeyID(&privKey.PublicKey)
 
-	server, err := NewWebrtc(nodeID, privKey, url, srv.handleAnswerWebrtcStream)
+	server, err := webrtc.NewWebrtc(nodeID, privKey, url, srv.handleWebrtcStream)
 	if err != nil {
 		return err
 	}
@@ -546,7 +548,7 @@ func (srv *Server) InitWebrtc(isLocked bool) error {
 	return nil
 }
 
-func (srv *Server) resetWebrtc(webrtcServer *Webrtc) error {
+func (srv *Server) resetWebrtc(webrtcServer *webrtc.Webrtc) error {
 
 	srv.webrtcServerLock.Lock()
 	defer srv.webrtcServerLock.Unlock()
@@ -559,37 +561,34 @@ func (srv *Server) resetWebrtc(webrtcServer *Webrtc) error {
 	return srv.InitWebrtc(true)
 }
 
-func (srv *Server) getWebrtcServer() *Webrtc {
+func (srv *Server) getWebrtcServer() *webrtc.Webrtc {
 	srv.webrtcServerLock.RLock()
 	defer srv.webrtcServerLock.RUnlock()
 
 	return srv.webrtcServer
 }
 
-func (srv *Server) DialWebrtc(node *discover.Node) (*WebrtcConn, error) {
+func (srv *Server) DialWebrtc(node *discover.Node) (*webrtc.WebrtcConn, error) {
 
 	// XXX we may need to include tctx in CreateOffer
 	webrtcServer := srv.getWebrtcServer()
 
 	if webrtcServer == nil {
-		return nil, ErrInvalidWebrtc
+		return nil, webrtc.ErrInvalidWebrtc
 	}
 
-	info, err := webrtcServer.CreateOffer(node.ID)
+	conn, err := webrtcServer.CreateOffer(node.ID)
 	if err != nil {
-		if err != ErrInvalidWebrtcOffer {
+		if err != webrtc.ErrInvalidWebrtcOffer {
 			srv.resetWebrtc(webrtcServer)
 		}
 		return nil, err
 	}
 
-	conn := &WebrtcConn{info: info}
-
 	return conn, nil
 }
 
-func (srv *Server) handleAnswerWebrtcStream(info *WebrtcInfo) {
-	conn := &WebrtcConn{info: info}
+func (srv *Server) handleWebrtcStream(conn *webrtc.WebrtcConn) {
 
 	mfd := newMeteredConn(conn, true)
 

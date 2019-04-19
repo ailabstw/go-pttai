@@ -22,7 +22,4 @@ var (
 	ErrNoP2PBootnodes = errors.New("no p2p bootnodes")
 	ErrInvalidP2P     = errors.New("invalid p2p")
 	ErrPeerShutdown   = errors.New("peer shutting down")
-
-	ErrInvalidWebrtc      = errors.New("invalid webrtc")
-	ErrInvalidWebrtcOffer = errors.New("invalid webrtc offer")
 )

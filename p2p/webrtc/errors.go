@@ -14,18 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package {{cookiecutter.pkg_name}}
+package webrtc
 
-import "testing"
-
-const (
-)
+import "errors"
 
 var (
+	ErrInvalidWebrtc      = errors.New("invalid webrtc")
+	ErrInvalidWebrtcOffer = errors.New("invalid webrtc offer")
 )
-
-func setupTest(t *testing.T) {
-}
-
-func teardownTest(t *testing.T) {
-}

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-pttai library. If not, see <http://www.gnu.org/licenses/>.
 
-package p2p
+package webrtc
 
 import (
 	"context"
@@ -43,7 +43,7 @@ type writeSignal struct {
 type offerConnInfo struct {
 	PeerConn  *webrtc.PeerConnection
 	offerID   string
-	OfferChan chan *WebrtcInfo
+	OfferChan chan *WebrtcConn
 }
 
 type WebrtcInfo struct {
@@ -79,14 +79,14 @@ type Webrtc struct {
 	offerConnMapLock sync.RWMutex
 	offerConnMap     map[discv5.NodeID]*offerConnInfo
 
-	handleAnswerChannel func(info *WebrtcInfo)
+	handleAnswerChannel func(conn *WebrtcConn)
 }
 
 func NewWebrtc(
 	nodeID discover.NodeID,
 	privKey *ecdsa.PrivateKey,
 	url url.URL,
-	h func(info *WebrtcInfo),
+	h func(conn *WebrtcConn),
 ) (*Webrtc, error) {
 
 	// XXX we may need the unified nodeID type.
@@ -161,7 +161,7 @@ CreateOffer actively create a new offer for nodeID.
 3. provide offer
 */
 
-func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
+func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcConn, error) {
 	if w.isClosed != 0 {
 		return nil, ErrInvalidWebrtc
 	}
@@ -170,7 +170,7 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
 	var tmpNodeID discv5.NodeID
 	copy(tmpNodeID[:], nodeID[:])
 
-	offerChan := make(chan *WebrtcInfo)
+	offerChan := make(chan *WebrtcConn)
 
 	peerConn, err := w.createOffer(tmpNodeID, offerChan)
 	if err != nil {
@@ -180,26 +180,26 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcInfo, error) {
 	tctx, cancel := context.WithTimeout(context.Background(), TimeoutSecondConnectWebrtc*time.Second)
 	defer cancel()
 
-	var info *WebrtcInfo
+	var conn *WebrtcConn
 	select {
 	case tmp, ok := <-offerChan:
 		if ok {
-			info = tmp
+			conn = tmp
 		}
 	case <-w.quitChan:
 	case <-tctx.Done():
 	}
 
-	if info == nil {
+	if conn == nil {
 		w.removeFromOfferConnMap(tmpNodeID, peerConn)
 		peerConn.Close()
 		return nil, ErrInvalidWebrtcOffer
 	}
 
-	return info, nil
+	return conn, nil
 }
 
-func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcInfo) (peerConnection *webrtc.PeerConnection, err error) {
+func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (peerConnection *webrtc.PeerConnection, err error) {
 
 	peerConnection, err = w.api.NewPeerConnection(w.config)
 	if err != nil {
@@ -291,13 +291,13 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 	peerConn.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			info, err := dataChannelToWebrtcInfo(d, fromID, peerConn)
+			conn, err := dataChannelToWebrtcConn(d, fromID, peerConn)
 			if err != nil {
 				return
 
 			}
 
-			w.handleAnswerChannel(info)
+			w.handleAnswerChannel(conn)
 		})
 	})
 
@@ -351,13 +351,13 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	}
 
 	dataChannel.OnOpen(func() {
-		info, err := dataChannelToWebrtcInfo(dataChannel, fromID, peerConn)
+		conn, err := dataChannelToWebrtcConn(dataChannel, fromID, peerConn)
 		if err != nil {
 			return
 		}
 
 		select {
-		case offerInfo.OfferChan <- info:
+		case offerInfo.OfferChan <- conn:
 		case <-w.quitChan:
 		}
 	})
@@ -371,11 +371,11 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	return nil
 }
 
-func dataChannelToWebrtcInfo(
+func dataChannelToWebrtcConn(
 	dataChannel *webrtc.DataChannel,
 	fromID discv5.NodeID,
 	peerConn *webrtc.PeerConnection,
-) (*WebrtcInfo, error) {
+) (*WebrtcConn, error) {
 
 	dataConn, err := dataChannel.Detach()
 	if err != nil {
@@ -393,7 +393,9 @@ func dataChannelToWebrtcInfo(
 		DataConn: dataConn,
 	}
 
-	return info, nil
+	conn := &WebrtcConn{info: info}
+
+	return conn, nil
 }
 
 func (w *Webrtc) parseOfferID(offer webrtc.SessionDescription) (string, error) {

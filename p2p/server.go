@@ -528,6 +528,10 @@ func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
 }
 
 func (srv *Server) InitWebrtc(isLocked bool) error {
+	if srv.Config.SignalServerURL.Host == "" {
+		return nil
+	}
+
 	if !isLocked {
 		srv.webrtcServerLock.Lock()
 		defer srv.webrtcServerLock.Unlock()

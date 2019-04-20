@@ -324,13 +324,17 @@ func setP2PBootnodes(ctx *cli.Context, cfg *p2p.Config) {
 
 func setSignalServerURL(ctx *cli.Context, cfg *p2p.Config) {
 
-	addr := params.TestSignalServerAddr
+	var addr string
 
 	switch {
 	case ctx.GlobalIsSet(WebrtcSignalServerFlag.Name):
 		addr = ctx.GlobalString(WebrtcSignalServerFlag.Name)
 	case ctx.GlobalBool(TestWebrtcFlag.Name):
 		addr = params.TestSignalServerAddr
+	}
+
+	if addr == "" {
+		return
 	}
 
 	cfg.SignalServerURL = url.URL{Scheme: "ws", Host: addr, Path: "/signal"}

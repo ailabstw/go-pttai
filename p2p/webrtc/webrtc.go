@@ -58,7 +58,7 @@ type Webrtc struct {
 	offerConnMapLock sync.RWMutex
 	offerConnMap     map[discv5.NodeID]*offerConnInfo
 
-	handleAnswerChannel func(conn *WebrtcConn)
+	handleChannel func(conn *WebrtcConn)
 
 	nodeID discv5.NodeID
 }
@@ -74,7 +74,9 @@ func NewWebrtc(
 	var tmpNodeID discv5.NodeID
 	copy(tmpNodeID[:], nodeID[:])
 
+	log.Debug("NewWebrtc: to NewClient", "nodeID", nodeID, "url", url)
 	client, err := signalserver.NewClient(tmpNodeID, privKey, url)
+	log.Debug("NewWebrtc: after NewClient", "e", err, "nodeID", nodeID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +105,7 @@ func NewWebrtc(
 
 		offerConnMap: make(map[discv5.NodeID]*offerConnInfo),
 
-		handleAnswerChannel: h,
+		handleChannel: h,
 
 		nodeID: tmpNodeID,
 	}
@@ -121,6 +123,8 @@ func (w *Webrtc) Close() error {
 		return nil
 	}
 
+	log.Debug("Webrtc.Close: start")
+
 	close(w.quitChan)
 
 	w.client.Close()
@@ -133,6 +137,8 @@ func (w *Webrtc) Close() error {
 	}
 
 	w.offerConnMap = make(map[discv5.NodeID]*offerConnInfo)
+
+	log.Debug("Webrtc.Close: done")
 
 	return nil
 }
@@ -149,6 +155,7 @@ func (w *Webrtc) CreateOffer(nodeID discover.NodeID) (*WebrtcConn, error) {
 		return nil, ErrInvalidWebrtc
 	}
 
+	log.Debug("CreateOffer: start", "me", w.nodeID, "nodeID", nodeID)
 	// XXX we may need the unified nodeID type.
 	var tmpNodeID discv5.NodeID
 	copy(tmpNodeID[:], nodeID[:])
@@ -283,7 +290,7 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 
 			}
 
-			w.handleAnswerChannel(conn)
+			w.handleChannel(conn)
 		})
 	})
 
@@ -294,6 +301,12 @@ func (w *Webrtc) receiveOffer(fromID discv5.NodeID, offer webrtc.SessionDescript
 	}
 
 	answer, err := peerConn.CreateAnswer(nil)
+	if err != nil {
+		peerConn.Close()
+		return err
+	}
+
+	err = peerConn.SetLocalDescription(answer)
 	if err != nil {
 		peerConn.Close()
 		return err

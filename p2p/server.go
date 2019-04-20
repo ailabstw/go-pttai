@@ -538,7 +538,10 @@ func (srv *Server) InitWebrtc(isLocked bool) error {
 
 	nodeID := discover.PubkeyID(&privKey.PublicKey)
 
+	log.Debug("InitWebrtc: to NewWebrtc", "nodeID", nodeID)
+
 	server, err := webrtc.NewWebrtc(nodeID, privKey, url, srv.handleWebrtcStream)
+	log.Debug("InitWebrtc: after NewWebrtc", "e", err, "nodeID", nodeID)
 	if err != nil {
 		return err
 	}
@@ -592,6 +595,7 @@ func (srv *Server) handleWebrtcStream(conn *webrtc.WebrtcConn) {
 
 	mfd := newMeteredConn(conn, true)
 
+	log.Debug("handleWebrtcStream: to SetupConn", "remoteAddr", conn.RemoteAddr())
 	srv.SetupConn(mfd, inboundConn|webrtcConn, nil)
 }
 
@@ -1164,6 +1168,8 @@ func (srv *Server) SetupConn(fd net.Conn, flags connFlag, dialDest *discover.Nod
 		return errors.New("shutdown")
 	}
 
+	log.Debug("SetupConn: start", "fd", fd, "flags", flags, "dest", dialDest)
+
 	var addrs []ma.Multiaddr
 	if dialDest != nil && dialDest.PeerInfo != nil {
 		addrs = dialDest.PeerInfo.Addrs
@@ -1186,9 +1192,22 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 	if !running {
 		return errServerStopped
 	}
+
+	// helo
+	n, err := c.fd.Write([]byte("helo"))
+	log.Debug("setupConn: (helo): after Write", "n", n, "e", err)
+	if err != nil {
+		return err
+	}
+
+	b := make([]byte, 10)
+	n, err = c.fd.Read(b)
+	log.Debug("setupConn: (helo): after Read", "n", n, "e", err, "b", b)
+
 	// Run the encryption handshake.
-	var err error
+	log.Debug("setupConn: to doEncHandshake", "c", c, "flags", flags, "dest", dialDest)
 	if c.id, err = c.doEncHandshake(srv.PrivateKey, dialDest); err != nil {
+		log.Error("setupConn: unable to doEncHandshake", "e", err, "c", c, "flags", flags, "dest", dialDest)
 		srv.log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
 		return err
 	}

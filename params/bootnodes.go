@@ -43,4 +43,4 @@ var DevP2PBootnodes = []string{
 }
 
 var MainSignalServerURL = ""
-var TestSignalServerAddr = "testnet-signal.ptt.ai:8080"
+var TestSignalServerAddr = "testnet-signal.ptt.ai:9488"

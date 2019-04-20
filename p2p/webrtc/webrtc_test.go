@@ -20,9 +20,11 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	signalserver "github.com/ailabstw/pttai-signal-server"
 
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gorilla/mux"
@@ -31,7 +33,18 @@ import (
 
 func handleWebrtcWithTest(t *testing.T) func(conn *WebrtcConn) {
 	return func(conn *WebrtcConn) {
-		t.Logf("handleWebrtc: start: conn: %v", conn)
+		t.Logf("handleWebrtcWithTest: start: conn: %v", conn)
+		b := make([]byte, 10)
+		n, err := conn.Read(b)
+		t.Logf("handleWebrtcWithTest: after Read: n: %v e: %v b: %v", n, err, b)
+		assert.NoError(t, err)
+		assert.Equal(t, 4, n)
+		assert.Equal(t, []byte("test"), b[:n])
+
+		n, err = conn.Write([]byte("test2"))
+		t.Logf("handleWebrtcWithTest: after Write: n: %v e: %v", n, err)
+		assert.NoError(t, err)
+		assert.Equal(t, 5, n)
 	}
 }
 
@@ -67,14 +80,34 @@ func TestWebrtc(t *testing.T) {
 	}
 	nodeID2 := discover.PubkeyID(&key2.PublicKey)
 
-	c1, err := NewWebrtc(nodeID1, key1, url, handle)
+	w1, err := NewWebrtc(nodeID1, key1, url, handle)
 	t.Logf("TestClientSendReceive: after c1: e: %v", err)
 	assert.NoError(t, err)
 
-	_, err = NewWebrtc(nodeID2, key2, url, handle)
-	t.Logf("TestClientSendReceive: after c2: e: %v", err)
+	go func() {
+		_, err = NewWebrtc(nodeID2, key2, url, handle)
+		t.Logf("TestClientSendReceive: after c2: e: %v", err)
+		assert.NoError(t, err)
+
+		select {}
+	}()
+
+	conn1, err := w1.CreateOffer(nodeID2)
 	assert.NoError(t, err)
 
-	_, err = c1.CreateOffer(nodeID2)
+	time.Sleep(1 * time.Second)
+
+	n, err := conn1.Write([]byte("test"))
 	assert.NoError(t, err)
+	assert.Equal(t, 4, n)
+
+	b := make([]byte, 10)
+	n, err = conn1.Read(b)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, n)
+	assert.Equal(t, []byte("test2"), b[:n])
+
+	time.Sleep(1 * time.Second)
+
+	log.Debug("after Sleep")
 }

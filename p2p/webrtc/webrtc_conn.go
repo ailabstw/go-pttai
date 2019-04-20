@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/discv5"
 
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/pion/datachannel"
 	"github.com/pion/webrtc"
@@ -41,12 +42,13 @@ func (addr *webrtcAddr) String() string {
 }
 
 type webrtcInfo struct {
+	datachannel.ReadWriteCloser
+
 	NodeID discover.NodeID
 
 	isClosed int32
 
 	PeerConn *webrtc.PeerConnection
-	DataConn datachannel.ReadWriteCloser
 }
 
 func (info *webrtcInfo) Close() {
@@ -55,7 +57,7 @@ func (info *webrtcInfo) Close() {
 		return
 	}
 
-	info.DataConn.Close()
+	info.ReadWriteCloser.Close()
 	info.PeerConn.Close()
 }
 
@@ -67,9 +69,9 @@ type WebrtcConn struct {
 
 func NewWebrtcConn(nodeID discv5.NodeID, fromID discv5.NodeID, info *webrtcInfo) (*WebrtcConn, error) {
 
-	localAddr := parseWebrtcAddr(nodeID)
+	localAddr := parseWebrtcAddr(nodeID, info)
 
-	remoteAddr := parseWebrtcAddr(fromID)
+	remoteAddr := parseWebrtcAddr(fromID, info)
 
 	conn := &WebrtcConn{
 		info:       info,
@@ -81,11 +83,19 @@ func NewWebrtcConn(nodeID discv5.NodeID, fromID discv5.NodeID, info *webrtcInfo)
 }
 
 func (w *WebrtcConn) Read(b []byte) (int, error) {
-	return w.info.DataConn.Read(b)
+	log.Debug("Read: to read", "peerConn", w.info.PeerConn, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
+	n, err := w.info.ReadWriteCloser.Read(b)
+	log.Debug("Read: after Read", "n", n, "e", err, "b", b, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
+
+	return n, err
 }
 
 func (w *WebrtcConn) Write(b []byte) (int, error) {
-	return w.info.DataConn.Write(b)
+	log.Debug("Write: to write", "peerConn", w.info.PeerConn, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
+	n, err := w.info.ReadWriteCloser.Write(b)
+	log.Debug("Write: after write", "n", n, "e", err, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
+
+	return n, err
 }
 
 func (w *WebrtcConn) Close() error {

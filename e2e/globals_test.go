@@ -34,6 +34,8 @@ import (
 	"github.com/ailabstw/go-pttai/content"
 	"github.com/ailabstw/go-pttai/log"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	signalserver "github.com/ailabstw/pttai-signal-server"
+	"github.com/gorilla/mux"
 	baloo "gopkg.in/h2non/baloo.v3"
 )
 
@@ -137,7 +139,7 @@ func startNode(t *testing.T, idx int, offsetSecond int64, isNewLog bool) {
 		"--rpcport", rpcport,
 		"--port", port,
 		"--p2pport", p2pport,
-		"--p2pbootnodes", "pnode://16Uiu2HAm4LsKoLY282NP13bf7gXYLGrDhyc3Y9bAAwHZesm8z9ka@127.0.0.1:9489",
+		"--webrtcsignalserver", "127.0.0.1:9489",
 		"--ipcdisable",
 		"--friendmaxsync", "7",
 		"--friendminsync", "5",
@@ -177,11 +179,17 @@ func setupTest(t *testing.T) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), TimeoutSeconds)
 
-	tBootnode = exec.CommandContext(ctx, "../build/bin/p2pbootnode", "--nodekeyhex", "03f509202abd40be562951247c7fe05294bb71ccad54f4853f2d75e3bf94affd", "--addr", "/ip4/127.0.0.1/tcp/9489")
-	err := tBootnode.Start()
-	if err != nil {
-		t.Errorf("unable to start tBootnode, e: %v", err)
-	}
+	addr := "127.0.0.1:9489"
+	go func() {
+		server := signalserver.NewServer()
+
+		srv := &http.Server{Addr: addr}
+		r := mux.NewRouter()
+		r.HandleFunc("/signal", server.SignalHandler)
+		srv.Handler = r
+
+		srv.ListenAndServe()
+	}()
 
 	origHandler = log.Root().GetHandler()
 	log.Root().SetHandler(log.Must.FileHandler("./test.out/log.tmp.txt", log.TerminalFormat(true)))

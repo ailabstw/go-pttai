@@ -35,11 +35,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
 	"golang.org/x/crypto/sha3"
 )
@@ -84,11 +85,13 @@ type rlpx struct {
 }
 
 func newRLPX(fd net.Conn) transport {
+	log.Debug("newRLPX: start", "fd", fd)
 	fd.SetDeadline(time.Now().Add(handshakeTimeout))
 	return &rlpx{fd: fd}
 }
 
 func (t *rlpx) ReadMsg() (Msg, error) {
+	log.Debug("ReadMsg: start", "t.rw", t.rw, "t.fd", t.fd)
 	t.rmu.Lock()
 	defer t.rmu.Unlock()
 	t.fd.SetReadDeadline(time.Now().Add(frameReadTimeout))
@@ -178,8 +181,19 @@ func readProtocolHandshake(rw MsgReader, our *protoHandshake) (*protoHandshake, 
 func (t *rlpx) doEncHandshake(prv *ecdsa.PrivateKey, dial *discover.Node) (discover.NodeID, error) {
 	var (
 		sec secrets
-		err error
 	)
+
+	// helo
+	n, err := t.fd.Write([]byte("helo-rlpx"))
+	log.Debug("doEncHandshake: (helo): after Write", "n", n, "e", err)
+	if err != nil {
+		return discover.NodeID{}, err
+	}
+
+	b := make([]byte, 20)
+	n, err = t.fd.Read(b)
+	log.Debug("doEncHandshake: (helo): after Read", "n", n, "e", err, "b", b)
+
 	if dial == nil {
 		sec, err = receiverEncHandshake(t.fd, prv, nil)
 	} else {
@@ -486,9 +500,11 @@ type plainDecoder interface {
 
 func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r io.Reader) ([]byte, error) {
 	buf := make([]byte, plainSize)
+	log.Debug("readHandshakeMsg: start", "plainSize", plainSize)
 	if _, err := io.ReadFull(r, buf); err != nil {
 		return buf, err
 	}
+	log.Debug("readHandshakeMsg: after ReadFull", "buf", buf)
 	// Attempt decoding pre-EIP-8 "plain" format.
 	key := ecies.ImportECDSA(prv)
 	if dec, err := key.Decrypt(buf, nil, nil); err == nil {

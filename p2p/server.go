@@ -1193,18 +1193,9 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 		return errServerStopped
 	}
 
-	// helo
-	n, err := c.fd.Write([]byte("helo"))
-	log.Debug("setupConn: (helo): after Write", "n", n, "e", err)
-	if err != nil {
-		return err
-	}
-
-	b := make([]byte, 10)
-	n, err = c.fd.Read(b)
-	log.Debug("setupConn: (helo): after Read", "n", n, "e", err, "b", b)
-
 	// Run the encryption handshake.
+	var err error
+
 	log.Debug("setupConn: to doEncHandshake", "c", c, "flags", flags, "dest", dialDest)
 	if c.id, err = c.doEncHandshake(srv.PrivateKey, dialDest); err != nil {
 		log.Error("setupConn: unable to doEncHandshake", "e", err, "c", c, "flags", flags, "dest", dialDest)

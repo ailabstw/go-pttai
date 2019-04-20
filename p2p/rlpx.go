@@ -181,18 +181,10 @@ func readProtocolHandshake(rw MsgReader, our *protoHandshake) (*protoHandshake, 
 func (t *rlpx) doEncHandshake(prv *ecdsa.PrivateKey, dial *discover.Node) (discover.NodeID, error) {
 	var (
 		sec secrets
+		err error
 	)
 
 	// helo
-	n, err := t.fd.Write([]byte("helo-rlpx"))
-	log.Debug("doEncHandshake: (helo): after Write", "n", n, "e", err)
-	if err != nil {
-		return discover.NodeID{}, err
-	}
-
-	b := make([]byte, 20)
-	n, err = t.fd.Read(b)
-	log.Debug("doEncHandshake: (helo): after Read", "n", n, "e", err, "b", b)
 
 	if dial == nil {
 		sec, err = receiverEncHandshake(t.fd, prv, nil)

@@ -46,13 +46,13 @@ var (
 
 // protocol
 const (
-	_ uint = iota + 2
-	Ptt3
+	_ uint = iota + 3
+	Ptt4
 )
 
 var (
-	ProtocolVersions = [1]uint{Ptt3}
-	ProtocolName     = "ptt3"
+	ProtocolVersions = [1]uint{Ptt4}
+	ProtocolName     = "ptt4"
 	ProtocolLengths  = [1]uint64{uint64(NCodeType)}
 )
 

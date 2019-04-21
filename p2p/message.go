@@ -25,10 +25,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
 )
+
+// Msg defines the structure of a p2p message.
+//
+// Note that a Msg can only be sent once since the Payload reader is
+// consumed during sending. It is not possible to create a Msg and
+// send it any number of times. If you want to reuse an encoded
+// structure, encode the payload into a byte array and create a
+// separate Msg with a bytes.Reader as Payload for each send.
 
 // Msg defines the structure of a p2p message.
 //
@@ -94,6 +103,7 @@ func Send(w MsgWriter, msgcode uint64, data interface{}) error {
 	if err != nil {
 		return err
 	}
+	log.Debug("p2p.Send: to WriteMsg", "Code", msgcode, "size", size)
 	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(size), Payload: r})
 }
 

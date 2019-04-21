@@ -30,6 +30,8 @@ const (
 	TimeoutSecondResolveP2P = 10
 
 	PTTAI_STREAM_PATH = "/pttai/0.2.0"
+
+	SizePadSpace = 300
 )
 
 var (

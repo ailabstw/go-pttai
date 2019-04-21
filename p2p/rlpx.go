@@ -85,13 +85,15 @@ type rlpx struct {
 }
 
 func newRLPX(fd net.Conn) transport {
-	log.Debug("newRLPX: start", "fd", fd)
+	//log.Debug("newRLPX: start", "fd", fd)
 	fd.SetDeadline(time.Now().Add(handshakeTimeout))
 	return &rlpx{fd: fd}
 }
 
 func (t *rlpx) ReadMsg() (Msg, error) {
-	log.Debug("ReadMsg: start", "t.rw", t.rw, "t.fd", t.fd)
+	//log.Debug("ReadMsg: start", "t.rw", t.rw, "t.fd", t.fd)
+	//defer log.Debug("ReadMsg: done")
+
 	t.rmu.Lock()
 	defer t.rmu.Unlock()
 	t.fd.SetReadDeadline(time.Now().Add(frameReadTimeout))
@@ -99,6 +101,9 @@ func (t *rlpx) ReadMsg() (Msg, error) {
 }
 
 func (t *rlpx) WriteMsg(msg Msg) error {
+	//log.Debug("WriteMsg: start", "t.rw", t.rw, "t.fd", t.fd)
+	//defer log.Debug("WriteMsg: done")
+
 	t.wmu.Lock()
 	defer t.wmu.Unlock()
 	t.fd.SetWriteDeadline(time.Now().Add(frameWriteTimeout))
@@ -491,12 +496,18 @@ type plainDecoder interface {
 }
 
 func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r io.Reader) ([]byte, error) {
-	buf := make([]byte, plainSize)
-	log.Debug("readHandshakeMsg: start", "plainSize", plainSize)
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return buf, err
+
+	// read all the buf.
+	tmpBuf := make([]byte, plainSize+SizePadSpace)
+
+	readSize, err := r.Read(tmpBuf)
+	if err != nil {
+		return tmpBuf[:plainSize], err
 	}
-	log.Debug("readHandshakeMsg: after ReadFull", "buf", buf)
+
+	// buf
+	buf := tmpBuf[:plainSize]
+
 	// Attempt decoding pre-EIP-8 "plain" format.
 	key := ecies.ImportECDSA(prv)
 	if dec, err := key.Decrypt(buf, nil, nil); err == nil {
@@ -506,13 +517,15 @@ func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r 
 	// Could be EIP-8 format, try that.
 	prefix := buf[:2]
 	size := binary.BigEndian.Uint16(prefix)
+	log.Debug("readHandshakeMsg after get size", "readSize", readSize, "size", size)
 	if size < uint16(plainSize) {
 		return buf, fmt.Errorf("size underflow, need at least %d bytes", plainSize)
 	}
-	buf = append(buf, make([]byte, size-uint16(plainSize)+2)...)
-	if _, err := io.ReadFull(r, buf[plainSize:]); err != nil {
-		return buf, err
+	if uint16(readSize) != size+2 {
+		return buf, fmt.Errorf("readSize incorrect, readSize: %v size+2: %v", readSize, size+2)
 	}
+
+	buf = tmpBuf[:readSize]
 	dec, err := key.Decrypt(buf[2:], nil, prefix)
 	if err != nil {
 		return buf, err
@@ -606,6 +619,9 @@ func newRLPXFrameRW(conn io.ReadWriter, s secrets) *rlpxFrameRW {
 }
 
 func (rw *rlpxFrameRW) WriteMsg(msg Msg) error {
+	log.Debug("rlpxFrameRW.WriteMsg: start", "code", msg.Code, "size", msg.Size)
+	defer log.Debug("rlpxFrameRW.WriteMsg: done")
+
 	ptype, _ := rlp.EncodeToBytes(msg.Code)
 
 	// if snappy is enabled, compress message now
@@ -659,6 +675,8 @@ func (rw *rlpxFrameRW) WriteMsg(msg Msg) error {
 }
 
 func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
+	log.Debug("rlpxFrameRW.ReadMsg: start")
+
 	// read the header
 	headbuf := make([]byte, 32)
 	if _, err := io.ReadFull(rw.conn, headbuf); err != nil {
@@ -678,6 +696,7 @@ func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
 	if padding := fsize % 16; padding > 0 {
 		rsize += 16 - padding
 	}
+
 	framebuf := make([]byte, rsize)
 	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
 		return msg, err
@@ -724,6 +743,9 @@ func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
 		}
 		msg.Size, msg.Payload = uint32(size), bytes.NewReader(payload)
 	}
+
+	log.Debug("rlpxFrameRW.ReadMsg: done", "size", msg.Size, "code", msg.Code)
+
 	return msg, nil
 }
 

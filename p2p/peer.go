@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -290,6 +290,7 @@ func (p *Peer) pingLoop() {
 func (p *Peer) readLoop(errc chan<- error) {
 	for {
 		msg, err := p.rw.ReadMsg()
+		log.Debug("readLoop: after ReadMsg", "e", err, "msg", msg.Code, "size", msg.Size)
 		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
 		if err != nil {
 			log.Error("readLoop: unable to SendItems", "e", err, "peer", p)
@@ -314,11 +315,11 @@ func (p *Peer) handle(msg Msg) error {
 	//p.log.Info("handle (msg): start", "msg", msg)
 	switch {
 	case msg.Code == pingMsg:
-		p.log.Debug("handle (msg): pingMsg")
+		log.Debug("handle (msg): pingMsg")
 		msg.Discard()
 		go SendItems(p.rw, pongMsg)
 	case msg.Code == pongMsg:
-		p.log.Debug("handle (msg): pongMsg")
+		log.Debug("handle (msg): pongMsg")
 		return msg.Discard()
 	case msg.Code == discMsg:
 		var reason [1]DiscReason
@@ -334,7 +335,7 @@ func (p *Peer) handle(msg Msg) error {
 	default:
 		// it's a subprotocol message
 		proto, err := p.getProto(msg.Code)
-		//p.log.Info("handle (msg): proto", "proto", proto, "e", err)
+		log.Info("handle (msg): proto", "proto", proto, "e", err)
 		if err != nil {
 			return fmt.Errorf("msg code out of range: %v", msg.Code)
 		}

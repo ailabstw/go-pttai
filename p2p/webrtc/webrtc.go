@@ -197,6 +197,30 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			peerConn.Close()
+		}
+	}()
+
+	dataChannel, err := peerConn.CreateDataChannel("data", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	dataChannel.OnOpen(func() {
+		log.Info("createOffer: channel created", "fromID", nodeID, "peerConn", peerConn)
+
+		conn, err := dataChannelToWebrtcConn(dataChannel, w.nodeID, nodeID, peerConn)
+		if err != nil {
+			return
+		}
+
+		select {
+		case offerChan <- conn:
+		case <-w.quitChan:
+		}
+	})
 
 	peerConn.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		log.Info("createOffer: ICE Connection State has changed", "nodeID", nodeID, "state", connectionState)
@@ -205,21 +229,14 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (
 	var offer webrtc.SessionDescription
 	offer, err = peerConn.CreateOffer(nil)
 	if err != nil {
-		peerConn.Close()
 		return nil, err
 	}
 
 	var offerID string
 	offerID, err = parseOfferID(&offer)
 	if err != nil {
-		peerConn.Close()
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			peerConn.Close()
-		}
-	}()
 
 	info := &offerConnInfo{
 		PeerConn:  peerConn,
@@ -229,7 +246,6 @@ func (w *Webrtc) createOffer(nodeID discv5.NodeID, offerChan chan *WebrtcConn) (
 
 	err = w.addToOfferConnMap(nodeID, info)
 	if err != nil {
-		peerConn.Close()
 		return nil, err
 	}
 	defer func() {
@@ -342,26 +358,6 @@ func (w *Webrtc) receiveAnswer(fromID discv5.NodeID, answer webrtc.SessionDescri
 	}
 
 	peerConn := offerInfo.PeerConn
-
-	dataChannel, err := peerConn.CreateDataChannel("data", nil)
-	if err != nil {
-		peerConn.Close()
-		return err
-	}
-
-	dataChannel.OnOpen(func() {
-		log.Info("receiveAnswer: channel created", "fromID", fromID, "peerConn", peerConn)
-
-		conn, err := dataChannelToWebrtcConn(dataChannel, w.nodeID, fromID, peerConn)
-		if err != nil {
-			return
-		}
-
-		select {
-		case offerInfo.OfferChan <- conn:
-		case <-w.quitChan:
-		}
-	})
 
 	err = peerConn.SetRemoteDescription(answer)
 	if err != nil {

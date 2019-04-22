@@ -555,10 +555,11 @@ func (srv *Server) InitWebrtc(isLocked bool) error {
 	return nil
 }
 
-func (srv *Server) resetWebrtc(webrtcServer *webrtc.Webrtc) error {
-
-	srv.webrtcServerLock.Lock()
-	defer srv.webrtcServerLock.Unlock()
+func (srv *Server) resetWebrtc(webrtcServer *webrtc.Webrtc, isLocked bool) error {
+	if !isLocked {
+		srv.webrtcServerLock.Lock()
+		defer srv.webrtcServerLock.Unlock()
+	}
 
 	if srv.webrtcServer != nil {
 		srv.webrtcServer.Close()
@@ -568,17 +569,31 @@ func (srv *Server) resetWebrtc(webrtcServer *webrtc.Webrtc) error {
 	return srv.InitWebrtc(true)
 }
 
-func (srv *Server) getWebrtcServer() *webrtc.Webrtc {
-	srv.webrtcServerLock.RLock()
-	defer srv.webrtcServerLock.RUnlock()
+func (srv *Server) getWebrtcServer(isLocked bool) *webrtc.Webrtc {
+	if !isLocked {
+		srv.webrtcServerLock.RLock()
+		defer srv.webrtcServerLock.RUnlock()
+	}
 
 	return srv.webrtcServer
+}
+
+func (srv *Server) stopWebrtcServer(isLocked bool) {
+	if !isLocked {
+		srv.webrtcServerLock.Lock()
+		defer srv.webrtcServerLock.Unlock()
+	}
+
+	if srv.webrtcServer != nil {
+		srv.webrtcServer.Close()
+		srv.webrtcServer = nil
+	}
 }
 
 func (srv *Server) DialWebrtc(node *discover.Node) (*webrtc.WebrtcConn, error) {
 
 	// XXX we may need to include tctx in CreateOffer
-	webrtcServer := srv.getWebrtcServer()
+	webrtcServer := srv.getWebrtcServer(false)
 
 	if webrtcServer == nil {
 		return nil, webrtc.ErrInvalidWebrtc
@@ -587,7 +602,7 @@ func (srv *Server) DialWebrtc(node *discover.Node) (*webrtc.WebrtcConn, error) {
 	conn, err := webrtcServer.CreateOffer(node.ID)
 	if err != nil {
 		if err != webrtc.ErrInvalidWebrtcOffer {
-			srv.resetWebrtc(webrtcServer)
+			srv.resetWebrtc(webrtcServer, false)
 		}
 		return nil, err
 	}
@@ -698,6 +713,8 @@ func (srv *Server) Stop() {
 		srv.p2pcancel()
 	}
 
+	srv.stopWebrtcServer(false)
+
 	log.Debug("Stop: to loopWG.Wait")
 	srv.loopWG.Wait()
 	log.Debug("Stop: after loopWG.Wait")
@@ -743,6 +760,12 @@ func (srv *Server) Start() (err error) {
 		srv.log = log.New()
 	}
 	srv.log.Info("Starting P2P networking")
+
+	err = srv.InitWebrtc(false)
+	if err != nil {
+		log.Error("Start: unable to init webrtc", "e", err)
+		return err
+	}
 
 	// static fields
 	if srv.PrivateKey == nil {

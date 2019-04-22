@@ -173,11 +173,6 @@ func (n *Node) Start() error {
 		n.serverConfig.NodeDatabase = n.Config.NodeDB()
 	}
 	running := &p2p.Server{Config: n.serverConfig}
-	err = running.InitWebrtc(false)
-	if err != nil {
-		log.Error("Start: unable to init webrtc", "listenAddr", running.Config.P2PListenAddr, "e", err)
-		return err
-	}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration

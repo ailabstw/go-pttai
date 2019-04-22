@@ -61,7 +61,7 @@ var (
 	nilSyncArticleInfo *content.SyncArticleInfo
 	nilProfile         *account.Profile
 
-	TimeSleepRestart = 30 * time.Second
+	TimeSleepRestart = 40 * time.Second
 	TimeSleepDefault = 15 * time.Second
 
 	ServiceExpireOplog = "300"

@@ -20,6 +20,7 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
@@ -284,6 +285,7 @@ func (api *PrivateAPI) ForceRemoveNode(nodeID string) (bool, error) {
 }
 
 func (api *PrivateAPI) GetMyNodes() ([]*MyNode, error) {
+	log.Debug("GetMyNodes: start")
 	return api.GetRawMyNodes("")
 }
 
@@ -291,6 +293,7 @@ func (api *PrivateAPI) GetRawMyNodes(entityID string) ([]*MyNode, error) {
 	var err error
 	if len(entityID) == 0 {
 		entityID, err = api.b.GetMyIDStr()
+		log.Debug("GetRawMyNodes: after getEntityID", "entityID", entityID, "e", err)
 		if err != nil {
 			return nil, err
 		}

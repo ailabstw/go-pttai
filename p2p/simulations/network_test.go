@@ -97,7 +97,7 @@ func TestNetworkSimulation(t *testing.T) {
 		}
 	}
 
-	timeout := 30 * time.Second
+	timeout := 60 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

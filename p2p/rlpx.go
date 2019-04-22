@@ -473,7 +473,7 @@ func (msg *authRespV4) decodePlain(input []byte) {
 	msg.Version = 4
 }
 
-var padSpace = make([]byte, 300)
+var padSpace = make([]byte, SizePadSpace)
 
 func sealEIP8(msg interface{}, h *encHandshake) ([]byte, error) {
 	buf := new(bytes.Buffer)

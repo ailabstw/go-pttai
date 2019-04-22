@@ -35,7 +35,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
@@ -517,7 +516,7 @@ func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r 
 	// Could be EIP-8 format, try that.
 	prefix := buf[:2]
 	size := binary.BigEndian.Uint16(prefix)
-	log.Debug("readHandshakeMsg after get size", "readSize", readSize, "size", size)
+	//log.Debug("readHandshakeMsg after get size", "readSize", readSize, "size", size)
 	if size < uint16(plainSize) {
 		return buf, fmt.Errorf("size underflow, need at least %d bytes", plainSize)
 	}
@@ -619,8 +618,8 @@ func newRLPXFrameRW(conn io.ReadWriter, s secrets) *rlpxFrameRW {
 }
 
 func (rw *rlpxFrameRW) WriteMsg(msg Msg) error {
-	log.Debug("rlpxFrameRW.WriteMsg: start", "code", msg.Code, "size", msg.Size)
-	defer log.Debug("rlpxFrameRW.WriteMsg: done")
+	//log.Debug("rlpxFrameRW.WriteMsg: start", "code", msg.Code, "size", msg.Size)
+	//defer log.Debug("rlpxFrameRW.WriteMsg: done")
 
 	ptype, _ := rlp.EncodeToBytes(msg.Code)
 
@@ -675,7 +674,7 @@ func (rw *rlpxFrameRW) WriteMsg(msg Msg) error {
 }
 
 func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
-	log.Debug("rlpxFrameRW.ReadMsg: start")
+	//log.Debug("rlpxFrameRW.ReadMsg: start")
 
 	// read the header
 	headbuf := make([]byte, 32)
@@ -744,7 +743,7 @@ func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
 		msg.Size, msg.Payload = uint32(size), bytes.NewReader(payload)
 	}
 
-	log.Debug("rlpxFrameRW.ReadMsg: done", "size", msg.Size, "code", msg.Code)
+	//log.Debug("rlpxFrameRW.ReadMsg: done", "size", msg.Size, "code", msg.Code)
 
 	return msg, nil
 }

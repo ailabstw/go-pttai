@@ -42,9 +42,8 @@ import (
 const ()
 
 var (
-	ctx       context.Context    = nil
-	cancel    context.CancelFunc = nil
-	tBootnode *exec.Cmd          = nil
+	ctx    context.Context    = nil
+	cancel context.CancelFunc = nil
 
 	Ctxs    []context.Context    = nil
 	Cancels []context.CancelFunc = nil

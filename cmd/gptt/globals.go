@@ -139,7 +139,6 @@ var (
 		utils.DiscoveryV5Flag,
 		utils.NetrestrictFlag,
 
-		utils.P2PBootnodesFlag,
 		utils.P2PListenPortFlag,
 
 		utils.WebrtcSignalServerFlag,

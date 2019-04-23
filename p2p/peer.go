@@ -290,8 +290,6 @@ func (p *Peer) pingLoop() {
 func (p *Peer) readLoop(errc chan<- error) {
 	for {
 		msg, err := p.rw.ReadMsg()
-		log.Debug("readLoop: after ReadMsg", "e", err, "msg", msg.Code, "size", msg.Size)
-		// p.log.Info("readLoop: after ReadMsg", "msg", msg, "e", err)
 		if err != nil {
 			log.Error("readLoop: unable to SendItems", "e", err, "peer", p)
 			select {
@@ -312,30 +310,24 @@ func (p *Peer) readLoop(errc chan<- error) {
 }
 
 func (p *Peer) handle(msg Msg) error {
-	//p.log.Info("handle (msg): start", "msg", msg)
 	switch {
 	case msg.Code == pingMsg:
-		log.Debug("handle (msg): pingMsg")
 		msg.Discard()
 		go SendItems(p.rw, pongMsg)
 	case msg.Code == pongMsg:
-		log.Debug("handle (msg): pongMsg")
 		return msg.Discard()
 	case msg.Code == discMsg:
 		var reason [1]DiscReason
 		// This is the last message. We don't need to discard or
 		// check errors because, the connection will be closed after it.
 		rlp.Decode(msg.Payload, &reason)
-		//p.log.Info("handle (msg): discMsg", "reason", reason)
 		return reason[0]
 	case msg.Code < baseProtocolLength:
-		//p.log.Info("handle (msg): invalid msg", "baseProtocolLength", baseProtocolLength, "msg.Code", msg.Code)
 		// ignore other base protocol messages
 		return msg.Discard()
 	default:
 		// it's a subprotocol message
 		proto, err := p.getProto(msg.Code)
-		log.Info("handle (msg): proto", "proto", proto, "e", err)
 		if err != nil {
 			return fmt.Errorf("msg code out of range: %v", msg.Code)
 		}
@@ -428,7 +420,6 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 // the given message code.
 func (p *Peer) getProto(code uint64) (*protoRW, error) {
 	for _, proto := range p.running {
-		//p.log.Debug("getProto", "proto", proto, "code", code)
 		if code >= proto.offset && code < proto.offset+proto.Length {
 			return proto, nil
 		}
@@ -447,7 +438,6 @@ type protoRW struct {
 }
 
 func (rw *protoRW) WriteMsg(msg Msg) (err error) {
-	log.Trace("WriteMsg: start", "msg", msg, "rw", rw, "msg.Code", msg.Code, "rw.Length", rw.Length)
 	if msg.Code >= rw.Length {
 		return newPeerError(errInvalidMsgCode, "not handled")
 	}

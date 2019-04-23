@@ -44,21 +44,11 @@ import (
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/ethereum/go-ethereum/common/fdlimit"
 	"github.com/ethereum/go-ethereum/crypto"
-	elog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/metrics/influxdb"
-	"github.com/mattn/go-colorable"
 	logging "github.com/whyrusleeping/go-logging"
 	cli "gopkg.in/urfave/cli.v1"
 )
-
-func initEthereumLog(verbosity int) {
-	output := colorable.NewColorableStderr()
-	ostream := elog.StreamHandler(output, elog.TerminalFormat(true))
-	glogger := elog.NewGlogHandler(ostream)
-	glogger.Verbosity(elog.Lvl(verbosity))
-	elog.Root().SetHandler(glogger)
-}
 
 func SetLogging(ctx *cli.Context) {
 	logging.SetLevel(logging.DEBUG, "swarm2")
@@ -72,8 +62,6 @@ func SetLogging(ctx *cli.Context) {
 		logging.SetLevel(logging.CRITICAL, "swarm2")
 		raft.SetLogger(&raft.DefaultLogger{Logger: golog.New(ioutil.Discard, "", 0)})
 	}
-
-	initEthereumLog(4)
 }
 
 // SetContentConfig applies node-related command line flags to the config.

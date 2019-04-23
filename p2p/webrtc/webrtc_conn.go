@@ -82,17 +82,13 @@ func NewWebrtcConn(nodeID discv5.NodeID, fromID discv5.NodeID, info *webrtcInfo)
 }
 
 func (w *WebrtcConn) Read(b []byte) (int, error) {
-	//log.Debug("Read: to read", "peerConn", w.info.PeerConn, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
 	n, err := w.info.ReadWriteCloser.Read(b)
-	//log.Debug("Read: after Read", "n", n, "e", err, "b", b, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
 
 	return n, err
 }
 
 func (w *WebrtcConn) Write(b []byte) (int, error) {
-	//log.Debug("Write: to write", "peerConn", w.info.PeerConn, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
 	n, err := w.info.ReadWriteCloser.Write(b)
-	//log.Debug("Write: after write", "n", n, "e", err, "remoteAddr", w.remoteAddr, "localAddr", w.localAddr)
 
 	return n, err
 }

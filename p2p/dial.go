@@ -304,16 +304,7 @@ func (s *dialstate) taskDone(t task, now time.Time) {
 func (t *dialTask) Do(srv *Server) {
 	err := t.dial(srv, t.dest)
 	if err != nil {
-		log.Trace("Dial error", "task", t, "err", err)
-		t.dest.PeerInfo = nil
-		// Try resolving the ID of static nodes if dialing failed.
-		/*
-			if _, ok := err.(*dialError); ok && t.flags&staticDialedConn != 0 {
-				if t.resolve(srv) {
-					t.dial(srv, t.dest)
-				}
-			}
-		*/
+		log.Warn("Dial error", "task", t, "err", err)
 	}
 }
 

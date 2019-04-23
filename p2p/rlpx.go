@@ -181,8 +181,6 @@ func (t *rlpx) doEncHandshake(prv *ecdsa.PrivateKey, dial *discover.Node) (disco
 		err error
 	)
 
-	// helo
-
 	if dial == nil {
 		sec, err = receiverEncHandshake(t.fd, prv, nil)
 	} else {

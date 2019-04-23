@@ -107,7 +107,7 @@ SSH Tunnel
 
 1. ssh -L [rpcport-for-localhost]:localhost:[rpcport-for-remote-host] [username]@[remote-host]
 2. ssh -L [httpport-for-localhost]:localhost:[httpport-for-remote-host] [username]@[remote-host]
-3. ./build/bin/gptt --testp2p --rpcport [port-for-remote-host] --httpaddr 127.0.0.1:[http-port] --exthttpaddr http://localhost:[httpport-for-localhost] --extrpcaddr http://localhost:[rpcport-for-localhost]
+3. ./build/bin/gptt --testwebrtc --rpcport [port-for-remote-host] --httpaddr 127.0.0.1:[http-port] --exthttpaddr http://localhost:[httpport-for-localhost] --extrpcaddr http://localhost:[rpcport-for-localhost]
 4. (in browser) http://localhost:[httpport-for-localhost]
 
 
@@ -126,7 +126,7 @@ Linode
     docker pull ailabstw/go-pttai:latest
     HTTPPORT=9774
     APIPORT=14779
-    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
+    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testwebrtc" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
     ```
 
 Digital Ocean
@@ -140,7 +140,7 @@ Digital Ocean
     docker pull ailabstw/go-pttai:latest
     HTTPPORT=9774
     APIPORT=14779
-    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
+    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testwebrtc" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
     ```
 
 3. ssh -L 14779:localhost:14779 root@[IP]
@@ -163,7 +163,7 @@ AWS
     docker pull ailabstw/go-pttai:latest
     HTTPPORT=9774
     APIPORT=14779
-    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
+    docker run -e HTTPPORT=${HTTPPORT} -e APIPORT=${APIPORT} -itd --restart=always -p 9487:9487 -p 127.0.0.1:9774:9774 -p 127.0.0.1:14779:14779 -v /home/admin/pttai.docker:/root/.pttai --name go-pttai ailabstw/go-pttai:latest gptt "--testwebrtc" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" "--exthttpaddr" "http://localhost:${HTTPPORT}" "--extrpcaddr" "http://localhost:${APIPORT}"
     ```
 
 5. ssh -L 14779:localhost:14779 ec2-user@[IP]

@@ -61,4 +61,4 @@ echo "${extrpcaddr}"
 echo ""
 sleep 1
 
-docker run --rm -itd -p ${p2pport}:9487 -p ${port}:9774 -p ${apiport}:14779 --name go-pttai_${branch} go-pttai:${branch} gptt "--testp2p" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" --exthttpaddr "${exthttpaddr}" --extrpcaddr "${extrpcaddr}"
+docker run --rm -itd -p ${p2pport}:9487 -p ${port}:9774 -p ${apiport}:14779 --name go-pttai_${branch} go-pttai:${branch} gptt "--testwebrtc" "--httpdir" "/static" "--httpaddr" "0.0.0.0:9774" "--rpcaddr" "0.0.0.0" --exthttpaddr "${exthttpaddr}" --extrpcaddr "${extrpcaddr}"

@@ -16,4 +16,4 @@ COPY --from=builder /go/src/github.com/ailabstw/go-pttai/build/bin/gptt /usr/loc
 COPY --from=builder /go/src/github.com/ailabstw/go-pttai/static /static
 
 EXPOSE 9487 9487/udp
-# ENTRYPOINT ["gptt", "--testp2p", "--httpdir", "/static", "--httpaddr", "0.0.0.0:9774", "--rpcaddr", "0.0.0.0"]
+# ENTRYPOINT ["gptt", "--testwebrtc", "--httpdir", "/static", "--httpaddr", "0.0.0.0:9774", "--rpcaddr", "0.0.0.0"]

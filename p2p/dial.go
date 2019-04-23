@@ -302,23 +302,9 @@ func (s *dialstate) taskDone(t task, now time.Time) {
 }
 
 func (t *dialTask) Do(srv *Server) {
-	if t.dest.Incomplete() {
-		if !t.resolve(srv) {
-			return
-		}
-	}
 	err := t.dial(srv, t.dest)
 	if err != nil {
-		log.Trace("Dial error", "task", t, "err", err)
-		t.dest.PeerInfo = nil
-		// Try resolving the ID of static nodes if dialing failed.
-		/*
-			if _, ok := err.(*dialError); ok && t.flags&staticDialedConn != 0 {
-				if t.resolve(srv) {
-					t.dial(srv, t.dest)
-				}
-			}
-		*/
+		log.Warn("Dial error", "task", t, "err", err)
 	}
 }
 
@@ -329,6 +315,10 @@ func (t *dialTask) Do(srv *Server) {
 // discovery network with useless queries for nodes that don't exist.
 // The backoff delay resets when the node is found.
 func (t *dialTask) resolve(srv *Server) bool {
+	if t.dest.IsWebrtc {
+		return true
+	}
+
 	isResolved := false
 	if t.dest.IsP2P {
 		isResolved = t.resolveP2P(srv)
@@ -400,6 +390,10 @@ type dialError struct {
 
 // dial performs the actual connection attempt.
 func (t *dialTask) dial(srv *Server, dest *discover.Node) error {
+	if dest.IsWebrtc {
+		return t.dialWebrtc(srv, dest)
+	}
+
 	if dest.IsP2P {
 		return t.dialP2P(srv, dest)
 	}
@@ -408,6 +402,7 @@ func (t *dialTask) dial(srv *Server, dest *discover.Node) error {
 	if err != nil {
 		return &dialError{err}
 	}
+
 	mfd := newMeteredConn(fd, false)
 	return srv.SetupConn(mfd, t.flags, dest)
 }
@@ -420,6 +415,16 @@ func (t *dialTask) dialP2P(srv *Server, dest *discover.Node) error {
 
 	mfd := newMeteredConn(streamConn, false)
 	return srv.SetupConn(mfd, t.flags|P2PConn, dest)
+}
+
+func (t *dialTask) dialWebrtc(srv *Server, dest *discover.Node) error {
+	conn, err := srv.DialWebrtc(dest)
+	if err != nil {
+		return &dialError{err}
+	}
+
+	mfd := newMeteredConn(conn, false)
+	return srv.SetupConn(mfd, t.flags|webrtcConn, dest)
 }
 
 func (t *dialTask) String() string {

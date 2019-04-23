@@ -28,7 +28,9 @@ import (
 HandleMessageWrapper
 */
 func (p *BasePtt) HandleMessageWrapper(peer *PttPeer) error {
+	log.Debug("HandleMessageWrapper: to ReadMsg", "peer", peer)
 	msg, err := peer.RW().ReadMsg()
+	log.Debug("HandleMessageWrapper: after ReadMsg", "e", err, "code", msg.Code, "size", msg.Size)
 	if err != nil {
 		log.Error("HandleMessageWrapper: unable ReadMsg", "peer", peer, "e", err)
 		return err

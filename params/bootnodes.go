@@ -41,3 +41,6 @@ var IPFSBootnodes = []string{
 var DevP2PBootnodes = []string{
 	"pnode://16Uiu2HAmJjpTxFgUu4WT57D1jK1HpQbtrNzZwJVHEewpv2wTCUqJ@10.1.1.27:9487",
 }
+
+var MainSignalServerURL = ""
+var TestSignalServerAddr = "testnet-signal.ptt.ai:9488"

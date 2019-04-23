@@ -101,10 +101,7 @@ func (p *BasePtt) TryJoin(challenge []byte, hash *common.Address, key *ecdsa.Pri
 	}
 
 	// 3. add peer
-	node, err := discover.NewP2PNodeWithNodeID(*nodeID)
-	if err != nil {
-		return err
-	}
+	node := discover.NewWebrtcNode(*nodeID)
 	p.Server().AddPeer(node)
 
 	return nil

@@ -803,10 +803,7 @@ func (p *BasePtt) AddDial(nodeID *discover.NodeID, opKey *common.Address, peerTy
 		return nil
 	}
 
-	node, err := discover.NewP2PNodeWithNodeID(*nodeID)
-	if err != nil {
-		return err
-	}
+	node := discover.NewWebrtcNode(*nodeID)
 	p.Server().AddPeer(node)
 
 	return nil

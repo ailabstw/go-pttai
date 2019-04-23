@@ -109,11 +109,14 @@ func (p *PttPeer) Handshake(networkID uint32) error {
 		}
 	}
 
+	log.Debug("Handshake: done", "peer", p)
+
 	return nil
 }
 
 func (p *PttPeer) ReadStatus(networkID uint32) error {
 	msg, err := p.rw.ReadMsg()
+	log.Debug("ReadStatus: after ReadMsg", "e", err, "code", msg.Code, "size", msg.Size)
 	if err != nil {
 		return err
 	}

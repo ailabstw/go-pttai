@@ -19,7 +19,7 @@ package service
 import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/pttdb"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ailabstw/go-pttai/rpc"
 )
 
 type Backend interface {

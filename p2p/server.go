@@ -23,18 +23,20 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/ailabstw/go-pttai/p2p/webrtc"
+
 	"github.com/ailabstw/go-pttai/key"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/p2p/discv5"
 	"github.com/ailabstw/go-pttai/p2p/nat"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/event"
 	libp2p "github.com/libp2p/go-libp2p"
 	host "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -95,11 +97,6 @@ type Config struct {
 	// with the rest of the network.
 	BootstrapNodes []*discover.Node
 
-	// BootstrapNodesV5 are used to establish connectivity
-	// with the rest of the network using the V5 discovery
-	// protocol.
-	BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
-
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
 	StaticNodes []*discover.Node
@@ -153,6 +150,10 @@ type Config struct {
 
 	P2PListenAddr string
 	P2PBootnodes  []*discover.Node
+
+	// webrtc
+
+	SignalServerURL url.URL
 }
 
 // Server manages all peer connections.
@@ -172,7 +173,6 @@ type Server struct {
 	listener     net.Listener
 	ourHandshake *protoHandshake
 	lastLookup   time.Time
-	DiscV5       *discv5.Network
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
@@ -196,6 +196,11 @@ type Server struct {
 	p2pKadDHT *dht.IpfsDHT
 
 	LastAnnounceP2PTS time.Time
+
+	// webrtc
+
+	webrtcServerLock sync.RWMutex
+	webrtcServer     *webrtc.Webrtc
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -213,6 +218,7 @@ const (
 	staticDialedConn
 	inboundConn
 	P2PConn
+	webrtcConn
 	trustedConn
 )
 
@@ -268,6 +274,9 @@ func (f connFlag) String() string {
 	}
 	if f&P2PConn != 0 {
 		s += "-p2p"
+	}
+	if f&webrtcConn != 0 {
+		s += "-webrtc"
 	}
 	if s != "" {
 		s = s[1:]
@@ -341,7 +350,7 @@ func (srv *Server) handleP2PStream(stream inet.Stream) {
 
 	streamConn := &P2PStreamConn{Stream: stream}
 
-	mfd := newMeteredConn(streamConn, false)
+	mfd := newMeteredConn(streamConn, true)
 
 	srv.SetupConn(mfd, inboundConn|P2PConn, nil)
 }
@@ -518,6 +527,97 @@ func (srv *Server) DialP2P(node *discover.Node) (*P2PStreamConn, error) {
 	return streamConn, nil
 }
 
+func (srv *Server) InitWebrtc(isLocked bool) error {
+	if srv.Config.SignalServerURL.Host == "" {
+		return nil
+	}
+
+	if !isLocked {
+		srv.webrtcServerLock.Lock()
+		defer srv.webrtcServerLock.Unlock()
+	}
+
+	privKey := srv.Config.PrivateKey
+	url := srv.Config.SignalServerURL
+
+	nodeID := discover.PubkeyID(&privKey.PublicKey)
+
+	log.Debug("InitWebrtc: to NewWebrtc", "nodeID", nodeID)
+
+	server, err := webrtc.NewWebrtc(nodeID, privKey, url, srv.handleWebrtcStream)
+	log.Debug("InitWebrtc: after NewWebrtc", "e", err, "nodeID", nodeID)
+	if err != nil {
+		return err
+	}
+
+	srv.webrtcServer = server
+
+	return nil
+}
+
+func (srv *Server) resetWebrtc(webrtcServer *webrtc.Webrtc, isLocked bool) error {
+	if !isLocked {
+		srv.webrtcServerLock.Lock()
+		defer srv.webrtcServerLock.Unlock()
+	}
+
+	if srv.webrtcServer != nil {
+		srv.webrtcServer.Close()
+		srv.webrtcServer = nil
+	}
+
+	return srv.InitWebrtc(true)
+}
+
+func (srv *Server) getWebrtcServer(isLocked bool) *webrtc.Webrtc {
+	if !isLocked {
+		srv.webrtcServerLock.RLock()
+		defer srv.webrtcServerLock.RUnlock()
+	}
+
+	return srv.webrtcServer
+}
+
+func (srv *Server) stopWebrtcServer(isLocked bool) {
+	if !isLocked {
+		srv.webrtcServerLock.Lock()
+		defer srv.webrtcServerLock.Unlock()
+	}
+
+	if srv.webrtcServer != nil {
+		srv.webrtcServer.Close()
+		srv.webrtcServer = nil
+	}
+}
+
+func (srv *Server) DialWebrtc(node *discover.Node) (*webrtc.WebrtcConn, error) {
+
+	// XXX we may need to include tctx in CreateOffer
+	webrtcServer := srv.getWebrtcServer(false)
+
+	if webrtcServer == nil {
+		return nil, webrtc.ErrInvalidWebrtc
+	}
+
+	conn, err := webrtcServer.CreateOffer(node.ID)
+	if err != nil {
+		if err != webrtc.ErrInvalidWebrtcOffer {
+			srv.resetWebrtc(webrtcServer, false)
+		}
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+func (srv *Server) handleWebrtcStream(conn *webrtc.WebrtcConn) {
+
+	mfd := newMeteredConn(conn, true)
+
+	log.Debug("handleWebrtcStream: to SetupConn", "remoteAddr", conn.RemoteAddr())
+	srv.SetupConn(mfd, inboundConn|webrtcConn, nil)
+}
+
 // PeerCount returns the number of connected peers.
 func (srv *Server) PeerCount() int {
 	var count int
@@ -613,6 +713,8 @@ func (srv *Server) Stop() {
 		srv.p2pcancel()
 	}
 
+	srv.stopWebrtcServer(false)
+
 	log.Debug("Stop: to loopWG.Wait")
 	srv.loopWG.Wait()
 	log.Debug("Stop: after loopWG.Wait")
@@ -659,6 +761,12 @@ func (srv *Server) Start() (err error) {
 	}
 	srv.log.Info("Starting P2P networking")
 
+	err = srv.InitWebrtc(false)
+	if err != nil {
+		log.Error("Start: unable to init webrtc", "e", err)
+		return err
+	}
+
 	// static fields
 	if srv.PrivateKey == nil {
 		return fmt.Errorf("Server.PrivateKey must be set to a non-nil key")
@@ -681,7 +789,6 @@ func (srv *Server) Start() (err error) {
 
 	var (
 		conn      *net.UDPConn
-		sconn     *sharedUDPConn
 		realaddr  *net.UDPAddr
 		unhandled chan discover.ReadPacket
 	)
@@ -710,7 +817,6 @@ func (srv *Server) Start() (err error) {
 
 	if !srv.NoDiscovery && srv.DiscoveryV5 {
 		unhandled = make(chan discover.ReadPacket, 100)
-		sconn = &sharedUDPConn{conn, unhandled}
 	}
 
 	// node table
@@ -728,25 +834,6 @@ func (srv *Server) Start() (err error) {
 			return err
 		}
 		srv.ntab = ntab
-	}
-
-	if srv.DiscoveryV5 {
-		var (
-			ntab *discv5.Network
-			err  error
-		)
-		if sconn != nil {
-			ntab, err = discv5.ListenUDP(srv.PrivateKey, sconn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-		} else {
-			ntab, err = discv5.ListenUDP(srv.PrivateKey, conn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-		}
-		if err != nil {
-			return err
-		}
-		if err := ntab.SetFallbackNodes(srv.BootstrapNodesV5); err != nil {
-			return err
-		}
-		srv.DiscV5 = ntab
 	}
 
 	dynPeers := srv.maxDialedConns()
@@ -985,9 +1072,6 @@ running:
 	if srv.ntab != nil {
 		srv.ntab.Close()
 	}
-	if srv.DiscV5 != nil {
-		srv.DiscV5.Close()
-	}
 	// Disconnect all peers.
 	for _, p := range peers {
 		p.Disconnect(DiscQuitting)
@@ -1133,9 +1217,12 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *discover.Node) e
 	if !running {
 		return errServerStopped
 	}
+
 	// Run the encryption handshake.
 	var err error
+
 	if c.id, err = c.doEncHandshake(srv.PrivateKey, dialDest); err != nil {
+		log.Error("setupConn: unable to doEncHandshake", "e", err, "c", c, "flags", flags, "dest", dialDest)
 		srv.log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
 		return err
 	}

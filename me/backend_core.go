@@ -22,11 +22,11 @@ import (
 	"github.com/ailabstw/go-pttai/account"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/content"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func (b *Backend) SetMyName(name []byte) (*account.UserName, error) {
@@ -460,6 +460,8 @@ func (b *Backend) GetMyNodes(entityIDBytes []byte) ([]*MyNode, error) {
 	defer pm.RUnlockMyNodes()
 
 	myNodeList := make([]*MyNode, len(pm.MyNodes))
+
+	log.Debug("GetMyNodes: to get myNodes", "entity", pm.Entity().GetID(), "myNodes", len(pm.MyNodes))
 
 	i := 0
 	for _, node := range pm.MyNodes {

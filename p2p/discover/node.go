@@ -51,6 +51,8 @@ type Node struct {
 	UDP, TCP uint16 // port numbers
 	ID       NodeID // the node's public key
 
+	IsWebrtc bool
+
 	IsP2P    bool
 	PeerID   peer.ID
 	PeerInfo *pstore.PeerInfo `rlp:"-"`
@@ -102,6 +104,14 @@ func NewP2PNodeWithNodeID(id NodeID) (*Node, error) {
 		PeerID: peerID,
 		sha:    crypto.Keccak256Hash(id[:]),
 	}, nil
+}
+
+func NewWebrtcNode(id NodeID) *Node {
+	return &Node{
+		ID:       id,
+		IsWebrtc: true,
+		sha:      crypto.Keccak256Hash(id[:]),
+	}
 }
 
 func NewMyPeerInfo(peerID peer.ID, ip net.IP, tcpPort uint64) (*pstore.PeerInfo, error) {

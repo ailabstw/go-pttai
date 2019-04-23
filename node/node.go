@@ -36,6 +36,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -45,9 +46,9 @@ import (
 	"github.com/ailabstw/go-pttai/internal/debug"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p"
+	"github.com/ailabstw/go-pttai/rpc"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/oklog/oklog/pkg/flock"
 )
 
@@ -75,6 +76,7 @@ type Node struct {
 	httpWhitelist []string     // HTTP RPC modules to allow through this endpoint
 	httpListener  net.Listener // HTTP RPC listener socket to server API requests
 	httpHandler   *rpc.Server  // HTTP RPC request handler to process the API requests
+	httpServer    *http.Server
 
 	wsEndpoint string       // Websocket endpoint (interface + port) to listen at (empty = websocket disabled)
 	wsListener net.Listener // Websocket RPC listener socket to server API requests
@@ -173,11 +175,6 @@ func (n *Node) Start() error {
 		n.serverConfig.NodeDatabase = n.Config.NodeDB()
 	}
 	running := &p2p.Server{Config: n.serverConfig}
-	err = running.InitP2P()
-	if err != nil {
-		log.Error("Start: unable to init p2p", "listenAddr", running.Config.P2PListenAddr, "e", err)
-		return err
-	}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
 	// Otherwise copy and specialize the P2P configuration
@@ -487,7 +484,7 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	if endpoint == "" {
 		return nil
 	}
-	listener, handler, err := rpc.StartHTTPEndpoint(endpoint, apis, modules, cors, vhosts, rpc.DefaultHTTPTimeouts)
+	listener, handler, httpServer, err := rpc.StartHTTPEndpoint(endpoint, apis, modules, cors, vhosts)
 	if err != nil {
 		return err
 	}
@@ -496,6 +493,7 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	n.httpEndpoint = endpoint
 	n.httpListener = listener
 	n.httpHandler = handler
+	n.httpServer = httpServer
 
 	return nil
 }
@@ -508,9 +506,15 @@ func (n *Node) stopHTTP() {
 
 		n.log.Info("HTTP endpoint closed", "url", fmt.Sprintf("http://%s", n.httpEndpoint))
 	}
+
 	if n.httpHandler != nil {
 		n.httpHandler.Stop()
 		n.httpHandler = nil
+	}
+
+	if n.httpServer != nil {
+		n.httpServer.Close()
+		n.httpServer = nil
 	}
 }
 

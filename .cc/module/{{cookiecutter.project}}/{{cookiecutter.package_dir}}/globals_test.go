@@ -16,6 +16,8 @@
 
 package {{cookiecutter.pkg_name}}
 
+import "testing"
+
 const (
 )
 

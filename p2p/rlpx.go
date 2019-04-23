@@ -36,10 +36,10 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
 	"golang.org/x/crypto/sha3"
 )
@@ -180,6 +180,7 @@ func (t *rlpx) doEncHandshake(prv *ecdsa.PrivateKey, dial *discover.Node) (disco
 		sec secrets
 		err error
 	)
+
 	if dial == nil {
 		sec, err = receiverEncHandshake(t.fd, prv, nil)
 	} else {
@@ -462,7 +463,7 @@ func (msg *authRespV4) decodePlain(input []byte) {
 	msg.Version = 4
 }
 
-var padSpace = make([]byte, 300)
+var padSpace = make([]byte, SizePadSpace)
 
 func sealEIP8(msg interface{}, h *encHandshake) ([]byte, error) {
 	buf := new(bytes.Buffer)
@@ -485,10 +486,18 @@ type plainDecoder interface {
 }
 
 func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r io.Reader) ([]byte, error) {
-	buf := make([]byte, plainSize)
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return buf, err
+
+	// read all the buf.
+	tmpBuf := make([]byte, plainSize+SizePadSpace)
+
+	readSize, err := r.Read(tmpBuf)
+	if err != nil {
+		return tmpBuf[:plainSize], err
 	}
+
+	// buf
+	buf := tmpBuf[:plainSize]
+
 	// Attempt decoding pre-EIP-8 "plain" format.
 	key := ecies.ImportECDSA(prv)
 	if dec, err := key.Decrypt(buf, nil, nil); err == nil {
@@ -501,10 +510,11 @@ func readHandshakeMsg(msg plainDecoder, plainSize int, prv *ecdsa.PrivateKey, r 
 	if size < uint16(plainSize) {
 		return buf, fmt.Errorf("size underflow, need at least %d bytes", plainSize)
 	}
-	buf = append(buf, make([]byte, size-uint16(plainSize)+2)...)
-	if _, err := io.ReadFull(r, buf[plainSize:]); err != nil {
-		return buf, err
+	if uint16(readSize) != size+2 {
+		return buf, fmt.Errorf("readSize incorrect, readSize: %v size+2: %v", readSize, size+2)
 	}
+
+	buf = tmpBuf[:readSize]
 	dec, err := key.Decrypt(buf[2:], nil, prefix)
 	if err != nil {
 		return buf, err
@@ -670,6 +680,7 @@ func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
 	if padding := fsize % 16; padding > 0 {
 		rsize += 16 - padding
 	}
+
 	framebuf := make([]byte, rsize)
 	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
 		return msg, err
@@ -716,6 +727,7 @@ func (rw *rlpxFrameRW) ReadMsg() (msg Msg, err error) {
 		}
 		msg.Size, msg.Payload = uint32(size), bytes.NewReader(payload)
 	}
+
 	return msg, nil
 }
 

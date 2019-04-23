@@ -25,11 +25,11 @@ import (
 	"testing"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/p2p"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ailabstw/go-pttai/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/event"
 )
 
 func TestPtt_EncryptData(t *testing.T) {

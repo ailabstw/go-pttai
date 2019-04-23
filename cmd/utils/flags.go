@@ -342,11 +342,6 @@ var (
 		Usage: "Network listening port",
 		Value: 9487,
 	}
-	P2PBootnodesFlag = cli.StringFlag{
-		Name:  "p2pbootnodes",
-		Usage: "Comma separated enode URLs for libp2p bootstrap",
-		Value: "",
-	}
 	WebrtcSignalServerFlag = cli.StringFlag{
 		Name:  "webrtcsignalserver",
 		Usage: "webrtc signal server",

@@ -20,10 +20,6 @@ bootnode:
 	build/env.sh go run build/ci.go install ./cmd/bootnode
 	@echo "Done building."
 
-p2pbootnode:
-	build/env.sh go run build/ci.go install ./cmd/p2pbootnode
-	@echo "Done building."
-
 all:
 	build/env.sh go run build/ci.go install
 

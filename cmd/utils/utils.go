@@ -284,8 +284,6 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 func setP2PBootnodes(ctx *cli.Context, cfg *p2p.Config) {
 	var urls []string
 	switch {
-	case ctx.GlobalIsSet(P2PBootnodesFlag.Name):
-		urls = strings.Split(ctx.GlobalString(P2PBootnodesFlag.Name), ",")
 	case ctx.GlobalBool(TestP2PFlag.Name):
 		urls = params.TestP2PBootnodes
 	case ctx.GlobalBool(DevP2PFlag.Name):

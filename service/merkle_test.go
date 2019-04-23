@@ -170,7 +170,7 @@ func TestMerkle_LoadUpdatingTSList(t *testing.T) {
 	setupTest(t)
 	defer teardownTest(t)
 
-	ts := types.Timestamp{1234567890, 0}
+	ts := types.Timestamp{Ts: 1234567890, NanoTs: 0}
 
 	m := tDefaultMerkle
 	m.ResetUpdateTS()

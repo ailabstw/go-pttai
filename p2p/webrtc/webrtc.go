@@ -417,10 +417,14 @@ func (w *Webrtc) tryPassWriteChan(sig *writeSignal) error {
 }
 
 func (w *Webrtc) ReadLoop() error {
+	var err error
+	var sig *signalserver.Signal
+
+looping:
 	for {
-		sig, err := w.client.Receive()
+		sig, err = w.client.Receive()
 		if err != nil {
-			return err
+			break looping
 		}
 
 		err = w.processSignal(sig)
@@ -431,7 +435,7 @@ func (w *Webrtc) ReadLoop() error {
 
 	w.Close()
 
-	return nil
+	return err
 }
 
 func (w *Webrtc) WriteLoop() error {

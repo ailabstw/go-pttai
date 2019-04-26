@@ -58,7 +58,7 @@ Testing for specific e2e-test
 
     ./scripts/e2e.sh [any test in the e2e dir]
 
-ex: ./scripts/e2e.sh friend_basic runs TestFriendBasic
+ex: ./scripts/e2e.sh friend_basic
 
 
 Running Godoc

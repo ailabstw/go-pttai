@@ -10,7 +10,6 @@ regex=`echo "$@" | perl -pe 's/(^|_)(\w)/\U\2/g'`
 echo "regex: ${regex}"
 
 make
-make p2pbootnode
 
 gotest -v -timeout 300s -run "${regex}" "./e2e"
 

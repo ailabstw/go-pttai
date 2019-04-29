@@ -40,7 +40,7 @@ import (
 	"github.com/ailabstw/go-pttai/p2p/nat"
 	"github.com/ailabstw/go-pttai/p2p/netutil"
 	"github.com/ailabstw/go-pttai/params"
-	"github.com/ailabstw/go-pttai/raft"
+	"github.com/ailabstw/etcd/raft"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/ethereum/go-ethereum/common/fdlimit"
 	"github.com/ethereum/go-ethereum/crypto"

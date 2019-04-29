@@ -24,8 +24,8 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/pttdb"
-	"github.com/ailabstw/go-pttai/raft"
-	pb "github.com/ailabstw/go-pttai/raft/raftpb"
+	"github.com/ailabstw/etcd/raft"
+	pb "github.com/ailabstw/etcd/raft/raftpb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 	"github.com/ethereum/go-ethereum/common"
 )

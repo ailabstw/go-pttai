@@ -23,7 +23,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	pb "github.com/ailabstw/go-pttai/raft/raftpb"
+	pb "github.com/ailabstw/etcd/raft/raftpb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 

@@ -24,8 +24,8 @@ import (
 
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/log"
-	"github.com/ailabstw/go-pttai/raft"
-	pb "github.com/ailabstw/go-pttai/raft/raftpb"
+	"github.com/ailabstw/etcd/raft"
+	pb "github.com/ailabstw/etcd/raft/raftpb"
 )
 
 func (pm *ProtocolManager) StartRaft(peers []raft.Peer, isNew bool) error {

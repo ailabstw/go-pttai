@@ -17,8 +17,6 @@
 package account
 
 import (
-	"sync"
-
 	"github.com/ailabstw/go-pttai/common"
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
@@ -38,8 +36,10 @@ type ProtocolManager struct {
 	dbUserNodeIdxPrefix  []byte
 	dbUserNodeIdx2Prefix []byte
 
-	lockUserNodeInfo sync.RWMutex
-	userNodeInfo     *UserNodeInfo
+	/*
+		lockUserNodeInfo sync.RWMutex
+		userNodeInfo     *UserNodeInfo
+	*/
 
 	// user-name
 	dbUserNamePrefix    []byte
@@ -155,6 +155,13 @@ func (pm *ProtocolManager) Start() error {
 		return err
 	}
 
+	// XXX hack for fix-261
+	err = pm.Fix261Account()
+	if err != nil {
+		log.Error("Start: unable to fix261", "e", err)
+		return err
+	}
+
 	// oplog-merkle-tree
 	syncWG := pm.SyncWG()
 
@@ -173,6 +180,21 @@ func (pm *ProtocolManager) Stop() error {
 }
 
 func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
+	// XXX hack for fix-261
+	entity := pm.Entity().(*Profile)
+	spm := entity.Service().SPM().(*ServiceProtocolManager)
+	userID := entity.GetCreatorID()
+
+	_, errImg := spm.GetUserImgByID(userID)
+	if errImg != nil {
+		peers := pm.Peers().ImportantPeerList(false)
+		if len(peers) < 1 {
+			return pkgservice.ErrNoMasters
+		}
+
+		peer = peers[0]
+	}
+
 	log.Debug("Sync: start", "entity", pm.Entity().IDString(), "peer", peer, "status", pm.Entity().GetStatus())
 	if peer == nil {
 		pm.SyncPendingMasterOplog(peer)
@@ -192,6 +214,8 @@ func (pm *ProtocolManager) Sync(peer *pkgservice.PttPeer) error {
 	return nil
 }
 
+/*
 func (pm *ProtocolManager) GetUserNodeInfo() *UserNodeInfo {
 	return pm.userNodeInfo
 }
+*/

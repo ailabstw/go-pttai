@@ -16,12 +16,7 @@
 
 package account
 
-import (
-	"encoding/json"
-
-	"github.com/ailabstw/go-pttai/common/types"
-)
-
+/*
 type UserNodeInfo struct {
 	ID         *types.PttID
 	UserNodeID *types.PttID `json:"nid"`
@@ -95,3 +90,4 @@ func (u *UserNodeInfo) Unmarshal(theBytes []byte) error {
 func (u *UserNodeInfo) MarshalKey() ([]byte, error) {
 	return append(DBUserNodeInfoPrefix, u.ID[:]...), nil
 }
+*/

@@ -327,19 +327,26 @@ var (
 )
 
 func InitService(dataDir string) error {
-	dbOplogCore, err := pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
-	if err != nil {
-		return err
+	var err error
+	if dbOplogCore == nil {
+		dbOplogCore, err = pttdb.NewLDBDatabase("oplog", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbOplog, err = pttdb.NewLDBBatch(dbOplogCore)
-	if err != nil {
-		return err
+	if dbOplog == nil {
+		dbOplog, err = pttdb.NewLDBBatch(dbOplogCore)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbMeta, err = pttdb.NewLDBDatabase("meta", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbMeta == nil {
+		dbMeta, err = pttdb.NewLDBDatabase("meta", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
 	DBPttLockMap, err = types.NewLockMap(SleepTimePttLock)
@@ -353,20 +360,6 @@ func InitService(dataDir string) error {
 }
 
 func TeardownService() {
-	if dbOplog != nil {
-		dbOplog = nil
-	}
-
-	if dbOplogCore != nil {
-		dbOplogCore.Close()
-		dbOplogCore = nil
-	}
-
-	if dbMeta != nil {
-		dbMeta.Close()
-		dbMeta = nil
-	}
-
 	if DBPttLockMap != nil {
 		DBPttLockMap = nil
 	}

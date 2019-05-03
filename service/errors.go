@@ -86,6 +86,8 @@ var (
 
 	ErrTooManyMasters = errors.New("too many masters")
 
+	ErrNoMasters = errors.New("no masters")
+
 	ErrInvalidBlock = errors.New("invalid block")
 
 	ErrAlreadyPending = errors.New("already pending")

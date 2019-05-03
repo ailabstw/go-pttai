@@ -133,6 +133,7 @@ func (b *Backend) GetUserNodeList(entityIDBytes []byte, startIDBytes []byte, lim
 	return pm.(*ProtocolManager).GetUserNodeList(startID, limit, listOrder, false)
 }
 
+/*
 func (b *Backend) GetUserNodeInfo(entityIDBytes []byte) (*UserNodeInfo, error) {
 
 	pm, err := b.EntityIDToPM(entityIDBytes)
@@ -142,6 +143,7 @@ func (b *Backend) GetUserNodeInfo(entityIDBytes []byte) (*UserNodeInfo, error) {
 
 	return pm.(*ProtocolManager).GetUserNodeInfo(), nil
 }
+*/
 
 func (b *Backend) RemoveUserNode(entityIDBytes []byte, nodeIDBytes []byte) (types.Bool, error) {
 

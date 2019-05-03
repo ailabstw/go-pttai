@@ -208,75 +208,57 @@ func InitMe(dataDir string) error {
 	var err error
 
 	// db
-	dbMeCore, err = pttdb.NewLDBDatabase("me", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbMeCore == nil {
+		dbMeCore, err = pttdb.NewLDBDatabase("me", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbMe, err = pttdb.NewLDBBatch(dbMeCore)
-	if err != nil {
-		return err
+	if dbMe == nil {
+		dbMe, err = pttdb.NewLDBBatch(dbMeCore)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbMyNodes, err = pttdb.NewLDBDatabase("mynodes", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbMyNodes == nil {
+		dbMyNodes, err = pttdb.NewLDBDatabase("mynodes", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbRaft, err = pttdb.NewLDBDatabase("raft", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbRaft == nil {
+		dbRaft, err = pttdb.NewLDBDatabase("raft", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbMeta, err = pttdb.NewLDBDatabase("memeta", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbMeta == nil {
+		dbMeta, err = pttdb.NewLDBDatabase("memeta", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbKeyCore, err = pttdb.NewLDBDatabase("signkey", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbKeyCore == nil {
+		dbKeyCore, err = pttdb.NewLDBDatabase("signkey", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbKey, err = pttdb.NewLDBBatch(dbKeyCore)
-	if err != nil {
-		return err
+	if dbKey == nil {
+		dbKey, err = pttdb.NewLDBBatch(dbKeyCore)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func TeardownMe() {
-	if dbMeCore != nil {
-		dbMeCore.Close()
-		dbMeCore = nil
-	}
-
-	if dbMe != nil {
-		dbMe = nil
-	}
-
-	if dbMyNodes != nil {
-		dbMyNodes.Close()
-		dbMyNodes = nil
-	}
-
-	if dbRaft != nil {
-		dbRaft.Close()
-		dbRaft = nil
-	}
-
-	if dbMeta != nil {
-		dbMeta.Close()
-		dbMeta = nil
-	}
-
-	if dbKeyCore != nil {
-		dbKeyCore.Close()
-		dbKeyCore = nil
-	}
-
-	if dbKey != nil {
-		dbKey = nil
-	}
 }

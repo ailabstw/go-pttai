@@ -22,13 +22,15 @@ import (
 )
 
 func (pm *ProtocolManager) CleanUserNode() error {
-	pm.lockUserNodeInfo.Lock()
-	defer pm.lockUserNodeInfo.Unlock()
+	// pm.lockUserNodeInfo.Lock()
+	// defer pm.lockUserNodeInfo.Unlock()
 
-	if pm.userNodeInfo != nil {
-		pm.userNodeInfo.Delete()
-		pm.userNodeInfo = nil
-	}
+	/*
+		if pm.userNodeInfo != nil {
+			pm.userNodeInfo.Delete()
+			pm.userNodeInfo = nil
+		}
+	*/
 
 	userNode := NewEmptyUserNode()
 	pm.SetUserNodeDB(userNode)
@@ -49,10 +51,12 @@ func (pm *ProtocolManager) CleanUserNode() error {
 }
 
 func (pm *ProtocolManager) InitUserNode(entityID *types.PttID) {
-	userNodeInfo := &UserNodeInfo{}
-	err := userNodeInfo.Get(entityID)
-	if err != nil {
-		userNodeInfo = &UserNodeInfo{ID: entityID}
-	}
-	pm.userNodeInfo = userNodeInfo
+	/*
+		userNodeInfo := &UserNodeInfo{}
+		err := userNodeInfo.Get(entityID)
+		if err != nil {
+			userNodeInfo = &UserNodeInfo{ID: entityID}
+		}
+		pm.userNodeInfo = userNodeInfo
+	*/
 }

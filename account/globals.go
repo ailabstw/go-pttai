@@ -125,7 +125,9 @@ var (
 
 	DBUserNodePrefix     = []byte(".undb")
 	DBUserNodeIdxPrefix  = []byte(".unix")
-	DBUserNodeInfoPrefix = []byte(".uidb")
+	DBUserNodeInfoPrefix = []byte(".unif")
+
+	DBFix261Prefix = []byte(".f05W") // 261 in base58
 )
 
 // max-masters
@@ -155,36 +157,29 @@ var (
 func InitAccount(dataDir string) error {
 	var err error
 
-	dbAccountCore, err = pttdb.NewLDBDatabase("account", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbAccountCore == nil {
+		dbAccountCore, err = pttdb.NewLDBDatabase("account", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbAccount, err = pttdb.NewLDBBatch(dbAccountCore)
-	if err != nil {
-		return err
+	if dbAccount == nil {
+		dbAccount, err = pttdb.NewLDBBatch(dbAccountCore)
+		if err != nil {
+			return err
+		}
 	}
 
-	dbMeta, err = pttdb.NewLDBDatabase("accountmeta", dataDir, 0, 0)
-	if err != nil {
-		return err
+	if dbMeta == nil {
+		dbMeta, err = pttdb.NewLDBDatabase("accountmeta", dataDir, 0, 0)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func TeardownAccount() {
-	if dbAccountCore != nil {
-		dbAccountCore.Close()
-		dbAccountCore = nil
-	}
-
-	if dbAccount != nil {
-		dbAccount = nil
-	}
-
-	if dbMeta != nil {
-		dbMeta.Close()
-		dbMeta = nil
-	}
 }

@@ -62,9 +62,11 @@ func (api *PrivateAPI) GetUserNodeList(entityID string, startID string, limit in
 	return api.b.GetUserNodeList([]byte(entityID), []byte(startID), limit, listOrder)
 }
 
+/*
 func (api *PrivateAPI) GetUserNodeInfo(entityID string) (*UserNodeInfo, error) {
 	return api.b.GetUserNodeInfo([]byte(entityID))
 }
+*/
 
 func (api *PrivateAPI) RemoveUserNode(entityID string, nodeIDStr string) (types.Bool, error) {
 	return api.b.RemoveUserNode([]byte(entityID), []byte(nodeIDStr))

@@ -17,13 +17,9 @@
 package account
 
 import (
-	"math/rand"
-	"reflect"
-
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
-	"github.com/ailabstw/go-pttai/pttdb"
 	pkgservice "github.com/ailabstw/go-pttai/service"
 )
 
@@ -96,42 +92,44 @@ func (pm *ProtocolManager) postdeleteUserNode(
 	origObj pkgservice.Object,
 	blockInfo *pkgservice.BlockInfo,
 ) error {
+	return nil
+	/*
+		var err error
+		userNodeInfo := pm.userNodeInfo
 
-	var err error
-	userNodeInfo := pm.userNodeInfo
+		pm.lockUserNodeInfo.Lock()
+		defer pm.lockUserNodeInfo.Unlock()
 
-	pm.lockUserNodeInfo.Lock()
-	defer pm.lockUserNodeInfo.Unlock()
+		obj := NewEmptyUserNode()
+		pm.SetUserNodeDB(obj)
 
-	obj := NewEmptyUserNode()
-	pm.SetUserNodeDB(obj)
+		theUserNodes, err := pkgservice.GetObjList(obj, nil, 0, pttdb.ListOrderNext, false)
+		log.Debug("postdeleteUserNode: after GetObjList", "e", err, "userNodes", theUserNodes)
+		if err != nil {
+			return err
+		}
 
-	theUserNodes, err := pkgservice.GetObjList(obj, nil, 0, pttdb.ListOrderNext, false)
-	log.Debug("postdeleteUserNode: after GetObjList", "e", err, "userNodes", theUserNodes)
-	if err != nil {
-		return err
-	}
+		userNodes := pkgservice.AliveObjects(theUserNodes)
 
-	userNodes := pkgservice.AliveObjects(theUserNodes)
+		lenUserNodes := len(userNodes)
+		userNodeInfo.NUserNode = lenUserNodes
 
-	lenUserNodes := len(userNodes)
-	userNodeInfo.NUserNode = lenUserNodes
+		if lenUserNodes == 0 {
+			userNodeInfo.UserNodeID = nil
+			return userNodeInfo.Save()
+		}
 
-	if lenUserNodes == 0 {
-		userNodeInfo.UserNodeID = nil
+		if !reflect.DeepEqual(userNodeInfo.UserNodeID, id) {
+			userNodeInfo.UserNodeID = nil
+			return userNodeInfo.Save()
+		}
+
+		randN := rand.Intn(lenUserNodes)
+
+		selectedUserNode := userNodes[randN]
+
+		userNodeInfo.UserNodeID = selectedUserNode.GetID()
+
 		return userNodeInfo.Save()
-	}
-
-	if !reflect.DeepEqual(userNodeInfo.UserNodeID, id) {
-		userNodeInfo.UserNodeID = nil
-		return userNodeInfo.Save()
-	}
-
-	randN := rand.Intn(lenUserNodes)
-
-	selectedUserNode := userNodes[randN]
-
-	userNodeInfo.UserNodeID = selectedUserNode.GetID()
-
-	return userNodeInfo.Save()
+	*/
 }

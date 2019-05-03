@@ -17,8 +17,6 @@
 package account
 
 import (
-	"math/rand"
-
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
@@ -86,23 +84,25 @@ func (pm *ProtocolManager) postcreateUserNode(obj pkgservice.Object, oplog *pkgs
 
 	log.Debug("postcreateUserNode: start", "entity", entityID, "objID", oplog.ObjID)
 
-	pm.lockUserNodeInfo.Lock()
-	defer pm.lockUserNodeInfo.Unlock()
+	/*
+		pm.lockUserNodeInfo.Lock()
+		defer pm.lockUserNodeInfo.Unlock()
 
-	if pm.userNodeInfo == nil {
-		pm.InitUserNode(entityID)
-	}
+		if pm.userNodeInfo == nil {
+			pm.InitUserNode(entityID)
+		}
 
-	pm.userNodeInfo.NUserNode++
-	randN := rand.Intn(pm.userNodeInfo.NUserNode)
-	if randN == 0 {
-		pm.userNodeInfo.UserNodeID = oplog.ObjID
-	}
+		pm.userNodeInfo.NUserNode++
+		randN := rand.Intn(pm.userNodeInfo.NUserNode)
+		if randN == 0 {
+			pm.userNodeInfo.UserNodeID = oplog.ObjID
+		}
 
-	err := pm.userNodeInfo.Save()
-	if err != nil {
-		return err
-	}
+		err := pm.userNodeInfo.Save()
+		if err != nil {
+			return err
+		}
+	*/
 
 	return nil
 }

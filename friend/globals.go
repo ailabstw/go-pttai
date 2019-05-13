@@ -122,36 +122,44 @@ const (
 func InitFriend(dataDir string) error {
 	var err error
 
-	if dbFriendCore == nil {
-		dbFriendCore, err = pttdb.NewLDBDatabase("friend", dataDir, 0, 0)
-		if err != nil {
-			return err
-		}
+	dbFriendCore, err = pttdb.NewLDBDatabase("friend", dataDir, 0, 0)
+	if err != nil {
+		return err
+	}
+	dbFriend, err = pttdb.NewLDBBatch(dbFriendCore)
+	if err != nil {
+		return err
 	}
 
-	if dbFriend == nil {
-		dbFriend, err = pttdb.NewLDBBatch(dbFriendCore)
-		if err != nil {
-			return err
-		}
+	dbMeta, err = pttdb.NewLDBDatabase("friendmeta", dataDir, 0, 0)
+	if err != nil {
+		return err
 	}
 
-	if dbMeta == nil {
-		dbMeta, err = pttdb.NewLDBDatabase("friendmeta", dataDir, 0, 0)
-		if err != nil {
-			return err
-		}
-	}
-
-	if dbKey == nil {
-		dbKey, err = pttdb.NewLDBDatabase("friendkey", dataDir, 0, 0)
-		if err != nil {
-			return err
-		}
+	dbKey, err = pttdb.NewLDBDatabase("friendkey", dataDir, 0, 0)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func TeardownFriend() {
+	if dbKey != nil {
+		dbKey.Close()
+		dbKey = nil
+	}
+
+	if dbFriendCore != nil {
+		dbFriendCore.Close()
+		dbFriendCore = nil
+	}
+	if dbFriend != nil {
+		dbFriend = nil
+	}
+
+	if dbMeta != nil {
+		dbMeta.Close()
+		dbMeta = nil
+	}
 }

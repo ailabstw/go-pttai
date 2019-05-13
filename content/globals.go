@@ -185,32 +185,24 @@ func InitContent(dataDir string, keystoreDir string) error {
 	var err error
 
 	// db
-	if dbBoardCore == nil {
-		dbBoardCore, err = pttdb.NewLDBDatabase("board", dataDir, 0, 0)
-		if err != nil {
-			return err
-		}
+	dbBoardCore, err = pttdb.NewLDBDatabase("board", dataDir, 0, 0)
+	if err != nil {
+		return err
 	}
 
-	if dbBoard == nil {
-		dbBoard, err = pttdb.NewLDBBatch(dbBoardCore)
-		if err != nil {
-			return err
-		}
+	dbBoard, err = pttdb.NewLDBBatch(dbBoardCore)
+	if err != nil {
+		return err
 	}
 
-	if dbKey == nil {
-		dbKey, err = pttdb.NewLDBDatabase("key", keystoreDir, 0, 0)
-		if err != nil {
-			return err
-		}
+	dbKey, err = pttdb.NewLDBDatabase("key", keystoreDir, 0, 0)
+	if err != nil {
+		return err
 	}
 
-	if dbMeta == nil {
-		dbMeta, err = pttdb.NewLDBDatabase("contentmeta", dataDir, 0, 0)
-		if err != nil {
-			return err
-		}
+	dbMeta, err = pttdb.NewLDBDatabase("contentmeta", dataDir, 0, 0)
+	if err != nil {
+		return err
 	}
 
 	InitLocaleInfo()
@@ -232,4 +224,22 @@ func DefaultTitle(myID *types.PttID, creatorID *types.PttID, myName string) []by
 }
 
 func TeardownContent() {
+	if dbBoard != nil {
+		dbBoard = nil
+	}
+
+	if dbBoardCore != nil {
+		dbBoardCore.Close()
+		dbBoardCore = nil
+	}
+
+	if dbKey != nil {
+		dbKey.Close()
+		dbKey = nil
+	}
+
+	if dbMeta != nil {
+		dbMeta.Close()
+		dbMeta = nil
+	}
 }

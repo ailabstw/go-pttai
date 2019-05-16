@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -654,38 +653,31 @@ func NewLDBBatch(db *LDBDatabase) (*LDBBatch, error) {
 	}, nil
 }
 
-func (b *LDBBatch) PutAllWithKeyIndex(key []byte, idx *Index, kvs []*KeyVal) error {
-	b.Reset()
+func (b *LDBBatch) putAllWithKeyIndex(key []byte, idx *Index, kvs []*KeyVal) error {
 	marshaledIdx, err := idx.Marshal()
 	if err != nil {
 		return err
 	}
 
-	err = b.Put(key, marshaledIdx)
+	newBatch := &ldbBatch{db: b.db, b: new(leveldb.Batch)}
+
+	err = newBatch.Put(key, marshaledIdx)
 	if err != nil {
 		return err
 	}
 
-	return b.PutAll(kvs, false)
-}
-
-func (b *LDBBatch) PutAll(kvs []*KeyVal, isInit bool) error {
-	if isInit {
-		b.Reset()
-	}
 	for _, kv := range kvs {
-		err := b.Put(kv.K, kv.V)
+		err = newBatch.Put(kv.K, kv.V)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := b.Write()
+	err = newBatch.Write()
 	if err != nil {
 		return err
 	}
 
-	b.Reset()
 	return nil
 }
 
@@ -700,10 +692,9 @@ For oplog: the id of each oplog is unique.
 For content:
 */
 func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteOrig bool, isGetOrig bool) ([]*KeyVal, error) {
-	log.Debug("TryPutAll: start", "idxKey", idxKey)
-
 	db := b.ldbBatch.DB()
 
+	// 1. lock
 	err := db.TryLockMap(idxKey)
 	if err != nil {
 		log.Error("TryPutAll: unable to lock", "idxKey", idxKey, "e", err)
@@ -711,6 +702,7 @@ func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteO
 	}
 	defer db.UnlockMap(idxKey)
 
+	// 2. check is new.
 	isHasKey, err := db.Has(idxKey)
 	if err != nil {
 		log.Error("TryPutAll: unable to has", "idxKey", idxKey, "e", err)
@@ -718,11 +710,12 @@ func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteO
 	}
 
 	if !isHasKey { // new-one
-		err := b.PutAllWithKeyIndex(idxKey, idx, kvs)
+		err := b.putAllWithKeyIndex(idxKey, idx, kvs)
 		log.Debug("TryPutAll: after PutAllWithKeyIndex (new-one)", "idxKey", idxKey, "e", err)
 		return nil, err
 	}
 
+	// 3. get the original keys and the orig-data
 	v, err := db.Get(idxKey)
 	if err != nil {
 		log.Error("TryPutAll: unable to Get", "idxKey", idxKey, "e", err)
@@ -733,7 +726,7 @@ func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteO
 	err = d.Unmarshal(v)
 	if err != nil { // unable to get original data.
 		log.Error("TryPutAll: unable to unmarshal index", "idxKey", idxKey, "v", v, "e", err)
-		return nil, ErrInvalidDBable
+		return nil, ErrInvalidIndex
 	}
 	var origKVs []*KeyVal
 	i := 0
@@ -753,101 +746,28 @@ func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteO
 		}
 	}
 
+	// compare the ut
 	if idx.UpdateTS.IsLess(d.UpdateTS) {
 		log.Warn("updateTS < d.UpdateTS", "idxKey", idxKey, "updateTS", idx.UpdateTS, "d.UpdateTS", d.UpdateTS, "d.Keys", d.Keys)
 		return origKVs, ErrInvalidUpdateTS
 	}
 
-	// delete original data
+	// 4. delete original keys
 	if isDeleteOrig {
 		for _, eachKey := range d.Keys {
 			db.Delete(eachKey)
 		}
 	}
 
-	// put to db
+	// 5. put to db
 
-	err = b.PutAllWithKeyIndex(idxKey, idx, kvs)
+	err = b.putAllWithKeyIndex(idxKey, idx, kvs)
 	if err != nil {
 		log.Error("TryPutAll: unable to PutAllWithKeyIndex", "idxKey", idxKey, "e", err)
 		return nil, err
 	}
 
 	return origKVs, nil
-}
-
-/*
-TryPutAll tries to put all the key-vals with comparing the updateTS of the 1st item.
-
-This is used when the real content is stored in ts-based key, but we want to refer the content directly from id-key.
-
-This assumes 1-record per key. The old data will be deleted if key conflict.
-
-For oplog: the id of each oplog is unique.
-For content:
-*/
-func (b *LDBBatch) TryPutAllSameUT(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteOrig bool) ([][]byte, error) {
-	log.Debug("TryPutAllSameUT: start", "idxKey", idxKey)
-
-	db := b.ldbBatch.DB()
-
-	err := db.TryLockMap(idxKey)
-	if err != nil {
-		log.Error("TryPutAllSameUT: unable to lock", "idxKey", idxKey, "e", err)
-		return nil, err
-	}
-	defer db.UnlockMap(idxKey)
-
-	isHasKey, err := db.Has(idxKey)
-	if err != nil {
-		log.Error("TryPutAllSameUT: unable to has", "idxKey", idxKey, "e", err)
-		return nil, err
-	}
-
-	if !isHasKey { // new-one
-		err := b.PutAllWithKeyIndex(idxKey, idx, kvs)
-		log.Debug("TryPutAllSameUT: after PutAllWithKeyIndex (new-one)", "idxKey", idxKey, "e", err)
-		return nil, err
-	}
-
-	v, err := db.Get(idxKey)
-	if err != nil {
-		log.Error("TryPutAllSameUT: unable to Get", "idxKey", idxKey, "e", err)
-		return nil, err
-	}
-
-	d := &Index{}
-	err = d.Unmarshal(v)
-	if err != nil { // unable to get original data.
-		return nil, ErrInvalidDBable
-	}
-
-	if idx.UpdateTS.IsLess(d.UpdateTS) {
-		log.Warn("TryPutAllSameUT: updateTS < d.UpdateTS", "idxKey", idxKey, "updateTS", idx.UpdateTS, "d.UpdateTS", d.UpdateTS)
-		return d.Keys, ErrInvalidUpdateTS
-	}
-
-	if idx.UpdateTS == d.UpdateTS && !reflect.DeepEqual(d, idx) {
-		log.Warn("updateTS == d.UpdateTS but idx diff", "idxKey", idxKey, "updateTS", idx.UpdateTS, "d.UpdateTS", d.UpdateTS, "idx", idx, "d", d)
-		return d.Keys, ErrInvalidUpdateTS
-	}
-
-	// delete original data
-	if isDeleteOrig {
-		for _, eachKey := range d.Keys {
-			db.Delete(eachKey)
-		}
-	}
-
-	// put to db
-
-	err = b.PutAllWithKeyIndex(idxKey, idx, kvs)
-	if err != nil {
-		log.Error("TryPutAllSameUT: unable to PutAllWithKeyIndex", "idxKey", idxKey, "e", err)
-		return nil, err
-	}
-
-	return d.Keys, nil
 }
 
 /*
@@ -861,10 +781,9 @@ For oplog: the id of each oplog is unique.
 For content:
 */
 func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]byte, error) {
-	log.Debug("ForcePutAll: start", "idxKey", idxKey)
-
 	db := b.ldbBatch.DB()
 
+	// 1. lock.
 	err := db.TryLockMap(idxKey)
 	if err != nil {
 		log.Error("ForcePutAll: unable to lock", "idxKey", idxKey, "e", err)
@@ -872,6 +791,7 @@ func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]by
 	}
 	defer db.UnlockMap(idxKey)
 
+	// 2. check is new.
 	isHasKey, err := db.Has(idxKey)
 	if err != nil {
 		log.Error("ForcePutAll: unable to has", "idxKey", idxKey, "e", err)
@@ -879,11 +799,12 @@ func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]by
 	}
 
 	if !isHasKey { // new-one
-		err := b.PutAllWithKeyIndex(idxKey, idx, kvs)
+		err := b.putAllWithKeyIndex(idxKey, idx, kvs)
 		log.Debug("ForcePutAll: after PutAllWithKeyIndex (new-one)", "idxKey", idxKey, "e", err)
 		return nil, err
 	}
 
+	// 3. to get the original keys.
 	v, err := db.Get(idxKey)
 	if err != nil {
 		log.Error("ForcePutAll: unable to Get", "idxKey", idxKey, "e", err)
@@ -893,19 +814,18 @@ func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]by
 	d := &Index{}
 	err = d.Unmarshal(v)
 	if err != nil { // unable to get original data.
-		return nil, ErrInvalidDBable
+		return nil, ErrInvalidIndex
 	}
 
-	// delete original data
+	// 4. delete original keys
 	for _, eachKey := range d.Keys {
 		db.Delete(eachKey)
 	}
 
-	// put to db
-
-	err = b.PutAllWithKeyIndex(idxKey, idx, kvs)
+	// 5. put to db
+	err = b.putAllWithKeyIndex(idxKey, idx, kvs)
 	if err != nil {
-		log.Error("TryPutAll: unable to PutAllWithKeyIndex", "idxKey", idxKey, "e", err)
+		log.Error("ForcePutAll: unable to PutAllWithKeyIndex", "idxKey", idxKey, "e", err)
 		return nil, err
 	}
 

@@ -29,6 +29,7 @@ import (
 	"github.com/ailabstw/go-pttai/common/types"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -824,130 +825,6 @@ func TestLDBDatabase_NewIteratorWithPrefix(t *testing.T) {
 	}
 }
 
-/*
-func TestLDBBatch_TryPutAll(t *testing.T) {
-	// setup test
-	setupTest(t)
-	defer teardownTest(t)
-
-	type fields struct {
-		ldbBatch *ldbBatch
-	}
-	type args struct {
-		idxKey       []byte
-		idx          *Index
-		kvs          []*KeyVal
-		isDeleteOrig bool
-	}
-
-	dbBatch, err := NewLDBBatch(tDefaultDB)
-
-	updateTS1, err := types.GetTimestamp()
-	if err != nil {
-		panic("failed to create beginning time stamp: " + err.Error())
-	}
-
-	updateTS2, err := types.GetTimestamp()
-	if err != nil {
-		panic("failed to create beginning time stamp: " + err.Error())
-	}
-
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    [][]byte
-		wantErr bool
-	}{
-		{
-			name: "test TryPutAll method with new key",
-			args: args{
-				idxKey: []byte("test-idx-key"),
-				idx: &Index{
-					Keys:     [][]byte{[]byte("test-idx-1"), []byte("test-idx-2"), []byte("test-idx-3")},
-					UpdateTS: updateTS1,
-				},
-				kvs: []*KeyVal{
-					&KeyVal{K: []byte("test-idx-1"), V: []byte("test-value-1")},
-					&KeyVal{K: []byte("test-idx-2"), V: []byte("test-value-2")},
-					&KeyVal{K: []byte("test-idx-3"), V: []byte("test-value-3")},
-				},
-				isDeleteOrig: false,
-			},
-			want:    nil,
-			wantErr: false,
-		},
-		{
-			name: "test TryPutAll method with old key",
-			args: args{
-				idxKey: []byte("test-idx-key"),
-				idx: &Index{
-					Keys:     [][]byte{[]byte("test-newidx-1"), []byte("test-newidx-2"), []byte("test-newidx-3")},
-					UpdateTS: updateTS2,
-				},
-				kvs: []*KeyVal{
-					&KeyVal{K: []byte("test-newidx-1"), V: []byte("test-value-1")},
-					&KeyVal{K: []byte("test-newidx-2"), V: []byte("test-value-2")},
-					&KeyVal{K: []byte("test-newidx-3"), V: []byte("test-value-3")},
-				},
-				isDeleteOrig: true,
-			},
-			want:    [][]byte{[]byte("test-idx-1"), []byte("test-idx-2"), []byte("test-idx-3")},
-			wantErr: false,
-		},
-		{
-			name: "test TryPutAll method update old key with smaller TS",
-			args: args{
-				idxKey: []byte("test-idx-key"),
-				idx: &Index{
-					Keys:     [][]byte{[]byte("test-newidx-1"), []byte("test-newidx-2"), []byte("test-newidx-3")},
-					UpdateTS: updateTS1,
-				},
-				kvs: []*KeyVal{
-					&KeyVal{K: []byte("test-newidx-1"), V: []byte("test-value-1")},
-					&KeyVal{K: []byte("test-newidx-2"), V: []byte("test-value-2")},
-					&KeyVal{K: []byte("test-newidx-3"), V: []byte("test-value-3")},
-				},
-				isDeleteOrig: true,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "test TryPutAll method update old key with same TS but different idx",
-			args: args{
-				idxKey: []byte("test-idx-key"),
-				idx: &Index{
-					Keys:     [][]byte{[]byte("test-newidx-1"), []byte("test-newidx-2")},
-					UpdateTS: updateTS2,
-				},
-				kvs: []*KeyVal{
-					&KeyVal{K: []byte("test-newidx-1"), V: []byte("test-value-1")},
-					&KeyVal{K: []byte("test-newidx-2"), V: []byte("test-value-2")},
-				},
-				isDeleteOrig: true,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := dbBatch.TryPutAll(tt.args.idxKey, tt.args.idx, tt.args.kvs, tt.args.isDeleteOrig)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("LDBBatch.TryPutAll() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				gotJson, _ := json.Marshal(got)
-				wantJson, _ := json.Marshal(tt.want)
-				t.Errorf("LDBBatch.TryPutAll() = %v, want %v", string(gotJson), string(wantJson))
-			}
-		})
-	}
-}
-*/
-
 func TestLDBBatch_GetDelete(t *testing.T) {
 	// setup test
 	setupTest(t)
@@ -1386,4 +1263,182 @@ func TestLDBBatch_TryPutAll(t *testing.T) {
 	}
 
 	// teardown test
+}
+
+func TestLDBBatch_TryPutAll2(t *testing.T) {
+	// setup test
+	setupTest(t)
+	defer teardownTest(t)
+
+	dbBatch, _ := NewLDBBatch(tDefaultDB)
+
+	updateTS1, _ := types.GetTimestamp()
+
+	time.Sleep(1)
+
+	updateTS2, _ := types.GetTimestamp()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		idxKey := []byte("test-idx-2-1")
+		idx := &Index{
+			Keys:     [][]byte{[]byte("test-newidx-2-8"), []byte("test-newidx-2-9")},
+			UpdateTS: updateTS1,
+		}
+
+		kvs := []*KeyVal{
+			&KeyVal{K: []byte("test-newidx-2-8"), V: []byte("test-value-2-8")},
+			&KeyVal{K: []byte("test-newidx-2-9"), V: []byte("test-value-2-9")},
+		}
+
+		dbBatch.TryPutAll(idxKey, idx, kvs, true, false)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		idxKey := []byte("test-idx-2-2")
+		idx := &Index{
+			Keys:     [][]byte{[]byte("test-newidx-2-10"), []byte("test-newidx-2-11")},
+			UpdateTS: updateTS2,
+		}
+
+		kvs := []*KeyVal{
+			&KeyVal{K: []byte("test-newidx-2-10"), V: []byte("test-value-2-10")},
+			&KeyVal{K: []byte("test-newidx-2-11"), V: []byte("test-value-2-11")},
+		}
+
+		dbBatch.TryPutAll(idxKey, idx, kvs, true, false)
+	}()
+
+	wg.Wait()
+
+	val, err := dbBatch.DBGet([]byte("test-idx-2-1"))
+	t.Logf("after DBGet: val: %v e: %v", val, err)
+	assert.NoError(t, err)
+	idx := &Index{}
+	err = idx.Unmarshal(val)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(idx.Keys))
+	assert.Equal(t, []byte("test-newidx-2-8"), idx.Keys[0])
+	assert.Equal(t, []byte("test-newidx-2-9"), idx.Keys[1])
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-2-8"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-2-8"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-2-9"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-2-9"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-idx-2-2"))
+	t.Logf("after DBGet: val: %v e: %v", val, err)
+	assert.NoError(t, err)
+	idx = &Index{}
+	err = idx.Unmarshal(val)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(idx.Keys))
+	assert.Equal(t, []byte("test-newidx-2-10"), idx.Keys[0])
+	assert.Equal(t, []byte("test-newidx-2-11"), idx.Keys[1])
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-2-10"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-2-10"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-2-11"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-2-11"), val)
+}
+
+func TestLDBBatch_ForcePutAll(t *testing.T) {
+	// setup test
+	setupTest(t)
+	defer teardownTest(t)
+
+	dbBatch, _ := NewLDBBatch(tDefaultDB)
+
+	updateTS1, _ := types.GetTimestamp()
+
+	time.Sleep(1)
+
+	updateTS2, _ := types.GetTimestamp()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		idxKey := []byte("test-idx-3-1")
+		idx := &Index{
+			Keys:     [][]byte{[]byte("test-newidx-3-8"), []byte("test-newidx-3-9")},
+			UpdateTS: updateTS1,
+		}
+
+		kvs := []*KeyVal{
+			&KeyVal{K: []byte("test-newidx-3-8"), V: []byte("test-value-3-8")},
+			&KeyVal{K: []byte("test-newidx-3-9"), V: []byte("test-value-3-9")},
+		}
+
+		dbBatch.ForcePutAll(idxKey, idx, kvs)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		idxKey := []byte("test-idx-3-2")
+		idx := &Index{
+			Keys:     [][]byte{[]byte("test-newidx-3-10"), []byte("test-newidx-3-11")},
+			UpdateTS: updateTS2,
+		}
+
+		kvs := []*KeyVal{
+			&KeyVal{K: []byte("test-newidx-3-10"), V: []byte("test-value-3-10")},
+			&KeyVal{K: []byte("test-newidx-3-11"), V: []byte("test-value-3-11")},
+		}
+
+		dbBatch.ForcePutAll(idxKey, idx, kvs)
+	}()
+
+	wg.Wait()
+
+	val, err := dbBatch.DBGet([]byte("test-idx-3-1"))
+	t.Logf("after DBGet: val: %v e: %v", val, err)
+	assert.NoError(t, err)
+	idx := &Index{}
+	err = idx.Unmarshal(val)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(idx.Keys))
+	assert.Equal(t, []byte("test-newidx-3-8"), idx.Keys[0])
+	assert.Equal(t, []byte("test-newidx-3-9"), idx.Keys[1])
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-3-8"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-3-8"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-3-9"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-3-9"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-idx-3-2"))
+	t.Logf("after DBGet: val: %v e: %v", val, err)
+	assert.NoError(t, err)
+	idx = &Index{}
+	err = idx.Unmarshal(val)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(idx.Keys))
+	assert.Equal(t, []byte("test-newidx-3-10"), idx.Keys[0])
+	assert.Equal(t, []byte("test-newidx-3-11"), idx.Keys[1])
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-3-10"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-3-10"), val)
+
+	val, err = dbBatch.DBGet([]byte("test-newidx-3-11"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("test-value-3-11"), val)
 }

@@ -686,10 +686,7 @@ TryPutAll tries to put all the key-vals with comparing the updateTS of the 1st i
 
 This is used when the real content is stored in ts-based key, but we want to refer the content directly from id-key.
 
-This assumes 1-record per key. The old data will be deleted if key conflict.
-
-For oplog: the id of each oplog is unique.
-For content:
+This assumes 1-record per id-key. The old data will be deleted if id-key already exists.
 */
 func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteOrig bool, isGetOrig bool) ([]*KeyVal, error) {
 	db := b.ldbBatch.DB()
@@ -775,10 +772,7 @@ ForcePutAll tries to put all the key-vals with comparing the updateTS of the 1st
 
 This is used when the real content is stored in ts-based key, but we want to refer the content directly from id-key.
 
-This assumes 1-record per key. The old data will be deleted if key conflict.
-
-For oplog: the id of each oplog is unique.
-For content:
+This assumes 1-record per id-key. The original data will be deleted if id-key already exists.
 */
 func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]byte, error) {
 	db := b.ldbBatch.DB()
@@ -845,6 +839,9 @@ func (b *LDBBatch) DeleteAllKeys(keys [][]byte) error {
 	return nil
 }
 
+/*
+DeleteAll deletes all the records, including value and 2nd-indexing of the idxKey.
+*/
 func (b *LDBBatch) DeleteAll(idxKey []byte) error {
 	db := b.ldbBatch.DB()
 
@@ -866,7 +863,7 @@ func (b *LDBBatch) DeleteAll(idxKey []byte) error {
 	d := &Index{}
 	err = d.Unmarshal(v)
 	if err != nil { // unable to get original data.
-		return ErrInvalidDBable
+		return ErrInvalidIndex
 	}
 
 	for _, eachKey := range d.Keys {
@@ -876,6 +873,9 @@ func (b *LDBBatch) DeleteAll(idxKey []byte) error {
 	return db.Delete(idxKey)
 }
 
+/*
+GetByIdxKey gets the value (idx as 0) or the corresponding 2nd-idx.
+*/
 func (b *LDBBatch) GetByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 	db := b.ldbBatch.DB()
 	err := db.TryRLockMap(idxKey)
@@ -891,8 +891,8 @@ func (b *LDBBatch) GetByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 
 	d := &Index{}
 	err = d.Unmarshal(v)
-	if err != nil { // unable to get original data.
-		return nil, ErrInvalidDBable
+	if err != nil { // unable to get the original index.
+		return nil, ErrInvalidIndex
 	}
 
 	if d.Keys == nil || len(d.Keys) <= idx || d.Keys[idx] == nil {
@@ -907,6 +907,9 @@ func (b *LDBBatch) GetByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 	return v, nil
 }
 
+/*
+GetKeyByIdxKey gets the key (idx as 0) or the corresponding 2nd-idx-key.
+*/
 func (b *LDBBatch) GetKeyByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 	db := b.ldbBatch.DB()
 	err := db.TryRLockMap(idxKey)
@@ -922,8 +925,8 @@ func (b *LDBBatch) GetKeyByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 
 	d := &Index{}
 	err = d.Unmarshal(v)
-	if err != nil { // unable to get original data.
-		return nil, ErrInvalidDBable
+	if err != nil { // unable to get the original index.
+		return nil, ErrInvalidIndex
 	}
 
 	if d.Keys == nil || len(d.Keys) <= idx || d.Keys[idx] == nil {
@@ -933,6 +936,9 @@ func (b *LDBBatch) GetKeyByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 	return d.Keys[idx], nil
 }
 
+/*
+GetBy2ndIdxKey gets the value based on the 2nd-idx-key.
+*/
 func (b *LDBBatch) GetBy2ndIdxKey(idxKey []byte) ([]byte, error) {
 	db := b.ldbBatch.DB()
 	err := db.TryRLockMap(idxKey)
@@ -954,6 +960,9 @@ func (b *LDBBatch) GetBy2ndIdxKey(idxKey []byte) ([]byte, error) {
 	return v, nil
 }
 
+/*
+GetKeyBy2ndIdxKey gets the key based on the 2nd-idx-key.
+*/
 func (b *LDBBatch) GetKeyBy2ndIdxKey(idxKey []byte) ([]byte, error) {
 	db := b.ldbBatch.DB()
 	err := db.TryRLockMap(idxKey)

@@ -687,6 +687,16 @@ TryPutAll tries to put all the key-vals with comparing the updateTS of the 1st i
 This is used when the real content is stored in ts-based key, but we want to refer the content directly from id-key.
 
 This assumes 1-record per id-key. The old data will be deleted if id-key already exists.
+
+idxKey, idx, and kvs intends to implement 2nd-indexing in leveldb.
+
+Given the id-key and the data with updateTS,
+idxKey is the id-key, key is the key-with-updateTS, value is the corresponding data.
+Besides, we also have the 2nd-idx-keys to index by the 2nd-idx-keys.
+The value of the 2nd-idx-keys are key.
+
+idx includes the key (in the 0th of idx.Keys) and 2nd-idx-keys
+kvs are the corresponding key-vals based on the order of idx.
 */
 func (b *LDBBatch) TryPutAll(idxKey []byte, idx *Index, kvs []*KeyVal, isDeleteOrig bool, isGetOrig bool) ([]*KeyVal, error) {
 	db := b.ldbBatch.DB()
@@ -773,6 +783,16 @@ ForcePutAll tries to put all the key-vals with comparing the updateTS of the 1st
 This is used when the real content is stored in ts-based key, but we want to refer the content directly from id-key.
 
 This assumes 1-record per id-key. The original data will be deleted if id-key already exists.
+
+idxKey, idx, and kvs intends to implement 2nd-indexing in leveldb.
+
+Given the id-key and the data with updateTS,
+idxKey is the id-key, key is the key-with-updateTS, value is the corresponding data.
+Besides, we also have the 2nd-idx-keys to index by the 2nd-idx-keys.
+The value of the 2nd-idx-keys are key.
+
+idx includes the key (in the 0th of idx.Keys) and 2nd-idx-keys
+kvs are the corresponding key-vals based on the order of idx.
 */
 func (b *LDBBatch) ForcePutAll(idxKey []byte, idx *Index, kvs []*KeyVal) ([][]byte, error) {
 	db := b.ldbBatch.DB()

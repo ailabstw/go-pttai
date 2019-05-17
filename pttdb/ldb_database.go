@@ -894,7 +894,7 @@ func (b *LDBBatch) DeleteAll(idxKey []byte) error {
 }
 
 /*
-GetByIdxKey gets the value (idx as 0) or the corresponding 2nd-idx.
+GetByIdxKey gets the value (idx as 0) or the value of the corresponding 2nd-idx-key (should be the key).
 */
 func (b *LDBBatch) GetByIdxKey(idxKey []byte, idx int) ([]byte, error) {
 	db := b.ldbBatch.DB()

@@ -26,6 +26,10 @@ type DBable struct {
 	UpdateTS types.Timestamp `json:"UT"`
 }
 
+func (d *DBable) Marshal() ([]byte, error) {
+	return json.Marshal(d)
+}
+
 func (d *DBable) Unmarshal(data []byte) error {
 	return json.Unmarshal(data, d)
 }

@@ -25,4 +25,5 @@ var (
 	ErrInvalidLock     = errors.New("invalid db lock")
 	ErrBusy            = errors.New("db busy")
 	ErrInvalidKeys     = errors.New("invalid db keys")
+	ErrInvalidIndex    = errors.New("invalid db index")
 )

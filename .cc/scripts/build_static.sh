@@ -4,7 +4,7 @@ cd pttai.js
 
 #./scripts/setup.sh
 
-npm run build
+yarn build
 
 cd ..
 mkdir -p ./static

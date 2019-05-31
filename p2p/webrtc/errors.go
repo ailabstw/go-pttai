@@ -21,4 +21,5 @@ import "errors"
 var (
 	ErrInvalidWebrtc      = errors.New("invalid webrtc")
 	ErrInvalidWebrtcOffer = errors.New("invalid webrtc offer")
+	ErrPacketTooLarge     = errors.New("packet too large")
 )

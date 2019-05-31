@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p/discv5"
 
+	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/pion/datachannel"
 	"github.com/pion/webrtc"
@@ -82,13 +83,86 @@ func NewWebrtcConn(nodeID discv5.NodeID, fromID discv5.NodeID, info *webrtcInfo)
 }
 
 func (w *WebrtcConn) Read(b []byte) (int, error) {
-	n, err := w.info.ReadWriteCloser.Read(b)
+	readBytes := 0
+	var err error
+
+	buf := make([]byte, PACKET_SIZE+1)
+	var eachN = 0
+	var n = 0
+
+looping:
+	for pb := b; len(pb) > 0; pb = pb[readBytes:] {
+		// 1. read to buf
+		eachN, err = w.info.ReadWriteCloser.Read(buf)
+		if err != nil {
+			break looping
+		}
+
+		// 2. copy to pb
+		readBytes = eachN - 1
+		if readBytes > len(pb) {
+			log.Error("Read: PacketTooLarge", "readBytes", readBytes, "pb", len(pb))
+			return 0, ErrPacketTooLarge
+		}
+
+		// 3. copy
+		copy(pb, buf[1:eachN])
+		n += readBytes
+
+		// 4. check PACKET_END
+		if buf[0] == PACKET_END {
+			break looping
+		}
+	}
+
+	if buf[0] != PACKET_END {
+		log.Error("Read: PacketTooLarge", "buf[0]", buf[0])
+		return 0, ErrPacketTooLarge
+	}
 
 	return n, err
 }
 
 func (w *WebrtcConn) Write(b []byte) (int, error) {
-	n, err := w.info.ReadWriteCloser.Write(b)
+	buf := make([]byte, PACKET_SIZE+1)
+	lenPB := 0
+	var pbuf []byte
+	n := 0
+	var err error
+
+	eachN := 0
+
+looping:
+	for pb := b; len(pb) > 0; pb = pb[lenPB:] {
+		// 1. set lenPB
+		if len(pb) <= PACKET_SIZE {
+			lenPB = len(pb)
+		} else {
+			lenPB = PACKET_SIZE
+		}
+
+		// 2. set buf[0]
+		if lenPB <= PACKET_SIZE {
+			buf[0] = PACKET_END
+		} else {
+			buf[0] = PACKET_NOT_END
+		}
+
+		// 3. copy and set pbuf
+		copy(buf[1:], pb[:lenPB])
+		pbuf = buf[:lenPB+1]
+
+		eachN, err = w.info.ReadWriteCloser.Write(pbuf)
+		if err != nil {
+			break looping
+		}
+		n += eachN - 1
+
+		// 4. break if no need to loop
+		if len(pb) <= PACKET_SIZE {
+			break looping
+		}
+	}
 
 	return n, err
 }

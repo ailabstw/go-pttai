@@ -21,6 +21,11 @@ const (
 
 	OfferIDPrefix = "a=fingerprint:"
 	OfferIDOffset = len(OfferIDPrefix)
+
+	PACKET_SIZE = 65534
+
+	PACKET_NOT_END = 0
+	PACKET_END     = 1
 )
 
 var ()

@@ -25,10 +25,10 @@ import (
 	"time"
 
 	"github.com/ailabstw/go-pttai/common/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ailabstw/go-pttai/log"
 	"github.com/ailabstw/go-pttai/p2p/discover"
 	"github.com/ailabstw/go-pttai/pttdb"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const ()

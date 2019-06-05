@@ -89,13 +89,19 @@ func (w *WebrtcConn) Read(b []byte) (int, error) {
 	buf := make([]byte, PACKET_SIZE+1)
 	var eachN = 0
 	var n = 0
+	var firstByte = uint8(0)
 
 looping:
 	for pb := b; len(pb) > 0; pb = pb[readBytes:] {
 		// 1. read to buf
 		eachN, err = w.info.ReadWriteCloser.Read(buf)
+		firstByte = uint8(255)
+		if err == nil && eachN > 0 {
+			firstByte = buf[0]
+		}
+		log.Debug("Read: (in-for-loop): after Read", "eachN", eachN, "firstByte", firstByte, "e", err)
 		if err != nil {
-			break looping
+			return 0, err
 		}
 
 		// 2. copy to pb
@@ -120,6 +126,8 @@ looping:
 		return 0, ErrPacketTooLarge
 	}
 
+	log.Debug("Read: done read", "n", n, "e", err)
+
 	return n, err
 }
 
@@ -132,17 +140,21 @@ func (w *WebrtcConn) Write(b []byte) (int, error) {
 
 	eachN := 0
 
+	log.Debug("Write: to write", "b", len(b))
+
+	isEnd := false
 looping:
 	for pb := b; len(pb) > 0; pb = pb[lenPB:] {
 		// 1. set lenPB
-		if len(pb) <= PACKET_SIZE {
+		isEnd = len(pb) <= PACKET_SIZE
+		if isEnd {
 			lenPB = len(pb)
 		} else {
 			lenPB = PACKET_SIZE
 		}
 
 		// 2. set buf[0]
-		if lenPB <= PACKET_SIZE {
+		if isEnd {
 			buf[0] = PACKET_END
 		} else {
 			buf[0] = PACKET_NOT_END
@@ -153,6 +165,7 @@ looping:
 		pbuf = buf[:lenPB+1]
 
 		eachN, err = w.info.ReadWriteCloser.Write(pbuf)
+		log.Debug("Write: (in-for-loop): after Write", "eachN", eachN, "e", err)
 		if err != nil {
 			break looping
 		}
@@ -163,6 +176,8 @@ looping:
 			break looping
 		}
 	}
+
+	log.Debug("Write: done write", "b", len(b), "n", n, "e", err)
 
 	return n, err
 }

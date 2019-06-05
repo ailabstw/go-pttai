@@ -16,7 +16,9 @@
 
 package p2p
 
-import "testing"
+import (
+	"testing"
+)
 
 const ()
 

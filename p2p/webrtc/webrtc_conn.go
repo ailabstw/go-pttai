@@ -95,7 +95,7 @@ looping:
 		// 1. read to buf
 		eachN, err = w.info.ReadWriteCloser.Read(buf)
 		if err != nil {
-			break looping
+			return 0, err
 		}
 
 		// 2. copy to pb
@@ -132,17 +132,19 @@ func (w *WebrtcConn) Write(b []byte) (int, error) {
 
 	eachN := 0
 
+	isEnd := false
 looping:
 	for pb := b; len(pb) > 0; pb = pb[lenPB:] {
 		// 1. set lenPB
-		if len(pb) <= PACKET_SIZE {
+		isEnd = len(pb) <= PACKET_SIZE
+		if isEnd {
 			lenPB = len(pb)
 		} else {
 			lenPB = PACKET_SIZE
 		}
 
 		// 2. set buf[0]
-		if lenPB <= PACKET_SIZE {
+		if isEnd {
 			buf[0] = PACKET_END
 		} else {
 			buf[0] = PACKET_NOT_END

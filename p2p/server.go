@@ -855,11 +855,6 @@ func (srv *Server) Start() (err error) {
 	}
 
 	// startP2P
-	err = srv.startP2P()
-	if err != nil {
-		return err
-	}
-
 	srv.loopWG.Add(1)
 	go func() {
 		defer srv.loopWG.Done()

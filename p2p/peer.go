@@ -200,18 +200,18 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		reason     DiscReason // sent to the peer
 	)
 	p.wg.Add(2)
-	log.Info("run: after Add", "peer", p)
+	log.Info("Peer.run: after Add", "peer", p)
 	go func() {
 		defer func() {
 			p.wg.Done()
-			log.Info("run: after readLoop done", "peer", p)
+			log.Info("Peer.run: after readLoop done", "peer", p)
 		}()
 		p.readLoop(readErr)
 	}()
 	go func() {
 		defer func() {
 			p.wg.Done()
-			log.Info("run: after pingLoop done", "peer", p)
+			log.Info("Peer.run: after pingLoop done", "peer", p)
 		}()
 		p.pingLoop()
 	}()

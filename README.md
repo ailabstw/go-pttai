@@ -1,3 +1,5 @@
+**This repository is deprecated**. Current development happen in [PTT.ai-next](https://github.com/ailabstw/pttai-next).
+
 gptt
 ==========
 
